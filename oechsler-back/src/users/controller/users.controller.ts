@@ -1,15 +1,25 @@
 import { Controller, Get, Query, Post, Body, Put, Param, Delete } from '@nestjs/common';
-import { User } from "./entity/user.entity";
-import { UsersService } from "./users.service";
+import { ApiTags, ApiOperation } from "@nestjs/swagger";
 
+import { User } from "../entity/user.entity";
+import { UsersService } from "../users.service";
+
+@ApiTags('Usuarios')
 @Controller('users')
 export class UsersController {
     constructor(private usersService: UsersService){}
 
+    @ApiOperation({ summary: 'Obtener lista de usuarios' })
     @Get()
     index(): Promise<User[]> {
       return this.usersService.findAll();
     } 
+
+    @Post('name')
+    async getName(@Body() userData: User): Promise<any> {
+      return this.usersService.findByName(userData.name);
+    } 
+
 
     @Post('create')
     async create(@Body() userData: User): Promise<any> {
@@ -19,7 +29,6 @@ export class UsersController {
     @Put(':id/update')
     async update(@Param('name') name, @Body() userData: User): Promise<any> {
         userData.name = String(name);
-        console.log('Update Name' + userData.name);
         return this.usersService.update(userData);
     }
 
@@ -27,6 +36,9 @@ export class UsersController {
     async delete(@Param('id') id): Promise<any> {
       return this.usersService.delete(id);
     }
+
+      
+    
 
     /*
     
