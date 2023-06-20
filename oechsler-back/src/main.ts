@@ -1,10 +1,14 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as expressListRoutes from "express-list-endpoints";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+  }));
 
   // Configuración Swagger en NestJS
   const config = new DocumentBuilder()
@@ -16,7 +20,10 @@ async function bootstrap() {
 
   // URL API
   SwaggerModule.setup('docs', app, document);
-  app.enableCors();
+  app.enableCors({
+    methods: 'GET, PUT, POST, DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+  });
   await app.listen(3000);
 
   const server = app.getHttpServer();

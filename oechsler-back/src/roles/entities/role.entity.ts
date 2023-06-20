@@ -1,14 +1,7 @@
-import { 
-    Entity, 
-    Column, 
-    PrimaryGeneratedColumn, 
-    CreateDateColumn,
-    UpdateDateColumn, 
-    DeleteDateColumn
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm";
 
 @Entity()
-export class User {
+export class Role {
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -16,10 +9,7 @@ export class User {
     name: string;
 
     @Column({ type: 'varchar', length: 255 })
-    password: string;
-
-    @Column({ type: 'varchar', length: 255 })
-    email: string;
+    description: string;
 
     @CreateDateColumn()
     created_at: Date;

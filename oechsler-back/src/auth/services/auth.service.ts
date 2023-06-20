@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from "bcrypt";
 import { JwtService } from "@nestjs/jwt";
 
-import { UsersService } from "../../users/users.service";
+import { UsersService } from "../../users/service/users.service";
 import { User } from 'src/users/entity/user.entity';
 
 @Injectable()
@@ -13,20 +13,27 @@ export class AuthService {
         private jwtService: JwtService
     ) {}
 
-    async validateUser(name: string, password) {
+    async validateUser(name: string, password: string) {
+
         const user = await this.usersService.findByName(name);
+        console.log({peticion: "validar usuario", datos: user});
+        
         const isMatch = await bcrypt.compare(password, user.password); 
+        console.log(isMatch);
         
         if(user && isMatch){
-            return user;
+            const payload = { id: user.id, username: user.name};
+            const access_token = this.generateJWT(payload);
+            return access_token;
         }
-        return null;
+        
+        throw new NotFoundException(`Contraseña incorrecta`);
+        
     }
 
-    generateJWT(user: User){
-        const payload = { role: user.name, sub: user.id };
+    generateJWT(user: any){
         return {
-            access_token: this.jwtService.sign(payload),
+            access_token: this.jwtService.sign(user),
             user,
         };
     }

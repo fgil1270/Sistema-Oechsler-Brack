@@ -1,25 +1,15 @@
-import { 
-    Entity, 
-    Column, 
-    PrimaryGeneratedColumn, 
-    CreateDateColumn,
-    UpdateDateColumn, 
-    DeleteDateColumn
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm";
 
 @Entity()
-export class User {
+export class UserRole {
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column({ unique: true, type: 'varchar', length: 255})
-    name: string;
+    id_user: number;
 
     @Column({ type: 'varchar', length: 255 })
-    password: string;
-
-    @Column({ type: 'varchar', length: 255 })
-    email: string;
+    id_role: number;
 
     @CreateDateColumn()
     created_at: Date;
