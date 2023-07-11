@@ -10,10 +10,8 @@ import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { enviroments } from "./enviroments";
 import { RolesModule } from './roles/roles.module';
-import { ModulesModule } from './modules/modules.module';
 import { ViewsModule } from './views/views.module';
 import config from "./config";
-
 
 @Module({
   imports: [
@@ -21,6 +19,7 @@ import config from "./config";
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
       load: [config],
       isGlobal: true,
+      expandVariables: true,
       validationSchema: Joi.object({
         API_KEY: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
@@ -30,19 +29,19 @@ import config from "./config";
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: process.env.MYSQL_HOST,
+      host: '127.0.0.1',
       port: 3306,
-      username: process.env.MYSQL_USER,
-      password: process.env.MYSQL_ROOT_PASSWORD,
-      database: process.env.MYSQL_DATABASE,
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
+      username: 'root',
+      password: 'root',
+      database: 'db_oechsler',
+      entities: ['dist/**/*.entity{.ts,.js}'],
+      autoLoadEntities: true,
+      synchronize: false,
     }),
     UsersModule,
     AuthModule,
     DatabaseModule,
     RolesModule,
-    ModulesModule,
     ViewsModule,
   ],
   controllers: [AppController],

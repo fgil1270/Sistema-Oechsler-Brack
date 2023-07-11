@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, IsNumber, IsUrl, IsEmail, Min, MinLength } from "class-validator";
-import { ApiProperty} from "@nestjs/swagger";
+import { ApiProperty, PartialType} from "@nestjs/swagger";
 
 export class CreateViewDto {
     @IsNotEmpty()
@@ -9,6 +9,8 @@ export class CreateViewDto {
 
     @IsNotEmpty()
     @IsString()
-    @ApiProperty({ description: 'Url de la vista'})
-    path: string;
+    @ApiProperty({ description: 'Descripción de la vista'})
+    description: string;
 }
+
+export class UpdateViewDto extends PartialType(CreateViewDto) {}

@@ -5,9 +5,11 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
-    ManyToOne
+    ManyToMany,
+    JoinTable
 } from "typeorm";
-import { ModuleViews } from "../../modules/entities/module.entity";
+
+import { Role } from "../../roles/entities/role.entity";
 
 @Entity()
 export class View {
@@ -18,7 +20,18 @@ export class View {
     name: string;
 
     @Column({ type: 'varchar', length: 255})
-    path: string;
+    description: string;
+
+    @ManyToMany(() => Role, (role) => role.views)
+    @JoinTable({
+        joinColumn: {
+            name: 'roleId'
+        },
+        inverseJoinColumn: {
+            name: 'viewId'
+        }
+    })
+    roles: Role[];
 
     @CreateDateColumn()
     created_at: Date;
@@ -29,6 +42,5 @@ export class View {
     @DeleteDateColumn()
     deleted_at: Date;
 
-    @ManyToOne(() => ModuleViews, (moduleViews) => moduleViews.views)
-    moduleViews: ModuleViews;
+    
 }

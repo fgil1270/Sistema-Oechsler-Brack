@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository, UpdateResult, DeleteResult } from "typeorm";
+import { Repository, UpdateResult, DeleteResult, Not, IsNull } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { CreateViewDto } from '../dto/create-view.dto';
-import { UpdateViewDto } from '../dto/update-view.dto';
 import { View } from '../entities/view.entity';
 
 @Injectable()
@@ -18,29 +17,66 @@ export class ViewsService {
   }
 
   async findAll() {
-    const mod = await this.viewRepository.find();
-    console.log(mod);
-    if (!mod) {
-      throw new NotFoundException(`Modules not found`);
+    const total = await this.viewRepository.count();
+    const views = await this.viewRepository.find();
+    
+    if (!views) {
+      throw new NotFoundException(`Views not found`);
     }
-    return mod;
+    return {
+      total: total,
+      views: views
+    };
+  }
+
+  async findAllDeleted() {
+    const total = await this.viewRepository.count();
+    const views = await this.viewRepository.find({ 
+      where: { deleted_at: Not(IsNull()) }, withDeleted: true 
+    });
+    
+    if (!views) {
+      throw new NotFoundException(`Views not found`);
+    }
+    return {
+      total: total,
+      views: views
+    };
   }
 
   async findOne(id: number) {
-    const mod = await this.viewRepository.findOneBy({id:id});
-    if (!mod) {
-      throw new NotFoundException(`Module #${id} not found`);
+    console.log(typeof id);
+    const view = await this.viewRepository.findOne({
+      relations: {
+        roles: true
+      },
+      where: {
+        id: id
+      },
+      withDeleted: true
+    });
+    console.log(view)
+    if (!view) {
+      throw new NotFoundException(`View #${id} not found`);
     }
-    return mod;
+    return {
+      view
+    };
   }
 
-  async update(id: number, updateModuleDto: UpdateViewDto) {
-    const mod = await this.findOne(id);
-    this.viewRepository.merge(mod, updateModuleDto);
-    return await this.viewRepository.update(id, mod);
+  async update(id: number, updateModuleDto: CreateViewDto) {
+    console.log(id);
+    const view = await this.viewRepository.findOneBy({id});
+    console.log(view);
+    this.viewRepository.merge(view, updateModuleDto);
+    return await this.viewRepository.update(id, view);
   }
 
   async remove(id: number) {
     return await this.viewRepository.softDelete(id);
+  }
+
+  async restore(id: number) {
+    return await this.viewRepository.restore(id);
   }
 }

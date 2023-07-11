@@ -10,20 +10,19 @@ const API_KEY_PROD = 'PROD123456789';
 @Module({ 
     imports: [
         TypeOrmModule.forRootAsync({
-            name: 'mysqlDB',
             inject: [config.KEY],
             useFactory: (configService: ConfigType<typeof config>) => {
                 const { dbName, user, password, host, port } = configService.mysql;
                 return {
                     type: 'mysql',
-                    host,
-                    port,
+                    host: host,
+                    port: port,
                     username: user,
-                    password,
+                    password: password,
                     database: dbName,
                     synchronize: false,
                     autoLoadEntities: true,
-
+                    entities: ['dist/**/*.entity.ts']
                 }
             },
         }),
@@ -32,8 +31,10 @@ const API_KEY_PROD = 'PROD123456789';
         {
             provide: 'API_KEY',
             useValue: process.env.NODE_ENV === 'prod' ? API_KEY_PROD : API_KEY,
-        }
+        },
+       
     ],
-    exports:['API_KEY'],
+    
+    exports:['API_KEY', TypeOrmModule],
 })
 export class DatabaseModule {}

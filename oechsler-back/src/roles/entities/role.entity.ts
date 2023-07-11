@@ -1,4 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm";
+import { 
+    Entity, 
+    Column, 
+    PrimaryGeneratedColumn, 
+    ManyToMany,
+    JoinTable,
+    CreateDateColumn, 
+    UpdateDateColumn, 
+    DeleteDateColumn 
+} from "typeorm";
+import { User } from "../../users/entity/user.entity";
+import { View } from "../../views/entities/view.entity";
 
 @Entity()
 export class Role {
@@ -10,6 +21,12 @@ export class Role {
 
     @Column({ type: 'varchar', length: 255 })
     description: string;
+
+    @ManyToMany(() => User, (user) => user.roles)
+    users: User[];
+
+    @ManyToMany(() => View, (view) => view.roles)
+    views: View[];
 
     @CreateDateColumn()
     created_at: Date;

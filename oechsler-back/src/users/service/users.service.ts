@@ -1,33 +1,64 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from "@nestjs/config";
-import { Repository, UpdateResult, DeleteResult } from 'typeorm';
+import { Repository, UpdateResult, DeleteResult, IsNull, Not, Like, In } from 'typeorm';
 import { InjectRepository } from "@nestjs/typeorm";
 import * as bcrypt from "bcrypt";
 
 import { User } from "../entity/user.entity";
+import { Role } from "../../roles/entities/role.entity";
 import { CreateUserDto, UpdateUserDto } from '../dto/create-user.dto';
-import { string } from 'joi';
 
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User) private userRepository: Repository<User>,
+        @InjectRepository(Role) private roleRepository: Repository<Role>,
         private configService: ConfigService,
     ){}
 
     async create(user: CreateUserDto) {
-        const newUser = this.userRepository.create(user);
-        this.hashPassword(newUser.password).then((x) => {
-            newUser.password = x
+        const userSearch = await this.userRepository.findOneBy({
+                name: Like(`%${user.name}%`)
         });
+        const mapUser = await this.userRepository.create(user);
         
-        return await this.userRepository.save(newUser);
+        if (userSearch?.id) {
+            throw new BadRequestException(`El usuario ya existe`);
+        }
+        this.hashPassword(mapUser.password).then((x) => {
+            mapUser.password = x
+        });
+
+        const rolesIds = user.rolesIds;
+        const roles = await this.roleRepository.findBy({ id: In(rolesIds) });
+        mapUser.roles = roles;
+        return  await this.userRepository.save(mapUser);
+        
     }
 
     async findAll() {
         const userAll = await this.userRepository.count();
-        const users = await this.userRepository.find();
+        const users = await this.userRepository.find({
+            relations: {
+                roles: true
+            }
+        });
+        return {
+            total: userAll,
+            users: users
+        }
+    }
+
+    async findAllDeleted() {
+        const userAll = await this.userRepository.count();
+        const users = await this.userRepository.find({ 
+            relations: {
+                roles: true
+            },
+            where: { deleted_at: Not(IsNull()) },
+            withDeleted: true 
+        });
         return {
             total: userAll,
             users: users
@@ -35,7 +66,15 @@ export class UsersService {
     }
 
     async findOne(id: number) {
-        const user = await this.userRepository.findOneBy({id:id});
+        const user = await this.userRepository.findOne({
+            relations: {
+                roles: true
+            },
+            where: {
+                id: id
+            },
+            withDeleted: true
+        });
         if (!user) {
             throw new NotFoundException(`User #${id} not found`);
         }
@@ -49,23 +88,44 @@ export class UsersService {
         const user = await this.userRepository.findOneBy({
             name : name
         });
-        //console.log({peticion: "buscar nombres", name: name, user: user});
+        
         if (!user) {
             throw new NotFoundException(`User "${name}" not found`);
         }
         return user;
-        
     }
     
     async update(id: number, userData: UpdateUserDto){
-        const user = await this.userRepository.findOneBy({id});
+        const user = await this.findOne(id);
+        const mapUser = await this.userRepository.create(userData);
         if (userData.password) {
             await this.hashPassword(userData.password).then((x) => {
-                userData.password = x
+                mapUser.password = x
             });
         }
-        this.userRepository.merge(user, userData);
-        return await this.userRepository.update(id, user);
+        const rolesIds = userData.rolesIds;
+        const roles = await this.roleRepository.findBy({ id: In(rolesIds) });
+        user.user.roles = roles;
+        
+        //se editan primero los roles
+        await this.userRepository.save(user.user);
+        //se actualiza la informacion del usuario
+        return await this.userRepository.update(id, mapUser);
+    }
+
+    async updatePassword(id: number, password: string){
+        const user = await this.findOne(id);
+        let newPaswword = "";
+        console.log(password);
+        if (user) {
+            await this.hashPassword(password).then((x) => {
+                newPaswword = x
+            });
+        }
+
+        //se actualiza la informacion del usuario
+        return await this.userRepository.update(id, {password: newPaswword});
+        
     }
 
 
@@ -78,9 +138,7 @@ export class UsersService {
         return  {
             user: id,
             affected: deleteUser.affected
-
         };
-        
     }
 
     async hashPassword(password: string){
@@ -90,6 +148,10 @@ export class UsersService {
 
         const newPassword = await bcrypt.hashSync(password, salt);
         return newPassword;
+    }
+
+    async restore(id: number) {
+        return await this.userRepository.restore(id);
     }
 
 

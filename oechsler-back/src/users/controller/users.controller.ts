@@ -1,7 +1,6 @@
 import { 
   Controller, 
-  Get, 
-  Query, 
+  Get,  
   Post, 
   Body, 
   Put, 
@@ -9,16 +8,13 @@ import {
   Delete, 
   HttpStatus, 
   HttpCode,
-  HttpException, 
   ParseIntPipe,
   UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 
-import { User } from "../entity/user.entity";
 import { UsersService } from "../service/users.service";
 import { CreateUserDto, UpdateUserDto } from '../dto/create-user.dto';
-import passport from 'passport';
 
 @UseGuards(AuthGuard('jwt'))
 @ApiTags('Usuarios')
@@ -27,19 +23,21 @@ export class UsersController {
     constructor(private usersService: UsersService){}
 
     @ApiOperation({ summary: 'Crear Usuario' })
-    @Post('create')
+    @Post()
     async create(@Body() userData: CreateUserDto) {
       return this.usersService.create(userData);
     }
 
     @ApiOperation({ summary: 'Obtener lista de usuarios' })
     @Get()
-    index() {
-      try {
-        return this.usersService.findAll();
-      } catch (error) {
-        throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
+    getUsers() {
+      return this.usersService.findAll();
+    } 
+
+    @ApiOperation({ summary: 'Obtener lista de usuarios eliminados' })
+    @Get('/deleted')
+    getDeletedUsers() {
+      return this.usersService.findAllDeleted();
     } 
 
     /*@ApiOperation({ summary: 'Obtener lista de usuarios' })
@@ -56,26 +54,38 @@ export class UsersController {
 
     @ApiOperation({ summary: 'Buscar Usuario' })
     @HttpCode(HttpStatus.ACCEPTED)
-    @Get(':userId')
-    getOne(@Param('userId', ParseIntPipe) userId: number){
+    @Get(':id')
+    getOne(@Param('id', ParseIntPipe) userId: number){
       return this.usersService.findOne(userId)
     }
 
     @ApiOperation({ summary: 'Buscar por Nombre de Usuario' })
-    @Post('/name/:name')
-    getName(@Param('name') name: string){
+    @Get('/name')
+    getName(@Body('name') name: string){
       return this.usersService.findByName(name)
     }
 
     @ApiOperation({ summary: 'Editar Usuario' })
     @Put(':id')
-    async update(@Param('id') id: number, @Body() userData: UpdateUserDto){
+    update(@Param('id', ParseIntPipe) id: number, @Body() userData: UpdateUserDto){
       return this.usersService.update(id, userData);
+    }
+
+    @ApiOperation({ summary: 'Editar contraseña'})
+    @Put('password/:id')
+    updatePassword(@Param('id') id: number, @Body('editPassword') password: string) {
+      return this.usersService.updatePassword(id, password);
+    }
+    
+    @ApiOperation({ summary: 'Restaurar usuario'})
+    @Put('restore/:id')
+    restore(@Param('id', ParseIntPipe) id: number){
+      return this.usersService.restore(id);
     }
 
     @ApiOperation({ summary: 'Eliminar Usuario' })
     @Delete(':id')
-    async delete(@Param('id') id: number){
+    delete(@Param('id') id: number){
       return this.usersService.delete(id);
     }
 
