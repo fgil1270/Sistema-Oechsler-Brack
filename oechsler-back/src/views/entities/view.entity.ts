@@ -25,10 +25,10 @@ export class View {
     @ManyToMany(() => Role, (role) => role.views)
     @JoinTable({
         joinColumn: {
-            name: 'roleId'
+            name: 'viewId'
         },
         inverseJoinColumn: {
-            name: 'viewId'
+            name: 'roleId'
         }
     })
     roles: Role[];
