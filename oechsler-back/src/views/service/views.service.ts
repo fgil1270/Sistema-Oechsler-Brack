@@ -1,14 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository, UpdateResult, DeleteResult, Not, IsNull } from "typeorm";
+import { Repository, In, Not, IsNull } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { CreateViewDto } from '../dto/create-view.dto';
 import { View } from '../entities/view.entity';
+import { Role } from "../../roles/entities/role.entity";
 
 @Injectable()
 export class ViewsService {
   constructor(
-    @InjectRepository(View) private viewRepository: Repository<View>
+    @InjectRepository(View) private viewRepository: Repository<View>,
+    @InjectRepository(Role) private roleRepository: Repository<Role>
   ) {}
 
   async create(createModuleDto: CreateViewDto) {
@@ -18,7 +20,11 @@ export class ViewsService {
 
   async findAll() {
     const total = await this.viewRepository.count();
-    const views = await this.viewRepository.find();
+    const views = await this.viewRepository.find({
+      relations: {
+        roles: true
+      }
+    });
     
     if (!views) {
       throw new NotFoundException(`Views not found`);
@@ -32,7 +38,11 @@ export class ViewsService {
   async findAllDeleted() {
     const total = await this.viewRepository.count();
     const views = await this.viewRepository.find({ 
-      where: { deleted_at: Not(IsNull()) }, withDeleted: true 
+      relations: {
+        roles: true
+      },
+      where: { deleted_at: Not(IsNull()) }, 
+      withDeleted: true 
     });
     
     if (!views) {
@@ -45,7 +55,7 @@ export class ViewsService {
   }
 
   async findOne(id: number) {
-    console.log(typeof id);
+    
     const view = await this.viewRepository.findOne({
       relations: {
         roles: true
@@ -55,7 +65,6 @@ export class ViewsService {
       },
       withDeleted: true
     });
-    console.log(view)
     if (!view) {
       throw new NotFoundException(`View #${id} not found`);
     }
@@ -65,9 +74,7 @@ export class ViewsService {
   }
 
   async update(id: number, updateModuleDto: CreateViewDto) {
-    console.log(id);
     const view = await this.viewRepository.findOneBy({id});
-    console.log(view);
     this.viewRepository.merge(view, updateModuleDto);
     return await this.viewRepository.update(id, view);
   }
@@ -78,5 +85,31 @@ export class ViewsService {
 
   async restore(id: number) {
     return await this.viewRepository.restore(id);
+  }
+
+  async addRole(id: number, updateModuleDto: any) {
+    const view = await this.findOne(id);
+    
+    let roles: any;
+    let rolesView: any[] = [];
+    
+    if (updateModuleDto.edit === true) {
+        view.view.roles.forEach((role) => {
+          
+          rolesView.push(role.id)
+        });
+        
+        rolesView.push(updateModuleDto.rolesIds);
+        
+        roles = await this.roleRepository.findBy({ id: In(rolesView)});
+        view.view.roles = roles;
+        
+    }else{
+        view.view.roles = view.view.roles.filter((role) => {
+        return role.id !== updateModuleDto.rolesIds
+      });
+    }
+
+    return await this.viewRepository.save(view.view);
   }
 }

@@ -50,8 +50,13 @@ export class ViewsController {
   @ApiOperation({ summary: 'Editar vista'})
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateViewDto: CreateViewDto) {
-    console.log(id)
     return this.viewsService.update(id, updateViewDto);
+  }
+
+  @ApiOperation({ summary: 'Editar permisos'})
+  @Put('/permission/:id')
+  addRole(@Param('id', ParseIntPipe) id: number, @Body() updateViewDto: any) {
+    return this.viewsService.addRole(id, updateViewDto);
   }
 
   @ApiOperation({ summary: 'Eliminar vista'})
