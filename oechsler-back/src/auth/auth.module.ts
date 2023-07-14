@@ -7,13 +7,15 @@ import { LocalStrategy } from "./strategies/loca.strategy";
 import { JWTStrategy } from "./strategies/jwt.strategy";
 import { AuthService } from './services/auth.service';
 import { UsersModule } from "../users/users.module";
+import { RolesModule } from "../roles/roles.module";
 import { AuthController } from './controllers/auth.controller';
 import config from "../config";
 
 @Module({
   imports: [
     UsersModule, 
-    PassportModule, 
+    PassportModule,
+    RolesModule,
     JwtModule.registerAsync({
       inject: [config.KEY],
       useFactory: (configService: ConfigType<typeof config>) => {

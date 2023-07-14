@@ -85,8 +85,13 @@ export class UsersService {
 
     async findByName(name: string){
         
-        const user = await this.userRepository.findOneBy({
-            name : name
+        const user = await this.userRepository.findOne({
+            relations: {
+                roles:true
+            },
+            where: {
+                name: name
+            }
         });
         
         if (!user) {
@@ -152,6 +157,21 @@ export class UsersService {
 
     async restore(id: number) {
         return await this.userRepository.restore(id);
+    }
+
+    async rolesViews( rolesName: string[] ){
+        const roleView = await this.roleRepository.find({ 
+            relations: {
+                views:true
+            },
+            where: {
+                name: In(rolesName) 
+            }
+            
+        });
+        
+
+        return roleView;
     }
 
 

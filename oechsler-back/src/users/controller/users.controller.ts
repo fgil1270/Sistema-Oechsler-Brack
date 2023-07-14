@@ -15,8 +15,10 @@ import { AuthGuard } from "@nestjs/passport";
 
 import { UsersService } from "../service/users.service";
 import { CreateUserDto, UpdateUserDto } from '../dto/create-user.dto';
+import { RoleGuard } from 'src/auth/guards/role.guard';
+import { Views } from 'src/auth/decorators/views.decorator';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Usuarios')
 @Controller('users')
 export class UsersController {
@@ -30,6 +32,7 @@ export class UsersController {
 
     @ApiOperation({ summary: 'Obtener lista de usuarios' })
     @Get()
+    @Views('Usuarios')
     getUsers() {
       return this.usersService.findAll();
     } 
@@ -39,18 +42,6 @@ export class UsersController {
     getDeletedUsers() {
       return this.usersService.findAllDeleted();
     } 
-
-    /*@ApiOperation({ summary: 'Obtener lista de usuarios' })
-    @Get()
-    getUsers(
-      @Query('limit') limit = 100,
-      @Query('offset') offset = 0,
-      @Query('brand') brand: string,
-    ) {
-      return {
-        message: `users limit=> ${limit} offset=> ${offset} brand=> ${brand}`,
-      }
-    }*/
 
     @ApiOperation({ summary: 'Buscar Usuario' })
     @HttpCode(HttpStatus.ACCEPTED)

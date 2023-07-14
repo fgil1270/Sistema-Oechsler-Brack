@@ -15,8 +15,10 @@ import { AuthGuard } from "@nestjs/passport";
 
 import { ViewsService } from '../service/views.service';
 import { CreateViewDto } from '../dto/create-view.dto';
+import { Views } from 'src/auth/decorators/views.decorator';
+import { RoleGuard } from 'src/auth/guards/role.guard';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Vistas')
 @Controller('views')
 export class ViewsController {
@@ -31,6 +33,7 @@ export class ViewsController {
 
   @ApiOperation({ summary: 'Listar vistas'})
   @Get()
+  @Views('Vistas', 'Roles-permisos')
   findAll() {
     return this.viewsService.findAll();
   }

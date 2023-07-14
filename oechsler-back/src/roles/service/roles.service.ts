@@ -23,7 +23,11 @@ export class RolesService {
 
   async findAll() {
     const total = await this.roleRepository.count();
-    const roles = await this.roleRepository.find();
+    const roles = await this.roleRepository.find({
+      relations: {
+          views: true
+      }
+  });
     if (!roles) {
       throw new NotFoundException(`Roles not found`);
     }
