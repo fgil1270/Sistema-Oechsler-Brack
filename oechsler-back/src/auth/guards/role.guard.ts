@@ -10,7 +10,7 @@ export class RoleGuard implements CanActivate {
 
   async canActivate( context: ExecutionContext): Promise<boolean>  {
     const views: string[] = this._reflector.get<string[]>('views', context.getHandler());
-    console.log(views);
+    
     if(!views){
       return true;
     }
@@ -27,7 +27,6 @@ export class RoleGuard implements CanActivate {
         }
       }
     );
-    console.log(user && hasRole);
     return user && hasRole; 
   }
 }

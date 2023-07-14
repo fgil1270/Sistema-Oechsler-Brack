@@ -11,6 +11,7 @@ import { DatabaseModule } from './database/database.module';
 import { enviroments } from "./enviroments";
 import { RolesModule } from './roles/roles.module';
 import { ViewsModule } from './views/views.module';
+import { DepartmentsModule } from './departments/departments.module';
 import config from "./config";
 
 @Module({
@@ -43,6 +44,7 @@ import config from "./config";
     DatabaseModule,
     RolesModule,
     ViewsModule,
+    DepartmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
