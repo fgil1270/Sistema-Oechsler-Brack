@@ -9,7 +9,8 @@ import {
   HttpStatus, 
   HttpCode,
   ParseIntPipe,
-  UseGuards } from '@nestjs/common';
+  UseGuards 
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 
@@ -27,13 +28,12 @@ export class ViewsController {
   @ApiOperation({ summary: 'Crear vista'})
   @Post()
   create(@Body() createViewDto: CreateViewDto) {
-    console.log("crear vista")
     return this.viewsService.create(createViewDto);
   }
 
   @ApiOperation({ summary: 'Listar vistas'})
+  @Views('vistas', 'roles_permisos')
   @Get()
-  @Views('Vistas', 'Roles-permisos')
   findAll() {
     return this.viewsService.findAll();
   }
@@ -69,8 +69,8 @@ export class ViewsController {
   }
 
   @ApiOperation({ summary: 'Restaurar vista'})
-    @Put('restore/:id')
-    restore(@Param('id', ParseIntPipe) id: number){
-      return this.viewsService.restore(id);
-    }
+  @Put('restore/:id')
+  restore(@Param('id', ParseIntPipe) id: number){
+    return this.viewsService.restore(id);
+  }
 }

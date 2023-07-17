@@ -19,7 +19,7 @@ export class Department {
     cv_code: string;
 
     @Column({ unique: true, type: 'varchar', length: 255})
-    cv_description: TrainingBudget[];
+    cv_description: string;
 
     @OneToMany(() => TrainingBudget, post => post.departmentId)
     training_budgetId: TrainingBudget[]

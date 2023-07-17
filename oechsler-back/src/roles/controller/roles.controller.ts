@@ -22,7 +22,7 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Obtener lista de roles'})
   @Get()
-  @Views('Roles')
+  @Views('roles')
   @UseGuards(RoleGuard)
   findAll() {
     return this.rolesService.findAll();

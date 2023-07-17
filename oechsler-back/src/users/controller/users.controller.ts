@@ -32,7 +32,7 @@ export class UsersController {
 
     @ApiOperation({ summary: 'Obtener lista de usuarios' })
     @Get()
-    @Views('Usuarios')
+    @Views('usuarios')
     getUsers() {
       return this.usersService.findAll();
     } 

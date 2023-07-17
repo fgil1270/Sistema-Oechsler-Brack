@@ -12,6 +12,7 @@ import { enviroments } from "./enviroments";
 import { RolesModule } from './roles/roles.module';
 import { ViewsModule } from './views/views.module';
 import { DepartmentsModule } from './departments/departments.module';
+import { JobsModule } from './jobs/jobs.module';
 import config from "./config";
 
 @Module({
@@ -45,6 +46,7 @@ import config from "./config";
     RolesModule,
     ViewsModule,
     DepartmentsModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
