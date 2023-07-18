@@ -14,6 +14,7 @@ import { ViewsModule } from './views/views.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { JobsModule } from './jobs/jobs.module';
 import { PayrollsModule } from './payrolls/payrolls.module';
+import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import config from "./config";
 
 @Module({
@@ -49,6 +50,7 @@ import config from "./config";
     DepartmentsModule,
     JobsModule,
     PayrollsModule,
+    VacationsProfileModule,
   ],
   controllers: [AppController],
   providers: [AppService],
