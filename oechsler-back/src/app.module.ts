@@ -13,6 +13,7 @@ import { RolesModule } from './roles/roles.module';
 import { ViewsModule } from './views/views.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { JobsModule } from './jobs/jobs.module';
+import { PayrollsModule } from './payrolls/payrolls.module';
 import config from "./config";
 
 @Module({
@@ -47,6 +48,7 @@ import config from "./config";
     ViewsModule,
     DepartmentsModule,
     JobsModule,
+    PayrollsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

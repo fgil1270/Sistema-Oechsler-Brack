@@ -24,6 +24,9 @@ export class Department {
     @OneToMany(() => TrainingBudget, post => post.departmentId)
     training_budgetId: TrainingBudget[]
 
+    @Column({ type: 'int', default: 0})
+    cc:number;
+
     @CreateDateColumn()
     created_at: Date;
 

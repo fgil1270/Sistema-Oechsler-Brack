@@ -55,7 +55,7 @@ export class JobsService {
         id: id
       }
     });
-    
+    console.log(job);
     if (!job) {
       throw new NotFoundException(`Job #${id} not found`);
     }
