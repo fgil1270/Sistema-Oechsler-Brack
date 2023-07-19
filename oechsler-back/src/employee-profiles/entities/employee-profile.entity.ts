@@ -38,8 +38,8 @@ export class EmployeeProfile {
     @Column({ type: "int", default: 0 })
     apply_extra_hrs: boolean;
 
-    @OneToMany(() => Employee, (post) => post.employeeProfileId)
-    employeeId: Employee[];
+    @OneToMany(() => Employee, (post) => post.employeeProfile)
+    employee: Employee[];
 
     @CreateDateColumn()    
     created_at: Date;

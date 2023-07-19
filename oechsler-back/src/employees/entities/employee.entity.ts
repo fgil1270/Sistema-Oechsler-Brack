@@ -22,25 +22,25 @@ export class Employee {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => Payroll, post => post.employeeId)
+    @ManyToOne(() => Payroll, post => post.employee)
     @JoinColumn()
-    payRollId: Payroll;
+    payRoll: Payroll;
     
-    @ManyToOne(() => Department, post => post.employeeId)
+    @ManyToOne(() => Department, post => post.employee)
     @JoinColumn()
-    departmentId: Department;
+    department: Department;
     
-    @ManyToOne(() => VacationsProfile, post => post.employeeId)
+    @ManyToOne(() => VacationsProfile, post => post.employee)
     @JoinColumn()
-    vacationProfileId: VacationsProfile;
+    vacationProfile: VacationsProfile;
     
-    @ManyToOne(() => EmployeeProfile, post => post.employeeId)
+    @ManyToOne(() => EmployeeProfile, post => post.employee)
     @JoinColumn()
-    employeeProfileId: EmployeeProfile;
+    employeeProfile: EmployeeProfile;
     
-    @ManyToOne(() => Job, post => post.employeeId)
+    @ManyToOne(() => Job, post => post.employee)
     @JoinColumn()
-    jobId: Job;
+    job: Job;
 
     @Column({ type: 'varchar', length: 255})
     worker: string;

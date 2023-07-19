@@ -27,8 +27,8 @@ export class Department {
     @Column({ type: 'int', default: 0})
     cc:number;
 
-    @OneToMany(() => Employee, post => post.departmentId)
-    employeeId: Employee[];
+    @OneToMany(() => Employee, post => post.department)
+    employee: Employee[];
 
     @CreateDateColumn()
     created_at: Date;

@@ -17,8 +17,8 @@ export class Payroll {
     @Column({ unique: true, type: 'varchar', length: 255})
     name: string;
 
-    @OneToMany(() => Employee, post => post.payRollId)
-    employeeId: Employee[];
+    @OneToMany(() => Employee, post => post.payRoll)
+    employee: Employee[];
 
     @CreateDateColumn()
     created_at: Date;

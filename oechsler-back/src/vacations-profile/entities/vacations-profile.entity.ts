@@ -32,8 +32,8 @@ export class VacationsProfile {
     @Column({ type: 'int', default: 0})
     total: number;
 
-    @OneToMany(() => Employee, post => post.vacationProfileId)
-    employeeId: Employee[];
+    @OneToMany(() => Employee, post => post.vacationProfile)
+    employee: Employee[];
 
     @CreateDateColumn()
     created_at: Date;
