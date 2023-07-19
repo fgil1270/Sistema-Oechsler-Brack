@@ -2,17 +2,20 @@ import {
     Entity,
     Column,
     PrimaryGeneratedColumn,
-    JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
-    ManyToOne
+    ManyToOne,
+    OneToMany,
+    JoinColumn
+
 } from "typeorm";
 import { Department } from "../../departments/entities/department.entity";
 import { VacationsProfile } from "../../vacations-profile/entities/vacations-profile.entity";
 import { Payroll } from "../../payrolls/entities/payroll.entity";
 import { EmployeeProfile } from "../../employee-profiles/entities/employee-profile.entity";
 import { Job } from "../../jobs/entities/job.entity";
+import { User } from "../../users/entity/user.entity";
 
 @Entity()
 export class Employee {
@@ -134,5 +137,8 @@ export class Employee {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => User, (post) => post.employee)
+    userId: User[];
 
 }
