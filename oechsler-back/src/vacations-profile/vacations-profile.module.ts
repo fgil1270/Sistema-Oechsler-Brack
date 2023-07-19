@@ -12,6 +12,7 @@ import { VacationsProfile } from "./entities/vacations-profile.entity";
     ]),
   ],
   controllers: [VacationsProfileController],
-  providers: [VacationsProfileService]
+  providers: [VacationsProfileService],
+  exports: [VacationsProfileService]
 })
 export class VacationsProfileModule {}

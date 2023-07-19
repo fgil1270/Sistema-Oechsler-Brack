@@ -31,7 +31,7 @@ export class DepartmentsService {
     const depts = await this.departmentRepository.find();
     
     if (!depts) {
-      throw new NotFoundException(`Views not found`);
+      throw new NotFoundException(`Departments not found`);
     }
     return {
       total: total,

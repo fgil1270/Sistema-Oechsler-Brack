@@ -107,25 +107,23 @@ export class CreateEmployeeDto {
     @ApiProperty({ description: 'Fecha de alta' })
     date_employment: Date;
 
-    @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: 'Fecha de baja' })
-    work_term_date: Date;
+    work_term_date ? : Date;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: 'Correo electrónico' })
     email: string;
 
-    @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: 'Teléfono' })
-    phone: string;
+    phone?: string;
 
     @IsNotEmpty()
-    @IsBoolean()
+    @IsString()
     @ApiProperty({ description: 'Estado civil' })
-    marital_status: boolean;
+    marital_status: string;
 
     @IsNotEmpty()
     @IsNumber()
@@ -143,7 +141,7 @@ export class CreateEmployeeDto {
     quote: number;
 
     @IsNotEmpty()
-    @IsNumber()
+    @IsString()
     @ApiProperty({ description: 'Tipo de contrato' })
     type_contract: string;
 

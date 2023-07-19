@@ -31,7 +31,7 @@ export class EmployeeProfilesService {
     const emps = await this.employeeProfileRepository.find();
     
     if (!emps) {
-      throw new NotFoundException(`Profile not found`);
+      throw new NotFoundException(`Profiles not found`);
     }
     return {
       total: total,

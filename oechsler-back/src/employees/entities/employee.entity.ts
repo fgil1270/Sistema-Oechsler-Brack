@@ -90,7 +90,7 @@ export class Employee {
     @Column({ type: 'date'})
     date_employment: Date;
 
-    @Column({ type: 'date'})
+    @Column({ type: 'date', default: null})
     work_term_date: Date;
 
     @Column({ type: 'varchar', length: 255})

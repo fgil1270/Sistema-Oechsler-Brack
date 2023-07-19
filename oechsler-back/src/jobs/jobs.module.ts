@@ -12,6 +12,7 @@ import { Job } from './entities/job.entity';
     ]),
   ],
   controllers: [JobsController],
-  providers: [JobsService]
+  providers: [JobsService],
+  exports: [JobsService]
 })
 export class JobsModule {}

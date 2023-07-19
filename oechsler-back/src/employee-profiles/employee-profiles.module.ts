@@ -13,6 +13,7 @@ import { EmployeeProfile } from "./entities/employee-profile.entity";
     ]),
   ],
   controllers: [EmployeeProfilesController],
-  providers: [EmployeeProfilesService]
+  providers: [EmployeeProfilesService],
+  exports: [EmployeeProfilesService]
 })
 export class EmployeeProfilesModule {}

@@ -12,6 +12,7 @@ import { Payroll } from "./entities/payroll.entity";
     ]),
   ],
   controllers: [PayrollsController],
-  providers: [PayrollsService]
+  providers: [PayrollsService],
+  exports: [PayrollsService]
 })
 export class PayrollsModule {}

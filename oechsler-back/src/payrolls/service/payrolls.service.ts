@@ -31,7 +31,7 @@ export class PayrollsService {
     const payrolls = await this.payrollRepository.find();
     
     if (!payrolls) {
-      throw new NotFoundException(`Views not found`);
+      throw new NotFoundException(`PayRolls not found`);
     }
     return {
       total: total,
