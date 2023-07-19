@@ -2,12 +2,12 @@ import {
     Entity,
     Column,
     PrimaryGeneratedColumn,
-    JoinTable,
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
     OneToMany,
 } from "typeorm";
+import { Employee } from "../../employees/entities/employee.entity";
 
 @Entity()
 export class EmployeeProfile {
@@ -37,6 +37,9 @@ export class EmployeeProfile {
 
     @Column({ type: "int", default: 0 })
     apply_extra_hrs: boolean;
+
+    @OneToMany(() => Employee, (post) => post.employeeProfileId)
+    employeeId: Employee[];
 
     @CreateDateColumn()    
     created_at: Date;

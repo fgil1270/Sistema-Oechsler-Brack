@@ -5,7 +5,10 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
+    OneToMany
 } from "typeorm";
+import { Employee } from "../../employees/entities/employee.entity";
+
 @Entity()
 export class Payroll {
     @PrimaryGeneratedColumn()
@@ -13,6 +16,9 @@ export class Payroll {
 
     @Column({ unique: true, type: 'varchar', length: 255})
     name: string;
+
+    @OneToMany(() => Employee, post => post.payRollId)
+    employeeId: Employee[];
 
     @CreateDateColumn()
     created_at: Date;

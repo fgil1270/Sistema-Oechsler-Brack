@@ -4,8 +4,10 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
-    DeleteDateColumn
+    DeleteDateColumn,
+    OneToMany
 } from 'typeorm';
+import { Employee } from '../../employees/entities/employee.entity';
 
 @Entity()
 export class Job {
@@ -23,6 +25,9 @@ export class Job {
 
     @Column({ type: 'boolean', default: false})
     plc: boolean;
+
+    @OneToMany(() => Employee, post => post.jobId)
+    employeeId: Employee[];
 
     @CreateDateColumn()
     created_at: Date;
