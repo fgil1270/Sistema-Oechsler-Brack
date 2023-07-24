@@ -53,6 +53,20 @@ export class PayrollsService {
     };
   }
 
+  async findName(name: string) {
+    const payroll = await this.payrollRepository.findOne({
+      where: {
+        name: Like(`%${name}%`)
+      }
+    });
+    if (!payroll) {
+      console.log(`Payroll #${name} not found`);
+      return {payroll};
+      throw new NotFoundException(`Payroll #${name} not found`);
+    }
+    return {payroll};
+  }
+
   async update(id: number, updatePayrollDto: CreatePayrollDto) {
     const payroll = await this.payrollRepository.findOneBy({id});
     this.payrollRepository.merge(payroll, updatePayrollDto);

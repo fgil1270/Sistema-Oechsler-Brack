@@ -53,6 +53,19 @@ export class VacationsProfileService {
     };
   }
 
+  async findName(name: string) {
+    const vacationsProfile = await this.vacationsProfileRepository.findOne({
+      where: {
+        cv_code: Like(`%${name}%`)
+      }
+    });
+    if (!vacationsProfile) {
+      return null;
+      throw new NotFoundException(`Vacations Profile #${name} not found`);
+    }
+    return {vacationsProfile};
+  }
+
   async update(id: number, updateVacationsProfileDto: CreateVacationsProfileDto) {
     const vacationsProfile = await this.vacationsProfileRepository.findOneBy({id});
     this.vacationsProfileRepository.merge(vacationsProfile, updateVacationsProfileDto);

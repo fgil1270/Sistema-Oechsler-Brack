@@ -53,6 +53,19 @@ export class DepartmentsService {
     };
   }
 
+  async findName(name: string) {
+    const dept = await this.departmentRepository.findOne({
+      where: {
+        cv_description: Like(`%${name}%`)
+      }
+    });
+    if (!dept) {
+      return null;
+      throw new NotFoundException(`Deparment #${name} not found`);
+    }
+    return {dept};
+  }
+
   async update(id: number, updateDepartmentDto: CreateDepartmentDto) {
     const dept = await this.departmentRepository.findOneBy({id});
     this.departmentRepository.merge(dept, updateDepartmentDto);

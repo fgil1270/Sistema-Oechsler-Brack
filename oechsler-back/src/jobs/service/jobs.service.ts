@@ -62,6 +62,19 @@ export class JobsService {
     return job;
   }
 
+  async findName(name: string) {
+    const job = await this.jobRepository.findOne({
+      where: {
+        cv_name: Like(`%${name}%`)
+      }
+    });
+    if (!job) {
+      return null;
+      //throw new NotFoundException(`Job #${name} not found`);
+    }
+    return {job};
+  }
+
   async update(id: number, updateJobDto: CreateJobDto) {
     const job = await this.jobRepository.findOne({
       where: {

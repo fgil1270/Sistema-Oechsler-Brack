@@ -46,6 +46,7 @@ export class EmployeeProfilesService {
       }
     });
     if (!emp) {
+      return null;
       throw new NotFoundException(`Profile #${id} not found`);
     }
     return {

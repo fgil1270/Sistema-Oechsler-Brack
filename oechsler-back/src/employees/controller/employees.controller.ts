@@ -7,15 +7,23 @@ import {
   Param, 
   Delete,
   UseGuards,
-  ParseIntPipe
+  ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipeBuilder
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage, memoryStorage } from 'multer';
 
 import { EmployeesService } from '../service/employees.service';
 import { CreateEmployeeDto } from '../dto/create-employee.dto';
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
+import { HttpStatus } from '@nestjs/common';
+
+
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Empleados')
@@ -34,6 +42,32 @@ export class EmployeesController {
   @Get()
   findAll() {
     return this.employeesService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Cargar archivo de empleados'})
+  @Post('/upload')
+  //CODIGO PARA SUBIR ARCHIVOS
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './documents/temp/emp',
+      filename: (req, file, cb) => {
+        const filename: string = file.originalname.split('.')[0];
+        const extension: string = file.originalname.split('.')[1];
+        const fecha: Date = new Date();
+        cb(null, `${filename} ${fecha.getFullYear()}${fecha.getMonth()+1}${fecha.getDate()}${fecha.getMinutes()}${fecha.getSeconds()}.${extension}`);
+      }
+    })
+  }))
+  //@UseInterceptors(FileInterceptor('file'))
+  uploadFile(@UploadedFile() file: Express.Multer.File ) {
+    return this.employeesService.readExcel(file);
+    /* return this.employeesService.readExcel(file).catch((err) => {
+      console.log(err);
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        message: err.message
+      }
+    }); */
   }
 
   @ApiOperation({ summary: 'Buscar empleado'})
