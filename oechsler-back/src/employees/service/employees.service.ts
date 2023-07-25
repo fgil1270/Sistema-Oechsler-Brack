@@ -320,7 +320,10 @@ export class EmployeesService {
   async findAll() {
     const total = await this.employeeRepository.count();
     const emps = await this.employeeRepository.find({
-      relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile']
+      relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile'],
+      order: {
+        employee_number: 'ASC'
+      }
     });
     
     if (!emps) {
