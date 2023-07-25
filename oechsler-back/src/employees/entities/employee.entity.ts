@@ -16,6 +16,7 @@ import { Payroll } from "../../payrolls/entities/payroll.entity";
 import { EmployeeProfile } from "../../employee-profiles/entities/employee-profile.entity";
 import { Job } from "../../jobs/entities/job.entity";
 import { User } from "../../users/entity/user.entity";
+import { Organigrama } from "../../organigrama/entities/organigrama.entity";
 
 @Entity()
 export class Employee {
@@ -140,5 +141,11 @@ export class Employee {
 
     @OneToMany(() => User, (post) => post.employee)
     userId: User[];
+
+    @OneToMany(() => Organigrama, (post) => post.employee)
+    organigramaL: Organigrama[];
+
+    @OneToMany(() => Organigrama, (post) => post.employee)
+    organigramaE: Organigrama[];
 
 }

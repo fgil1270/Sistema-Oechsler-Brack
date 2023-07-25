@@ -17,6 +17,7 @@ import { PayrollsModule } from './payrolls/payrolls.module';
 import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import { EmployeeProfilesModule } from './employee-profiles/employee-profiles.module';
 import { EmployeesModule } from './employees/employees.module';
+import { OrganigramaModule } from './organigrama/organigrama.module';
 import config from "./config";
 
 @Module({
@@ -55,6 +56,7 @@ import config from "./config";
     VacationsProfileModule,
     EmployeeProfilesModule,
     EmployeesModule,
+    OrganigramaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
