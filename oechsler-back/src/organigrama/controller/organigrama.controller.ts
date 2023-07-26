@@ -42,6 +42,12 @@ export class OrganigramaController {
     return this.organigramaService.findOne(id);
   }
 
+  @ApiOperation({ summary: 'Buscar organigrama'})
+  @Get('/leaders/:id')
+  findLiders(@Param('id', ParseIntPipe) id: number) {
+    return this.organigramaService.findLeader(id);
+  }
+
   @ApiOperation({ summary: 'Actualizar organigrama'})
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateOrganigramaDto: CreateOrganigramaDto) {

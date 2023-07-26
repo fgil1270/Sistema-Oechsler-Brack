@@ -3,7 +3,7 @@ import { Repository, In, Not, IsNull, Like } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { CreateOrganigramaDto } from '../dto/create-organigrama.dto';
-import { Organigrama } from "../entities/organigrama.entity";
+import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { Employee } from '../../employees/entities/employee.entity';
 
@@ -64,6 +64,34 @@ export class OrganigramaService {
     return {
       total: total,
       orgs: orgs
+    };
+  }
+
+  
+  async findLeader(id: number) {
+    //SE OBTIENEN LOS LIDERES DEL EMPLEADO
+    const leaders = await this.organigramaRepository.find({
+      relations: {
+        leader: true,
+        employee: true,
+      },
+      where: {
+        employee: {
+          id: id
+        }
+      },
+    });
+    
+    let idsLeaders = [];
+    idsLeaders.push(id);
+    leaders.forEach((leader) => {
+      idsLeaders.push(leader.leader.id);
+    });
+    
+    const newLeaders = await this.employeeService.findLeaders(idsLeaders);
+    
+    return {
+      orgs: newLeaders
     };
   }
 
