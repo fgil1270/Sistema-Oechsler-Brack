@@ -38,19 +38,19 @@ export class PatternController {
 
   @ApiOperation({ summary: 'Buscar patrón de turnos'})
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.patternService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.patternService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Actualizar patrón de turnos'})
   @Put(':id')
-  update(@Param('id') id: string, @Body() updatePatternDto: UpdatePatternDto) {
-    return this.patternService.update(+id, updatePatternDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() updatePatternDto: UpdatePatternDto) {
+    return this.patternService.update(id, updatePatternDto);
   }
 
   @ApiOperation({ summary: 'Eliminar patrón de turnos'})
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.patternService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.patternService.remove(id);
   }
 }

@@ -5,9 +5,9 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
-    ManyToMany,
-    JoinTable
+    OneToMany
 } from 'typeorm';
+import { EmployeeShift } from '../../employee_shift/entities/employee_shift.entity';
 
 @Entity()
 export class Pattern {
@@ -34,5 +34,8 @@ export class Pattern {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => EmployeeShift, (post) => post.pattern)
+    employeeShift: EmployeeShift[];
 
 }

@@ -38,19 +38,19 @@ export class ShiftController {
 
   @ApiOperation({ summary: 'Buscar turno'})
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.shiftService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.shiftService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Actualizar turno'})
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateShiftDto: UpdateShiftDto) {
-    return this.shiftService.update(+id, updateShiftDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateShiftDto: UpdateShiftDto) {
+    return this.shiftService.update(id, updateShiftDto);
   }
 
   @ApiOperation({ summary: 'Eliminar turno'})
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.shiftService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.shiftService.remove(id);
   }
 }
