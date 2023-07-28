@@ -19,6 +19,7 @@ import { EmployeeProfilesModule } from './employee-profiles/employee-profiles.mo
 import { EmployeesModule } from './employees/employees.module';
 import { OrganigramaModule } from './organigrama/organigrama.module';
 import { ShiftModule } from './shift/shift.module';
+import { PatternModule } from './pattern/pattern.module';
 import config from "./config";
 
 @Module({
@@ -59,6 +60,7 @@ import config from "./config";
     EmployeesModule,
     OrganigramaModule,
     ShiftModule,
+    PatternModule,
   ],
   controllers: [AppController],
   providers: [AppService],

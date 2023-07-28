@@ -5,8 +5,9 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
-    ManyToOne
+    ManyToMany
 } from 'typeorm';
+import { Pattern } from '../../pattern/entities/pattern.entity';
 
 @Entity()
 export class Shift {
@@ -34,12 +35,17 @@ export class Shift {
     @Column({ type: 'boolean', default: false})
     special: boolean;
 
-    @Column({ type: 'boolean', default: false})
+    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
     created_at: Date;
 
+    @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
     @Column({ type: 'boolean', default: false})
     updated_at: Date;
 
+    @DeleteDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
     @Column({ type: 'boolean', default: false})
     deleted_at: Date;
+
+    @ManyToMany(() => Pattern, pattern => pattern.shifts)
+    patterns: Pattern[];
 }

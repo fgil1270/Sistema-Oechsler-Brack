@@ -64,19 +64,8 @@ export class ShiftService {
       throw new NotFoundException(`Shift #${id} not found`);
     }
 
-    const shiftExist = await this.shiftRepository.findOne({
-      where: {
-        code: Like(`%${updateShiftDto.code}%`),
-        id: Not(id)
-      }
-    });
-
-    if (shiftExist?.id) {
-      throw new BadRequestException(`El Turno ya existe`);
-    }
-
     const updatedShift = Object.assign(shift, updateShiftDto);
-    return await this.shiftRepository.save(updatedShift);
+    return await this.shiftRepository.update(id, updatedShift);
   }
 
   async remove(id: number) {
