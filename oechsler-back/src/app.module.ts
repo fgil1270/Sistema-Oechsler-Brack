@@ -18,6 +18,7 @@ import { VacationsProfileModule } from './vacations-profile/vacations-profile.mo
 import { EmployeeProfilesModule } from './employee-profiles/employee-profiles.module';
 import { EmployeesModule } from './employees/employees.module';
 import { OrganigramaModule } from './organigrama/organigrama.module';
+import { ShiftModule } from './shift/shift.module';
 import config from "./config";
 
 @Module({
@@ -57,6 +58,7 @@ import config from "./config";
     EmployeeProfilesModule,
     EmployeesModule,
     OrganigramaModule,
+    ShiftModule,
   ],
   controllers: [AppController],
   providers: [AppService],
