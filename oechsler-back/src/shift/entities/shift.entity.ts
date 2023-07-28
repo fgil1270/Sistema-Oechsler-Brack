@@ -14,16 +14,16 @@ export class Shift {
     id:number;
 
     @Column({ type: 'varchar', length: 255})
-    name:string;
-
-    @Column({ type: 'varchar', length: 255})
     code:string;
 
-    @Column({ type: 'time', default: '00:00:00'})
-    initial_time: Date;
+    @Column({ type: 'varchar', length: 255})
+    name:string;
 
     @Column({ type: 'time', default: '00:00:00'})
-    final_time: Date;
+    start_time: Date;
+
+    @Column({ type: 'time', default: '00:00:00'})
+    end_time: Date;
 
     @Column({ type: 'set', enum: ['L', 'M', 'X', 'J', 'V', 'S', 'D']})
     day: string;

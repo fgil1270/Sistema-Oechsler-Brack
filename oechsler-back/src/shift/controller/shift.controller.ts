@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ShiftService } from '../service/shift.service';
-import { CreateShiftDto } from '../dto/create-shift.dto';
-import { UpdateShiftDto } from '../dto/update-shift.dto';
+import { CreateShiftDto, UpdateShiftDto } from '../dto/create-shift.dto';
 
 @Controller('shift')
 export class ShiftController {

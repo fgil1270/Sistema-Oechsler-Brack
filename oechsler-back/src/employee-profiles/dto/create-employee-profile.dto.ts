@@ -42,3 +42,5 @@ export class CreateEmployeeProfileDto {
     @ApiProperty({ description: 'Aplicar horas extra' })
     apply_extra_hrs: boolean;
 }
+
+export class UpdateEmployeeProfileDto extends PartialType(CreateEmployeeProfileDto) {}
