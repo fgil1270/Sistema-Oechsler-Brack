@@ -7,6 +7,7 @@ import * as bcrypt from "bcrypt";
 import { User } from "../entity/user.entity";
 import { Role } from "../../roles/entities/role.entity";
 import { CreateUserDto, UpdateUserDto } from '../dto/create-user.dto';
+import { EmployeesService } from '../../employees/service/employees.service';
 
 
 @Injectable()
@@ -15,21 +16,30 @@ export class UsersService {
         @InjectRepository(User) private userRepository: Repository<User>,
         @InjectRepository(Role) private roleRepository: Repository<Role>,
         private configService: ConfigService,
+        private employeeService: EmployeesService
     ){}
 
     async create(user: CreateUserDto) {
         const userSearch = await this.userRepository.findOneBy({
                 name: Like(`%${user.name}%`)
         });
-        const mapUser = await this.userRepository.create(user);
-        
         if (userSearch?.id) {
             throw new BadRequestException(`El usuario ya existe`);
         }
+        const emp = await this.employeeService.findOne(user.employee);
+        const mapUser = await this.userRepository.create(
+            {
+                name: user.name,
+                password: user.password,
+                email: user.email
+            }
+        );
+        
+        
         this.hashPassword(mapUser.password).then((x) => {
             mapUser.password = x
         });
-
+        mapUser.employee = emp.emp;
         const rolesIds = user.rolesIds;
         const roles = await this.roleRepository.findBy({ id: In(rolesIds) });
         mapUser.roles = roles;
@@ -41,7 +51,8 @@ export class UsersService {
         const userAll = await this.userRepository.count();
         const users = await this.userRepository.find({
             relations: {
-                roles: true
+                roles: true,
+                employee: true
             }
         });
         return {
@@ -68,7 +79,8 @@ export class UsersService {
     async findOne(id: number) {
         const user = await this.userRepository.findOne({
             relations: {
-                roles: true
+                roles: true,
+                employee: true
             },
             where: {
                 id: id
@@ -102,7 +114,17 @@ export class UsersService {
     
     async update(id: number, userData: UpdateUserDto){
         const user = await this.findOne(id);
-        const mapUser = await this.userRepository.create(userData);
+        //const mapUser = await this.userRepository.create(userData);
+        const emp = await this.employeeService.findOne(userData.employee);
+        const mapUser = await this.userRepository.create(
+            {
+                name: userData.name,
+                //password: userData.password,
+                email: userData.email,
+                //employee: emp.emp
+            }
+        );
+
         if (userData.password) {
             await this.hashPassword(userData.password).then((x) => {
                 mapUser.password = x
@@ -111,6 +133,7 @@ export class UsersService {
         const rolesIds = userData.rolesIds;
         const roles = await this.roleRepository.findBy({ id: In(rolesIds) });
         user.user.roles = roles;
+        user.user.employee = emp.emp;
         
         //se editan primero los roles
         await this.userRepository.save(user.user);

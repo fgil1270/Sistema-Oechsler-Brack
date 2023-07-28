@@ -5,7 +5,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { CreateOrganigramaDto } from '../dto/create-organigrama.dto';
 import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
-import { Employee } from '../../employees/entities/employee.entity';
 
 @Injectable()
 export class OrganigramaService {
@@ -15,6 +14,13 @@ export class OrganigramaService {
   ){}
 
   async create(createOrganigramaDto: CreateOrganigramaDto) {
+    
+    let orgDTO = {
+      leader: null,
+      employee: null,
+      evaluar: false
+    };
+
     const orgExist = await this.organigramaRepository.findOne({
       relations: {
         leader: true,
@@ -33,13 +39,19 @@ export class OrganigramaService {
     if (orgExist?.id) {
       throw new BadRequestException(`La Relacion ya existe`);
     }
+    try {
+      const leader = await this.employeeService.findOne(createOrganigramaDto.leader);
+      const employee = await this.employeeService.findOne(createOrganigramaDto.employee);
+      
+      orgDTO.leader = leader.emp;
+      orgDTO.employee = employee.emp;
+      orgDTO.evaluar = createOrganigramaDto.evaluar;
+    } catch (error) {
+      console.log(error);
+    }
+    
 
-    const leader = await this.employeeService.findOne(createOrganigramaDto.leader);
-    const employee = await this.employeeService.findOne(createOrganigramaDto.employee);
-    orgExist.leader = leader.emp;
-    orgExist.employee = employee.emp;
-
-    const org = this.organigramaRepository.create(orgExist);
+    const org = this.organigramaRepository.create(orgDTO);
     return await this.organigramaRepository.save(org);
   }
 
@@ -96,11 +108,41 @@ export class OrganigramaService {
   }
 
   async findOne(id: number) {
-    return `This action returns a #${id} organigrama`;
+    console.log(id);
+    const org = await this.organigramaRepository.findOne({
+      relations: {
+        leader: {
+          department: true,
+          job: true
+        },
+        employee: {
+          department: true,
+          job: true
+        },
+      },
+      where: {
+        id: id
+      }
+    });
+    if (!org) {
+      throw new NotFoundException(`Organigrama #${id} not found`);
+    }
+    return {org};
   }
 
   async update(id: number, updateOrganigramaDto: CreateOrganigramaDto) {
-    return `This action updates a #${id} organigrama`;
+    const org = await this.organigramaRepository.findOne({
+      where: {
+        id: id
+      }
+    });
+    if (!org) {
+      throw new NotFoundException(`Organigrama #${id} not found`);
+    }
+    const leader = await this.employeeService.findOne(updateOrganigramaDto.leader);
+    org.leader = leader.emp;
+    org.evaluar = updateOrganigramaDto.evaluar;
+    return await this.organigramaRepository.save(org);
   }
 
   async remove(id: number) {

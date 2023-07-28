@@ -6,6 +6,7 @@ import { UsersService } from './service/users.service';
 import { User } from './entity/user.entity';
 import { Role } from '../roles/entities/role.entity';
 import { Employee } from '../employees/entities/employee.entity';
+import { EmployeesModule } from '../employees/employees.module';
 
 
 @Module({
@@ -14,7 +15,8 @@ import { Employee } from '../employees/entities/employee.entity';
       User,
       Role,
       Employee
-    ])
+    ]),
+    EmployeesModule
   ],
   controllers: [UsersController],
   providers: [UsersService],

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
-import { readFileSync } from "fs";
+import { readFile, readFileSync , writeFile } from "fs";
 import { read, utils } from "xlsx";
 
 import { CreateEmployeeDto } from '../dto/create-employee.dto';
@@ -28,6 +28,76 @@ export class EmployeesService {
 
   
   async readExcel(file) {
+    console.log(file);
+
+    //LEER ARCHIVO TXT
+    if (file.mimetype === 'text/plain') {
+      console.log("texto plano")
+      
+      //primera opción 
+     /*  var content =  readFileSync(`./documents/temp/emp/${file.filename}`, 'utf8');
+      console.log(content[0]); */
+
+      const objRead = JSON.parse(readFileSync(`./documents/temp/emp/${file.filename}`, {encoding: 'utf-8'}));
+       
+         /* readFile(`./documents/temp/emp/${file.filename}`, function read(err, data) {
+             if (err) {
+                 throw err;
+             }
+             content = data;
+             console.log(data);
+         }); */
+
+         
+    //opcion 2
+        /*  function readDemo1(file1) {
+          return new Promise(function (resolve, reject) {
+              fs.readFile(file1, 'utf8', function (err, dataDemo1) {
+                  if (err)
+                      reject(err);
+                  else
+                      resolve(dataDemo1);
+              });
+          });
+      }
+      async function copyFile() {
+      
+          try {
+              let dataDemo1 = await readDemo1('url')
+              dataDemo1 += '\n' +  await readDemo1('url')
+      
+              await writeDemo2(dataDemo1)
+              console.log(dataDemo1)
+          } catch (error) {
+              console.error(error);
+          }
+      }
+      copyFile();
+      
+      function writeDemo2(dataDemo1) {
+          return new Promise(function(resolve, reject) {
+            fs.writeFile('text.txt', dataDemo1, 'utf8', function(err) {
+              if (err)
+                reject(err);
+              else
+                resolve("Promise Success!");
+            });
+          });
+        } */
+      console.log(objRead);
+      return
+      //writeFile('message.txt', 'Hello Node.js', 'utf8', callback);
+      const bufTxt = readFileSync(join(process.cwd(), `./documents/temp/emp/${file.filename}`).toString());
+      const archivoTxt = read(bufTxt);
+      let rangeTxt = utils.decode_range(archivoTxt.Sheets['Sheet1']['!ref']);
+      var rowTxt = archivoTxt.Sheets['Sheet1'][utils.encode_cell({r:0, c:0 })];
+
+      
+      console.log(archivoTxt);
+      console.log(rangeTxt);
+      console.log(rowTxt.v);
+    }
+    
     //se obtiene el archivo
     const buf = readFileSync(join(process.cwd(), `./documents/temp/emp/${file.filename}`).toString());
     /* buf is a Buffer */

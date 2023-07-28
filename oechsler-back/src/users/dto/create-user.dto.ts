@@ -23,6 +23,11 @@ export class CreateUserDto {
     @ApiProperty({ description: 'Roles' })
     rolesIds: number[];
 
+    @IsNotEmpty()
+    @IsNumber()
+    @ApiProperty({ description: 'Id del empleado' })
+    employee: number;
+
 
 
 }
