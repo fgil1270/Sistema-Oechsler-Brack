@@ -30,7 +30,7 @@ export class PatternController {
   }
 
   @ApiOperation({ summary: 'Listar patrones de turnos'})
-  @Views('patrones')
+  @Views('patrones_turno')
   @Get()
   findAll() {
     return this.patternService.findAll();

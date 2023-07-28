@@ -28,11 +28,7 @@ export class PatternService {
 
   async findAll() {
     const total = await this.patternRepository.count();
-    const patterns = await this.patternRepository.find({
-      relations: {
-        shifts: true
-      }
-    });
+    const patterns = await this.patternRepository.find();
     
     if (!patterns) {
       throw new NotFoundException(`Patterns not found`);
@@ -47,9 +43,6 @@ export class PatternService {
     const pattern = await this.patternRepository.findOne({
       where: {
         id: id
-      },
-      relations: {
-        shifts: true
       }
     });
     if (!pattern) {

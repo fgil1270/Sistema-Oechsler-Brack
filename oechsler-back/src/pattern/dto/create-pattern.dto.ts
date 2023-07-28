@@ -16,6 +16,11 @@ export class CreatePatternDto {
     @IsNumber()
     @ApiProperty({ description: 'Periodicidad en semanas' })
     periodicity: number;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Serie de turnos' })
+    serie_shifts: string;
 }
 
 export class UpdatePatternDto extends PartialType(CreatePatternDto) {}

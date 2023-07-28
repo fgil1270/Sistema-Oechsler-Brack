@@ -8,8 +8,6 @@ import {
     ManyToMany,
     JoinTable
 } from 'typeorm';
-import { Shift } from '../../shift/entities/shift.entity';
-import * as Joi from 'joi';
 
 @Entity()
 export class Pattern {
@@ -25,23 +23,16 @@ export class Pattern {
     @Column({ type: 'int', default: 0})
     periodicity: number;
 
-    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
+    @Column({ type: 'varchar', length: 255})
+    serie_shifts: string;
+
+    @CreateDateColumn()
     created_at: Date;
 
-    @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
+    @UpdateDateColumn()
     updated_at: Date;
 
-    @DeleteDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
+    @DeleteDateColumn()
     deleted_at: Date;
 
-    @ManyToMany(() => Shift, shift => shift.patterns)
-    @JoinTable({
-        joinColumn: {
-            name: 'patternId'
-        },
-        inverseJoinColumn: {
-            name: 'shiftId'
-        }
-    })
-    shifts: Shift[];
 }
