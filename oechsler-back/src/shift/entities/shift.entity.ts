@@ -46,6 +46,6 @@ export class Shift {
     @Column({ type: 'boolean', default: false})
     deleted_at: Date;
 
-    @OneToMany(() => EmployeeShift, employeeShift => employeeShift.shift)
+    @OneToMany(() => EmployeeShift, (post) => post.shift)
     employeeShift: EmployeeShift[];
 }

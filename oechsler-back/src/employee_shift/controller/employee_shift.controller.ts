@@ -26,6 +26,7 @@ export class EmployeeShiftController {
   @ApiOperation({ summary: 'Crear turno de empleado'})
   @Post()
   create(@Body() createEmployeeShiftDto: CreateEmployeeShiftDto) {
+    console.log(createEmployeeShiftDto);
     return this.employeeShiftService.create(createEmployeeShiftDto);
   }
 

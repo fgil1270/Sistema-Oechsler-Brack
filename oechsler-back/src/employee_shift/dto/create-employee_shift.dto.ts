@@ -12,7 +12,6 @@ export class CreateEmployeeShiftDto {
     @ApiProperty({ description: 'Id del turno' })
     shiftId: number;
 
-    @IsNotEmpty()
     @IsNumber()
     @ApiProperty({ description: 'Id del patrón de turnos' })
     patternId?: number;
