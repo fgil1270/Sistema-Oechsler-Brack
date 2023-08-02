@@ -420,6 +420,26 @@ export class EmployeesService {
     };
   }
 
+  //Buscar por array de ids
+  async findMore(ids: any) {
+    const emps = await this.employeeRepository.find({
+      where: {
+        id: In(ids)
+      },
+      relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile'],
+      order: {
+        name: 'ASC'
+      }
+    });
+    console.log(emps);
+    if (!emps) {
+      throw new NotFoundException(`Employee #${ids} not found`);
+    }
+    return {
+      emps
+    };
+  }
+
   async update(id: number, updateEmployeeDto: CreateEmployeeDto) {
     const emp = await this.employeeRepository.findOneBy({id});
     if (!emp?.id) {
