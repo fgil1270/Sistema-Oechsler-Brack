@@ -49,6 +49,12 @@ export class EmployeeShiftController {
     return this.employeeShiftService.findMore(data, ids);
   }
 
+  @ApiOperation({ summary: 'Buscar empleados por departamento y leader'})
+  @Get('/shift-emps/:idLeader/:idDept')
+  findEmployeeDeptLeader(@Param('idLeader', ParseIntPipe) idLeader: number, @Param('idDept', ParseIntPipe) idDept: number) {
+    return this.employeeShiftService.findEmployeeDeptLeader(idLeader, idDept);
+  }
+
   @ApiOperation({ summary: 'Actualizar turno de empleado'})
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateEmployeeShiftDto: UpdateEmployeeShiftDto) {

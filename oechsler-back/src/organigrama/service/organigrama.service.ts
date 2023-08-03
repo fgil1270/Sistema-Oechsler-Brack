@@ -107,6 +107,33 @@ export class OrganigramaService {
     };
   }
 
+  async findEmployeeByLeader(id: number) {
+    //SE OBTIENEN LOS EMPLEADOS DEL LIDER
+    const employees = await this.organigramaRepository.find({
+      relations: {
+        leader: true,
+        employee: true,
+      },
+      where: {
+        leader: {
+          id: id
+        }
+      },
+      
+    });
+    
+    let idsEmployees = [];
+    
+    employees.forEach((emp) => {
+      idsEmployees.push(emp.employee.id);
+    });
+    
+    return {
+      orgs: employees,
+      idsEmployees: idsEmployees
+    };
+  }
+
   async findOne(id: number) {
     console.log(id);
     const org = await this.organigramaRepository.findOne({

@@ -8,6 +8,7 @@ import { EmployeeShift } from "../entities/employee_shift.entity";
 import { EmployeesService } from '../../employees/service/employees.service';
 import { ShiftService } from '../../shift/service/shift.service';
 import { PatternService } from '../../pattern/service/pattern.service';
+import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 
 @Injectable()
 export class EmployeeShiftService {
@@ -15,7 +16,8 @@ export class EmployeeShiftService {
     @InjectRepository(EmployeeShift) private employeeShiftRepository: Repository<EmployeeShift>,
     private readonly employeesService: EmployeesService,
     private readonly shiftService: ShiftService,
-    private readonly patternService: PatternService
+    private readonly patternService: PatternService,
+    private readonly organigramaService: OrganigramaService
   ) {}
 
   async create(createEmployeeShiftDto: CreateEmployeeShiftDto) {
@@ -89,10 +91,10 @@ export class EmployeeShiftService {
 
   async findMore(data: any, ids: any) {
     
-    /* const from = format(new Date(data.start), 'yyyy-MM-dd');
-    const to = format(new Date(data.end), 'yyyy-MM-dd'); */
-    const from = new Date(data.start).getFullYear()+'-'+(new Date(data.start).getMonth()+1)+'-'+new Date(data.start).getDate(); 
-    const to = new Date(data.end);
+    const from = format(new Date(data.start), 'yyyy-MM-dd');
+    const to = format(new Date(data.end), 'yyyy-MM-dd'); 
+    //const from = new Date(data.start).getFullYear()+'-'+(new Date(data.start).getMonth()+1)+'-'+new Date(data.start).getDate(); 
+    //const to = new Date(data.end).getFullYear()+'-'+(new Date(data.end).getMonth()+1)+'-'+new Date(data.end).getDate();
     
     const employees = await this.employeesService.findMore(ids.split(','));
     
@@ -102,7 +104,7 @@ export class EmployeeShiftService {
         title: "#"+ employee.employee_number + " " + employee.name + ' ' + employee.paternal_surname + ' ' + employee.maternal_surname 
       }
     });
-    console.log(resource);
+    
     const employeeShifts = await this.employeeShiftRepository.find({
       relations: {
         employee: true,
@@ -111,13 +113,14 @@ export class EmployeeShiftService {
       },
       where: {
         employee: {
-          id: In(ids)
+          id: In(ids.split(','))
         },
-        start_date: MoreThanOrEqual(new Date(data.start)),
-        end_date: LessThanOrEqual(new Date(data.end)) 
+        //start_date: MoreThanOrEqual(new Date(data.start)),
+        start_date: MoreThanOrEqual(from as any),
+        end_date: LessThanOrEqual(to as any),
       }
     });
-   
+    
     const events = employeeShifts.map((employeeShift: any) => {
       return {
         id: employeeShift.id,
@@ -130,9 +133,17 @@ export class EmployeeShiftService {
         textColor: '#fff'
       }
     });
-    console.log(events);
+    
     return { resource, events };
   }
+
+  async findEmployeeDeptLeader(idLeader: number, idDept: number) {
+    const orgs = await this.organigramaService.findEmployeeByLeader(idLeader);
+    const employees = await this.employeesService.findMore(orgs.idsEmployees);
+    
+    return employees;
+  }
+
 
   async update(id: number, updateEmployeeShiftDto: UpdateEmployeeShiftDto) {
     return `This action updates a #${id} employeeShift`;

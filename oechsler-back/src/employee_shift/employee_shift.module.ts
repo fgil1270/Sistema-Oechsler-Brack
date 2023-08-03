@@ -7,6 +7,7 @@ import { EmployeeShift } from './entities/employee_shift.entity';
 import { EmployeesModule } from '../employees/employees.module';
 import { ShiftModule } from '../shift/shift.module';
 import { PatternModule } from '../pattern/pattern.module';
+import { OrganigramaModule } from '../organigrama/organigrama.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { PatternModule } from '../pattern/pattern.module';
     ]),
     EmployeesModule,
     ShiftModule,
-    PatternModule
+    PatternModule,
+    OrganigramaModule
   ],
   controllers: [EmployeeShiftController],
   providers: [EmployeeShiftService],

@@ -99,7 +99,8 @@ export class UsersService {
         
         const user = await this.userRepository.findOne({
             relations: {
-                roles:true
+                roles:true,
+                employee: true
             },
             where: {
                 name: name
