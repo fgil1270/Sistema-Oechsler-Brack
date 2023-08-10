@@ -4,7 +4,7 @@ import { Repository, UpdateResult, DeleteResult, IsNull, Not, Like, In } from 't
 import { InjectRepository } from "@nestjs/typeorm";
 import * as bcrypt from "bcrypt";
 
-import { User } from "../entity/user.entity";
+import { User } from "../entities/user.entity";
 import { Role } from "../../roles/entities/role.entity";
 import { CreateUserDto, UpdateUserDto } from '../dto/create-user.dto';
 import { EmployeesService } from '../../employees/service/employees.service';

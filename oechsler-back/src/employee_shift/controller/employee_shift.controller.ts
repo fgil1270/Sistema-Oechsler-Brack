@@ -26,7 +26,6 @@ export class EmployeeShiftController {
   @ApiOperation({ summary: 'Crear turno de empleado'})
   @Post()
   create(@Body() createEmployeeShiftDto: CreateEmployeeShiftDto) {
-    console.log(createEmployeeShiftDto);
     return this.employeeShiftService.create(createEmployeeShiftDto);
   }
 
@@ -50,9 +49,13 @@ export class EmployeeShiftController {
   }
 
   @ApiOperation({ summary: 'Buscar empleados por departamento y leader'})
-  @Get('/shift-emps/:idLeader/:idDept')
-  findEmployeeDeptLeader(@Param('idLeader', ParseIntPipe) idLeader: number, @Param('idDept', ParseIntPipe) idDept: number) {
-    return this.employeeShiftService.findEmployeeDeptLeader(idLeader, idDept);
+  @Get('/shift-emps/byDept/:idLeader/:idDept/:idUser')
+  findEmployeeDeptLeader(
+    @Param('idLeader', ParseIntPipe) idLeader: number, 
+    @Param('idDept', ParseIntPipe) idDept: number, 
+    @Param('idUser', ParseIntPipe) idUser: number
+  ) {
+    return this.employeeShiftService.findEmployeeDeptLeader(idLeader, idDept, idUser);
   }
 
   @ApiOperation({ summary: 'Actualizar turno de empleado'})

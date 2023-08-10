@@ -36,6 +36,12 @@ export class ShiftController {
     return this.shiftService.findAll();
   }
 
+  @ApiOperation({ summary: 'Listar turnos para otras vistas'})
+  @Get('/shiftsOtherViews')
+  findAllOtherViews() {
+    return this.shiftService.findAll();
+  }
+
   @ApiOperation({ summary: 'Buscar turno'})
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

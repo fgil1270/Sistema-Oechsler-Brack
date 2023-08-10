@@ -15,7 +15,7 @@ import { VacationsProfile } from "../../vacations-profile/entities/vacations-pro
 import { Payroll } from "../../payrolls/entities/payroll.entity";
 import { EmployeeProfile } from "../../employee-profiles/entities/employee-profile.entity";
 import { Job } from "../../jobs/entities/job.entity";
-import { User } from "../../users/entity/user.entity";
+import { User } from "../../users/entities/user.entity";
 import { Organigrama } from "../../organigrama/entities/organigrama.entity";
 import { EmployeeShift } from "../../employee_shift/entities/employee_shift.entity";
 

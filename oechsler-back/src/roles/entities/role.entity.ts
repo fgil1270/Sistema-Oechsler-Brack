@@ -8,7 +8,7 @@ import {
     UpdateDateColumn, 
     DeleteDateColumn 
 } from "typeorm";
-import { User } from "../../users/entity/user.entity";
+import { User } from "../../users/entities/user.entity";
 import { View } from "../../views/entities/view.entity";
 
 @Entity()

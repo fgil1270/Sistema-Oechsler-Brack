@@ -20,7 +20,9 @@ import { diskStorage, memoryStorage } from 'multer';
 import { EmployeesService } from '../service/employees.service';
 import { CreateEmployeeDto } from '../dto/create-employee.dto';
 import { Views } from "../../auth/decorators/views.decorator";
+import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
+import { User } from "../../users/entities/user.entity";
 import { HttpStatus } from '@nestjs/common';
 
 
@@ -41,6 +43,13 @@ export class EmployeesController {
   @Views('empleados')
   @Get()
   findAll() {
+    return this.employeesService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Listar empleados para otras vistas'})
+  @Get('/empOtherViews')
+  findAllEmpotherViews(@CurrentUser() user: User) {
+   
     return this.employeesService.findAll();
   }
 
@@ -74,6 +83,12 @@ export class EmployeesController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.employeesService.findOne(id);
+  }
+
+  @ApiOperation({ summary: 'Buscar por array de empleados'})
+  @Get('/find/:ids')
+  findMore(@Param('ids') ids: any) {
+    return this.employeesService.findMore(ids.split(','));
   }
 
   @ApiOperation({ summary: 'Actualizar empleado'})

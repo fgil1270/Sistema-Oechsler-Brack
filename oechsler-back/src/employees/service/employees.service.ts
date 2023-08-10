@@ -12,8 +12,6 @@ import { PayrollsService } from '../../payrolls/service/payrolls.service';
 import { VacationsProfileService } from '../../vacations-profile/service/vacations-profile.service';
 import { EmployeeProfilesService } from '../../employee-profiles/service/employee-profiles.service';
 import { join } from 'path';
-import { range } from 'rxjs';
-import { table } from 'console';
 
 @Injectable()
 export class EmployeesService {
@@ -23,7 +21,7 @@ export class EmployeesService {
     private departmentsService: DepartmentsService,
     private payrollsService: PayrollsService,
     private vacationsProfileService: VacationsProfileService,
-    private employeeProfilesService: EmployeeProfilesService
+    private employeeProfilesService: EmployeeProfilesService,
   ){}
 
   
@@ -389,6 +387,7 @@ export class EmployeesService {
 
   async findAll() {
     const total = await this.employeeRepository.count();
+
     const emps = await this.employeeRepository.find({
       relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile'],
       order: {
@@ -410,7 +409,17 @@ export class EmployeesService {
       where: {
         id: id
       },
-      relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile']
+      relations: {
+        department: true,
+        job: true,
+        payRoll: true,
+        vacationProfile: true,
+        employeeProfile: true,
+        userId: {
+          roles: true
+        }
+      }
+        
     });
     if (!emp) {
       throw new NotFoundException(`Employee #${id} not found`);
@@ -431,7 +440,7 @@ export class EmployeesService {
         name: 'ASC'
       }
     });
-    console.log(emps);
+    
     if (!emps) {
       throw new NotFoundException(`Employee #${ids} not found`);
     }

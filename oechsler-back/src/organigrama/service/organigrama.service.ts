@@ -1,16 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like } from "typeorm";
+import { Repository, In, Not, IsNull, Like, Admin } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { CreateOrganigramaDto } from '../dto/create-organigrama.dto';
 import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
+import { UsersService } from '../../users/service/users.service';
 
 @Injectable()
 export class OrganigramaService {
   constructor(
     @InjectRepository(Organigrama) private organigramaRepository: Repository<Organigrama>,
-    private employeeService: EmployeesService
+    private employeeService: EmployeesService,
+    private userService: UsersService
   ){}
 
   async create(createOrganigramaDto: CreateOrganigramaDto) {
@@ -107,29 +109,48 @@ export class OrganigramaService {
     };
   }
 
-  async findEmployeeByLeader(id: number) {
+  async findEmployeeByLeader(idLeader: number, idUser: number) {
     //SE OBTIENEN LOS EMPLEADOS DEL LIDER
-    const employees = await this.organigramaRepository.find({
-      relations: {
-        leader: true,
-        employee: true,
-      },
-      where: {
-        leader: {
-          id: id
-        }
-      },
-      
-    });
+    const leader = await this.employeeService.findOne(idLeader);
+    const admin = await this.userService.findOne(idUser);
+    let isAdmin = false;
+    admin.user.roles.find((role) => role.name === 'Admin') ? isAdmin = true : isAdmin = false;
+    
+    let isRh = false;
+    /* user.roles.find((role) => {
+      role.name === 'Admin' ? isAdmin = true : isAdmin = false;
+      role.name === 'RH' ? isRh = true : isRh = false;
+    });  */
+    const employeesAdmin = await this.employeeService.findAll();
+
+    const employeesLeader =  await this.organigramaRepository.find({
+        relations: {
+          leader: true,
+          employee: true,
+        },
+        where: {
+          leader: {
+            id: idLeader
+          },
+          
+        },
+        
+      });
     
     let idsEmployees = [];
-    
-    employees.forEach((emp) => {
-      idsEmployees.push(emp.employee.id);
-    });
+    idsEmployees.push(idLeader);
+    if(isAdmin){
+      employeesAdmin.emps.forEach((emp) => {
+        idsEmployees.push(emp.id);
+      });
+    }else{
+      employeesLeader.forEach((emp) => {
+        idsEmployees.push(emp.employee.id);
+      });
+    }
     
     return {
-      orgs: employees,
+      orgs: isAdmin ? employeesAdmin: employeesLeader,
       idsEmployees: idsEmployees
     };
   }

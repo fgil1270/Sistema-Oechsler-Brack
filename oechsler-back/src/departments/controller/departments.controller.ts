@@ -36,6 +36,12 @@ export class DepartmentsController {
     return this.departmentsService.findAll();
   }
 
+  @ApiOperation({ summary: 'Listar departamentos pra otras vistas'})
+  @Get('/deptOtherViews')
+  findAllOtherViews() {
+    return this.departmentsService.findAll();
+  }
+
   @ApiOperation({ summary: 'Buscar Departamento'})
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

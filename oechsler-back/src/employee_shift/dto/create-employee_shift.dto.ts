@@ -3,9 +3,9 @@ import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateEmployeeShiftDto {
     @IsNotEmpty()
-    @IsNumber()
+    @IsArray()
     @ApiProperty({ description: 'Id del empleado' })
-    employeeId: number;
+    employeeId: number[];
 
     @IsNotEmpty()
     @IsNumber()

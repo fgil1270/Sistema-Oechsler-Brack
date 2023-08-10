@@ -33,6 +33,7 @@ export class DepartmentsService {
     if (!depts) {
       throw new NotFoundException(`Departments not found`);
     }
+    
     return {
       total: total,
       depts: depts
@@ -48,6 +49,7 @@ export class DepartmentsService {
     if (!dept) {
       throw new NotFoundException(`Deparment #${id} not found`);
     }
+    
     return {
       dept
     };

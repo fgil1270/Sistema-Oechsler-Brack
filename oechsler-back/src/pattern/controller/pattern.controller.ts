@@ -36,6 +36,12 @@ export class PatternController {
     return this.patternService.findAll();
   }
 
+  @ApiOperation({ summary: 'Listar patrones de turnos para otras vistas'})
+  @Get('/patternsOtherViews')
+  findAllOtherViews() {
+    return this.patternService.findAll();
+  }
+
   @ApiOperation({ summary: 'Buscar patrón de turnos'})
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

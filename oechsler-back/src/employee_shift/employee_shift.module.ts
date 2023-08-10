@@ -8,6 +8,7 @@ import { EmployeesModule } from '../employees/employees.module';
 import { ShiftModule } from '../shift/shift.module';
 import { PatternModule } from '../pattern/pattern.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
+import { RolesModule } from '../roles/roles.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
     EmployeesModule,
     ShiftModule,
     PatternModule,
-    OrganigramaModule
+    OrganigramaModule,
+    RolesModule
   ],
   controllers: [EmployeeShiftController],
   providers: [EmployeeShiftService],

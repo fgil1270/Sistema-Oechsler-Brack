@@ -9,6 +9,7 @@ import { DepartmentsModule } from '../departments/departments.module';
 import { PayrollsModule } from '../payrolls/payrolls.module';
 import { VacationsProfileModule } from '../vacations-profile/vacations-profile.module';
 import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.module';
+import { UsersModule } from '../users/users.module';
 
 
 @Module({
