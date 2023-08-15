@@ -21,23 +21,24 @@ export class EmployeeShiftService {
   ) {}
 
   async create(createEmployeeShiftDto: CreateEmployeeShiftDto) {
-    console.log(createEmployeeShiftDto);
-    const shift = await this.shiftService.findOne(createEmployeeShiftDto.shiftId);
     
     createEmployeeShiftDto.employeeId.forEach(async (element, i) => {
       
+      
       const employee = await this.employeesService.findOne(element);
-      console.log("fehca inicio", createEmployeeShiftDto.start_date);
-      console.log("fehca fin", createEmployeeShiftDto.end_date);
-      console.log("dia", new Date(createEmployeeShiftDto.start_date).getDate());
+     
+      let contSemana = 0;
+      let contPeriodicidad = 0;
+      let totalSerie = 0;
       for (let index = new Date(createEmployeeShiftDto.start_date); index <= new Date(createEmployeeShiftDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
-        console.log(index);
         //SI NO SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
         let start_date = new Date(new Date().setDate(index.getDate()));
         
         let end_date = new Date(new Date().setDate(index.getDate()));
-        console.log("fecha registro: ", format(index, 'yyyy-MM-dd') as any);
-        if(createEmployeeShiftDto.patternId == 0){
+        
+        if(createEmployeeShiftDto.shiftId != 0){
+          const shift = await this.shiftService.findOne(createEmployeeShiftDto.shiftId);
+          console.log("shift");
           //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
           const employeeShiftExist = await this.employeeShiftRepository.findOne({
             relations: {
@@ -70,34 +71,161 @@ export class EmployeeShiftService {
             await this.employeeShiftRepository.save(employeeShiftExist);
           }
           
+        }else if(createEmployeeShiftDto.patternId != 0){
+          
+          //SI SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
+          const pattern = await this.patternService.findOne(createEmployeeShiftDto.patternId);
+         
+          let diaLetra = "";
+          let serie_shifts = pattern.pattern.serie_shifts.split(",");
+          let periodicity = pattern.pattern.periodicity;
+          totalSerie = serie_shifts.length;
+          
+          const shift = await this.shiftService.findOne(parseInt(serie_shifts[contSemana]));
+          let dias: any = [];
+          dias = shift.shift.day; //dias del turno
+         
+          switch (index.getDay()) {
+            case 0:
+              diaLetra = "D";
+              break;
+            case 1:
+              diaLetra = "L";
+              break;
+            case 2:
+              diaLetra = "M";
+              break;
+            case 3:
+              diaLetra = "X";
+              break;
+            case 4:
+              diaLetra = "J";
+              break;
+            case 5:
+              diaLetra = "V";
+              break;
+            case 6:
+              diaLetra = "S";
+              break;
+          }
+          
+          let existeDia = dias.find((element, i) => {
+            if(element == diaLetra){
+              return true;
+            }
+          });
+          // SI EXISTE EL DIA SELECCIONADO EN LOS DIAS DEL TURNO
+         
+            //EL CONTADOR DE PERIDICIDAD ES MENOR A LA PERIODICIDAD DEL PATRON DE TURNOS
+            if(contPeriodicidad < periodicity){
+              console.log("periodicidad menor");
+              //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+              //SI NO EXISTE REGISTRO LO CREA
+              if(existeDia){
+                const employeeShiftExist = await this.employeeShiftRepository.findOne({
+                  relations: {
+                    employee: true,
+                    shift: true,
+                    pattern: true
+                  },
+                  where: {
+                    employee: {
+                      id: employee.emp.id
+                    },
+                    start_date: format(index, 'yyyy-MM-dd') as any
+                  }
+                });
+              
+                if(!employeeShiftExist){
+                  const employeeShift = this.employeeShiftRepository.create({
+                    employee: employee.emp,
+                    shift: shift.shift,
+                    start_date: format(index, 'yyyy-MM-dd') as any,
+                    end_date: format(index, 'yyyy-MM-dd') as any,
+                    pattern: pattern.pattern
+                  });
+                  
+                  await this.employeeShiftRepository.save(employeeShift);
+                }else{
+                  employeeShiftExist.shift = shift.shift;
+                  employeeShiftExist.pattern = pattern.pattern;
+                  await this.employeeShiftRepository.save(employeeShiftExist);
+                }
+              }
+              
+            }else{
+              
+              //SI EL CONTADOR DE PERIODICIDAD ES MAYOR A LA PERIODICIDAD DEL PATRON DE TURNOS
+              //REINICIA EL CONTADOR DE PERIODICIDAD
+              //AUMENTA EL CONTADOR DE SEMANA
+              contPeriodicidad = 0;
+              contSemana++;
+              //SI EL CONTADOR DE SEMANA ES MENOR AL TOTAL DE SERIES DEL PATRON DE TURNOS
+              if(contSemana < totalSerie){
+                const shift = await this.shiftService.findOne(parseInt(serie_shifts[contSemana]));
+              }else{
+                
+                //SI EL CONTADOR DE SEMANA IGUAL O MAYOR AL TOTAL DE SERIES DEL PATRON DE TURNOS
+                //REINICIA EL CONTADOR DE SEMANA
+                contSemana = 0;
+                const shift = await this.shiftService.findOne(parseInt(serie_shifts[contSemana]));
+              }
+              if(existeDia){
+
+                const employeeShiftExist = await this.employeeShiftRepository.findOne({
+                  relations: {
+                    employee: true,
+                    shift: true,
+                    pattern: true
+                  },
+                  where: {
+                    employee: {
+                      id: employee.emp.id
+                    },
+                    start_date: format(index, 'yyyy-MM-dd') as any
+                  }
+                });
+                
+                if(!employeeShiftExist){
+                  const employeeShift = this.employeeShiftRepository.create({
+                    employee: employee.emp,
+                    shift: shift.shift,
+                    start_date: format(index, 'yyyy-MM-dd') as any,
+                    end_date: format(index, 'yyyy-MM-dd') as any,
+                    pattern: pattern.pattern
+                  });
+                  
+                  await this.employeeShiftRepository.save(employeeShift);
+                }else{
+                  employeeShiftExist.shift = shift.shift;
+                  employeeShiftExist.pattern = pattern.pattern;
+                  await this.employeeShiftRepository.save(employeeShiftExist);
+                }
+              }
+              
+            }
+          
+          
+          if(index.getDay() == 6 && shift.shift.name == "Turno 1"){
+            contPeriodicidad++;
+          }
+          if(index.getDay() == 6 && shift.shift.name == "Turno 2"){
+            contPeriodicidad++;
+          }
+          if(index.getDay() == 5 && shift.shift.name == "Turno 3"){
+            contPeriodicidad++;
+          }
+          if(index.getDay() == 5 && shift.shift.name == "Mixto"){
+            contPeriodicidad++;
+          }
+
         }
         
       }
       
     });
+
     return;
-    const from = format(new Date(createEmployeeShiftDto.start_date), 'yyyy-MM-dd');
-    let start_date = new Date(createEmployeeShiftDto.start_date);
-    console.log("dia inicio: ", new Date(createEmployeeShiftDto.start_date).getDate());
-    console.log("dia fin: ",new Date(createEmployeeShiftDto.end_date).getDate());
-    //MIENTRAS LA FEHA FINAL SEA MENOR A LA FECHA INCIAL
-
-   
-    return;
-    console.log(from);
-    let pattern: any = {} ;
-    let employeeShiftExist: any = {} ;
-    if( createEmployeeShiftDto.patternId == 0 ){
-      
-      
-    }else{
-     
-    }
-
-
-    if ( employeeShiftExist?.id ) {
-      throw new BadRequestException(`El empleado ya tiene un turno`);
-    }
     
   }
 
@@ -226,6 +354,16 @@ export class EmployeeShiftService {
   }
 
   async remove(id: number) {
-    return `This action removes a #${id} employeeShift`;
+    const employeeShift = await this.employeeShiftRepository.findOne({
+      where: {
+        id: id
+      }
+    });
+
+    if (!employeeShift) {
+      throw new NotFoundException(`EmployeeShift #${id} not found`);
+    }
+    
+    return await this.employeeShiftRepository.remove(employeeShift);
   }
 }
