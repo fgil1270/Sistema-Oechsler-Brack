@@ -21,6 +21,7 @@ import { OrganigramaModule } from './organigrama/organigrama.module';
 import { ShiftModule } from './shift/shift.module';
 import { PatternModule } from './pattern/pattern.module';
 import { EmployeeShiftModule } from './employee_shift/employee_shift.module';
+import { IncidenceCatologueModule } from './incidence_catologue/incidence_catologue.module';
 import config from "./config";
 
 @Module({
@@ -63,6 +64,7 @@ import config from "./config";
     ShiftModule,
     PatternModule,
     EmployeeShiftModule,
+    IncidenceCatologueModule,
   ],
   controllers: [AppController],
   providers: [AppService],
