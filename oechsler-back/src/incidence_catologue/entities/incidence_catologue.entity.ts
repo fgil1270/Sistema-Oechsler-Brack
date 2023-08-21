@@ -4,8 +4,13 @@ import {
     PrimaryGeneratedColumn,
     CreateDateColumn,
     UpdateDateColumn,
-    DeleteDateColumn
-} from 'typeorm'
+    DeleteDateColumn,
+    OneToMany,
+    ManyToMany,
+    JoinTable
+} from 'typeorm';
+import { EmployeeIncidence } from '../../employee_incidence/entities/employee_incidence.entity';
+import { Role } from '../../roles/entities/role.entity';
 
 @Entity()
 export class IncidenceCatologue {
@@ -22,19 +27,16 @@ export class IncidenceCatologue {
     code_band: string;
 
     @Column({ type: 'boolean', default: false })
-    home_office: boolean;
-
-    @Column({ type: 'boolean', default: false })
     approval_double: boolean;
 
     @Column({ type: 'boolean', default: false })
-    descriptiva: boolean;
+    require_description: boolean;
 
     @Column({ type: 'boolean', default: false })
-    operativa: boolean;
+    require_range_hrs: boolean;
 
     @Column({ type: 'boolean', default: false })
-    periodo: boolean;
+    unique_day: boolean;
 
     @Column({ type: 'boolean', default: false })
     total_vacation: boolean;
@@ -62,4 +64,18 @@ export class IncidenceCatologue {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => EmployeeIncidence, (post) => post.incidenceCatologue)
+    employeeIncidence: EmployeeIncidence[];
+
+    @ManyToMany(() => Role, (role) => role.IncidencesCatologue)
+    @JoinTable({
+        joinColumn: {
+            name: 'incidenceCatologueId'
+        },
+        inverseJoinColumn: {
+            name: 'roleId'
+        }
+    })
+    roles: Role[];
 }

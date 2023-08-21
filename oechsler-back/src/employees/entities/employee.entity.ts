@@ -18,6 +18,7 @@ import { Job } from "../../jobs/entities/job.entity";
 import { User } from "../../users/entities/user.entity";
 import { Organigrama } from "../../organigrama/entities/organigrama.entity";
 import { EmployeeShift } from "../../employee_shift/entities/employee_shift.entity";
+import { EmployeeIncidence } from "../../employee_incidence/entities/employee_incidence.entity";
 
 @Entity()
 export class Employee {
@@ -152,5 +153,6 @@ export class Employee {
     @OneToMany(() => EmployeeShift, (post) => post.employee)
     employeeShift: EmployeeShift[];
 
-
+    @OneToMany(() => EmployeeIncidence, (post) => post.employee)
+    employeeIncidence: EmployeeIncidence[];
 }

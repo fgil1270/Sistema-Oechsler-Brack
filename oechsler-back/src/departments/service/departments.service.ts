@@ -28,7 +28,11 @@ export class DepartmentsService {
 
   async findAll() {
     const total = await this.departmentRepository.count();
-    const depts = await this.departmentRepository.find();
+    const depts = await this.departmentRepository.find({
+      order: {
+        cv_description: "ASC"
+      }
+    });
     
     if (!depts) {
       throw new NotFoundException(`Departments not found`);
@@ -66,6 +70,22 @@ export class DepartmentsService {
       throw new NotFoundException(`Deparment #${name} not found`);
     }
     return {dept};
+  }
+
+  async findLikeName(name: string) {
+    let depts = await this.departmentRepository.find({
+      where: {
+        cv_description: Like(`%${name}%`)
+      }
+    });
+
+    if(!depts) {
+      throw new NotFoundException(`Departments not found`);
+    }
+
+    return {
+      depts
+    };
   }
 
   async update(id: number, updateDepartmentDto: CreateDepartmentDto) {

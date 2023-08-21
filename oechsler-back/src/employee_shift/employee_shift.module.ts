@@ -9,17 +9,22 @@ import { ShiftModule } from '../shift/shift.module';
 import { PatternModule } from '../pattern/pattern.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { RolesModule } from '../roles/roles.module';
+import { DepartmentsModule } from '../departments/departments.module';
+import { Department } from '../departments/entities/department.entity';
+import { de } from 'date-fns/locale';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      EmployeeShift
+      EmployeeShift,
+      Department
     ]),
     EmployeesModule,
     ShiftModule,
     PatternModule,
     OrganigramaModule,
-    RolesModule
+    RolesModule,
+    DepartmentsModule
   ],
   controllers: [EmployeeShiftController],
   providers: [EmployeeShiftService],

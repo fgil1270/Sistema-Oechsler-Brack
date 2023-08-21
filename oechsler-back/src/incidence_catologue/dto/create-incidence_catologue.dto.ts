@@ -19,28 +19,23 @@ export class CreateIncidenceCatologueDto {
 
     @IsNotEmpty()
     @IsBoolean()
-    @ApiProperty({ description: '¿Se puede reportar desde casa?' })
-    home_office: boolean;
-
-    @IsNotEmpty()
-    @IsBoolean()
     @ApiProperty({ description: '¿Se puede aprobar doble?' })
     approval_double: boolean;
 
     @IsNotEmpty()
     @IsBoolean()
-    @ApiProperty({ description: '¿Es descriptiva?' })
-    descriptiva: boolean;
+    @ApiProperty({ description: '¿Requiere descripción?' })
+    require_description: boolean;
 
     @IsNotEmpty()
     @IsBoolean()
-    @ApiProperty({ description: '¿Es operativa?' })
-    operativa: boolean;
+    @ApiProperty({ description: '¿Requiere rango de horas?' })
+    require_range_hrs: boolean;
 
     @IsNotEmpty()
     @IsBoolean()
-    @ApiProperty({ description: '¿Es periodo?' })
-    periodo: boolean;
+    @ApiProperty({ description: '¿Es unico por día?' })
+    unique_day: boolean;
 
     @IsNotEmpty()
     @IsBoolean()

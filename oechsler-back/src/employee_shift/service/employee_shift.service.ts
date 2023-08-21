@@ -9,6 +9,8 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { ShiftService } from '../../shift/service/shift.service';
 import { PatternService } from '../../pattern/service/pattern.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
+import { DepartmentsService } from 'src/departments/service/departments.service';
+import { read } from 'xlsx'; 
 
 @Injectable()
 export class EmployeeShiftService {
@@ -17,20 +19,27 @@ export class EmployeeShiftService {
     private readonly employeesService: EmployeesService,
     private readonly shiftService: ShiftService,
     private readonly patternService: PatternService,
-    private readonly organigramaService: OrganigramaService
+    private readonly organigramaService: OrganigramaService,
+    private readonly departmentsService: DepartmentsService
   ) {}
 
   async create(createEmployeeShiftDto: CreateEmployeeShiftDto) {
     
+    let Inicial = new Date(createEmployeeShiftDto.start_date);
+    let Final = new Date(createEmployeeShiftDto.end_date);
+    let diaInicial = new Date(Inicial.getFullYear(), Inicial.getMonth(), Inicial.getDate());
+    let diaFinal = new Date(Final.getFullYear(), Final.getMonth(), Final.getDate());
     createEmployeeShiftDto.employeeId.forEach(async (element, i) => {
       
-      
       const employee = await this.employeesService.findOne(element);
-     
+      
       let contSemana = 0;
       let contPeriodicidad = 0;
       let totalSerie = 0;
-      for (let index = new Date(createEmployeeShiftDto.start_date); index <= new Date(createEmployeeShiftDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+      
+      
+      for (let index = diaInicial; index <= diaFinal; index= new Date(index.setDate(index.getDate() + 1))) {
+        
         //SI NO SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
         let start_date = new Date(new Date().setDate(index.getDate()));
         
@@ -38,7 +47,7 @@ export class EmployeeShiftService {
         
         if(createEmployeeShiftDto.shiftId != 0){
           const shift = await this.shiftService.findOne(createEmployeeShiftDto.shiftId);
-          console.log("shift");
+          
           //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
           const employeeShiftExist = await this.employeeShiftRepository.findOne({
             relations: {
@@ -53,8 +62,7 @@ export class EmployeeShiftService {
               start_date: format(index, 'yyyy-MM-dd') as any
             }
           });
-          console.log("buscamos registros");
-          console.log("employeeShiftExist", employeeShiftExist);
+         
           if(!employeeShiftExist){
             const employeeShift = this.employeeShiftRepository.create({
               employee: employee.emp,
@@ -63,8 +71,7 @@ export class EmployeeShiftService {
               end_date: format(index, 'yyyy-MM-dd') as any,
               pattern: null
             });
-            console.log("si no existen los crea");
-            console.log("employeeShift", employeeShift);
+            
             await this.employeeShiftRepository.save(employeeShift);
           }else{
             employeeShiftExist.shift = shift.shift;
@@ -118,7 +125,7 @@ export class EmployeeShiftService {
          
             //EL CONTADOR DE PERIDICIDAD ES MENOR A LA PERIODICIDAD DEL PATRON DE TURNOS
             if(contPeriodicidad < periodicity){
-              console.log("periodicidad menor");
+              
               //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
               //SI NO EXISTE REGISTRO LO CREA
               if(existeDia){
@@ -224,8 +231,46 @@ export class EmployeeShiftService {
       }
       
     });
+    console.log(createEmployeeShiftDto.employeeId);
+    const result = await this.employeeShiftRepository.find({
+      relations: {
+        employee: true,
+        shift: true,
+        pattern: true
+      },
+      where: {
+        employee: {
+          id: 1906
+        },
+        start_date: format(diaInicial, 'yyyy-MM-dd') as any,
+        end_date: format(diaFinal, 'yyyy-MM-dd') as any
+      }
+    });
+    const resource = result.map((employee: any) => {
+      return { 
+        id: employee.employee.id, 
+        title: "#"+ employee.employee.employee_number + " " + employee.employee.name + ' ' + employee.employee.paternal_surname + ' ' + employee.employee.maternal_surname 
+      }
+    });
 
-    return;
+    const events = result.map((employeeShift: any) => {
+      let textColor = '#fff';
+      if(employeeShift.shift.color == '#faf20f'){
+        textColor = '#000';
+      }
+      return {
+        id: employeeShift.id,
+        resourceId: employeeShift.employee.id,
+        title: employeeShift.shift.name,
+        start: employeeShift.start_date,
+        end: employeeShift.end_date,
+        backgroundColor: employeeShift.shift.color,
+        borderColor: employeeShift.shift.color,
+        textColor: textColor
+      }
+    });
+    
+    return { resource, events };
     
   }
 
@@ -318,7 +363,12 @@ export class EmployeeShiftService {
 
   async findEmployeeDeptLeader(idLeader: number, idDept: number, idUser: number) {
     const orgs = await this.organigramaService.findEmployeeByLeader(idLeader, idUser);
-    
+    const dept = await this.departmentsService.findOne(idDept);
+    let findName = dept.dept.cv_description.split(" ")[0];
+    const depts = await this.departmentsService.findLikeName( findName+ " ");
+    let idsDept = depts.depts.map((dept: any) => {
+      return dept.id;
+    });
     const employeesTest = await this.employeeShiftRepository.find({
       relations: {
         employee: {
@@ -329,14 +379,9 @@ export class EmployeeShiftService {
         employee : {
           id: In(orgs.idsEmployees),
           department: {
-            id: idDept
+            id: In(idsDept)
           }
         }
-        /* employee: {
-          department: {
-            id: idDept
-          }
-        } */
       }
     });
     let ids = [];
@@ -347,7 +392,6 @@ export class EmployeeShiftService {
     const employees = await this.employeesService.findMore(ids);
     return employees;
   }
-
 
   async update(id: number, updateEmployeeShiftDto: UpdateEmployeeShiftDto) {
     return `This action updates a #${id} employeeShift`;
