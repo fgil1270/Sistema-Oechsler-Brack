@@ -34,10 +34,10 @@ export class EmployeeIncidence {
     @Column({ type: 'time', default: null })
     end_hour: Date;
 
-    @Column({ type: 'date'})
+    @Column({ type: 'date',  nullable: true })
     date_aproved_leader: Date;
 
-    @Column({ type: 'date'})
+    @Column({ type: 'date', nullable: true})
     date_aproved_rh: Date;
 
     @CreateDateColumn()

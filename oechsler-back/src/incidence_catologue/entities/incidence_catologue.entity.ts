@@ -56,6 +56,9 @@ export class IncidenceCatologue {
     @Column({ type: 'boolean', default: false })
     require_shift: boolean;
 
+    @Column({ type: 'varchar', length: 255, default: null })
+    color: string;
+
     @CreateDateColumn()
     creatted_at: Date;
 

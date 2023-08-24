@@ -16,7 +16,14 @@ export class IncidenceCatologueService {
   }
 
   async findAll() {
-    return `This action returns all incidenceCatologue`;
+    const incidenceCatologue = await this.incidenceCatologueRepository.find();
+
+    if (!incidenceCatologue) {
+      throw new NotFoundException(`No se encontraron registros`);
+    }
+
+    return incidenceCatologue;
+
   }
 
   async findOne(id: number) {

@@ -36,6 +36,12 @@ export class IncidenceCatologueController {
     return this.incidenceCatologueService.findAll();
   }
 
+  @ApiOperation({ summary: 'Listar catálogo de incidencias en otras vistas'})
+  @Get('incidencesOtherViews')
+  findAllOtherViews() {
+    return this.incidenceCatologueService.findAll();
+  }
+
   @ApiOperation({ summary: 'Buscar incidencia dentro del catálogo de incidencias'})
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
