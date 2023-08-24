@@ -68,9 +68,14 @@ export class CreateIncidenceCatologueDto {
     require_shift: boolean;
 
     @IsNotEmpty()
-    @IsBoolean()
+    @IsString()
     @ApiProperty({ description: 'Color de la requisición' })
     color: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Tipo afecta al total de horas' })
+    affected_type:string;
 }
 
 export class UpdateIncidenceCatologueDto extends PartialType(CreateIncidenceCatologueDto) {}
