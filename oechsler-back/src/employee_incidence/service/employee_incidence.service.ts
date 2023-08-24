@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadGatewayException } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like } from "typeorm";
+import { Repository, In, Not, IsNull, Like, MoreThanOrEqual } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 
@@ -23,6 +23,10 @@ export class EmployeeIncidenceService {
 
   async findByIdsEmployee(data: any) {
     
+    console.log(data);
+    let startDate = new Date(data.start);
+    let from = format(new Date(startDate), 'yyyy-MM-dd')
+    console.log(startDate);
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -32,6 +36,7 @@ export class EmployeeIncidenceService {
         employee: {
           id: In(data.ids.split(','))
         },
+        start_date: MoreThanOrEqual(from as any)
       }
     });
     console.log(incidences);

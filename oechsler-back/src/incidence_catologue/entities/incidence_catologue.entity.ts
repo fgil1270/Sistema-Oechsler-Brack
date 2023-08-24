@@ -58,6 +58,9 @@ export class IncidenceCatologue {
 
     @Column({ type: 'varchar', length: 255, default: null })
     color: string;
+    
+    @Column({ type: 'boolean', default: false })
+    require_date_range: boolean;
 
     @CreateDateColumn()
     creatted_at: Date;

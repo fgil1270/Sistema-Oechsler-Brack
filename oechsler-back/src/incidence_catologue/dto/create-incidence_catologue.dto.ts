@@ -66,6 +66,11 @@ export class CreateIncidenceCatologueDto {
     @IsBoolean()
     @ApiProperty({ description: '¿Requiere turno?' })
     require_shift: boolean;
+
+    @IsNotEmpty()
+    @IsBoolean()
+    @ApiProperty({ description: 'Color de la requisición' })
+    color: string;
 }
 
 export class UpdateIncidenceCatologueDto extends PartialType(CreateIncidenceCatologueDto) {}
