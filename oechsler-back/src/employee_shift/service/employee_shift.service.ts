@@ -343,7 +343,7 @@ export class EmployeeShiftService {
     
     const events = employeeShifts.map((employeeShift: any) => {
       let textColor = '#fff';
-      if(employeeShift.shift.color == '#faf20f'){
+      if(employeeShift.shift.color == '#faf20f' || employeeShift.shift.color == '#ffdeec'){
         textColor = '#000';
       }
       

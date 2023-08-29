@@ -6,10 +6,12 @@ import {
     UpdateDateColumn,
     DeleteDateColumn,
     ManyToOne,
-    JoinColumn
+    JoinColumn,
+    OneToMany
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { IncidenceCatologue } from '../../incidence_catologue/entities/incidence_catologue.entity';
+import { DateEmployeeIncidence } from './date_employee_incidence.entity';
 
 @Entity()
 export class EmployeeIncidence {
@@ -18,12 +20,6 @@ export class EmployeeIncidence {
 
     @Column({ type: 'text', default: null })
     descripcion: string;
-
-    @Column({ type: 'date' })
-    start_date: Date;
-
-    @Column({ type: 'date' })
-    end_date: Date;
 
     @Column({ type: 'int', default: 0 })
     total_hour: number;
@@ -64,4 +60,7 @@ export class EmployeeIncidence {
     @ManyToOne(() => Employee, post => post.employeeIncidence)
     @JoinColumn()
     rh: Employee;
+
+    @OneToMany(() => DateEmployeeIncidence, post => post.employeeIncidence)
+    dateEmployeeIncidence: DateEmployeeIncidence[];
 }
