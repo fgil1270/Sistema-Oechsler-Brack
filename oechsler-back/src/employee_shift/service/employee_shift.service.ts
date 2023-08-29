@@ -346,6 +346,7 @@ export class EmployeeShiftService {
       if(employeeShift.shift.color == '#faf20f'){
         textColor = '#000';
       }
+      
       return {
         id: employeeShift.id,
         resourceId: employeeShift.employee.id,

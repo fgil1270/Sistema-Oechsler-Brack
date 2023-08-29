@@ -36,10 +36,19 @@ export class EmployeeIncidenceController {
     return this.employeeIncidenceService.findAll();
   }
 
-  @ApiOperation({ summary: 'Listar incidencias por ids de empleados'})
-  @Get('findByIdsEmployee/:ids/:start/:end')
-  findByIdsEmployee(@Param() data: any) {
-    return this.employeeIncidenceService.findByIdsEmployee(data);
+  //buscar incidencias de empleados por ids de empleados
+  //y por rango de fechas
+  @ApiOperation({ summary: 'Listar todas las incidencias por ids de empleados'})
+  @Get('incidences/:ids/:start/:end')
+  findAllIncidencesByIdsEmployee(@Param() data: any) {
+    return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(data);
+  }
+
+  //buscar incidencias del empleado por dia 
+  @ApiOperation({ summary: 'Listar todas las incidencias que corresponden al día de ese empleado'})
+  @Get('incidences/date/:ids/:start/:end')
+  findAllIncidencesDay(@Param() data: any) {
+    return this.employeeIncidenceService.findAllIncidencesDay(data);
   }
 
   @ApiOperation({ summary: 'Buscar incidencia de empleado'})

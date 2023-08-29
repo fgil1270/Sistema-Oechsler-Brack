@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadGatewayException } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like, MoreThanOrEqual } from "typeorm";
+import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 
@@ -21,12 +21,13 @@ export class EmployeeIncidenceService {
     return `This action returns all employeeIncidence`;
   }
 
-  async findByIdsEmployee(data: any) {
+  //se obtienen las incidencias de los empleados por rango de fechas y ids de empleados
+  async findAllIncidencesByIdsEmployee(data: any) {
     
-    console.log(data);
     let startDate = new Date(data.start);
     let from = format(new Date(startDate), 'yyyy-MM-dd')
-    console.log(startDate);
+    let to = format(new Date(data.end), 'yyyy-MM-dd')
+    
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -36,18 +37,70 @@ export class EmployeeIncidenceService {
         employee: {
           id: In(data.ids.split(','))
         },
-        start_date: MoreThanOrEqual(from as any)
+        start_date: MoreThanOrEqual(from as any),
+        end_date: LessThanOrEqual(to as any)
       }
     });
-    console.log(incidences);
+
+    let i = 0;
+
     const incidencesEmployee = incidences.map(incidence => {
+      i++;
       return {
-        id: incidence.id,
+        id: i,
+        incidenceId: incidence.id,
         resourceId: incidence.employee.id,
         title: incidence.incidenceCatologue.name,
+        description: incidence.descripcion,
+        total_hour: incidence.total_hour,
         start: incidence.start_date,
         end: incidence.end_date,
         backgroundColor: incidence.incidenceCatologue.color,
+        unique_day: incidence.incidenceCatologue.unique_day,
+      }
+    });
+
+    return incidencesEmployee;
+  }
+
+  //se obtienen las incidencias de los empleados por dia
+  async findAllIncidencesDay(data: any) {
+    
+    console.log(data);
+    let startDate = new Date(data.start);
+    let from = format(new Date(data.start + ' 00:00:00'), 'yyyy-MM-dd')
+    let to = format(new Date(data.end + ' 00:00:00'), 'yyyy-MM-dd')
+    console.log(startDate);
+    console.log(new Date(startDate));
+    console.log(from);
+    const incidences = await this.employeeIncidenceRepository.find({
+      relations: {
+        employee: true,
+        incidenceCatologue: true
+      },
+      where: {
+        employee: {
+          id: In(data.ids.split(','))
+        },
+        start_date: from as any
+        
+      }
+    });
+    console.log(incidences);
+    let i = 0;
+    const incidencesEmployee = incidences.map(incidence => {
+      i++;
+      return {
+        id: i,
+        incidenceId: incidence.id,
+        resourceId: incidence.employee.id,
+        title: incidence.incidenceCatologue.name,
+        description: incidence.descripcion,
+        total_hour: incidence.total_hour,
+        start: incidence.start_date,
+        end: incidence.end_date,
+        backgroundColor: incidence.incidenceCatologue.color,
+        unique_day: incidence.incidenceCatologue.unique_day,
       }
     });
 
