@@ -1,11 +1,10 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 import { ApiProperty, PartialType } from "@nestjs/swagger";
 
 export class CreateEmployeeIncidenceDto {
     @IsNotEmpty()
-    @IsNumber()
     @ApiProperty({ description: 'Id del empleado' })
-    id_employee: number;
+    id_employee: any;
 
     @IsNotEmpty()
     @IsNumber()
@@ -30,26 +29,30 @@ export class CreateEmployeeIncidenceDto {
     @ApiProperty({ description: 'Total de horas' })
     total_hour?: number;
 
-    @IsNumber()
+    @IsString()
     @ApiProperty({ description: 'Hora inicial' })
     start_hour?: string;
 
-    @IsNumber()
+    @IsString()
     @ApiProperty({ description: 'Hora final' })
     end_hour?: string;
 
+    @IsOptional()
     @IsNumber()
     @ApiProperty({ description: 'id del leader que aprovo' })
     id_leader?: number;
 
+    @IsOptional()
     @IsString()
     @ApiProperty({ description: 'Fecha de aprobación por el leader' })
     date_aproved_leader?: string;
 
+    @IsOptional()
     @IsNumber()
     @ApiProperty({ description: 'id de rh que aprovo' })
     id_rh?: number;
 
+    @IsOptional()
     @IsString()
     @ApiProperty({ description: 'Fecha de aprobación por rh' })
     date_aproved_rh?: string; 

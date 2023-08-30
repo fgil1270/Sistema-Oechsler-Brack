@@ -16,6 +16,7 @@ import { EmployeeIncidenceService } from '../service/employee_incidence.service'
 import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Incidencias de empleados')
@@ -25,8 +26,8 @@ export class EmployeeIncidenceController {
 
   @ApiOperation({ summary: 'Crear incidencias de empleados'})
   @Post()
-  create(@Body() createEmployeeIncidenceDto: CreateEmployeeIncidenceDto) {
-    return this.employeeIncidenceService.create(createEmployeeIncidenceDto);
+  create(@Body() createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, @CurrentUser() user: any) {
+    return this.employeeIncidenceService.create(createEmployeeIncidenceDto, user);
   }
 
   @ApiOperation({ summary: 'Listar incidencias de empleados'})
