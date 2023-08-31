@@ -305,12 +305,13 @@ export class EmployeeShiftService {
       
       });
     if (!employeeShift) {
-      throw new NotFoundException(`EmployeeShift #${id} not found`);
+      throw new NotFoundException(`Employee Shift #${id} not found`);
     }
     return employeeShift;
     
   }
 
+  //se obtienen los turnos de los empleados por dia
   async findMore(data: any, ids: any) {
     
     const from = format(new Date(data.start), 'yyyy-MM-dd');
@@ -362,6 +363,7 @@ export class EmployeeShiftService {
     return { resource, events };
   }
 
+  //se obtienen empleados por departamento y por lider
   async findEmployeeDeptLeader(idLeader: number, idDept: number, idUser: number) {
     const orgs = await this.organigramaService.findEmployeeByLeader(idLeader, idUser);
     const dept = await this.departmentsService.findOne(idDept);
@@ -392,6 +394,33 @@ export class EmployeeShiftService {
     
     const employees = await this.employeesService.findMore(ids);
     return employees;
+  }
+
+  //se obtienen los turnos por fecha y por empleado
+  async findEmployeeShiftsByDate(date: any, idEmployee: any) {
+    const from = format(new Date(date), 'yyyy-MM-dd');
+    
+    const employeeShifts = await this.employeeShiftRepository.find({
+      relations: {
+        employee: true,
+        shift: true,
+        pattern: true
+      },
+      where: {
+        employee: {
+          id: In(idEmployee)
+        },
+        start_date: from as any
+        
+      }
+    });
+    
+    if (employeeShifts.length == 0) {
+      console.log("no hay turnos");
+      throw new NotFoundException(`Employee Shifts not found`);
+    }
+
+    return employeeShifts;
   }
 
   async update(id: number, updateEmployeeShiftDto: UpdateEmployeeShiftDto) {

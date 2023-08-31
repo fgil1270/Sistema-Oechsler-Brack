@@ -8,7 +8,7 @@ import { EmployeeIncidence } from "../entities/employee_incidence.entity";
 import { DateEmployeeIncidence } from "../entities/date_employee_incidence.entity";
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { EmployeesService } from '../../employees/service/employees.service';
-import { is } from 'date-fns/locale';
+import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
 
 
 @Injectable()
@@ -17,23 +17,24 @@ export class EmployeeIncidenceService {
     @InjectRepository(EmployeeIncidence) private employeeIncidenceRepository: Repository<EmployeeIncidence>,
     @InjectRepository(DateEmployeeIncidence) private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
     private incidenceCatologueService: IncidenceCatologueService,
-    private employeeService: EmployeesService
+    private employeeService: EmployeesService,
+    private employeeShiftService: EmployeeShiftService
   ) {}
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
-    console.log(createEmployeeIncidenceDto);
-    console.log(user);
+   
     let idsEmployees: any = createEmployeeIncidenceDto.id_employee;
     const IncidenceCatologue = await this.incidenceCatologueService.findOne(createEmployeeIncidenceDto.id_incidence_catologue);
     const employee = await this.employeeService.findMore(idsEmployees.split(','));
     const leader = await this.employeeService.findOne(user.id_employee);
-    let startDate = new Date(createEmployeeIncidenceDto.start_date);
-    let endDate = new Date(createEmployeeIncidenceDto.end_date);
-    console.log("startDate", startDate);
-    console.log("endDate", endDate);
-    console.log("dia", startDate.getDate());
-    console.log("mes", startDate.getMonth());
-    console.log("año", startDate.getFullYear());
+    const startDate = new Date(createEmployeeIncidenceDto.start_date);
+    const endDate = new Date(createEmployeeIncidenceDto.end_date);
+    
+    
+    
+    for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+        await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
+    }
 
     employee.emps.forEach(async (emp) => {
       
@@ -56,17 +57,17 @@ export class EmployeeIncidenceService {
       });
 
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
-      console.log("employeeIncidence", employeeIncidence);
       
-      for (let index = startDate; index <= endDate; index= new Date(index.setDate(index.getDate() + 1))) {
+      for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
         console.log("index", index);
         const dateEmployeeIncidence = await this.dateEmployeeIncidenceRepository.create({
           employeeIncidence: employeeIncidence,
           date: index
-        });
+        }); 
 
         await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
       }
+
     });
 
     return ;
