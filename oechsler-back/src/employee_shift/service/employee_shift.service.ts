@@ -9,7 +9,8 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { ShiftService } from '../../shift/service/shift.service';
 import { PatternService } from '../../pattern/service/pattern.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
-import { DepartmentsService } from 'src/departments/service/departments.service';
+import { DepartmentsService } from '../../departments/service/departments.service';
+import { EmployeeProfilesService } from '../../employee-profiles/service/employee-profiles.service'; 
 import { read } from 'xlsx'; 
 
 @Injectable()
@@ -20,7 +21,8 @@ export class EmployeeShiftService {
     private readonly shiftService: ShiftService,
     private readonly patternService: PatternService,
     private readonly organigramaService: OrganigramaService,
-    private readonly departmentsService: DepartmentsService
+    private readonly departmentsService: DepartmentsService,
+    private employeeProfilesService: EmployeeProfilesService
   ) {}
 
   async create(createEmployeeShiftDto: CreateEmployeeShiftDto) {
@@ -29,6 +31,8 @@ export class EmployeeShiftService {
     let Final = new Date(createEmployeeShiftDto.end_date);
     let diaInicial = new Date(Inicial.getFullYear(), Inicial.getMonth(), Inicial.getDate());
     let diaFinal = new Date(Final.getFullYear(), Final.getMonth(), Final.getDate());
+
+    //se realiza forEach para recorrer los empleados seleccionados
     createEmployeeShiftDto.employeeId.forEach(async (element, i) => {
       
       const employee = await this.employeesService.findOne(element);
@@ -36,48 +40,61 @@ export class EmployeeShiftService {
       let contSemana = 0;
       let contPeriodicidad = 0;
       let totalSerie = 0;
+      let weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
       
-      
+      //se realiza for para recorrer los dias seleccionados
       for (let index = diaInicial; index <= diaFinal; index= new Date(index.setDate(index.getDate() + 1))) {
         
-        //SI NO SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
+        
         let start_date = new Date(new Date().setDate(index.getDate()));
         
         let end_date = new Date(new Date().setDate(index.getDate()));
-        
+
+        //SI NO SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
         if(createEmployeeShiftDto.shiftId != 0){
           const shift = await this.shiftService.findOne(createEmployeeShiftDto.shiftId);
+           
+          //Se obtiene el perfil del empleado
           
-          //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
-          const employeeShiftExist = await this.employeeShiftRepository.findOne({
-            relations: {
-              employee: true,
-              shift: true,
-              pattern: true
-            },
-            where: {
-              employee: {
-                id: employee.emp.id
-              },
-              start_date: format(index, 'yyyy-MM-dd') as any
-            }
-          });
+
+          let weekDaysProfile = employee.emp.employeeProfile.work_days;
+          
+          let dayLetter = weekDays[index.getDay()];
+          let dayLetterProfile = await this.employeeProfilesService.findWeekDay(dayLetter, employee.emp.employeeProfile.id);
          
-          if(!employeeShiftExist){
-            const employeeShift = this.employeeShiftRepository.create({
-              employee: employee.emp,
-              shift: shift.shift,
-              start_date: format(index, 'yyyy-MM-dd') as any,
-              end_date: format(index, 'yyyy-MM-dd') as any,
-              pattern: null
+          //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
+          if(dayLetterProfile){
+
+            //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+            const employeeShiftExist = await this.employeeShiftRepository.findOne({
+              relations: {
+                employee: true,
+                shift: true,
+                pattern: true
+              },
+              where: {
+                employee: {
+                  id: employee.emp.id
+                },
+                start_date: format(index, 'yyyy-MM-dd') as any
+              }
             });
-            
-            await this.employeeShiftRepository.save(employeeShift);
-          }else{
-            employeeShiftExist.shift = shift.shift;
-            await this.employeeShiftRepository.save(employeeShiftExist);
-          }
           
+            if(!employeeShiftExist){
+              const employeeShift = this.employeeShiftRepository.create({
+                employee: employee.emp,
+                shift: shift.shift,
+                start_date: format(index, 'yyyy-MM-dd') as any,
+                end_date: format(index, 'yyyy-MM-dd') as any,
+                pattern: null
+              });
+              
+              await this.employeeShiftRepository.save(employeeShift);
+            }else{
+              employeeShiftExist.shift = shift.shift;
+              await this.employeeShiftRepository.save(employeeShiftExist);
+            }
+          }
         }else if(createEmployeeShiftDto.patternId != 0){
           
           //SI SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
@@ -231,7 +248,7 @@ export class EmployeeShiftService {
       }
       
     });
-    console.log(createEmployeeShiftDto.employeeId);
+    
     const result = await this.employeeShiftRepository.find({
       relations: {
         employee: true,
@@ -416,7 +433,7 @@ export class EmployeeShiftService {
     });
     
     if (employeeShifts.length == 0) {
-      console.log("no hay turnos");
+      
       throw new NotFoundException(`Employee Shifts not found`);
     }
 

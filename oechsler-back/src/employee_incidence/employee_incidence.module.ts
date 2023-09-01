@@ -8,6 +8,7 @@ import { DateEmployeeIncidence } from './entities/date_employee_incidence.entity
 import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catologue.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
+import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
     ]),
     IncidenceCatologueModule,
     EmployeesModule,
-    EmployeeShiftModule
+    EmployeeShiftModule,
+    EmployeeProfilesModule
   ],
   controllers: [EmployeeIncidenceController],
   providers: [EmployeeIncidenceService],

@@ -59,7 +59,6 @@ export class EmployeeIncidenceService {
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
       
       for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
-        console.log("index", index);
         const dateEmployeeIncidence = await this.dateEmployeeIncidenceRepository.create({
           employeeIncidence: employeeIncidence,
           date: index
@@ -81,7 +80,7 @@ export class EmployeeIncidenceService {
   async findAllIncidencesByIdsEmployee(data: any) {
     
     let startDate = new Date(data.start);
-    let from = format(new Date(startDate), 'yyyy-MM-dd')
+    let from = format(new Date(data.start), 'yyyy-MM-dd')
     let to = format(new Date(data.end), 'yyyy-MM-dd')
     
     const incidences = await this.employeeIncidenceRepository.find({
@@ -138,7 +137,7 @@ export class EmployeeIncidenceService {
   //se obtienen las incidencias de los empleados por dia
   async findAllIncidencesDay(data: any) {
     
-    let startDate = new Date(data.start);
+    let startDate = new Date(data.start + ' 00:00:00');
     let year = startDate.getFullYear();
     let date = startDate.getUTCDate();
     let month = startDate.getMonth() + 1;
@@ -160,6 +159,7 @@ export class EmployeeIncidenceService {
         }
       }
     });
+
     
     let i = 0;
     const incidencesEmployee = incidences.map(incidence => {

@@ -54,6 +54,25 @@ export class EmployeeProfilesService {
     };
   }
 
+  //Buscar dia de la semana del perfil de empleado
+  //Return true or false
+  async findWeekDay(day: string, idProfile: number) {
+    
+    const weekDay = await this.employeeProfileRepository.findOne({
+      where: {
+        id: idProfile,
+        work_days: Like(`%${day}%`)
+      }
+    });
+    
+    if (!weekDay) {
+      return null;
+    }
+
+    return true;
+
+  }
+
   async update(id: number, updateEmployeeProfileDto: CreateEmployeeProfileDto) {
     const emp = await this.employeeProfileRepository.findOneBy({id});
     this.employeeProfileRepository.merge(emp, updateEmployeeProfileDto);

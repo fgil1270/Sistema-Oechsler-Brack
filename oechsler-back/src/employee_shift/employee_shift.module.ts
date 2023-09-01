@@ -11,6 +11,7 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { RolesModule } from '../roles/roles.module';
 import { DepartmentsModule } from '../departments/departments.module';
 import { Department } from '../departments/entities/department.entity';
+import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.module';
 import { de } from 'date-fns/locale';
 
 @Module({
@@ -24,7 +25,8 @@ import { de } from 'date-fns/locale';
     PatternModule,
     OrganigramaModule,
     RolesModule,
-    DepartmentsModule
+    DepartmentsModule,
+    EmployeeProfilesModule
   ],
   controllers: [EmployeeShiftController],
   providers: [EmployeeShiftService],
