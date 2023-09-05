@@ -31,9 +31,10 @@ export class EmployeeIncidenceService {
     const endDate = new Date(createEmployeeIncidenceDto.end_date);
     
     
-    
-    for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+    if(IncidenceCatologue.require_shift){
+      for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
         await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
+      }
     }
 
     employee.emps.forEach(async (emp) => {
