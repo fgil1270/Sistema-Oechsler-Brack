@@ -55,6 +55,7 @@ export class EmployeeIncidenceService {
         end_hour: createEmployeeIncidenceDto.end_hour,
         date_aproved_leader: isLeader ? new Date() : null,
         leader: isLeader ? leader.emp : null,
+        status: isLeader ? 'Autorizada' : 'Pendiente'
       });
 
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
@@ -145,6 +146,7 @@ export class EmployeeIncidenceService {
     let startDateFormat = format(new Date(year + '-' + month + '-' + date) , 'yyyy-MM-dd');
     let to = format(new Date(data.end), 'yyyy-MM-dd');
     
+    //se obtienen las incidencias del dia seleccionado
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -160,19 +162,32 @@ export class EmployeeIncidenceService {
         }
       }
     });
+    //se genera arreglo de ids de incidencias
+    const idsIncidence = incidences.map(incidence => incidence.id);
+
+    //se obtienen los dias de la incidencias
+    const dateIncidence = await this.dateEmployeeIncidenceRepository.find({
+      where: {
+        employeeIncidence: In(idsIncidence)
+      }
+    });
 
     
+
+    console.log(dateIncidence);
+    //console.log(incidences);
     let i = 0;
+    
     const incidencesEmployee = incidences.map(incidence => {
       i++;
       let dateLength = incidence.dateEmployeeIncidence.length;
       let startDate = incidence.dateEmployeeIncidence[0].date;
       let endDate = incidence.dateEmployeeIncidence[dateLength - 1].date;
-      if(dateLength == 1){
+      /* if(dateLength == 1){
         endDate = incidence.dateEmployeeIncidence[0].date;
       }else{
         endDate = incidence.dateEmployeeIncidence[dateLength - 1].date;
-      }
+      } */
 
       return {
         id: i,
@@ -185,6 +200,7 @@ export class EmployeeIncidenceService {
         end: endDate,
         backgroundColor: incidence.incidenceCatologue.color,
         unique_day: incidence.incidenceCatologue.unique_day,
+        status: incidence.status
       }
     });
 

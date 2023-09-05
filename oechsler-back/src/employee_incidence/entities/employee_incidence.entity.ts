@@ -36,6 +36,12 @@ export class EmployeeIncidence {
     @Column({ type: 'date', nullable: true})
     date_aproved_rh: Date;
 
+    @Column({ type: 'varchar', length: 255 })
+    status: string;
+
+    @Column({ type: 'date', nullable: true })
+    date_cancelled: Date;
+
     @CreateDateColumn()
     created_at: Date;
 
@@ -63,4 +69,8 @@ export class EmployeeIncidence {
 
     @OneToMany(() => DateEmployeeIncidence, post => post.employeeIncidence)
     dateEmployeeIncidence: DateEmployeeIncidence[];
+
+    @ManyToOne(() => Employee, post => post.employeeIncidence)
+    @JoinColumn()
+    cancelled_by: Employee;
 }
