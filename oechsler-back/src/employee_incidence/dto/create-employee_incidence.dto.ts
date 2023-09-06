@@ -56,6 +56,11 @@ export class CreateEmployeeIncidenceDto {
     @IsString()
     @ApiProperty({ description: 'Fecha de aprobación por rh' })
     date_aproved_rh?: string; 
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ description: 'Estatus de la incidencia' })
+    status?: string;
 }
 
 export class UpdateEmployeeIncidenceDto extends PartialType(CreateEmployeeIncidenceDto) {}

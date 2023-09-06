@@ -212,7 +212,19 @@ export class EmployeeIncidenceService {
   }
 
   async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto) {
-    return `This action updates a #${id} employeeIncidence`;
+
+    const employeeIncidence = await this.employeeIncidenceRepository.findOne({
+      where: {
+        id: id
+      }
+    });
+
+    if(!employeeIncidence){
+      throw new NotFoundException('No se encontro la incidencia');
+    }
+    employeeIncidence.status = updateEmployeeIncidenceDto.status;
+
+    return await this.employeeIncidenceRepository.save(employeeIncidence);;
   }
 
   async remove(id: number) {
