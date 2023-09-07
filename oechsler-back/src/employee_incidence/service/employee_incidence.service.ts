@@ -129,7 +129,8 @@ export class EmployeeIncidenceService {
         end: endDate,
         backgroundColor: incidence.incidenceCatologue.color,
         unique_day: incidence.incidenceCatologue.unique_day,
-        textColor: textColor
+        textColor: textColor,
+        status: incidence.status
       }
     });
     
@@ -174,7 +175,7 @@ export class EmployeeIncidenceService {
 
     
 
-    console.log(dateIncidence);
+    console.log(dateIncidence); 
     //console.log(incidences);
     let i = 0;
     
@@ -213,6 +214,7 @@ export class EmployeeIncidenceService {
 
   async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto) {
 
+    
     const employeeIncidence = await this.employeeIncidenceRepository.findOne({
       where: {
         id: id
@@ -223,8 +225,8 @@ export class EmployeeIncidenceService {
       throw new NotFoundException('No se encontro la incidencia');
     }
     employeeIncidence.status = updateEmployeeIncidenceDto.status;
-
-    return await this.employeeIncidenceRepository.save(employeeIncidence);;
+    console.log(employeeIncidence);
+    return await this.employeeIncidenceRepository.update(employeeIncidence.id, employeeIncidence);;
   }
 
   async remove(id: number) {

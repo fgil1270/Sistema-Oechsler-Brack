@@ -14,12 +14,12 @@ export class CreateJobDto {
 
     @IsNotEmpty()
     @IsBoolean()
-    @ApiProperty({ description: 'Indica si el puesto es de lider de turno'})
+    @ApiProperty({ description: 'Indica si el puesto es visuble para el lider de turno'})
     shift_leader: boolean;
 
     @IsNotEmpty()
     @IsBoolean()
-    @ApiProperty({ description: 'Indica si el puesto puede ver plc'})
+    @ApiProperty({ description: 'Indica si el puesto es visible por plc'})
     plc: boolean;
 
 }
