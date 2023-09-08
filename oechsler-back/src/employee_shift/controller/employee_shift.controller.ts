@@ -30,10 +30,16 @@ export class EmployeeShiftController {
   }
 
   @ApiOperation({ summary: 'Listar turnos de empleados'})
-  @Views('asignar_turno')
   @Get()
   findAll() {
     return this.employeeShiftService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Acceso a la vista Asignacion de turno'})
+  @Views('asignar_turno')
+  @Get("access")
+  findView() {
+    return true;
   }
 
   @ApiOperation({ summary: 'Buscar turno de empleado'})
