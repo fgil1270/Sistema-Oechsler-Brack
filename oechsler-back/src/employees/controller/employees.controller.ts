@@ -88,8 +88,13 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Buscar por array de empleados'})
   @Get('/find/:ids')
   findMore(@Param('ids') ids: any) {
-    console.log(ids);
     return this.employeesService.findMore(ids.split(','));
+  }
+
+  @ApiOperation({ summary: 'Buscar por array de numero de empleados'})
+  @Get('/findByEmployeeNumber/:ids')
+  findByEmployeeNumber(@Param('ids') ids: any) {
+    return this.employeesService.findByEmployeeNumber(ids.split(','));
   }
 
   @ApiOperation({ summary: 'Actualizar empleado'})

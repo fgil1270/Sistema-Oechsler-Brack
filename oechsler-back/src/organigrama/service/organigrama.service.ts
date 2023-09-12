@@ -49,7 +49,7 @@ export class OrganigramaService {
       orgDTO.employee = employee.emp;
       orgDTO.evaluar = createOrganigramaDto.evaluar;
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(`Error al crear la Relación`);
     }
     
 
@@ -156,7 +156,7 @@ export class OrganigramaService {
   }
 
   async findOne(id: number) {
-    console.log(id);
+    
     const org = await this.organigramaRepository.findOne({
       relations: {
         leader: {

@@ -333,12 +333,13 @@ export class EmployeeShiftService {
     
     const from = format(new Date(data.start), 'yyyy-MM-dd');
     const to = format(new Date(data.end), 'yyyy-MM-dd'); 
+    //const employees = await this.employeesService.findByEmployeeNumber(ids.split(','));
     
     const employees = await this.employeesService.findMore(ids.split(','));
-    
     const resource = employees.emps.map((employee: any) => {
       return { 
         id: employee.id, 
+        employee_number: employee.employee_number,
         title: "#"+ employee.employee_number + " " + employee.name + ' ' + employee.paternal_surname + ' ' + employee.maternal_surname 
       }
     });

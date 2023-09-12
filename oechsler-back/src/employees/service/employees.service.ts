@@ -26,11 +26,9 @@ export class EmployeesService {
 
   
   async readExcel(file) {
-    console.log(file);
 
     //LEER ARCHIVO TXT
     if (file.mimetype === 'text/plain') {
-      console.log("texto plano")
       
       //primera opción 
      /*  var content =  readFileSync(`./documents/temp/emp/${file.filename}`, 'utf8');
@@ -82,8 +80,8 @@ export class EmployeesService {
             });
           });
         } */
-      console.log(objRead);
-      return
+
+      return;
       //writeFile('message.txt', 'Hello Node.js', 'utf8', callback);
       const bufTxt = readFileSync(join(process.cwd(), `./documents/temp/emp/${file.filename}`).toString());
       const archivoTxt = read(bufTxt);
@@ -91,9 +89,6 @@ export class EmployeesService {
       var rowTxt = archivoTxt.Sheets['Sheet1'][utils.encode_cell({r:0, c:0 })];
 
       
-      console.log(archivoTxt);
-      console.log(rangeTxt);
-      console.log(rowTxt.v);
     }
     
     //se obtiene el archivo
@@ -291,7 +286,7 @@ export class EmployeesService {
               this.employeeRepository.update(tableEmployee.id, row);
               totalEdit++;
             } catch (error) {
-              console.log(error);
+              
               totalError++;
             }
             
@@ -340,7 +335,7 @@ export class EmployeesService {
               totalNew++;
               
             } catch (error) {
-              console.log(error);
+              
               totalError++;
             }
             
@@ -437,7 +432,30 @@ export class EmployeesService {
       },
       relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile'],
       order: {
-        name: 'ASC'
+        employee_number: 'ASC',
+        //name: 'ASC'
+      }
+    });
+    
+    if (!emps) {
+      throw new NotFoundException(`Employee #${ids} not found`);
+    }
+    return {
+      emps
+    };
+  }
+
+  
+  //Buscar por array de numero de empleado
+  async findByEmployeeNumber(ids: any) {
+    const emps = await this.employeeRepository.find({
+      where: {
+        employee_number: In(ids)
+      },
+      relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile'],
+      order: {
+        employee_number: 'ASC',
+        //name: 'ASC'
       }
     });
     

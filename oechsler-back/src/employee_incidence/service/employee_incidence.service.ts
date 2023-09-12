@@ -173,10 +173,6 @@ export class EmployeeIncidenceService {
       }
     });
 
-    
-
-    console.log(dateIncidence); 
-    //console.log(incidences);
     let i = 0;
     
     const incidencesEmployee = incidences.map(incidence => {
@@ -225,7 +221,7 @@ export class EmployeeIncidenceService {
       throw new NotFoundException('No se encontro la incidencia');
     }
     employeeIncidence.status = updateEmployeeIncidenceDto.status;
-    console.log(employeeIncidence);
+    
     return await this.employeeIncidenceRepository.update(employeeIncidence.id, employeeIncidence);;
   }
 
