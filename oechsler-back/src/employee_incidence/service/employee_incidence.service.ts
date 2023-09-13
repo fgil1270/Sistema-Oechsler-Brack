@@ -152,7 +152,10 @@ export class EmployeeIncidenceService {
       relations: {
         employee: true,
         incidenceCatologue: true,
-        dateEmployeeIncidence: true
+        dateEmployeeIncidence: true,
+        leader: true,
+        rh: true,
+        cancelled_by: true
       },
       where: {
         employee: {
@@ -206,6 +209,35 @@ export class EmployeeIncidenceService {
 
   async findOne(id: number) {
     return `This action returns a #${id} employeeIncidence`;
+  }
+
+  async findIncidencesByStatus(status: string){
+    const incidences = await this.employeeIncidenceRepository.find({
+      relations: {
+        employee: true,
+        incidenceCatologue: true,
+        dateEmployeeIncidence: true,
+        leader: true
+
+      },
+      where: {
+        status: status
+      }
+    });
+    const total =  await this.employeeIncidenceRepository.count({
+      where: {
+        status: status
+      }
+    });
+    if(!incidences){
+      throw new NotFoundException(`Incidencias con estatus ${status} no encontradas`);
+    }
+
+   
+    return {
+      incidences,
+      total
+    };
   }
 
   async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto) {

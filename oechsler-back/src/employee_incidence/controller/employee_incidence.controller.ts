@@ -58,6 +58,12 @@ export class EmployeeIncidenceController {
     return this.employeeIncidenceService.findOne(id);
   }
 
+  @ApiOperation({ summary: 'Buscar incidencia por status' })
+  @Get('incidences/status/:status')
+  findIncidencesByStatus(@Param('status') status: string){
+    return this.employeeIncidenceService.findIncidencesByStatus(status);
+  }
+
   @ApiOperation({ summary: 'Actualizar incidencia de empleado'})
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto) {
