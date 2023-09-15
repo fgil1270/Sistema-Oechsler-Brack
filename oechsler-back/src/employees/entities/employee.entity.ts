@@ -158,4 +158,7 @@ export class Employee {
 
     @OneToMany(() => EmployeeIncidence, (post) => post.employee)
     employeeIncidenceCancel: EmployeeIncidence[];
+
+    @OneToMany(() => EmployeeIncidence, (post) => post.employee)
+    employeeIncidenceCreate: EmployeeIncidence[];
 }

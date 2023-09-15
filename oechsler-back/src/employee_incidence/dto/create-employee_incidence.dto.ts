@@ -58,6 +58,11 @@ export class CreateEmployeeIncidenceDto {
     date_aproved_rh?: string; 
 
     @IsOptional()
+    @IsNumber()
+    @ApiProperty({ description: 'Creada por' })
+    created_by?: number;
+
+    @IsOptional()
     @IsString()
     @ApiProperty({ description: 'Estatus de la incidencia' })
     status?: string;

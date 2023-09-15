@@ -73,4 +73,8 @@ export class EmployeeIncidence {
     @ManyToOne(() => Employee, post => post.employeeIncidence)
     @JoinColumn()
     cancelled_by: Employee;
+
+    @ManyToOne(() => Employee, post => post.employeeIncidence)
+    @JoinColumn()
+    created_by: Employee;
 }
