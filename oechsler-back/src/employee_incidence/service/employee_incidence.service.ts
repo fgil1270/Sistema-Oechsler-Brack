@@ -26,10 +26,10 @@ export class EmployeeIncidenceService {
     let idsEmployees: any = createEmployeeIncidenceDto.id_employee;
     const IncidenceCatologue = await this.incidenceCatologueService.findOne(createEmployeeIncidenceDto.id_incidence_catologue);
     const employee = await this.employeeService.findMore(idsEmployees.split(','));
-    const leader = await this.employeeService.findOne(user.id_employee);
+    const leader = await this.employeeService.findOne(user.idEmployee);
     const startDate = new Date(createEmployeeIncidenceDto.start_date);
     const endDate = new Date(createEmployeeIncidenceDto.end_date);
-    
+    const createdBy = await this.employeeService.findOne(user.idEmployee);
     
     if(IncidenceCatologue.require_shift){
       for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
@@ -55,9 +55,11 @@ export class EmployeeIncidenceService {
         end_hour: createEmployeeIncidenceDto.end_hour,
         date_aproved_leader: isLeader ? new Date() : null,
         leader: isLeader ? leader.emp : null,
-        status: isLeader ? 'Autorizada' : 'Pendiente'
+        status: isLeader ? 'Autorizada' : 'Pendiente',
+        createdBy: createdBy.emp
       });
 
+      console.log(user);
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
       
       for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
@@ -147,6 +149,9 @@ export class EmployeeIncidenceService {
     let startDateFormat = format(new Date(year + '-' + month + '-' + date) , 'yyyy-MM-dd');
     let to = format(new Date(data.end), 'yyyy-MM-dd');
     
+    //datos del empleado
+    const employee = await this.employeeService.findOne(data.ids);
+
     //se obtienen las incidencias del dia seleccionado
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
@@ -155,7 +160,8 @@ export class EmployeeIncidenceService {
         dateEmployeeIncidence: true,
         leader: true,
         rh: true,
-        cancelled_by: true
+        canceledBy: true,
+        createdBy: true,
       },
       where: {
         employee: {
@@ -203,12 +209,34 @@ export class EmployeeIncidenceService {
         status: incidence.status
       }
     });
-
-    return incidencesEmployee;
+    employee.emp
+    return {
+      incidencesEmployee,
+      employee
+    };
   }
 
   async findOne(id: number) {
-    return `This action returns a #${id} employeeIncidence`;
+    const incidence = await this.employeeIncidenceRepository.findOne({
+      relations: {
+        employee: true,
+        incidenceCatologue: true,
+        dateEmployeeIncidence: true,
+        leader: true,
+        rh: true,
+        canceledBy: true,
+        createdBy: true,
+      },
+      where: {
+        id: id
+      }
+    });
+
+    if(!incidence){
+      throw new NotFoundException('No se encontro la incidencia');
+    }
+
+    return incidence;
   }
 
   async findIncidencesByStatus(status: string){
@@ -217,30 +245,69 @@ export class EmployeeIncidenceService {
         employee: true,
         incidenceCatologue: true,
         dateEmployeeIncidence: true,
-        leader: true
-
+        leader: true,
+        createdBy: true,
       },
       where: {
-        status: status
+        status: status == 'Pendiente' ? 'Pendiente': 'Autorizada'
       }
     });
+
     const total =  await this.employeeIncidenceRepository.count({
       where: {
         status: status
       }
     });
+
     if(!incidences){
       throw new NotFoundException(`Incidencias con estatus ${status} no encontradas`);
     }
 
-   
     return {
       incidences,
       total
     };
   }
 
-  async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto) {
+  async findIncidencesByStatusDouble(status: string, approvalDouble: boolean){
+    
+    const incidences = await this.employeeIncidenceRepository.find({
+      relations: {
+        employee: true,
+        incidenceCatologue: true,
+        dateEmployeeIncidence: true,
+        leader: true,
+        createdBy: true,
+        rh: true,
+      },
+      where: {
+        incidenceCatologue: {
+          approval_double: true
+        },
+        status: status,
+      }
+    });
+
+    const total =  await this.employeeIncidenceRepository.count({
+      where: {
+        status: status,
+        incidenceCatologue: {
+          approval_double: approvalDouble
+        }
+      }
+    });
+
+    if(!incidences){
+      throw new NotFoundException(`Incidencias con estatus ${status} no encontradas`);
+    }
+
+    return {
+      incidences,
+      total
+    };
+  }
+
+  async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, user: any) {
 
     
     const employeeIncidence = await this.employeeIncidenceRepository.findOne({
@@ -249,12 +316,24 @@ export class EmployeeIncidenceService {
       }
     });
 
+    const userAutoriza = await this.employeeService.findOne(user.idEmployee);
+
     if(!employeeIncidence){
       throw new NotFoundException('No se encontro la incidencia');
     }
+
+    if(updateEmployeeIncidenceDto.status == 'Autorizada'){
+      employeeIncidence.date_aproved_leader = new Date();
+      employeeIncidence.leader = userAutoriza.emp;
+    }
+    if(updateEmployeeIncidenceDto.status == 'Rechazada'){
+      employeeIncidence.date_canceled = new Date();
+      employeeIncidence.canceledBy = userAutoriza.emp;
+    }
     employeeIncidence.status = updateEmployeeIncidenceDto.status;
-    
-    return await this.employeeIncidenceRepository.update(employeeIncidence.id, employeeIncidence);;
+    return await this.employeeIncidenceRepository.save(employeeIncidence);
+
+    //return await this.employeeIncidenceRepository.update(employeeIncidence.id, employeeIncidence);
   }
 
   async remove(id: number) {

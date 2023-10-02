@@ -17,6 +17,7 @@ import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto } from '../dto/c
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Double } from 'typeorm';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Incidencias de empleados')
@@ -37,6 +38,24 @@ export class EmployeeIncidenceController {
     return this.employeeIncidenceService.findAll();
   }
 
+  @ApiOperation({ summary: 'Buscar incidencia de empleado'})
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.employeeIncidenceService.findOne(id);
+  }
+
+  @ApiOperation({ summary: 'Buscar incidencia por status y aprobacion double' })
+  @Get(':status/:approval')
+  findIncidencesByStatusDouble(@Param('status') status: string, @Param('approval') approvalDouble: boolean){
+    return this.employeeIncidenceService.findIncidencesByStatusDouble(status, approvalDouble);
+  }
+  
+  @ApiOperation({ summary: 'Buscar incidencia por status' })
+  @Get('incidences/status/:status')
+  findIncidencesByStatus(@Param('status') status: string){
+    return this.employeeIncidenceService.findIncidencesByStatus(status);
+  }
+
   //buscar incidencias de empleados por ids de empleados
   //y por rango de fechas
   @ApiOperation({ summary: 'Listar todas las incidencias por ids de empleados'})
@@ -52,22 +71,10 @@ export class EmployeeIncidenceController {
     return this.employeeIncidenceService.findAllIncidencesDay(data);
   }
 
-  @ApiOperation({ summary: 'Buscar incidencia de empleado'})
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.employeeIncidenceService.findOne(id);
-  }
-
-  @ApiOperation({ summary: 'Buscar incidencia por status' })
-  @Get('incidences/status/:status')
-  findIncidencesByStatus(@Param('status') status: string){
-    return this.employeeIncidenceService.findIncidencesByStatus(status);
-  }
-
   @ApiOperation({ summary: 'Actualizar incidencia de empleado'})
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto) {
-    return this.employeeIncidenceService.update(id, updateEmployeeIncidenceDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, @CurrentUser() user: any) {
+    return this.employeeIncidenceService.update(id, updateEmployeeIncidenceDto, user);
   }
 
   @Delete(':id')

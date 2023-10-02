@@ -40,7 +40,7 @@ export class EmployeeIncidence {
     status: string;
 
     @Column({ type: 'date', nullable: true })
-    date_cancelled: Date;
+    date_canceled: Date;
 
     @CreateDateColumn()
     created_at: Date;
@@ -72,9 +72,9 @@ export class EmployeeIncidence {
 
     @ManyToOne(() => Employee, post => post.employeeIncidence)
     @JoinColumn()
-    cancelled_by: Employee;
+    canceledBy: Employee;
 
     @ManyToOne(() => Employee, post => post.employeeIncidence)
     @JoinColumn()
-    created_by: Employee;
+    createdBy: Employee;
 }
