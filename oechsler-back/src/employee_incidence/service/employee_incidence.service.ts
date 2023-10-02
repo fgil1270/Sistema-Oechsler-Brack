@@ -9,6 +9,7 @@ import { DateEmployeeIncidence } from "../entities/date_employee_incidence.entit
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
+import { MailService } from '../../mail/mail.service';
 
 
 @Injectable()
@@ -18,7 +19,8 @@ export class EmployeeIncidenceService {
     @InjectRepository(DateEmployeeIncidence) private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
     private incidenceCatologueService: IncidenceCatologueService,
     private employeeService: EmployeesService,
-    private employeeShiftService: EmployeeShiftService
+    private employeeShiftService: EmployeeShiftService,
+    private mailService: MailService
   ) {}
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
@@ -72,6 +74,8 @@ export class EmployeeIncidenceService {
       }
 
     });
+
+    const mail = await this.mailService.sendEmail();
 
     return ;
   }

@@ -9,6 +9,7 @@ import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catol
 import { EmployeesModule } from '../employees/employees.module';
 import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
 import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.m
     IncidenceCatologueModule,
     EmployeesModule,
     EmployeeShiftModule,
-    EmployeeProfilesModule
+    EmployeeProfilesModule,
+    MailModule
   ],
   controllers: [EmployeeIncidenceController],
   providers: [EmployeeIncidenceService],

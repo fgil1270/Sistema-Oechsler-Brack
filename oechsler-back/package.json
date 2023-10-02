@@ -26,6 +26,7 @@
     "migrations:drop": "npm run typeorm -- migration:drop"
   },
   "dependencies": {
+    "@nestjs-modules/mailer": "^1.9.1",
     "@nestjs/axios": "^3.0.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.3.2",
@@ -42,8 +43,10 @@
     "class-validator": "^0.14.0",
     "date-fns": "^2.30.0",
     "express-list-endpoints": "^6.0.0",
+    "handlebars": "^4.7.8",
     "joi": "^17.9.2",
     "mysql2": "^3.4.2",
+    "nodemailer": "^6.9.5",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -62,6 +65,7 @@
     "@types/jest": "29.5.1",
     "@types/multer": "^1.4.7",
     "@types/node": "18.16.12",
+    "@types/nodemailer": "^6.4.11",
     "@types/passport-jwt": "^3.0.8",
     "@types/passport-local": "^1.0.35",
     "@types/supertest": "^2.0.11",

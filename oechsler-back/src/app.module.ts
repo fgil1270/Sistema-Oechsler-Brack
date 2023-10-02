@@ -1,7 +1,8 @@
+import { MailModule } from './mail/mail.module';
 import { Module } from '@nestjs/common';
 import * as Joi from 'joi';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule} from "@nestjs/config";
+import { ConfigModule } from "@nestjs/config";
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -27,7 +28,8 @@ import config from "./config";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ 
+    MailModule,
+    ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
       load: [config],
       isGlobal: true,
@@ -71,4 +73,4 @@ import config from "./config";
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
