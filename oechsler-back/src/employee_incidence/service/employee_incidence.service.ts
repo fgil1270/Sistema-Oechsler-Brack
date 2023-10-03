@@ -75,6 +75,7 @@ export class EmployeeIncidenceService {
 
     });
 
+    //ENVIO DE CORREO
     const mail = await this.mailService.sendEmail();
 
     return ;
@@ -243,7 +244,20 @@ export class EmployeeIncidenceService {
     return incidence;
   }
 
+  //buscar por estatus
   async findIncidencesByStatus(status: string){
+    let whereQuery: any;
+    if(status == 'Todas'){
+      whereQuery = [
+        { status: 'Pendiente' },
+        { status: 'Autorizada' },
+        { status: 'Rechazada' }
+      ]
+    } else{
+      whereQuery = {
+        status: status
+      }
+    }
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -252,15 +266,11 @@ export class EmployeeIncidenceService {
         leader: true,
         createdBy: true,
       },
-      where: {
-        status: status == 'Pendiente' ? 'Pendiente': 'Autorizada'
-      }
+      where: whereQuery
     });
 
     const total =  await this.employeeIncidenceRepository.count({
-      where: {
-        status: status
-      }
+      where: whereQuery
     });
 
     if(!incidences){
@@ -273,7 +283,42 @@ export class EmployeeIncidenceService {
     };
   }
 
+  //buscar incidencias doubles
   async findIncidencesByStatusDouble(status: string, approvalDouble: boolean){
+    
+    let whereQuery: any;
+    if(status == 'Todas'){
+      whereQuery = [
+        {
+          status: 'Pendiente',
+          incidenceCatologue: {
+            approval_double: true
+          },
+        },
+        {
+          status: 'Autorizada',
+          incidenceCatologue: {
+            approval_double: true
+          },
+        },
+        {
+          status: 'Rechazada',
+          incidenceCatologue: {
+            approval_double: true
+          },
+        }
+      ];
+        
+      
+    } else{
+      whereQuery = {
+        status: status,
+        incidenceCatologue: {
+          approval_double: true
+        },
+      }
+      
+    }
     
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
@@ -284,21 +329,12 @@ export class EmployeeIncidenceService {
         createdBy: true,
         rh: true,
       },
-      where: {
-        incidenceCatologue: {
-          approval_double: true
-        },
-        status: status,
-      }
+      where: whereQuery
+      
     });
 
     const total =  await this.employeeIncidenceRepository.count({
-      where: {
-        status: status,
-        incidenceCatologue: {
-          approval_double: approvalDouble
-        }
-      }
+      where: whereQuery
     });
 
     if(!incidences){

@@ -16,16 +16,22 @@ import { MailService } from './mail.service';
         MailerModule.forRootAsync({
             useFactory: async () => ({
                 transport: {
-                    host: '192.168.26.6',
-                    port: 25,
+                    host: 'smtp.gmail.com', //host: '192.168.26.180', smtp.gmail.com
+                    port: 587,
                     secure: false, // true for 465, false for other ports
+                    //ignoreTLS: true, 
                     auth: {
-                        user: 'test', // generated ethereal user
-                        pass: 'test', // generated ethereal password
+                        user: 'erikmv021@gmail.com', // generated ethereal user
+                        pass: 'nhic fewe fvxf nbrc', // generated ethereal password
                     },
+                    /* tls: {
+                        // do not fail on invalid certs
+                        rejectUnauthorized: false,
+                    }, */
+                    
                 },
                 defaults: {
-                    from: '"nest-modules" <test@oechslet.mx>',
+                    from: '"nest-modules" <test@oechsler.mx>',
                 },
                 template: {
                     dir: join(__dirname, './templates'),
