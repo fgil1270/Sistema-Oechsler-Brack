@@ -10,6 +10,9 @@ import { IncidenceCatologueService } from '../../incidence_catologue/service/inc
 import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
 import { MailService } from '../../mail/mail.service';
+import { EmployeeShift } from '../../employee_shift/entities/employee_shift.entity';
+import { Employee } from '../../employees/entities/employee.entity';
+import { Shift } from '../../shift/entities/shift.entity';
 
 
 @Injectable()
@@ -146,7 +149,7 @@ export class EmployeeIncidenceService {
 
   //se obtienen las incidencias de los empleados por dia
   async findAllIncidencesDay(data: any) {
-    
+
     let startDate = new Date(data.start + ' 00:00:00');
     let year = startDate.getFullYear();
     let date = startDate.getUTCDate();
@@ -156,7 +159,7 @@ export class EmployeeIncidenceService {
     
     //datos del empleado
     const employee = await this.employeeService.findOne(data.ids);
-
+    
     //se obtienen las incidencias del dia seleccionado
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
@@ -173,10 +176,13 @@ export class EmployeeIncidenceService {
           id: In(data.ids.split(','))
         },
         dateEmployeeIncidence: {
-          date: startDateFormat as any
+          date: startDate as any
         }
       }
     });
+
+    const employeeShift = await this.employeeShiftService.findEmployeeShiftsByDate(startDate, data.ids.split(','));
+    
     //se genera arreglo de ids de incidencias
     const idsIncidence = incidences.map(incidence => incidence.id);
 
@@ -214,10 +220,11 @@ export class EmployeeIncidenceService {
         status: incidence.status
       }
     });
-    employee.emp
+    
     return {
       incidencesEmployee,
-      employee
+      employee,
+      employeeShift
     };
   }
 
