@@ -25,6 +25,7 @@ import { EmployeeShiftModule } from './employee_shift/employee_shift.module';
 import { IncidenceCatologueModule } from './incidence_catologue/incidence_catologue.module';
 import { EmployeeIncidenceModule } from './employee_incidence/employee_incidence.module';
 import config from "./config";
+import { ChecadorModule } from './checador/checador.module';
 
 @Module({
   imports: [
@@ -69,8 +70,10 @@ import config from "./config";
     EmployeeShiftModule,
     IncidenceCatologueModule,
     EmployeeIncidenceModule,
+    ChecadorModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService],
 })
 export class AppModule { }

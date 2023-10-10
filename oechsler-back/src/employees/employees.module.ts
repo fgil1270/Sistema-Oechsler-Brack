@@ -22,6 +22,7 @@ import { UsersModule } from '../users/users.module';
     PayrollsModule,
     VacationsProfileModule,
     EmployeeProfilesModule
+    
   ],
   controllers: [EmployeesController],
   providers: [EmployeesService],

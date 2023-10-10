@@ -8,7 +8,6 @@ import {
     ManyToOne,
     OneToMany,
     JoinColumn
-
 } from "typeorm";
 import { Department } from "../../departments/entities/department.entity";
 import { VacationsProfile } from "../../vacations-profile/entities/vacations-profile.entity";
@@ -19,6 +18,7 @@ import { User } from "../../users/entities/user.entity";
 import { Organigrama } from "../../organigrama/entities/organigrama.entity";
 import { EmployeeShift } from "../../employee_shift/entities/employee_shift.entity";
 import { EmployeeIncidence } from "../../employee_incidence/entities/employee_incidence.entity";
+import { Checador } from "../../checador/entities/checador.entity";
 
 @Entity()
 export class Employee {
@@ -161,4 +161,7 @@ export class Employee {
 
     @OneToMany(() => EmployeeIncidence, (post) => post.employee)
     employeeIncidenceCreate: EmployeeIncidence[];
+
+    @OneToMany(() => Checador, (post) => post.employee)
+    employeeChecadas: Checador[];
 }
