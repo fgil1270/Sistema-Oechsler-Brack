@@ -9,7 +9,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
   }));
-
+  process.env.TZ = 'Etc/Universal'; //establece la zona horaria universal
   // Configuración Swagger en NestJS
   const config = new DocumentBuilder()
     .setTitle('API OECHSLER')

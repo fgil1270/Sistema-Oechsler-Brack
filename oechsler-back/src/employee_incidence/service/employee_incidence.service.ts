@@ -64,7 +64,7 @@ export class EmployeeIncidenceService {
         createdBy: createdBy.emp
       });
 
-      console.log(user);
+      
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
       
       for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
@@ -79,7 +79,7 @@ export class EmployeeIncidenceService {
     });
 
     //ENVIO DE CORREO
-    const mail = await this.mailService.sendEmail();
+    //const mail = await this.mailService.sendEmail();
 
     return ;
   }
@@ -133,6 +133,9 @@ export class EmployeeIncidenceService {
         incidenceId: incidence.id,
         resourceId: incidence.employee.id,
         title: incidence.incidenceCatologue.name,
+        code: incidence.incidenceCatologue.code,
+        codeBand: incidence.incidenceCatologue.code_band,
+        reportNomina: incidence.incidenceCatologue.repor_nomina,
         description: incidence.descripcion,
         total_hour: incidence.total_hour,
         start: startDate,

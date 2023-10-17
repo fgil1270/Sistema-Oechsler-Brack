@@ -33,5 +33,19 @@ export class ChecadorController {
         return this.checadorService.create(createChecadaDto);
     }
 
+    @ApiOperation({ summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq' })
+    @Views('nomipaq')
+    @Get('nomipaq')
+    findView(){
+        return true;
+    }
+
+    @ApiOperation({ summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq' })
+    @Views('nomipaq')
+    @Get('nomipaq/report/:startDate/:endDate')
+    reportNomipaq(@Param() data:any){
+        return this.checadorService.reportNomipaq(data);
+    }
+
     
 }

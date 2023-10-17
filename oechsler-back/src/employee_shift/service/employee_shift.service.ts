@@ -368,10 +368,14 @@ export class EmployeeShiftService {
       
       return {
         id: employeeShift.id,
+        nameShift: employeeShift.shift.code,
         resourceId: employeeShift.employee.id,
         title: employeeShift.shift.name,
         start: employeeShift.start_date,
         end: employeeShift.end_date,
+        idTurno: employeeShift.shift.id,
+        startTimeshift: employeeShift.shift.start_time,
+        endTimeshift: employeeShift.shift.end_time,
         backgroundColor: employeeShift.shift.color,
         borderColor: employeeShift.shift.color,
         textColor: textColor
