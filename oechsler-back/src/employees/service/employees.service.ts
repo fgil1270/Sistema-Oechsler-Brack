@@ -467,6 +467,36 @@ export class EmployeesService {
     };
   }
 
+  //Buscar por tipo de nomina
+  async findByNomina(tipo: string) {
+    let whereTipo = {};
+    if(tipo != 'Todas'){
+      whereTipo = {
+        payRoll: {
+          name: tipo
+        }
+      };
+
+    }else{
+      whereTipo = {};
+    }
+    const emps = await this.employeeRepository.find({
+      where: whereTipo,
+      relations: ['department', 'job', 'payRoll', 'vacationProfile', 'employeeProfile'],
+      order: {
+        employee_number: 'ASC',
+        //name: 'ASC'
+      }
+    });
+    
+    if (!emps) {
+      throw new NotFoundException(`Employee #${tipo} not found`);
+    }
+    return {
+      emps
+    };
+  }
+
   async update(id: number, updateEmployeeDto: CreateEmployeeDto) {
     const emp = await this.employeeRepository.findOneBy({id});
     if (!emp?.id) {

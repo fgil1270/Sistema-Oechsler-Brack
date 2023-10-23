@@ -40,6 +40,20 @@ export class IncidenceCatologueService {
     return incidenceCatologue;
   }
 
+  async findName(name: string) {
+    const incidenceCatologue = await this.incidenceCatologueRepository.findOne({
+      where: {
+        name: name
+      }
+    });
+
+    if (!incidenceCatologue) {
+      throw new NotFoundException(`IncidenceCatologue #${name} not found`);
+    }
+
+    return incidenceCatologue;
+  }
+
   async update(id: number, updateIncidenceCatologueDto: UpdateIncidenceCatologueDto) {
     return `This action updates a #${id} incidenceCatologue`;
   }

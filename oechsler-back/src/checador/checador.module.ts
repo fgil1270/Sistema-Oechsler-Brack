@@ -7,6 +7,7 @@ import { ChecadorService } from './service/checador.service';
 import { EmployeesModule } from '../employees/employees.module';
 import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
 import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidence.module';
+import { IncidenceCatologueModule } from '..//incidence_catologue/incidence_catologue.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidenc
     ]),
     EmployeesModule,
     EmployeeShiftModule,
-    EmployeeIncidenceModule
+    EmployeeIncidenceModule,
+    IncidenceCatologueModule
   ],
   providers: [ChecadorService],
   controllers: [ChecadorController],

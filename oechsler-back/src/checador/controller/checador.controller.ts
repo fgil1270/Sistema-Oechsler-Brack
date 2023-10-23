@@ -11,7 +11,9 @@ import {
     Param,
     Delete,
     UseGuards,
-    ParseIntPipe
+    ParseIntPipe,
+    Req,
+    Query
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -42,8 +44,8 @@ export class ChecadorController {
 
     @ApiOperation({ summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq' })
     @Views('nomipaq')
-    @Get('nomipaq/report/:startDate/:endDate')
-    reportNomipaq(@Param() data:any){
+    @Get('nomipaq/report')
+    reportNomipaq(@Query() data:any){
         return this.checadorService.reportNomipaq(data);
     }
 
