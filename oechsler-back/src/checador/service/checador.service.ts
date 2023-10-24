@@ -181,6 +181,7 @@ export class ChecadorService {
                     diffDate = diffTimeShift;
                 }
                 
+                //falta injustificada
                 if(registrosChecador.length == 0 && incidencias.length == 0){
                     incidenciaFalta = true;
                     incidenceExtra.push(`1` + faltaInjustificada.code_band);
@@ -188,7 +189,7 @@ export class ChecadorService {
                 }
 
                 //tiempo extra para el turno 3
-                if(diffDate >= diffTimeShift && employeeShif.events[0]?.nameShift == 'T3'){
+                if(diffDate >= diffTimeShift && employeeShif.events[0]?.nameShift == 'T3' && incidencias.length <= 0){
                     incidenceExtra.push(`${mediaHoraExtra}` + incidenceHrExtra.code_band + '2');
                     sumaMediaHrExtra += mediaHoraExtra;
                     
