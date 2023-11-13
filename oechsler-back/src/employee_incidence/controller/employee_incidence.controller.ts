@@ -17,7 +17,6 @@ import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto } from '../dto/c
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import { Double } from 'typeorm';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Incidencias de empleados')
@@ -35,7 +34,7 @@ export class EmployeeIncidenceController {
   @Views('asignar_incidencia')
   @Get()
   findAll() {
-    return this.employeeIncidenceService.findAll();
+    return true;
   }
 
   @ApiOperation({ summary: 'Buscar incidencia de empleado'})
@@ -69,6 +68,14 @@ export class EmployeeIncidenceController {
   @Get('incidences/date/:ids/:start/:end')
   findAllIncidencesDay(@Param() data: any) {
     return this.employeeIncidenceService.findAllIncidencesDay(data);
+  }
+
+  
+  @ApiOperation({ summary: 'Acceso a vista Autorizar incidencias'})
+  @Views('autorizar_incidencia')
+  @Get('view/autorizar-incidencia/access/autorizar/incidencia/leader')
+  AccessAutorizaIncidencia() {
+    return true;
   }
 
   @ApiOperation({ summary: 'Actualizar incidencia de empleado'})

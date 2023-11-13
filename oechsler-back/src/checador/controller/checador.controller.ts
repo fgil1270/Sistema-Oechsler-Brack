@@ -32,6 +32,7 @@ export class ChecadorController {
     @ApiOperation({ summary: 'Crear registro de entrada o salida del empleado' })
     @Post()
     create(@Body() createChecadaDto: CreateChecadaDto){
+        
         return this.checadorService.create(createChecadaDto);
     }
 
@@ -48,6 +49,7 @@ export class ChecadorController {
     reportNomipaq(@Query() data:any){
         return this.checadorService.reportNomipaq(data);
     }
+
 
     
 }

@@ -31,15 +31,14 @@ export class EmployeeShiftService {
     let Final = new Date(createEmployeeShiftDto.end_date);
     let diaInicial = new Date(Inicial.getFullYear(), Inicial.getMonth(), Inicial.getDate());
     let diaFinal = new Date(Final.getFullYear(), Final.getMonth(), Final.getDate());
-    console.log(createEmployeeShiftDto);
+    
     const to = format(new Date(createEmployeeShiftDto.start_date), 'yyyy-MM-dd 00:00:00');
     const from = format(new Date(createEmployeeShiftDto.end_date), 'yyyy-MM-dd 23:59:59'); 
-    console.log(to);
-    console.log(from);
+    
     //se realiza forEach para recorrer los empleados seleccionados
     for (let i = 0; i < createEmployeeShiftDto.employeeId.length; i++) {
       const element = createEmployeeShiftDto.employeeId[i];
-      console.log(i, element);
+      
       const employee = await this.employeesService.findOne(element);
       
       let contSemana = 0;
@@ -49,7 +48,7 @@ export class EmployeeShiftService {
 
       //se realiza for para recorrer los dias seleccionados
       for (let index = new Date(to); index <= new Date(from); index= new Date(index.setDate(index.getDate() + 1))) {
-        console.log('fecha', index);
+        
         if(element == 2149){
           
         }

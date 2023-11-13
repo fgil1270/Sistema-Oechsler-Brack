@@ -64,6 +64,12 @@ export class EmployeeIncidenceService {
         createdBy: createdBy.emp
       });
 
+      //ENVIO DE CORREO
+      const mail = await this.mailService.sendEmail(
+        'Incidencia Creada', 
+        `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
+        employeeIncidenceCreate.employee.name
+      );
       
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
       
@@ -76,10 +82,9 @@ export class EmployeeIncidenceService {
         await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
       }
 
-    });
+    }); 
 
-    //ENVIO DE CORREO
-    //const mail = await this.mailService.sendEmail();
+    
 
     return ;
   }
@@ -107,7 +112,8 @@ export class EmployeeIncidenceService {
         },
         dateEmployeeIncidence: {
           date: Between(from as any, to as any)
-        }
+        },
+        status: Not('Rechazada')
       } 
     });
 
@@ -363,7 +369,12 @@ export class EmployeeIncidenceService {
     const employeeIncidence = await this.employeeIncidenceRepository.findOne({
       where: {
         id: id
+      },
+      relations: {
+        employee: true,
+        incidenceCatologue: true,
       }
+
     });
 
     const userAutoriza = await this.employeeService.findOne(user.idEmployee);
@@ -375,11 +386,25 @@ export class EmployeeIncidenceService {
     if(updateEmployeeIncidenceDto.status == 'Autorizada'){
       employeeIncidence.date_aproved_leader = new Date();
       employeeIncidence.leader = userAutoriza.emp;
+      //ENVIO DE CORREO
+      const mail = await this.mailService.sendEmail(
+        'Incidencia Autorizada', 
+        `Incidencia: ${employeeIncidence.id} ${employeeIncidence.incidenceCatologue.name} - Empleado: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
+        employeeIncidence.employee.name
+      );
     }
+
     if(updateEmployeeIncidenceDto.status == 'Rechazada'){
       employeeIncidence.date_canceled = new Date();
       employeeIncidence.canceledBy = userAutoriza.emp;
+      //ENVIO DE CORREO
+      const mail = await this.mailService.sendEmail(
+        'Incidencia Rechazada', 
+        `Incidencia: ${employeeIncidence.id} ${employeeIncidence.incidenceCatologue.name} - Empleado: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
+        employeeIncidence.employee.name
+      );
     }
+
     employeeIncidence.status = updateEmployeeIncidenceDto.status;
     return await this.employeeIncidenceRepository.save(employeeIncidence);
 

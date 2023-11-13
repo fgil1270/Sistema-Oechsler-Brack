@@ -17,9 +17,9 @@ import { MailService } from './mail.service';
             useFactory: async () => ({
                 transport: {
                     host: 'smtp.gmail.com', //host: '192.168.26.180', smtp.gmail.com
-                    port: 587,
+                    //port: 587,
                     secure: false, // true for 465, false for other ports
-                    //ignoreTLS: true, 
+                    //ignoreTLS: true,
                     auth: {
                         user: 'erikmv021@gmail.com', // generated ethereal user
                         pass: 'nhic fewe fvxf nbrc', // generated ethereal password
@@ -31,7 +31,7 @@ import { MailService } from './mail.service';
                     
                 },
                 defaults: {
-                    from: '"nest-modules" <test@oechsler.mx>',
+                    from: '"No Reply" <notificationes@oechsler.mx>',
                 },
                 template: {
                     dir: join(__dirname, './templates'),

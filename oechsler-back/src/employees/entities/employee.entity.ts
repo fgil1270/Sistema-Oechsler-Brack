@@ -19,6 +19,7 @@ import { Organigrama } from "../../organigrama/entities/organigrama.entity";
 import { EmployeeShift } from "../../employee_shift/entities/employee_shift.entity";
 import { EmployeeIncidence } from "../../employee_incidence/entities/employee_incidence.entity";
 import { Checador } from "../../checador/entities/checador.entity";
+import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
 
 @Entity()
 export class Employee {
@@ -164,4 +165,13 @@ export class Employee {
 
     @OneToMany(() => Checador, (post) => post.employee)
     employeeChecadas: Checador[];
+
+    @OneToMany(() => TimeCorrection, (post) => post.employee)
+    timeCorrection: TimeCorrection[];
+
+    @OneToMany(() => TimeCorrection, (post) => post.created_by)
+    timeCorrectionCreateBy: TimeCorrection[];
+
+    @OneToMany(() => Checador, (post) => post.createdBy)
+    employeeChecadasCreateBy: Checador[];
 }

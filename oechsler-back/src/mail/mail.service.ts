@@ -9,24 +9,26 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
     constructor(private readonly mailerService: MailerService) { }
 
-    async sendEmail() {
+    async sendEmail(subject: string, message:string, name:string = '' ) {
 
         await this.mailerService.sendMail({
+            //to: 'E.Munoz@oechsler.mx',
             to: 'f.gil@oechsler.mx',
-            from: 'notification@oechsler.mx',
-            subject: 'Testing Nest MailerModule ✔',
+            from: 'notificationes@oechsler.mx',
+            subject: subject,
             template: 'confirmation', // `.hbs` extension is appended automatically
             context: {  // ✏️ filling curly brackets with content
                 code: 'cf1a3f828287', 
-                name: 'john doe',
-                url: 'www.google.com'
+                name: name,
+                url: 'www.google.com',
+                message:message
             },
         }) 
         .then((success) => {
         console.log('correcto:', success)
         })
         .catch((err) => {
-            throw new NotFoundException('Error al enviar el correo');
+            return true;
         });
     }
 

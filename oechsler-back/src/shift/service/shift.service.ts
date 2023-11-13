@@ -53,6 +53,20 @@ export class ShiftService {
     };
   }
 
+  async findByName(code: string) {
+    const shift = await this.shiftRepository.findOne({
+      where: {
+        code: code
+      }
+    });
+    if (!shift) {
+      throw new NotFoundException(`Shift #${code} not found`);
+    }
+    return {
+      shift
+    };
+  }
+
   async update(id: number, updateShiftDto: UpdateShiftDto) {
     const shift = await this.shiftRepository.findOne({
       where: {

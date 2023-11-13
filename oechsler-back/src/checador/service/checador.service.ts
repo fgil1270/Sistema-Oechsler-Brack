@@ -27,11 +27,73 @@ export class ChecadorService {
 
     async create(createChecadaDto: CreateChecadaDto){
 
+        const date = format(new Date(createChecadaDto.fecha), 'yyyy-MM-dd');
+
+        const employee = await this.employeesService.findOne(createChecadaDto.empleadoId);
+        if(!employee){
+            throw new NotFoundException(`Empleado no encontrado`);
+        }
+
+        const userCreate = await this.employeesService.findOne(createChecadaDto.createdBy);
+        
+        if(!userCreate){
+            throw new NotFoundException(`Usuario no encontrado`);
+        }
+       
+        const checada = await this.checadorRepository.create(
+            {
+                date: new Date(createChecadaDto.fecha + ' ' + createChecadaDto.time),
+                employee: employee.emp,
+                createdBy: userCreate.emp,
+                numRegistroChecador: createChecadaDto.numRegistroChecador,
+            }
+        );
+        
+        
+        if(createChecadaDto.comment != ''){
+            checada.comment = createChecadaDto.comment;
+        }
+
+        const checadaSave = await this.checadorRepository.save(checada);
+
+        return checadaSave;     
+
+              
     }
 
     async findAll(createChecadaDto: CreateChecadaDto){
 
     }
+
+    //buscar registros de entrada y salida por ids de empleado y rango de fechas
+    async findbyDate(id: number, start: any, end: any, hrEntrada: string, hrSalida: string){
+        const checador = await this.checadorRepository.find( {
+            where: { 
+                employee: {
+                    id: id,
+                    employeeShift: {
+                        start_date: format(start, 'yyyy-MM-dd') as any,
+                    }
+                },
+                date: Between(format(start, `yyyy-MM-dd ${hrEntrada}`) as any, format(end, `yyyy-MM-dd ${hrSalida}`) as any)
+            },
+            relations: {
+                employee: {
+                    employeeShift: {
+                        shift: true
+                    },
+                    employeeProfile: true,
+                },
+            },
+            order: {
+                date: 'ASC'
+            } 
+        });
+        return checador;
+    }
+
+    
+
 
     async reportNomipaq(data: any){
         
@@ -59,6 +121,7 @@ export class ChecadorService {
             let totalHrsRequeridas = 0;
             let totalHrsTrabajadas = 0;
             let totalHrsExtra = 0;
+            
             let i = 0;
 
             //se recorre el arreglo de dias generados
@@ -156,11 +219,12 @@ export class ChecadorService {
                 let incidenciaPermiso = false;
                 let incidenciaTiemExtra = false;
                 let incidenciaFalta = false;
-                let textHrExtraDoble ="";
-                let textHrExtraTripe = "";
+                let hrExtraDoble = 0;
+                let hrExtraTripe = 0;
                 let incidenceExtra = [];
                 let mediaHoraExtra = 0.06;
                 let sumaMediaHrExtra = 0;
+                let hrsExtraIncidencias: any;
                 
                 const incidenceHrExtra = await this.incidenceCatalogueService.findName('Tiempo extra');
                 const faltaInjustificada = await this.incidenceCatalogueService.findName('Falta injustificada');
@@ -171,6 +235,7 @@ export class ChecadorService {
                     //validar que exista tiempo extra
                     if(incidencias[index].code == 'TE'){
                         incidenciaTiemExtra = true;
+                        hrsExtraIncidencias = incidencias[index].total_hour;
                     }
 
                     
@@ -187,19 +252,48 @@ export class ChecadorService {
                     incidenceExtra.push(`1` + faltaInjustificada.code_band);
 
                 }
-
+                
                 //tiempo extra para el turno 3
                 if(diffDate >= diffTimeShift && employeeShif.events[0]?.nameShift == 'T3' && incidencias.length <= 0){
                     incidenceExtra.push(`${mediaHoraExtra}` + incidenceHrExtra.code_band + '2');
                     sumaMediaHrExtra += mediaHoraExtra;
+                    totalHrsExtra +=  sumaMediaHrExtra;
                     
                 }
 
                 //se calcula las horas trabajadas y hrs extra
                 calculoHrsExtra += (diffDate - diffTimeShift) <= 0 ?  0: (diffDate - diffTimeShift);
+               
+                //se valida si calculo de horas extra es mayor a 0 y si existe incidencia de tiempo extra
+                if(calculoHrsExtra >= 0 && incidenciaTiemExtra){
+
+                    //se valida si el calculo de horas extra es mayor a las horas extra de las incidencias
+                    if(calculoHrsExtra > hrsExtraIncidencias){
+                        totalHrsExtra = hrsExtraIncidencias+totalHrsExtra;
+                        calculoHrsExtra = hrsExtraIncidencias;
+                    }
+
+                    //se valida si las hrs extra dobles y triples
+                    if(calculoHrsExtra > 3){
+                        hrExtraTripe = calculoHrsExtra - 3;
+                        hrExtraDoble = 3;
+                    }else{
+                        hrExtraDoble = calculoHrsExtra;
+                    }
+
+                    if(hrExtraTripe > 0){
+                        incidenceExtra.push(`${moment.utc(hrExtraDoble*60*60*1000).format('H.mm')}` + incidenceHrExtra.code_band + '2');
+                        incidenceExtra.push(`${moment.utc(hrExtraTripe*60*60*1000).format('H.mm')}` + incidenceHrExtra.code_band + '3');
+                    }else{
+                        incidenceExtra.push(`${moment.utc(hrExtraDoble*60*60*1000).format('H.mm')}` + incidenceHrExtra.code_band + '2');
+                    }
+
+                    
+                    
+                }
+                
+                
                 totalHrsTrabajadas += diffDate >= 0? diffDate : 0;
-                totalHrsExtra += calculoHrsExtra >= 0 && incidenciaTiemExtra ? calculoHrsExtra : 0;
-                totalHrsExtra += sumaMediaHrExtra;
 
                 eventDays.push({
                     date: format(index, 'yyyy-MM-dd'),
@@ -213,6 +307,8 @@ export class ChecadorService {
                  
             }
 
+            totalHrsTrabajadas = totalHrsTrabajadas - totalHrsExtra;
+            
             registros.push({
                 idEmpleado: iterator.id,
                 numeroNomina: iterator.employee_number,
@@ -223,7 +319,7 @@ export class ChecadorService {
                 horasEsperadas: totalHrsRequeridas.toFixed(2),
                 horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas
                 convertir: moment.utc(totalHrsTrabajadas*168*24*60*60*1000).format('HH:mm'),
-                horasExtra: totalHrsExtra.toFixed(2),
+                horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('H.mm'),
                 //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
             });
             

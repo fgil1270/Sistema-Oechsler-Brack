@@ -15,6 +15,21 @@ export class CreateChecadaDto {
     @IsNumber()
     @ApiProperty({ description: 'Numero de registro que proviene del checador' })
     numRegistroChecador?:number;
+
+    @IsString()
+    @ApiProperty({ description: 'Comentario' })
+    comment?: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    @ApiProperty({ description: 'Id del empleado que crea el registro' })
+    createdBy: number;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Hora de entrada o salida' })
+    time: string;
+
 }
 
 export class UpdateChecadaDto extends PartialType(CreateChecadaDto) {}

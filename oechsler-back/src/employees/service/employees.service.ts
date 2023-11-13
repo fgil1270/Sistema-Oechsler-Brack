@@ -412,7 +412,8 @@ export class EmployeesService {
         employeeProfile: true,
         userId: {
           roles: true
-        }
+        },
+        
       }
         
     });

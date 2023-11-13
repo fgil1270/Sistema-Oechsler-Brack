@@ -21,9 +21,16 @@ export class Checador {
     @ManyToOne(() => Employee, post => post.employeeChecadas)
     @JoinColumn()
     employee: Employee;
-
+ 
     @Column({ type: 'int' })
     numRegistroChecador: number;
+
+    @Column({ type: 'text', nullable: true })
+    comment: string;
+
+    @ManyToOne(() => Employee, post => post.employeeChecadasCreateBy)
+    @JoinColumn()
+    createdBy: Employee;
 
 }
 

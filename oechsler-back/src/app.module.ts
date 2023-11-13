@@ -26,6 +26,7 @@ import { IncidenceCatologueModule } from './incidence_catologue/incidence_catolo
 import { EmployeeIncidenceModule } from './employee_incidence/employee_incidence.module';
 import config from "./config";
 import { ChecadorModule } from './checador/checador.module';
+import { TimeCorrectionModule } from './time_correction/time_correction.module';
 
 @Module({
   imports: [
@@ -70,7 +71,8 @@ import { ChecadorModule } from './checador/checador.module';
     EmployeeShiftModule,
     IncidenceCatologueModule,
     EmployeeIncidenceModule,
-    ChecadorModule
+    ChecadorModule,
+    TimeCorrectionModule
   ],
   controllers: [AppController],
   providers: [

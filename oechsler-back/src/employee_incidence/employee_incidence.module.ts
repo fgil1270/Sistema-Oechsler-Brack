@@ -24,7 +24,7 @@ import { MailModule } from '../mail/mail.module';
     MailModule
   ],
   controllers: [EmployeeIncidenceController],
-  providers: [EmployeeIncidenceService],
-  exports: [EmployeeIncidenceService]
+  providers: [EmployeeIncidenceService, EmployeeIncidence],
+  exports: [EmployeeIncidenceService, EmployeeIncidence]
 })
 export class EmployeeIncidenceModule {}
