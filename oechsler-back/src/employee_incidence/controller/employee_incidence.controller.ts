@@ -8,12 +8,13 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 
 import { EmployeeIncidenceService } from '../service/employee_incidence.service';
-import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
+import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -88,4 +89,25 @@ export class EmployeeIncidenceController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.employeeIncidenceService.remove(id);
   }
+}
+
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('reportes de incidencias de empleados')
+@Controller('report/employee-incidence')
+export class ReportEmployeeIncidenceController {
+  constructor(private readonly employeeIncidenceService: EmployeeIncidenceService) {}
+
+  @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos'})
+  @Views('tiempo_compensatorio_repago')
+  @Get()
+  reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
+    
+    if(report.access == 'true'){
+      return true;
+    }else{
+      return this.employeeIncidenceService.reportCompensatoryTime(report, user);
+    }
+      
+  }
+
 }

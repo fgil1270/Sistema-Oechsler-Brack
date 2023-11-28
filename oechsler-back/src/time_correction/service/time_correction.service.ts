@@ -63,6 +63,7 @@ export class TimeCorrectionService {
         return await this.timeCorrectionRepository.save(createCorrection);
     }
 
+    //reporte correccion de tiempo
     async find(data: any, user: any){
         let tipoNomina = data.tipoEmpleado;
         let isAdmin = user.roles.find((role) => {
@@ -226,6 +227,12 @@ export class TimeCorrectionService {
                                 diaAnterior = new Date(index);
                                 diaSiguente = new Date(index); 
                                 break;
+                            case 'TI':
+                                hrEntrada = '02:00:00';  //dia actual 
+                                hrSalida = '23:00:00';  //dia siguiente
+                                diaAnterior = new Date(index);
+                                diaSiguente = new Date(index); 
+                                break;
                         }
 
                     }else{
@@ -254,6 +261,12 @@ export class TimeCorrectionService {
                                 diaAnterior = new Date(index);
                                 diaSiguente = new Date(index); 
                                 break;
+                            case 'TI':
+                                hrEntrada = '02:00:00';  //dia actual 
+                                hrSalida = '23:00:00';  //dia siguiente
+                                diaAnterior = new Date(index);
+                                diaSiguente = new Date(index); 
+                                break;
                         }
                     }
                 }else{
@@ -279,6 +292,12 @@ export class TimeCorrectionService {
                         case 'MIX':
                             hrEntrada = '03:00:00';  //dia actual 
                             hrSalida = '22:00:00';  //dia siguiente
+                            diaAnterior = new Date(index);
+                            diaSiguente = new Date(index); 
+                            break;
+                        case 'TI':
+                            hrEntrada = '02:00:00';  //dia actual 
+                            hrSalida = '23:00:00';  //dia siguiente
                             diaAnterior = new Date(index);
                             diaSiguente = new Date(index); 
                             break;
@@ -431,10 +450,9 @@ export class TimeCorrectionService {
             diasGenerados};
     }
 
+    
     async findByEmployee(data: any, user: any){
         let tipoNomina = data.tipoEmpleado;
-        
-        
         
         //const employees = await this.employeesService.findByNomina(tipoNomina);
         const employees = await this.employeesService.findMore(data.employees.split(',') );

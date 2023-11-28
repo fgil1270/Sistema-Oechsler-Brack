@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, BadGatewayException } from '@nestjs/common';
+import { Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Between } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
+import * as moment from 'moment';
 
 import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
@@ -9,10 +10,9 @@ import { DateEmployeeIncidence } from "../entities/date_employee_incidence.entit
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
+import { ChecadorService } from '../../checador/service/checador.service';
+import { PayrollsService } from '../../payrolls/service/payrolls.service';
 import { MailService } from '../../mail/mail.service';
-import { EmployeeShift } from '../../employee_shift/entities/employee_shift.entity';
-import { Employee } from '../../employees/entities/employee.entity';
-import { Shift } from '../../shift/entities/shift.entity';
 
 
 @Injectable()
@@ -23,6 +23,8 @@ export class EmployeeIncidenceService {
     private incidenceCatologueService: IncidenceCatologueService,
     private employeeService: EmployeesService,
     private employeeShiftService: EmployeeShiftService,
+    @Inject(forwardRef(() => ChecadorService)) private checadorService: ChecadorService,
+    private payRollService: PayrollsService,
     private mailService: MailService
   ) {}
 
@@ -42,7 +44,51 @@ export class EmployeeIncidenceService {
       }
     }
 
-    employee.emps.forEach(async (emp) => {
+    for (let j = 0; j < employee.emps.length; j++) {
+      const element = employee.emps[j];
+
+      let isLeader: boolean = false;
+      user.roles.forEach(role => {
+        if(role.name == 'Jefe de Area' || role.name == 'RH' || role.name == 'Admin'){
+          isLeader = true;
+        }
+      });
+
+      const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
+        employee: employee.emps[j],
+        incidenceCatologue: IncidenceCatologue,
+        descripcion: createEmployeeIncidenceDto.description,
+        total_hour: createEmployeeIncidenceDto.total_hour,
+        start_hour: createEmployeeIncidenceDto.start_hour,
+        end_hour: createEmployeeIncidenceDto.end_hour,
+        date_aproved_leader: isLeader ? new Date() : null,
+        leader: isLeader ? leader.emp : null,
+        status: isLeader ? 'Autorizada' : 'Pendiente',
+        type: createEmployeeIncidenceDto.type, 
+        createdBy: createdBy.emp
+      });
+
+      //ENVIO DE CORREO
+      const mail = await this.mailService.sendEmail(
+        'Incidencia Creada', 
+        `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
+        employeeIncidenceCreate.employee.name
+      );
+      
+      const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
+      
+      for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+        const dateEmployeeIncidence = await this.dateEmployeeIncidenceRepository.create({
+          employeeIncidence: employeeIncidence,
+          date: index
+        }); 
+
+        await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
+      }
+      
+    }
+
+    /* employee.emps.forEach(async (emp) => {
       
       let isLeader: boolean = false;
       user.roles.forEach(role => {
@@ -61,6 +107,7 @@ export class EmployeeIncidenceService {
         date_aproved_leader: isLeader ? new Date() : null,
         leader: isLeader ? leader.emp : null,
         status: isLeader ? 'Autorizada' : 'Pendiente',
+        type: createEmployeeIncidenceDto.type, 
         createdBy: createdBy.emp
       });
 
@@ -82,7 +129,7 @@ export class EmployeeIncidenceService {
         await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
       }
 
-    }); 
+    });  */
 
     
 
@@ -189,7 +236,7 @@ export class EmployeeIncidenceService {
         }
       }
     });
-
+    
     const employeeShift = await this.employeeShiftService.findEmployeeShiftsByDate(startDate, data.ids.split(','));
     
     //se genera arreglo de ids de incidencias
@@ -198,7 +245,7 @@ export class EmployeeIncidenceService {
     //se obtienen los dias de la incidencias
     const dateIncidence = await this.dateEmployeeIncidenceRepository.find({
       where: {
-        employeeIncidence: In(idsIncidence)
+        employeeIncidence: In(idsIncidence) 
       }
     });
 
@@ -361,6 +408,193 @@ export class EmployeeIncidenceService {
       incidences,
       total
     };
+  }
+
+  //report tiempo compensatorio
+  async reportCompensatoryTime(data: any, userLogin: any){
+    
+    console.log(data);
+     
+    let from = format(new Date(data.start_date), 'yyyy-MM-dd')
+    let to = format(new Date(data.end_date), 'yyyy-MM-dd')
+    let isAdmin: boolean = false;
+    let isLeader: boolean = false;
+    let conditions: any;
+    let report: any;
+    let query = '';
+    let dataEmployee = [];
+
+
+    userLogin.roles.forEach(role => {
+      if(role.name == 'Admin' || role.name == 'RH'){
+        isAdmin = true;
+      }
+      if(role.name == 'Jefe de Area' || role.name == 'RH'){
+        isLeader = true;
+      } 
+      
+    });
+
+    if(isAdmin){
+      conditions = {
+      };
+      query = `SELECT * FROM employee AS e
+      `; 
+    }
+
+    if(isLeader){ //leader o jefe de turno
+      conditions = {
+        job: {
+          shift_leader: true
+        },
+        organigramaL: userLogin.idEmployee
+      };
+
+      query = `
+            SELECT * FROM employee AS e
+            INNER JOIN job AS j ON e.jobId = j.id
+            WHERE j.shift_leader = 1 
+            UNION
+            SELECT * FROM employee AS e
+            INNER JOIN organigrama AS o ON e.id = o.employeeId
+            WHERE o.leaderId = ${userLogin.idEmployee}
+            `;
+
+
+    }
+    
+    const employees = await this.employeeIncidenceRepository.query(query);
+
+    for (let i = 0; i < employees.length; i++) {
+      let dataIncidence = [];
+
+      //se realiza la busqueda de incidencias de tiempo compensatorio por empleado y por rango de fechas
+      //y que esten autorizadas 
+      const incidenciaCompensatorio = await this.employeeIncidenceRepository.find({
+        relations: {
+          employee: true,
+          incidenceCatologue: true,
+          dateEmployeeIncidence: true,
+        },
+        where: {
+          employee: {
+            id: employees[i].id
+          }, 
+          dateEmployeeIncidence: {
+            date: Between(from as any, to as any)
+          },
+          status: 'Autorizada',
+          type: In(['Compensatorio', 'Repago']) 
+        },
+        order: {
+          employee: {
+            id: 'ASC'
+          },
+          type: 'ASC'
+        }
+      });
+
+
+      if (incidenciaCompensatorio.length <= 0) {
+        continue;
+        
+      }
+      
+      for (let j = 0; j < incidenciaCompensatorio.length; j++) {
+        
+        
+        let queryShift = `
+            SELECT * FROM employee_shift as es
+            INNER JOIN shift as s ON es.shiftId = s.id
+            WHERE employeeId = ${employees[i].id} and start_date = '${incidenciaCompensatorio[j].dateEmployeeIncidence[0].date}'
+            `;
+
+
+        const employeeShift = await this.employeeIncidenceRepository.query(queryShift);
+        
+        
+        //const employeeShift = await this.employeeShiftService.findEmployeeShiftsByDate(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date, [employees[i].id]);
+        
+
+        let hrEntrada = '';
+        let hrSalida = '';
+        let diaAnterior: any;
+        let diaSiguente: any;
+        let turnoActual = employeeShift[0].code;
+        let nowDate = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+
+        
+        switch (turnoActual) {
+          case 'T1':
+              hrEntrada = '04:00:00'; //dia anterior
+              hrSalida = '23:00:00'; //dia actual
+              diaAnterior = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+              diaSiguente = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+              break;
+          case 'T2':
+              hrEntrada = '03:00:00'; //dia Actual
+              hrSalida = '08:00:00'; //dia siguiente
+              diaAnterior = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+              diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+              break;
+          case 'T3':
+              hrEntrada = '12:00:00';  //dia actual 
+              hrSalida = '23:00:00';  //dia siguiente
+              diaAnterior = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+              diaSiguente = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date); 
+              break;
+          case 'MIX':
+              hrEntrada = '02:00:00';  //dia actual 
+              hrSalida = '23:00:00';  //dia siguiente
+              diaAnterior = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+              diaSiguente = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date); 
+              break;
+            case 'TI':
+              hrEntrada = '02:00:00';  //dia actual
+              hrSalida = '23:00:00';  //dia siguiente
+              diaAnterior = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+              diaSiguente = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date); 
+              break;
+        }
+        
+        const registrosChecador = await this.checadorService.findbyDate(parseInt(employees[i].id), diaAnterior, diaSiguente, hrEntrada, hrSalida);
+        let firstHr = moment(new Date(registrosChecador[0]?.date));
+        let secondHr = moment(new Date(registrosChecador[registrosChecador.length-1]?.date));
+        let diffHr = secondHr.diff(firstHr, 'hours', true);
+        let hrsTotales = incidenciaCompensatorio[j].total_hour - (diffHr > 0? diffHr : 0);
+        
+        dataIncidence.push({
+          fecha: incidenciaCompensatorio[j].dateEmployeeIncidence[0].date, 
+          concepto: incidenciaCompensatorio[j].type, 
+          hrsAutorizadas: incidenciaCompensatorio[j].total_hour, 
+          hrsTrabajadas: diffHr > 0? diffHr.toFixed(2) : 0, 
+          hrsTotales: hrsTotales.toFixed(2) ,
+        });
+        
+      }
+
+
+      //se obtiene el tipo de nomina del empleado
+      const payroll = await this.payRollService.findOne(employees[i].payRollId);
+
+
+      dataEmployee.push({
+        id: employees[i].id,
+        name: employees[i].name + ' ' + employees[i].paternal_surname + ' ' + employees[i].maternal_surname,
+        fecha: dataIncidence,
+        nomina: payroll.payroll.name,
+      });
+
+      
+
+    }
+
+    
+
+    
+    return dataEmployee;
+
+
   }
 
   async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, user: any) {

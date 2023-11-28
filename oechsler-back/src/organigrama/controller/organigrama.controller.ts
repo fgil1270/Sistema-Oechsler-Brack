@@ -5,6 +5,7 @@ import {
   Body, 
   Put, 
   Param, 
+  Query,
   Delete,
   UseGuards,
   ParseIntPipe
@@ -13,9 +14,10 @@ import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 
 import { OrganigramaService } from '../service/organigrama.service';
-import { CreateOrganigramaDto } from '../dto/create-organigrama.dto';
+import { CreateOrganigramaDto, OrganigramaGerarquia } from '../dto/create-organigrama.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Organigrama')
@@ -46,6 +48,12 @@ export class OrganigramaController {
   @Get('/leaders/:id')
   findLiders(@Param('id', ParseIntPipe) id: number) {
     return this.organigramaService.findLeader(id);
+  }
+
+  @ApiOperation({ summary: 'Buscar gerarquia organigrama'})
+  @Get('/leaders/gerarquia/organigrama')
+  findGerarquia(@Query() gerarquia: OrganigramaGerarquia, @CurrentUser() user: any) {
+    return this.organigramaService.findGerarquia(gerarquia, user);
   }
 
   @ApiOperation({ summary: 'Actualizar organigrama'})

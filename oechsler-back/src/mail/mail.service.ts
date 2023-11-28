@@ -25,7 +25,8 @@ export class MailService {
             },
         }) 
         .then((success) => {
-        console.log('correcto:', success)
+        //console.log('correcto:', success);
+        return true;
         })
         .catch((err) => {
             return true;

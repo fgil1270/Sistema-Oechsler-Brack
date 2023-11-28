@@ -42,6 +42,9 @@ export class EmployeeIncidence {
     @Column({ type: 'date', nullable: true })
     date_canceled: Date;
 
+    @Column({ type: 'varchar', nullable: true })
+    type: string;
+
     @CreateDateColumn()
     created_at: Date;
 

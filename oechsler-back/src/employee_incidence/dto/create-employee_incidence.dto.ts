@@ -66,6 +66,30 @@ export class CreateEmployeeIncidenceDto {
     @IsString()
     @ApiProperty({ description: 'Estatus de la incidencia' })
     status?: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ description: 'Tipo de Incidencia (Compensatorio, Repago)' })
+    type?: string;
 }
 
 export class UpdateEmployeeIncidenceDto extends PartialType(CreateEmployeeIncidenceDto) {}
+
+export class ReportEmployeeIncidenceDto {
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Acceso a la vista tiempo compensatorio y repago' })
+    access: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Fecha de inicio del reporte' })
+    start_date: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Fecha de fin del reporte' })
+    end_date: string;
+
+    
+}

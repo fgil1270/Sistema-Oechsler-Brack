@@ -497,6 +497,19 @@ export class EmployeesService {
       emps
     };
   }
+  
+  //BUSCA LOS EMPLEADOS QUE NO ESTEN DENTRO DEL RANGO DE IDS 
+  //PARA LA RELACION EN EL ORGANIGRAMA
+  async findLeaders(ids: any) {
+
+    const leaders = await this.employeeRepository.find({
+      where: {
+        id: Not(In(ids))
+      },
+    });
+
+    return leaders;
+  }
 
   async update(id: number, updateEmployeeDto: CreateEmployeeDto) {
     const emp = await this.employeeRepository.findOneBy({id});
@@ -529,16 +542,4 @@ export class EmployeesService {
     return await this.employeeRepository.softDelete(id);
   }
 
-  //BUSCA LOS EMPLEADOS QUE NO ESTEN DENTRO DEL RANGO DE IDS 
-  //PARA LA RELACION EN EL ORGANIGRAMA
-  async findLeaders(ids: any) {
-
-    const leaders = await this.employeeRepository.find({
-      where: {
-        id: Not(In(ids))
-      },
-    });
-
-    return leaders;
-  }
 }

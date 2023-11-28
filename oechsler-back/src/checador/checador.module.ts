@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ChecadorController } from './controller/checador.controller';
@@ -16,7 +16,7 @@ import { IncidenceCatologueModule } from '..//incidence_catologue/incidence_cato
     ]),
     EmployeesModule,
     EmployeeShiftModule,
-    EmployeeIncidenceModule,
+    forwardRef( () => EmployeeIncidenceModule),
     IncidenceCatologueModule
   ],
   providers: [ChecadorService],

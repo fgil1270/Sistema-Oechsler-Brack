@@ -145,7 +145,7 @@ export class UsersService {
     async updatePassword(id: number, password: string){
         const user = await this.findOne(id);
         let newPaswword = "";
-        console.log(password);
+        
         if (user) {
             await this.hashPassword(password).then((x) => {
                 newPaswword = x

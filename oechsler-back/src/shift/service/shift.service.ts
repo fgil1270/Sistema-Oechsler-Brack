@@ -27,8 +27,16 @@ export class ShiftService {
   }
 
   async findAll() {
-    const total = await this.shiftRepository.count();
-    const shifts = await this.shiftRepository.find();
+    const total = await this.shiftRepository.count({
+      where:{
+        special: false
+      }
+    });
+    const shifts = await this.shiftRepository.find({
+      where:{
+        special: false
+      }
+    });
     
     if (!shifts) {
       throw new NotFoundException(`Shifts not found`);

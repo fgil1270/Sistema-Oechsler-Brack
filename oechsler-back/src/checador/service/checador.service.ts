@@ -2,7 +2,7 @@
 https://docs.nestjs.com/providers#services
 */
 
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common';
 import { LessThanOrEqual, MoreThanOrEqual, Repository, Between, Double, Decimal128 } from 'typeorm';
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
@@ -21,7 +21,7 @@ export class ChecadorService {
         @InjectRepository(Checador) private checadorRepository: Repository<Checador>,
         private readonly employeesService: EmployeesService,
         private readonly employeeShiftService: EmployeeShiftService,
-        private readonly employeeIncidenceService: EmployeeIncidenceService,
+        @Inject(forwardRef(() => EmployeeIncidenceService)) private employeeIncidenceService: EmployeeIncidenceService,
         private readonly incidenceCatalogueService: IncidenceCatologueService
     ){}
 
@@ -66,7 +66,8 @@ export class ChecadorService {
     }
 
     //buscar registros de entrada y salida por ids de empleado y rango de fechas
-    async findbyDate(id: number, start: any, end: any, hrEntrada: string, hrSalida: string){
+    async findbyDate(id: any, start: any, end: any, hrEntrada: any, hrSalida: any){
+        
         const checador = await this.checadorRepository.find( {
             where: { 
                 employee: {
@@ -89,6 +90,9 @@ export class ChecadorService {
                 date: 'ASC'
             } 
         });
+        
+
+        
         return checador;
     }
 
@@ -120,6 +124,8 @@ export class ChecadorService {
             let eventDays = [];
             let totalHrsRequeridas = 0;
             let totalHrsTrabajadas = 0;
+            let totalHrsTrabajadasyExtra = 0;
+            let total
             let totalHrsExtra = 0;
             
             let i = 0;
@@ -133,7 +139,7 @@ export class ChecadorService {
                 
                
                 const employeeShif = await this.employeeShiftService.findMore(dataDate, `${iterator.id}`);
-                //console.log('turno de empleado: ', employeeShif.events);
+                
 
                 if(employeeShif.events.length == 0){
                     continue;
@@ -145,18 +151,6 @@ export class ChecadorService {
                 let startTimeShift = moment(new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`), 'HH:mm');
                 let endTimeShift = moment(new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`), 'HH:mm');
                
-               /*  if(iterator.id == 1907){
-                    
-                    let diaUno =moment(new Date('2023-10-09 21:30:00'), 'HH:mm:ss');
-                    let diaUnoFin =moment(new Date('2023-10-10 06:59:59'), 'HH:mm:ss');
-                    let diaDos =moment('2023-10-09T00:00:00', 'HH:mm:ss');
-                    let diaDosFin =moment('2023-10-09T06:00:00', 'HH:mm:ss');
-                    console.log('diff turno 3 inicio: ', diaUnoFin.diff(diaUno, 'hours', true));
-                    console.log('diff turno 3 fin: ', diaDosFin.diff(diaDos, 'hours', true) );
-                    
-                } */
-               
-
                 if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T3') {
                     hrEntrada = '20:00:00';
                     hrSalida = '08:59:00';
@@ -171,10 +165,6 @@ export class ChecadorService {
                 
                 let diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
                 totalHrsRequeridas += diffTimeShift >= 0 ? diffTimeShift : 0;
- 
-                /* console.log('startTimeShift', startTimeShift);
-                console.log('endTimeShift', moment(employeeShif.events[0]?.endTimeshift, 'HH:mm').add(1, 'day')); */
-
                 
                 //se obtienen los registros del dia
                 const registrosChecador = await this.checadorRepository.find({
@@ -308,6 +298,7 @@ export class ChecadorService {
             }
 
             totalHrsTrabajadas = totalHrsTrabajadas - totalHrsExtra;
+            totalHrsTrabajadasyExtra = totalHrsTrabajadas + totalHrsExtra
             
             registros.push({
                 idEmpleado: iterator.id,
@@ -318,7 +309,7 @@ export class ChecadorService {
                 date: eventDays,
                 horasEsperadas: totalHrsRequeridas.toFixed(2),
                 horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas
-                convertir: moment.utc(totalHrsTrabajadas*168*24*60*60*1000).format('HH:mm'),
+                horasTrabajadasyExtra: totalHrsTrabajadasyExtra.toFixed(2),
                 horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('H.mm'),
                 //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
             });
@@ -327,7 +318,6 @@ export class ChecadorService {
             
         }
 
-        //console.log(registros);
         return {
             registros,
             diasGenerados};

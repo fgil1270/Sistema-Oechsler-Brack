@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { Repository, In, Not, IsNull, Like, Admin } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
-import { CreateOrganigramaDto } from '../dto/create-organigrama.dto';
+import { CreateOrganigramaDto, OrganigramaGerarquia } from '../dto/create-organigrama.dto';
 import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { UsersService } from '../../users/service/users.service';
@@ -81,9 +81,9 @@ export class OrganigramaService {
     };
   }
 
-  
+  //SE OBTIENEN LOS LIDERES DEL EMPLEADO
   async findLeader(id: number) {
-    //SE OBTIENEN LOS LIDERES DEL EMPLEADO
+    
     const leaders = await this.organigramaRepository.find({
       relations: {
         leader: true,
@@ -176,6 +176,61 @@ export class OrganigramaService {
       throw new NotFoundException(`Organigrama #${id} not found`);
     }
     return {org};
+  }
+
+  async findGerarquia(data: OrganigramaGerarquia, user: any){
+    
+    try {
+      
+      const levelOne = await this.organigramaRepository.find({
+        relations: {
+          employee: true,
+          leader: true
+        },
+        where: {
+          leader: In([user.idEmployee]) 
+        }
+      });
+      
+      if(data.type == 'Normal'){
+        const userLogin = await this.organigramaRepository.find({
+          relations: {
+            employee: true,
+            leader: true
+          },
+          where: {
+            employee: In([user.idEmployee]) 
+          }
+        });
+        levelOne.push(...userLogin);
+        return levelOne;
+      }
+
+      let idsEmployees = [];
+
+      for (let index = 0; index < levelOne.length; index++) {
+        idsEmployees.push(levelOne[index].employee.id);
+        
+      }
+
+      const levelTwo = await this.organigramaRepository.find({
+        relations: {
+          employee: true,
+          leader: true
+        },
+        where: {
+          leader: In(idsEmployees) 
+        },
+        
+      });
+
+      levelTwo.push(...levelOne);
+      return levelTwo;
+
+    } catch (error) {
+      console.log(error.message);
+    }
+    
   }
 
   async update(id: number, updateOrganigramaDto: CreateOrganigramaDto) {

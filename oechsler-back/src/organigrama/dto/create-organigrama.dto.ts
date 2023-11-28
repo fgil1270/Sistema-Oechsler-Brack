@@ -19,3 +19,20 @@ export class CreateOrganigramaDto {
 }
 
 export class UpdateOrganigramaDto extends PartialType(CreateOrganigramaDto) {}
+
+export class OrganigramaGerarquia {
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Tipo de organigrama' })
+    type: string;
+
+    @IsString()
+    @ApiProperty({ description: 'Fecha de Inicio' })
+    startDate?: string; 
+
+    @IsString()
+    @ApiProperty({ description: 'Fecha Final' })
+    endDate?: string;
+
+
+}
