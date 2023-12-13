@@ -57,7 +57,9 @@ export class OrganigramaService {
     return await this.organigramaRepository.save(org);
   }
 
-  async findAll() {
+  async findAll(user: any) {
+    let isAdmin = user.roles.some((role) => role.name === 'Admin' || role.name === 'RH');
+    let isJefeTurno = user.roles.some((role) => role.name === 'Jefe de Turno');
     const total = await this.organigramaRepository.count();
     const orgs = await this.organigramaRepository.find({
       relations: {
@@ -71,12 +73,19 @@ export class OrganigramaService {
         },
       }
     });
-    
+    let query = `
+            SELECT * FROM employee AS e
+            INNER JOIN job AS j ON e.jobId = j.id
+            INNER JOIN department AS d On e.departmentId = d.id
+            WHERE j.shift_leader = 1
+            `;
+    const visibleJefeTurno = await this.organigramaRepository.query(query);
+    console.log(visibleJefeTurno);
     if (!orgs) {
       throw new NotFoundException(`Organigrama not found`);
     }
     return {
-      total: total,
+      total: orgs.length ,
       orgs: orgs
     };
   }
@@ -178,10 +187,21 @@ export class OrganigramaService {
     return {org};
   }
 
-  async findGerarquia(data: OrganigramaGerarquia, user: any){
-    
+  async findJerarquia(data: OrganigramaGerarquia, user: any){
+
     try {
-      
+      //se verifica si el usuario logueado tiene role de Admin o RH
+      //si es asi se obtienen todos los empleados
+      let isAdmin = user.roles.some((role) => role.name === 'Admin' || role.name === 'RH');
+      let employees = [];
+      if(isAdmin){
+        const levelOne = await this.employeeService.findAll();
+        levelOne.emps.forEach(element => {
+          employees.push(element);
+        });
+        return employees;
+      }
+
       const levelOne = await this.organigramaRepository.find({
         relations: {
           employee: true,
@@ -191,25 +211,24 @@ export class OrganigramaService {
           leader: In([user.idEmployee]) 
         }
       });
+
+      levelOne.forEach(element => {
+        employees.push(element.employee);
+      });
       
       if(data.type == 'Normal'){
-        const userLogin = await this.organigramaRepository.find({
-          relations: {
-            employee: true,
-            leader: true
-          },
-          where: {
-            employee: In([user.idEmployee]) 
-          }
-        });
-        levelOne.push(...userLogin);
-        return levelOne;
+        const userLogin = await this.employeeService.findOne(user.idEmployee);
+
+        //levelOne.employee.push(...userLogin);
+        employees.push(userLogin.emp);
+        
+        return employees;
       }
 
       let idsEmployees = [];
 
-      for (let index = 0; index < levelOne.length; index++) {
-        idsEmployees.push(levelOne[index].employee.id);
+      for (let index = 0; index < employees.length; index++) {
+        idsEmployees.push(employees[index].id);
         
       }
 
@@ -224,8 +243,13 @@ export class OrganigramaService {
         
       });
 
-      levelTwo.push(...levelOne);
-      return levelTwo;
+      levelTwo.forEach(element => {
+        employees.push(element.employee);
+      });
+      
+      //levelTwo.push(...levelOne);
+
+      return employees;
 
     } catch (error) {
       console.log(error.message);

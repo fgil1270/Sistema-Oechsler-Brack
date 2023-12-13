@@ -12,6 +12,7 @@ import { EmployeeShiftService } from '../../employee_shift/service/employee_shif
 import { EmployeesService } from '../../employees/service/employees.service';
 import { ChecadorService } from '../../checador/service/checador.service';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
+import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 
 import { read } from 'xlsx';
 
@@ -26,7 +27,8 @@ export class TimeCorrectionService {
         private readonly employeeShiftService: EmployeeShiftService,
         private readonly employeesService: EmployeesService,
         private readonly checadorService: ChecadorService,
-        private readonly incidenceCatalogueService: IncidenceCatologueService
+        private readonly incidenceCatalogueService: IncidenceCatologueService,
+        private readonly organigramaService: OrganigramaService
     ) {}
 
     async create(data: CreateTimeCorrectionDto){
@@ -66,20 +68,18 @@ export class TimeCorrectionService {
     //reporte correccion de tiempo
     async find(data: any, user: any){
         let tipoNomina = data.tipoEmpleado;
-        let isAdmin = user.roles.find((role) => {
-            if(role.name == 'Admin'){
-                return true;
-            }else{
-                return false;
-            }
-        });
-        let isJefeTurno = user.roles.find((role) => {
-            if(role.name == 'Jefe de turno'){
-                return true;
-            }else{
-                return false;
-            }
-        });
+        let isAdmin = user.roles.some((role) => role.name === 'Admin' || role.name === 'RH');
+        
+        let isJefeTurno = user.roles.some((role) => role.name === 'Jefe de turno');
+
+        let organigrama = await this.organigramaService.findJerarquia({
+            type: data.type,
+            startDate : '',
+            endDate: ''
+        }, user);
+
+        
+        //return organigrama;
 
         let query= `SELECT * FROM employee AS e
         INNER JOIN organigrama AS o ON e.id = o.employeeId
@@ -129,7 +129,8 @@ export class TimeCorrectionService {
         }
         
         //se recorre el arreglo de empleados
-        for (const iterator of employees.emps) {
+        //employees.emps
+        for (const iterator of organigrama) {
             let eventDays = [];
             let totalHrsRequeridas = 0;
             let totalHrsTrabajadas = 0;
@@ -452,6 +453,7 @@ export class TimeCorrectionService {
 
     
     async findByEmployee(data: any, user: any){
+        console.log('find',data);
         let tipoNomina = data.tipoEmpleado;
         
         //const employees = await this.employeesService.findByNomina(tipoNomina);
@@ -459,6 +461,7 @@ export class TimeCorrectionService {
         let registros = [];
         let diasGenerados = [];
         let empleados = [];
+        
         // Perform a union operation using a raw query
         
        /*  const results = await this.timeCorrectionRepository.query(query);
@@ -499,7 +502,6 @@ export class TimeCorrectionService {
                 const nowDate = new Date(index);
                 const employeeShif = await this.employeeShiftService.findMore(dataDate, `${iterator.id}`);
                 
-
                 
                 //se obtienen las incidencias del dia
                 const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
@@ -508,7 +510,10 @@ export class TimeCorrectionService {
                     ids: `${iterator.id}`,
                 });
 
-                
+                console.log('turno', employeeShif);
+                console.log(dataDate);
+                console.log('incidencias', incidencias);
+
                 if(employeeShif.events.length == 0){
                     continue;
                 }
@@ -535,6 +540,7 @@ export class TimeCorrectionService {
                 const employeeShifSiguiente = await this.employeeShiftService.findMore(dataDateSiguiente, `${iterator.id}`);
                 let turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
                 let turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
+                console.log('turno', turnoActual, turnoAnterior, turnoSiguiente);
 
                 //turno actual es igual al turno del dia anterior
                 if(turnoActual == turnoAnterior){
@@ -627,6 +633,7 @@ export class TimeCorrectionService {
 
                 const registrosChecadorNuevo = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
 
+                console.log('checadas', registrosChecadorNuevo);
 
                 
                 //se verifica si el dia anterior para el turno 1 es el mismo turno

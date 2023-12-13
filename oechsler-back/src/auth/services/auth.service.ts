@@ -41,6 +41,7 @@ export class AuthService {
                 id: user.id, 
                 username: user.name, 
                 idEmployee: user.employee.id,
+                employeeNumber: user.employee.employee_number,
                 //roles: user.roles.map( r => r.name),
                 roles: roles
             };

@@ -79,7 +79,7 @@ export class ReportEmployeeIncidenceDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: 'Acceso a la vista tiempo compensatorio y repago' })
-    access: string;
+    access?: string;
 
     @IsNotEmpty()
     @IsString()
@@ -91,5 +91,29 @@ export class ReportEmployeeIncidenceDto {
     @ApiProperty({ description: 'Fecha de fin del reporte' })
     end_date: string;
 
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Tipo de Jerarquia' })
+    type: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Status de las incidencias' })
+    status: string;
+
+
+    
+}
+
+export class ReportEmployeeVacationDto {
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Accion que se realizara(solicitud de acceso)' })
+    action: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Fecha de inicio del reporte' })
+    start_date: string;
     
 }

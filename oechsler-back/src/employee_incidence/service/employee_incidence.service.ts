@@ -4,7 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
 
-import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
+import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeVacationDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
 import { DateEmployeeIncidence } from "../entities/date_employee_incidence.entity";
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
@@ -12,6 +12,7 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
 import { ChecadorService } from '../../checador/service/checador.service';
 import { PayrollsService } from '../../payrolls/service/payrolls.service';
+import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { MailService } from '../../mail/mail.service';
 
 
@@ -25,6 +26,7 @@ export class EmployeeIncidenceService {
     private employeeShiftService: EmployeeShiftService,
     @Inject(forwardRef(() => ChecadorService)) private checadorService: ChecadorService,
     private payRollService: PayrollsService,
+    private organigramaService: OrganigramaService,
     private mailService: MailService
   ) {}
 
@@ -54,6 +56,10 @@ export class EmployeeIncidenceService {
         }
       });
 
+      if(employee.emps[j].id == user.idEmployee){
+        isLeader = false;
+      }
+
       const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
         employee: employee.emps[j],
         incidenceCatologue: IncidenceCatologue,
@@ -69,11 +75,11 @@ export class EmployeeIncidenceService {
       });
 
       //ENVIO DE CORREO
-      const mail = await this.mailService.sendEmail(
+      /* const mail = await this.mailService.sendEmail(
         'Incidencia Creada', 
         `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
         employeeIncidenceCreate.employee.name
-      );
+      ); */
       
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
       
@@ -308,19 +314,33 @@ export class EmployeeIncidenceService {
   }
 
   //buscar por estatus
-  async findIncidencesByStatus(status: string){
+  async findIncidencesByStatus(data: ReportEmployeeIncidenceDto, user: any){
     let whereQuery: any;
-    if(status == 'Todas'){
-      whereQuery = [
-        { status: 'Pendiente' },
-        { status: 'Autorizada' },
-        { status: 'Rechazada' }
-      ]
+    let idsEmployees: any = [];
+    console.log(data);
+    //se obtienen los empleados por organigrama
+    let organigrama = await this.organigramaService.findJerarquia(
+      {
+        type: data.type,
+      },
+      user
+    );
+
+
+    for (let index = 0; index < organigrama.length; index++) {
+      const element = organigrama[index];
+      idsEmployees.push(element.id);
+    }
+
+    if(data.status == 'Todas'){
+      whereQuery = ''
     } else{
       whereQuery = {
-        status: status
+        status: data.status,
+
       }
     }
+    
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -329,15 +349,22 @@ export class EmployeeIncidenceService {
         leader: true,
         createdBy: true,
       },
-      where: whereQuery
+      where: {
+        employee: {
+          id: In(idsEmployees)
+        }, 
+        dateEmployeeIncidence: {
+          date: Between(format(new Date(data.start_date), 'yyyy-MM-dd') , format(new Date(data.end_date), 'yyyy-MM-dd'))
+        }, 
+        ...whereQuery
+      },
+      
     });
 
-    const total =  await this.employeeIncidenceRepository.count({
-      where: whereQuery
-    });
+    const total =  incidences.length;
 
     if(!incidences){
-      throw new NotFoundException(`Incidencias con estatus ${status} no encontradas`);
+      throw new NotFoundException(`Incidencias con estatus ${data.status} no encontradas`);
     }
 
     return {
@@ -594,6 +621,11 @@ export class EmployeeIncidenceService {
     
     return dataEmployee;
 
+
+  }
+
+  //reporte de vacaciones
+  async reportVacation(data: ReportEmployeeVacationDto, user){
 
   }
 

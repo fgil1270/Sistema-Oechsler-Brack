@@ -2,17 +2,21 @@ import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateChecadaDto {
+
     @IsNotEmpty()
-    @IsNumber()
     @ApiProperty({ description: 'Id del empleado' })
-    empleadoId: number;
+    empleadoId?: number;
+
+    @IsString()
+    @ApiProperty({ description: 'Fecha de inicio' })
+    startDate?: string;
 
     @IsNotEmpty()
     @IsString()
-    @ApiProperty({ description: 'Fecha de registro' })
-    fecha: string;
+    @ApiProperty({ description: 'Fecha de fin' })
+    endDate: string;
 
-    @IsNumber()
+    @IsNotEmpty()
     @ApiProperty({ description: 'Numero de registro que proviene del checador' })
     numRegistroChecador?:number;
 
@@ -21,15 +25,25 @@ export class CreateChecadaDto {
     comment?: string;
 
     @IsNotEmpty()
-    @IsNumber()
     @ApiProperty({ description: 'Id del empleado que crea el registro' })
-    createdBy: number;
+    createdBy?: number;
 
     @IsNotEmpty()
     @IsString()
-    @ApiProperty({ description: 'Hora de entrada o salida' })
-    time: string;
+    @ApiProperty({ description: 'Hora de entrada' })
+    startTime: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Hora de salida' })
+    endTime: string;
+
+    @IsString()
+    @ApiProperty({ description: 'Estatus de la hora' })
+    status: string;
 
 }
 
 export class UpdateChecadaDto extends PartialType(CreateChecadaDto) {}
+
+

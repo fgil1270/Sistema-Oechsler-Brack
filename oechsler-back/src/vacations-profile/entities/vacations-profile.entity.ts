@@ -8,6 +8,7 @@ import {
     OneToMany
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
+import { VacationsProfileDetail } from './vacations-profile-detail.entity';
 
 @Entity()
 export class VacationsProfile {
@@ -43,5 +44,8 @@ export class VacationsProfile {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => VacationsProfileDetail, post => post.vacationProfile)
+    vacationProfileDetail: VacationsProfileDetail[];
 
 }

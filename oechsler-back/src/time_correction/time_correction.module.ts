@@ -11,6 +11,7 @@ import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
 import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catologue.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { ChecadorModule } from '../checador/checador.module';
+import { OrganigramaModule } from '../organigrama/organigrama.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { ChecadorModule } from '../checador/checador.module';
     EmployeeShiftModule,
     IncidenceCatologueModule,
     EmployeesModule,
-    ChecadorModule
+    ChecadorModule,
+    OrganigramaModule
   ],
   providers: [TimeCorrectionService],
   controllers: [TimeCorrectionController],

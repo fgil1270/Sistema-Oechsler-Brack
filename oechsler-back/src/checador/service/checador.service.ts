@@ -8,7 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
 
-import { CreateChecadaDto } from '../dto/create-checada.dto';
+import { CreateChecadaDto, UpdateChecadaDto } from '../dto/create-checada.dto';
 import { Checador } from '../entities/checador.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
@@ -27,7 +27,7 @@ export class ChecadorService {
 
     async create(createChecadaDto: CreateChecadaDto){
 
-        const date = format(new Date(createChecadaDto.fecha), 'yyyy-MM-dd');
+        const date = format(new Date(createChecadaDto.startDate), 'yyyy-MM-dd');
 
         const employee = await this.employeesService.findOne(createChecadaDto.empleadoId);
         if(!employee){
@@ -42,21 +42,25 @@ export class ChecadorService {
        
         const checada = await this.checadorRepository.create(
             {
-                date: new Date(createChecadaDto.fecha + ' ' + createChecadaDto.time),
+                date: new Date(createChecadaDto.startDate + ' ' + createChecadaDto.startTime),
                 employee: employee.emp,
                 createdBy: userCreate.emp,
                 numRegistroChecador: createChecadaDto.numRegistroChecador,
             }
         );
         
-        
+        //se valida que exista un comentario
         if(createChecadaDto.comment != ''){
             checada.comment = createChecadaDto.comment;
+        }
+        if(createChecadaDto.status != ''){
+            checada.status = createChecadaDto.status;
+
         }
 
         const checadaSave = await this.checadorRepository.save(checada);
 
-        return checadaSave;     
+        return checada;     
 
               
     }
@@ -73,10 +77,10 @@ export class ChecadorService {
                 employee: {
                     id: id,
                     employeeShift: {
-                        start_date: format(start, 'yyyy-MM-dd') as any,
+                        start_date: format(new Date(start), 'yyyy-MM-dd') as any,
                     }
                 },
-                date: Between(format(start, `yyyy-MM-dd ${hrEntrada}`) as any, format(end, `yyyy-MM-dd ${hrSalida}`) as any)
+                date: Between(format(new Date(start), `yyyy-MM-dd ${hrEntrada}`) as any, format(new Date(end), `yyyy-MM-dd ${hrSalida}`) as any)
             },
             relations: {
                 employee: {
@@ -91,7 +95,7 @@ export class ChecadorService {
             } 
         });
         
-
+        console.log(checador);
         
         return checador;
     }
@@ -325,8 +329,29 @@ export class ChecadorService {
 
     }
 
-    async update(id: CreateChecadaDto){
+    async update(data: UpdateChecadaDto, id: number){
+        const checada = await this.checadorRepository.findOne({
+            where: {
+                id: id,
+            }
+        });
 
+        if(!checada){
+            throw new NotFoundException(`Registro de Entrada o Salida no encontrado`);
+        }
+        const createdBy = await this.employeesService.findOne(data.createdBy);
+
+        if(data.startDate != ''){
+            checada.date = new Date(data.startDate + ' ' + data.startTime);
+        }
+        
+        checada.comment = data.comment != '' ? data.comment : null;
+        checada.status = data.status; 
+        checada.createdBy = createdBy.emp;
+
+        console.log(checada);
+
+        return await this.checadorRepository.save(checada);
     }
 
     async remove(id: number){

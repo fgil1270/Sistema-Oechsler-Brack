@@ -35,6 +35,7 @@ export class TimeCorrectionController {
   @Views('correccion_tiempo')
   @Get()
   reportNomipaq(@Query() data:any, @CurrentUser() user: any){
+    console.log(data);
     return this.timeCorrectionService.find(data, user);
   }
 

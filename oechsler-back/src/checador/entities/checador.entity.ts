@@ -31,6 +31,8 @@ export class Checador {
     @ManyToOne(() => Employee, post => post.employeeChecadasCreateBy)
     @JoinColumn()
     createdBy: Employee;
-
+    
+    @Column({ type: 'varchar', nullable: true })
+    status: string;
 }
 

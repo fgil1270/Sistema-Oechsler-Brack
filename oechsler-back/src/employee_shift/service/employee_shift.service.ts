@@ -347,7 +347,7 @@ export class EmployeeShiftService {
 
   //se obtienen los turnos de los empleados(array de ids), por dia
   async findMore(data: any, ids: any) {
-    
+
     const from = format(new Date(data.start), 'yyyy-MM-dd');
     const to = format(new Date(data.end), 'yyyy-MM-dd'); 
     //const employees = await this.employeesService.findByEmployeeNumber(ids.split(','));
@@ -376,8 +376,7 @@ export class EmployeeShiftService {
         end_date: LessThanOrEqual(to as any),
       }
     });
-     
-    
+
     const events = employeeShifts.map((employeeShift: any) => {
       let textColor = '#fff';
       if(employeeShift.shift.color == '#faf20f' || employeeShift.shift.color == '#ffdeec'){

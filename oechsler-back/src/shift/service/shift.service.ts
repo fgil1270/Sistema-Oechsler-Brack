@@ -39,7 +39,7 @@ export class ShiftService {
     });
     
     if (!shifts) {
-      throw new NotFoundException(`Shifts not found`);
+      throw new NotFoundException(`Shift not found`);
     }
     return {
       total: total,

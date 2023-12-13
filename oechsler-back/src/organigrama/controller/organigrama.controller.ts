@@ -34,8 +34,8 @@ export class OrganigramaController {
   @ApiOperation({ summary: 'Listar organigrama'})
   @Views('organigrama')
   @Get()
-  findAll() {
-    return this.organigramaService.findAll();
+  findAll(@CurrentUser() user: any) {
+    return this.organigramaService.findAll(user);
   }
 
   @ApiOperation({ summary: 'Buscar organigrama'})
@@ -53,7 +53,7 @@ export class OrganigramaController {
   @ApiOperation({ summary: 'Buscar gerarquia organigrama'})
   @Get('/leaders/gerarquia/organigrama')
   findGerarquia(@Query() gerarquia: OrganigramaGerarquia, @CurrentUser() user: any) {
-    return this.organigramaService.findGerarquia(gerarquia, user);
+    return this.organigramaService.findJerarquia(gerarquia, user);
   }
 
   @ApiOperation({ summary: 'Actualizar organigrama'})
