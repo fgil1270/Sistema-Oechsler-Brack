@@ -20,6 +20,7 @@ import { EmployeeShift } from "../../employee_shift/entities/employee_shift.enti
 import { EmployeeIncidence } from "../../employee_incidence/entities/employee_incidence.entity";
 import { Checador } from "../../checador/entities/checador.entity";
 import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
+import { VacationsProfileSpecial} from "../../vacations-profile/entities/vacations-profile-special.entity";
 
 @Entity()
 export class Employee {
@@ -174,4 +175,8 @@ export class Employee {
 
     @OneToMany(() => Checador, (post) => post.createdBy)
     employeeChecadasCreateBy: Checador[];
+
+    @OneToMany(() => VacationsProfileSpecial, (post) => post.employee)
+    vacationProfileSpecial: VacationsProfileSpecial[];
+    
 }
