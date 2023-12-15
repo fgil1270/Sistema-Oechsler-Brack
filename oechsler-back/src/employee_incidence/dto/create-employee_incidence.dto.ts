@@ -105,15 +105,3 @@ export class ReportEmployeeIncidenceDto {
     
 }
 
-export class ReportEmployeeVacationDto {
-    @IsNotEmpty()
-    @IsString()
-    @ApiProperty({ description: 'Accion que se realizara(solicitud de acceso)' })
-    action: string;
-
-    @IsNotEmpty()
-    @IsString()
-    @ApiProperty({ description: 'Fecha de inicio del reporte' })
-    start_date: string;
-    
-}

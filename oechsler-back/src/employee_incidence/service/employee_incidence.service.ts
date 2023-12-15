@@ -4,7 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
 
-import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeVacationDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
+import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
 import { DateEmployeeIncidence } from "../entities/date_employee_incidence.entity";
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
@@ -624,10 +624,7 @@ export class EmployeeIncidenceService {
 
   }
 
-  //reporte de vacaciones
-  async reportVacation(data: ReportEmployeeVacationDto, user){
 
-  }
 
   async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, user: any) {
 

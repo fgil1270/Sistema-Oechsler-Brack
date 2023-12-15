@@ -20,7 +20,8 @@ import { EmployeeShift } from "../../employee_shift/entities/employee_shift.enti
 import { EmployeeIncidence } from "../../employee_incidence/entities/employee_incidence.entity";
 import { Checador } from "../../checador/entities/checador.entity";
 import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
-import { VacationsProfileSpecial} from "../../vacations-profile/entities/vacations-profile-special.entity";
+import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";       
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 
 @Entity()
 export class Employee {
@@ -176,7 +177,10 @@ export class Employee {
     @OneToMany(() => Checador, (post) => post.createdBy)
     employeeChecadasCreateBy: Checador[];
 
-    @OneToMany(() => VacationsProfileSpecial, (post) => post.employee)
-    vacationProfileSpecial: VacationsProfileSpecial[];
+    @OneToMany(() => LogAdjustmentVacation, (post) => post.employee)
+    logAdjustmentVacationEmployee: LogAdjustmentVacation[];
+
+    @OneToMany(() => LogAdjustmentVacation, (post) => post.leader)
+    logAdjustmentVacationLeader: LogAdjustmentVacation[];
     
 }

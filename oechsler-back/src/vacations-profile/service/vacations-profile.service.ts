@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
@@ -8,7 +8,8 @@ import { VacationsProfile } from "../entities/vacations-profile.entity";
 @Injectable()
 export class VacationsProfileService {
   constructor(
-    @InjectRepository(VacationsProfile) private vacationsProfileRepository: Repository<VacationsProfile>
+    @InjectRepository(VacationsProfile) private vacationsProfileRepository: Repository<VacationsProfile>,
+    
   ){}
 
   async create(createVacationsProfileDto: CreateVacationsProfileDto) {
@@ -41,6 +42,9 @@ export class VacationsProfileService {
 
   async findOne(id: number) {
     const vacationsProfile = await this.vacationsProfileRepository.findOne({
+      relations: {
+        vacationProfileDetail: true
+      },
       where: {
         id: id
       }
@@ -75,4 +79,5 @@ export class VacationsProfileService {
   async remove(id: number) {
     return await this.vacationsProfileRepository.softDelete(id);
   }
+
 }

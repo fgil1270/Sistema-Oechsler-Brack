@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { readFile, readFileSync , writeFile } from "fs";
 import { read, utils } from "xlsx";
+import { format } from 'date-fns';
+import * as moment from 'moment';
 
 import { CreateEmployeeDto } from '../dto/create-employee.dto';
 import { Employee } from "../entities/employee.entity";
@@ -12,6 +14,8 @@ import { PayrollsService } from '../../payrolls/service/payrolls.service';
 import { VacationsProfileService } from '../../vacations-profile/service/vacations-profile.service';
 import { EmployeeProfilesService } from '../../employee-profiles/service/employee-profiles.service';
 import { join } from 'path';
+import { OrganigramaService } from '../../organigrama/service/organigrama.service';
+
 
 @Injectable()
 export class EmployeesService {
@@ -22,6 +26,7 @@ export class EmployeesService {
     private payrollsService: PayrollsService,
     private vacationsProfileService: VacationsProfileService,
     private employeeProfilesService: EmployeeProfilesService,
+    private organigramaService: OrganigramaService
   ){}
 
   
@@ -540,6 +545,63 @@ export class EmployeesService {
       throw new NotFoundException(`Employee #${id} not found`);
     }
     return await this.employeeRepository.softDelete(id);
+  }
+
+  async vacationReport(data, user){
+    
+    const employee = await this.organigramaService.findJerarquia(
+      {
+        type: data.type,
+        startDate: '',
+        endDate: '',
+      },
+      user
+    ); 
+
+    let report = [];
+    for (let index = 0; index < employee.length; index++) {
+      const emp = employee[index];
+      let row = {};
+      let ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
+      let diaConsulta = moment(new Date(data.startDate)); //dia de consulta del reporte
+      let anoCumplidos = diaConsulta.diff(ingreso, 'years', true); // años cumplidos al dia del reporte
+      let finAno = moment(new Date(new Date(data.startDate).getFullYear(), 11, 31)); //fin de año
+      let anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
+      let vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
+      //se calculan los dias de vacaciones al dia de la consulta
+      let arrayAno = anoCumplidos.toFixed(2).split('.');
+      let objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]) );
+      let objDiasBysiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0? parseInt(arrayAno[0]) + 1  : 1));
+      let totalDiasByAno = objDiasByAno? objDiasByAno.total: 0; 
+      let sumDiasSiguenteAno = ((parseInt(arrayAno[1])/100) * objDiasBysiguenteAno.day);
+      let sumaDiasAntiguedad = (totalDiasByAno + sumDiasSiguenteAno);
+      //se calculan los dias de vacaciones a fin de año
+      let arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
+      let objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayFinAno[0]) );
+      let objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0? parseInt(arrayFinAno[0]) + 1  : 1));
+      let totalDiasByFinAno = objDiasByAnoFin? objDiasByAnoFin.total: 0;
+      let sumDiasSiguenteAnoFin = ((parseInt(arrayFinAno[1])/100) * objDiasBysiguenteAnoFin.day);
+      let sumaDiasAntiguedadFin = (totalDiasByFinAno + sumDiasSiguenteAnoFin);
+
+      
+      row['id'] = emp.id;
+      row['perfil'] = emp.employeeProfile.name;
+      row['num_employee'] = emp.employee_number;
+      row['nombre'] = emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
+      row['ingreso'] = emp.date_employment;
+      row['anos_cumplidos'] = anoCumplidos.toFixed(2); //años cumplidos
+      row['anos_fin_ano'] = anoCumplidosFinAno.toFixed(2); //años cumplidos hasta fin de año
+      row['dias_antiguedad_fin_ano'] = sumaDiasAntiguedadFin.toFixed(2); //dias proporcionales por antiguedad hasta fin de año
+      row['dias_antiguedad'] = sumaDiasAntiguedad.toFixed(2); //dias proporcionales por antiguedad
+      row['dias_utilizados_all_years'] = 0; //dias utilizados(todos los años)
+      row['dias_disponibles_dia_hoy'] = 0; //dias disponibles al dia de hoy
+      row['dias_disponibles_fin_ano'] = 0; //dias disponibles hasta fin de año
+      report.push(row);
+      
+    }
+
+    
+    return report;
   }
 
 }

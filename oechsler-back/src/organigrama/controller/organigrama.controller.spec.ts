@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrganigramaController } from './organigrama.controller';
-import { OrganigramaService } from './organigrama.service';
+import { OrganigramaService } from '../service/organigrama.service';
 
 describe('OrganigramaController', () => {
   let controller: OrganigramaController;

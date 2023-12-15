@@ -6,6 +6,7 @@ import {
   Put, 
   Param, 
   Delete,
+  Query,
   UseGuards,
   ParseIntPipe,
   UseInterceptors,
@@ -24,7 +25,6 @@ import { CurrentUser } from "../../auth/decorators/current-user.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { User } from "../../users/entities/user.entity";
 import { HttpStatus } from '@nestjs/common';
-
 
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
@@ -108,4 +108,26 @@ export class EmployeesController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.employeesService.remove(id);
   }
+}
+
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Reportes de Vacaciones')
+@Controller('vacations-report')
+export class VacationsReportController {
+  constructor(private readonly employeesService: EmployeesService) {}
+
+  @ApiOperation({ summary: 'Reporte de Vacaciones'})
+  @Views('vacaciones')
+  @Get()
+  report(@Query() data: any, @CurrentUser() user: any) {
+    
+    if(data.action == 'access'){
+      return true;
+    }else if(data.action == 'vacation_report'){
+      return this.employeesService.vacationReport(data, user);
+    }
+    
+  }
+
+ 
 }

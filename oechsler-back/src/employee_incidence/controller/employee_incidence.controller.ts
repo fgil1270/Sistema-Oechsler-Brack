@@ -14,7 +14,7 @@ import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 
 import { EmployeeIncidenceService } from '../service/employee_incidence.service';
-import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto, ReportEmployeeVacationDto } from '../dto/create-employee_incidence.dto';
+import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -116,23 +116,3 @@ export class ReportEmployeeIncidenceController {
 
 }
 
-@UseGuards(AuthGuard('jwt'), RoleGuard)
-@ApiTags('reportes de vacaciones de empleados')
-@Controller('report/vacation')
-export class ReportEmployeeVacationController {
-  constructor(private readonly employeeIncidenceService: EmployeeIncidenceService) {}
-
-  @ApiOperation({ summary: 'Reporte de total de vacaciones'})
-  @Views('vacaciones')
-  @Get()
-  reportVacaciones(@Query() data: ReportEmployeeVacationDto, @CurrentUser() user: any) {
-    
-    if(data.action == 'access'){
-      return true;
-    }else{
-      return this.employeeIncidenceService.reportVacation(data, user);
-    }
-      
-  }
-
-}

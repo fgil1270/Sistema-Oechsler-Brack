@@ -6,6 +6,7 @@ import {
     UpdateDateColumn,
     DeleteDateColumn,
     OneToMany,
+    JoinColumn,
     ManyToOne
 } from 'typeorm';
 import { VacationsProfile } from './vacations-profile.entity';
@@ -34,6 +35,7 @@ export class VacationsProfileDetail {
     deleted_at: Date;
 
     @ManyToOne(() => VacationsProfile, post => post.vacationProfileDetail)
+    @JoinColumn()
     vacationProfile: VacationsProfile;
 
 }

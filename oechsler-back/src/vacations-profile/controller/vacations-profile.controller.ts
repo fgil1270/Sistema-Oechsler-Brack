@@ -7,7 +7,9 @@ import {
   Param, 
   Delete,
   UseGuards,
-  ParseIntPipe
+  ParseIntPipe,
+  Query,
+
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -16,8 +18,9 @@ import { VacationsProfileService } from '../service/vacations-profile.service';
 import { CreateVacationsProfileDto } from '../dto/create-vacations-profile.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Perfiles de vacaciones')
 @Controller('vacations-profile')
 export class VacationsProfileController {
@@ -53,3 +56,5 @@ export class VacationsProfileController {
     return this.vacationsProfileService.remove(id);
   }
 }
+
+

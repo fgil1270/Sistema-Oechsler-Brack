@@ -510,10 +510,6 @@ export class TimeCorrectionService {
                     ids: `${iterator.id}`,
                 });
 
-                console.log('turno', employeeShif);
-                console.log(dataDate);
-                console.log('incidencias', incidencias);
-
                 if(employeeShif.events.length == 0){
                     continue;
                 }
@@ -540,7 +536,7 @@ export class TimeCorrectionService {
                 const employeeShifSiguiente = await this.employeeShiftService.findMore(dataDateSiguiente, `${iterator.id}`);
                 let turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
                 let turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
-                console.log('turno', turnoActual, turnoAnterior, turnoSiguiente);
+                
 
                 //turno actual es igual al turno del dia anterior
                 if(turnoActual == turnoAnterior){
@@ -633,8 +629,6 @@ export class TimeCorrectionService {
 
                 const registrosChecadorNuevo = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
 
-                console.log('checadas', registrosChecadorNuevo);
-
                 
                 //se verifica si el dia anterior para el turno 1 es el mismo turno
                 //se toman los horarios de entra del segundo Turno pero si son distintos
@@ -699,9 +693,6 @@ export class TimeCorrectionService {
                     continue;
                 }
 
-                
-                
-
                 registros.push({
                     id: iterator.id,
                     employee_number: iterator.employee_number,
@@ -729,15 +720,11 @@ export class TimeCorrectionService {
                 if(incidenciaVac){
                     diffDate = diffTimeShift;
                 }
-                
-                
+
 
                 //se calcula las horas trabajadas y hrs extra
                 calculoHrsExtra += (diffDate - diffTimeShift) <= 0 ?  0: (diffDate - diffTimeShift);
-               
-                
-                
-                
+
                 totalHrsTrabajadas += diffDate >= 0? diffDate : 0;
 
                 /* eventDays.push({
@@ -747,8 +734,7 @@ export class TimeCorrectionService {
                 }); */
 
                 i++;
-                
-                
+
                
             }
 

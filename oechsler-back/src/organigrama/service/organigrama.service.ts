@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like, Admin } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
@@ -11,8 +11,8 @@ import { UsersService } from '../../users/service/users.service';
 export class OrganigramaService {
   constructor(
     @InjectRepository(Organigrama) private organigramaRepository: Repository<Organigrama>,
-    private employeeService: EmployeesService,
-    private userService: UsersService
+    @Inject(forwardRef(() => EmployeesService)) private employeeService: EmployeesService,
+    @Inject(forwardRef(() => UsersService)) private userService: UsersService
   ){}
 
   async create(createOrganigramaDto: CreateOrganigramaDto) {
