@@ -32,7 +32,6 @@ export class ChecadorController {
     @ApiOperation({ summary: 'Crear registro de entrada o salida del empleado' })
     @Post()
     create(@Body() createChecadaDto: CreateChecadaDto){
-        console.log(createChecadaDto);
         return this.checadorService.create(createChecadaDto);
     }
 

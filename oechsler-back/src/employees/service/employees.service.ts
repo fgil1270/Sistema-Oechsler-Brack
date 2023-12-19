@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like } from "typeorm";
+import { Repository, In, Not, IsNull, Like, MoreThanOrEqual } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { readFile, readFileSync , writeFile } from "fs";
 import { read, utils } from "xlsx";
@@ -26,7 +26,7 @@ export class EmployeesService {
     private payrollsService: PayrollsService,
     private vacationsProfileService: VacationsProfileService,
     private employeeProfilesService: EmployeeProfilesService,
-    private organigramaService: OrganigramaService
+    private organigramaService: OrganigramaService,
   ){}
 
   
@@ -405,6 +405,7 @@ export class EmployeesService {
   }
 
   async findOne(id: number) {
+
     const emp = await this.employeeRepository.findOne({
       where: {
         id: id
@@ -422,6 +423,7 @@ export class EmployeesService {
       }
         
     });
+
     if (!emp) {
       throw new NotFoundException(`Employee #${id} not found`);
     }
@@ -554,10 +556,10 @@ export class EmployeesService {
         type: data.type,
         startDate: '',
         endDate: '',
-      },
+      }, 
       user
     ); 
-
+ 
     let report = [];
     for (let index = 0; index < employee.length; index++) {
       const emp = employee[index];
@@ -567,7 +569,27 @@ export class EmployeesService {
       let anoCumplidos = diaConsulta.diff(ingreso, 'years', true); // años cumplidos al dia del reporte
       let finAno = moment(new Date(new Date(data.startDate).getFullYear(), 11, 31)); //fin de año
       let anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
-      let vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
+      
+      
+      const vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
+      
+      
+      let dayUsedAllYears = 0;
+      const adjustmentVacation = await this.employeeRepository.findOne({
+        where: {
+          logAdjustmentVacationEmployee: {
+            employee: {
+              id: emp.id
+            }
+          }
+        },
+        relations: {
+         logAdjustmentVacationEmployee: true
+        }
+      });
+      //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
+      
+
       //se calculan los dias de vacaciones al dia de la consulta
       let arrayAno = anoCumplidos.toFixed(2).split('.');
       let objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]) );
@@ -583,7 +605,69 @@ export class EmployeesService {
       let sumDiasSiguenteAnoFin = ((parseInt(arrayFinAno[1])/100) * objDiasBysiguenteAnoFin.day);
       let sumaDiasAntiguedadFin = (totalDiasByFinAno + sumDiasSiguenteAnoFin);
 
-      
+      //se obtienen las incidencias de vacaciones
+      const incidenciaVacaciones = await this.employeeRepository.findOne({
+        where: {
+          id: emp.id,
+          employeeIncidence: {
+            incidenceCatologue: {
+              code: In(['Vac', 'VacM', 'VAC'])
+            },
+            status: 'Autorizada'
+          }
+        },
+        relations: {
+          employeeIncidence: {
+            incidenceCatologue: true,
+            dateEmployeeIncidence: true
+          }
+        }
+      });
+
+
+      //si no existe ajuste
+      //se realiza el calculo con las incidencias
+      if(!adjustmentVacation){
+        
+        dayUsedAllYears = incidenciaVacaciones? incidenciaVacaciones.employeeIncidence[0].dateEmployeeIncidence.length: 0; //total de vacaciones
+      }else{
+        //si existe ajuste toma el valor del ajuste
+        //y toma las incidencias posteriores al dia de ajuste 
+        //y sumas las cantidades
+        
+        let totalDiasIncidencia = 0;
+        const newIncidence = await this.employeeRepository.findOne({
+          relations: {
+            employeeIncidence: {
+              dateEmployeeIncidence: true
+            }
+          },
+          where: {
+            id: emp.id,
+            employeeIncidence: {
+              dateEmployeeIncidence: {
+                date: MoreThanOrEqual(format(new Date(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length-1].created_at), 'yyyy-MM-dd') as any)
+              },
+              status: 'Autorizada',
+              
+            }
+          }
+        });
+
+        if(newIncidence){
+          
+          for (let index = 0; index < newIncidence.employeeIncidence.length; index++) {
+            const element = newIncidence.employeeIncidence[index];
+            totalDiasIncidencia += element.dateEmployeeIncidence.length
+
+          }
+        }
+        
+        dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length-1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
+        
+      }
+
+       
       row['id'] = emp.id;
       row['perfil'] = emp.employeeProfile.name;
       row['num_employee'] = emp.employee_number;
@@ -593,9 +677,9 @@ export class EmployeesService {
       row['anos_fin_ano'] = anoCumplidosFinAno.toFixed(2); //años cumplidos hasta fin de año
       row['dias_antiguedad_fin_ano'] = sumaDiasAntiguedadFin.toFixed(2); //dias proporcionales por antiguedad hasta fin de año
       row['dias_antiguedad'] = sumaDiasAntiguedad.toFixed(2); //dias proporcionales por antiguedad
-      row['dias_utilizados_all_years'] = 0; //dias utilizados(todos los años)
-      row['dias_disponibles_dia_hoy'] = 0; //dias disponibles al dia de hoy
-      row['dias_disponibles_fin_ano'] = 0; //dias disponibles hasta fin de año
+      row['dias_utilizados_all_years'] = dayUsedAllYears.toFixed(2); //dias utilizados(todos los años)
+      row['dias_disponibles_dia_hoy'] = (sumaDiasAntiguedad - dayUsedAllYears).toFixed(2); //dias disponibles al dia de hoy
+      row['dias_disponibles_fin_ano'] = (sumaDiasAntiguedadFin - dayUsedAllYears).toFixed(2); //dias disponibles hasta fin de año
       report.push(row);
       
     }

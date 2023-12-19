@@ -27,11 +27,10 @@ import { EmployeeIncidenceModule } from './employee_incidence/employee_incidence
 import config from "./config";
 import { ChecadorModule } from './checador/checador.module';
 import { TimeCorrectionModule } from './time_correction/time_correction.module';
-import { Log_adjustment_vacationModule } from './log_adjustment_vacation/log_adjustment_vacation.module';
+import { LogAdjustmentVacationModule } from './log_adjustment_vacation/log_adjustment_vacation.module';
 
 @Module({
-  imports: [
-        Log_adjustment_vacationModule, 
+  imports: [ 
     MailModule,
     ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
@@ -74,7 +73,8 @@ import { Log_adjustment_vacationModule } from './log_adjustment_vacation/log_adj
     IncidenceCatologueModule,
     EmployeeIncidenceModule,
     ChecadorModule,
-    TimeCorrectionModule
+    TimeCorrectionModule,
+    LogAdjustmentVacationModule
   ],
   controllers: [AppController],
   providers: [

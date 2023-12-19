@@ -80,7 +80,7 @@ export class OrganigramaService {
             WHERE j.shift_leader = 1
             `;
     const visibleJefeTurno = await this.organigramaRepository.query(query);
-    console.log(visibleJefeTurno);
+    
     if (!orgs) {
       throw new NotFoundException(`Organigrama not found`);
     }
@@ -204,7 +204,13 @@ export class OrganigramaService {
 
       const levelOne = await this.organigramaRepository.find({
         relations: {
-          employee: true,
+          employee: {
+            department: true, 
+            job: true, 
+            payRoll: true, 
+            vacationProfile: true, 
+            employeeProfile: true
+          },
           leader: true
         },
         where: {
@@ -234,7 +240,13 @@ export class OrganigramaService {
 
       const levelTwo = await this.organigramaRepository.find({
         relations: {
-          employee: true,
+          employee: {
+            department: true, 
+            job: true, 
+            payRoll: true, 
+            vacationProfile: true, 
+            employeeProfile: true
+          },
           leader: true
         },
         where: {

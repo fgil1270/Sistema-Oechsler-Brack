@@ -30,8 +30,8 @@ export class LogAdjustmentVacationController {
 
     @ApiOperation({ summary: 'Crear ajuste de vacaciones'})
     @Post()
-    create(@Body() createLogAdjustmentVacationDto: CreateLogAdjustmentVacationDto) {
-        return this.logAdjustmentVacationService.create(createLogAdjustmentVacationDto);
+    create(@Body() createLogAdjustmentVacationDto: CreateLogAdjustmentVacationDto, @CurrentUser() user: User) {
+        return this.logAdjustmentVacationService.create(createLogAdjustmentVacationDto, user);
     }
 
     @ApiOperation({ summary: 'Listar ajustes de vacaciones'})
@@ -48,8 +48,7 @@ export class LogAdjustmentVacationController {
 
     @ApiOperation({ summary: 'Listar ajustes de vacaciones por X parametro'})
     @Get('/search/adjustmentVacation')
-    findby(@Query() data: UpdateLogAdjustmentVacationDto) {
-        
+    findby(@Query() data: any) {
         return this.logAdjustmentVacationService.findby(data);
     }
 

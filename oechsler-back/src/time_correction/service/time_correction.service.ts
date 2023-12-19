@@ -453,7 +453,7 @@ export class TimeCorrectionService {
 
     
     async findByEmployee(data: any, user: any){
-        console.log('find',data);
+
         let tipoNomina = data.tipoEmpleado;
         
         //const employees = await this.employeesService.findByNomina(tipoNomina);

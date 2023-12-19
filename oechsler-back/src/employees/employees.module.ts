@@ -24,8 +24,8 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
     VacationsProfileModule,
     EmployeeProfilesModule,
     forwardRef(() => UsersModule),
-    OrganigramaModule
-    
+    OrganigramaModule,
+        
   ],
   controllers: [EmployeesController, VacationsReportController],
   providers: [EmployeesService],

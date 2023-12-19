@@ -317,7 +317,7 @@ export class EmployeeIncidenceService {
   async findIncidencesByStatus(data: ReportEmployeeIncidenceDto, user: any){
     let whereQuery: any;
     let idsEmployees: any = [];
-    console.log(data);
+
     //se obtienen los empleados por organigrama
     let organigrama = await this.organigramaService.findJerarquia(
       {
@@ -440,8 +440,7 @@ export class EmployeeIncidenceService {
   //report tiempo compensatorio
   async reportCompensatoryTime(data: any, userLogin: any){
     
-    console.log(data);
-     
+
     let from = format(new Date(data.start_date), 'yyyy-MM-dd')
     let to = format(new Date(data.end_date), 'yyyy-MM-dd')
     let isAdmin: boolean = false;

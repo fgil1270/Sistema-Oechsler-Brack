@@ -17,9 +17,9 @@ export class LogAdjustmentVacationService {
         private employeeService: EmployeesService,
     ){}
 
-    async create(createLogAdjustmentVacationDto: CreateLogAdjustmentVacationDto) {
-        const emp = await this.employeeService.findOne(createLogAdjustmentVacationDto.id_empoyee);
-        const leader = await this.employeeService.findOne(createLogAdjustmentVacationDto.id_leader);
+    async create(createLogAdjustmentVacationDto: CreateLogAdjustmentVacationDto, user: any) {
+        const emp = await this.employeeService.findOne(createLogAdjustmentVacationDto.id_employee);
+        const leader = await this.employeeService.findOne(user.idEmployee);
         const logAdjustmentVacation = this.logAdjustmentVacationRepository.create(createLogAdjustmentVacationDto);
         
         logAdjustmentVacation.employee = emp.emp;
@@ -58,23 +58,24 @@ export class LogAdjustmentVacationService {
         };
     }
 
-    async findby(data: UpdateLogAdjustmentVacationDto) {
+    async findby(data: any) {
+
         const logAdjustmentVacations = await this.logAdjustmentVacationRepository.find({
             relations: {
-                employee: true
+                employee: true,
+                leader: true
             },
             where: {
                 employee: {
-                    id: data.id_empoyee
+                    id: data.id_employee
                 }
             }
         });
         if (!logAdjustmentVacations) {
-            throw new NotFoundException(`Log Adjustment Vacation #${data.id_empoyee} not found`);
+            throw new NotFoundException(`Log Adjustment Vacation #${data.id_employee} not found`);
         }
-        return {
-            logAdjustmentVacations
-        };
+        
+        return logAdjustmentVacations;
     }
 
     async update(id: number, updateLogAdjustmentVacationDto: CreateLogAdjustmentVacationDto) {

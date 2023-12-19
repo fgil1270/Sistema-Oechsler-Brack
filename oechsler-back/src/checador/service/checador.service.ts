@@ -95,8 +95,6 @@ export class ChecadorService {
             } 
         });
         
-        console.log(checador);
-        
         return checador;
     }
 
@@ -348,8 +346,6 @@ export class ChecadorService {
         checada.comment = data.comment != '' ? data.comment : null;
         checada.status = data.status; 
         checada.createdBy = createdBy.emp;
-
-        console.log(checada);
 
         return await this.checadorRepository.save(checada);
     }

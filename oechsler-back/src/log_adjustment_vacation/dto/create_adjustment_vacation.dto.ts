@@ -5,7 +5,7 @@ export class CreateLogAdjustmentVacationDto {
     @IsNotEmpty()
     @IsNumber()
     @ApiProperty({ description: 'Id del empleado' })
-    id_empoyee: number;
+    id_employee: number;
 
     @IsNumber()
     @ApiProperty({ description: 'Id del leader' })

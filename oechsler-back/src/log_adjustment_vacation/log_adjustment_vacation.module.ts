@@ -22,4 +22,4 @@ import { EmployeesModule } from '../employees/employees.module';
     providers: [ LogAdjustmentVacationService ],
     exports: [ LogAdjustmentVacationService ]
 })
-export class Log_adjustment_vacationModule { }
+export class LogAdjustmentVacationModule { }
