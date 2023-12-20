@@ -604,6 +604,7 @@ export class EmployeesService {
       let totalDiasByFinAno = objDiasByAnoFin? objDiasByAnoFin.total: 0;
       let sumDiasSiguenteAnoFin = ((parseInt(arrayFinAno[1])/100) * objDiasBysiguenteAnoFin.day);
       let sumaDiasAntiguedadFin = (totalDiasByFinAno + sumDiasSiguenteAnoFin);
+      let totalDiasVacacionesMedioDia = 0;
 
       //se obtienen las incidencias de vacaciones
       const incidenciaVacaciones = await this.employeeRepository.findOne({
@@ -624,22 +625,45 @@ export class EmployeesService {
         }
       });
 
+      const incidenciaVacacionesMedioDia = await this.employeeRepository.count({
+        where: {
+          id: emp.id,
+          employeeIncidence: {
+            incidenceCatologue: {
+              code: In(['VacM'])
+            },
+            status: 'Autorizada'
+          }
+        },
+        relations: {
+          employeeIncidence: {
+            incidenceCatologue: true,
+            dateEmployeeIncidence: true
+          }
+        }
+      });
+
+      if(incidenciaVacacionesMedioDia > 0){
+        totalDiasVacacionesMedioDia = incidenciaVacacionesMedioDia * 0.5;
+      }
 
       //si no existe ajuste
       //se realiza el calculo con las incidencias
       if(!adjustmentVacation){
         
-        dayUsedAllYears = incidenciaVacaciones? incidenciaVacaciones.employeeIncidence[0].dateEmployeeIncidence.length: 0; //total de vacaciones
+        dayUsedAllYears = incidenciaVacaciones? Number(incidenciaVacaciones.employeeIncidence[0].dateEmployeeIncidence.length) + Number(totalDiasVacacionesMedioDia): 0; //total de vacaciones
       }else{
         //si existe ajuste toma el valor del ajuste
         //y toma las incidencias posteriores al dia de ajuste 
         //y sumas las cantidades
         
         let totalDiasIncidencia = 0;
-        const newIncidence = await this.employeeRepository.findOne({
+        //vacaciones normales y adelantadas
+        const newIncidenceNormales = await this.employeeRepository.findOne({
           relations: {
             employeeIncidence: {
-              dateEmployeeIncidence: true
+              dateEmployeeIncidence: true,
+              incidenceCatologue: true
             }
           },
           where: {
@@ -649,16 +673,51 @@ export class EmployeesService {
                 date: MoreThanOrEqual(format(new Date(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length-1].created_at), 'yyyy-MM-dd') as any)
               },
               status: 'Autorizada',
+              incidenceCatologue: {
+                code: In(['Vac', 'VAC'])
+              }
               
             }
           }
         });
 
-        if(newIncidence){
+        //vacaciones medio dia
+        const newIncidenceVacMedioDia = await this.employeeRepository.findOne({
+          relations: {
+            employeeIncidence: {
+              dateEmployeeIncidence: true,
+              incidenceCatologue: true
+            }
+          },
+          where: {
+            id: emp.id,
+            employeeIncidence: {
+              dateEmployeeIncidence: {
+                date: MoreThanOrEqual(format(new Date(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length-1].created_at), 'yyyy-MM-dd') as any)
+              },
+              status: 'Autorizada',
+              incidenceCatologue: {
+                code: In(['VacM'])
+              }
+              
+            }
+          }
+        });
+
+        if(newIncidenceNormales){
           
-          for (let index = 0; index < newIncidence.employeeIncidence.length; index++) {
-            const element = newIncidence.employeeIncidence[index];
+          for (let index = 0; index < newIncidenceNormales.employeeIncidence.length; index++) {
+            const element = newIncidenceNormales.employeeIncidence[index];
             totalDiasIncidencia += element.dateEmployeeIncidence.length
+
+          }
+        }
+
+        if(newIncidenceVacMedioDia){
+          
+          for (let index = 0; index < newIncidenceVacMedioDia.employeeIncidence.length; index++) {
+            const element = newIncidenceVacMedioDia.employeeIncidence[index];
+            totalDiasIncidencia += Number(element.dateEmployeeIncidence.length) * Number(0.5);
 
           }
         }

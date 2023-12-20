@@ -39,6 +39,7 @@ export class EmployeeIncidenceService {
     const startDate = new Date(createEmployeeIncidenceDto.start_date);
     const endDate = new Date(createEmployeeIncidenceDto.end_date);
     const createdBy = await this.employeeService.findOne(user.idEmployee);
+    const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
     
     if(IncidenceCatologue.require_shift){
       for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
@@ -84,6 +85,51 @@ export class EmployeeIncidenceService {
       const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
       
       for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+            
+        ////////////
+        ////////// revisar
+        /////////
+          /* const shift = await this.shiftService.findOne(createEmployeeShiftDto.shiftId); await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
+          
+          //Se obtiene el perfil del empleado
+          
+
+          let weekDaysProfile = employee.emps[j].employeeProfile.work_days.split(',');
+          
+          let dayLetter = weekDays[index.getDay()];
+          let dayLetterProfile = weekDaysProfile.some((day) => day == dayLetter);
+          
+          
+          if(shift.shift.code == 'TI'){
+            dayLetterProfile = true;
+          }
+          //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
+          if(dayLetterProfile){
+
+            //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+            const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
+              index,
+              [employee.emps[j].id]
+            );
+            
+            
+            if(!employeeShiftExist){
+              
+              const employeeShift = this.employeeShiftRepository.create({
+                employee: employee.emp, 
+                shift: shift.shift,
+                start_date: format(index, 'yyyy-MM-dd') as any,
+                end_date: format(index, 'yyyy-MM-dd') as any,
+                pattern: null
+              });
+              
+              await this.employeeShiftRepository.save(employeeShift);
+            }else{
+              employeeShiftExist.shift = shift.shift;
+              
+              await this.employeeShiftRepository.save(employeeShiftExist);
+            }
+          } */
         const dateEmployeeIncidence = await this.dateEmployeeIncidenceRepository.create({
           employeeIncidence: employeeIncidence,
           date: index
@@ -152,6 +198,7 @@ export class EmployeeIncidenceService {
     let startDate = new Date(data.start);
     let from = format(new Date(data.start), 'yyyy-MM-dd')
     let to = format(new Date(data.end), 'yyyy-MM-dd')
+    let tipo = '';
     
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
@@ -166,7 +213,10 @@ export class EmployeeIncidenceService {
         dateEmployeeIncidence: {
           date: Between(from as any, to as any)
         },
-        status: Not('Rechazada')
+        incidenceCatologue: {
+          code: data.code? In(data.code) :  Not('')
+        },
+        status: In(data.status)
       } 
     });
 

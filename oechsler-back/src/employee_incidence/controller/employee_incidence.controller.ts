@@ -18,6 +18,7 @@ import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeI
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { query } from 'express';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Incidencias de empleados')
@@ -50,7 +51,7 @@ export class EmployeeIncidenceController {
     return this.employeeIncidenceService.findIncidencesByStatusDouble(status, approvalDouble);
   }
   
-  //buscar incidencias por status
+  //buscar incidencias por status y
   //rango de fechas
   @ApiOperation({ summary: 'Buscar incidencia por status' })
   @Get('incidences/status/:status')
@@ -62,8 +63,15 @@ export class EmployeeIncidenceController {
   //y por rango de fechas
   @ApiOperation({ summary: 'Listar todas las incidencias por ids de empleados'})
   @Get('incidences/:ids/:start/:end')
-  findAllIncidencesByIdsEmployee(@Param() data: any) {
-    return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(data);
+  findAllIncidencesByIdsEmployee(@Param() data: any, @Query() query: any) {
+    let dataSerach = {
+      ids: data.ids,
+      start: data.start,
+      end: data.end,
+      status: query.status,
+      code: query.code,
+    }
+    return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(dataSerach);
   }
 
   //buscar incidencias del empleado por dia 
