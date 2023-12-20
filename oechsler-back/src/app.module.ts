@@ -1,7 +1,8 @@
+import { MailModule } from './mail/mail.module';
 import { Module } from '@nestjs/common';
 import * as Joi from 'joi';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule} from "@nestjs/config";
+import { ConfigModule } from "@nestjs/config";
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,11 +12,27 @@ import { DatabaseModule } from './database/database.module';
 import { enviroments } from "./enviroments";
 import { RolesModule } from './roles/roles.module';
 import { ViewsModule } from './views/views.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { JobsModule } from './jobs/jobs.module';
+import { PayrollsModule } from './payrolls/payrolls.module';
+import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
+import { EmployeeProfilesModule } from './employee-profiles/employee-profiles.module';
+import { EmployeesModule } from './employees/employees.module';
+import { OrganigramaModule } from './organigrama/organigrama.module';
+import { ShiftModule } from './shift/shift.module';
+import { PatternModule } from './pattern/pattern.module';
+import { EmployeeShiftModule } from './employee_shift/employee_shift.module';
+import { IncidenceCatologueModule } from './incidence_catologue/incidence_catologue.module';
+import { EmployeeIncidenceModule } from './employee_incidence/employee_incidence.module';
 import config from "./config";
+import { ChecadorModule } from './checador/checador.module';
+import { TimeCorrectionModule } from './time_correction/time_correction.module';
+import { LogAdjustmentVacationModule } from './log_adjustment_vacation/log_adjustment_vacation.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ 
+  imports: [ 
+    MailModule,
+    ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
       load: [config],
       isGlobal: true,
@@ -43,8 +60,24 @@ import config from "./config";
     DatabaseModule,
     RolesModule,
     ViewsModule,
+    DepartmentsModule,
+    JobsModule,
+    PayrollsModule,
+    VacationsProfileModule,
+    EmployeeProfilesModule,
+    EmployeesModule,
+    OrganigramaModule,
+    ShiftModule,
+    PatternModule,
+    EmployeeShiftModule,
+    IncidenceCatologueModule,
+    EmployeeIncidenceModule,
+    ChecadorModule,
+    TimeCorrectionModule,
+    LogAdjustmentVacationModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService],
 })
-export class AppModule {}
+export class AppModule { }

@@ -8,8 +8,9 @@ import {
     UpdateDateColumn, 
     DeleteDateColumn 
 } from "typeorm";
-import { User } from "../../users/entity/user.entity";
+import { User } from "../../users/entities/user.entity";
 import { View } from "../../views/entities/view.entity";
+import { IncidenceCatologue } from '../../incidence_catologue/entities/incidence_catologue.entity';
 
 @Entity()
 export class Role {
@@ -36,5 +37,9 @@ export class Role {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @ManyToMany(() => IncidenceCatologue, (incidenceCatologue) => incidenceCatologue.roles)
+    IncidencesCatologue: IncidenceCatologue[];
+    
     
 }

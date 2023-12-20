@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository, In, Not, IsNull } from "typeorm";
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Repository, In, Not, IsNull, Like } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { CreateViewDto } from '../dto/create-view.dto';
@@ -14,6 +14,15 @@ export class ViewsService {
   ) {}
 
   async create(createModuleDto: CreateViewDto) {
+    const viewtExist = await this.viewRepository.findOne({
+      where: {
+        name: Like(`%${createModuleDto.name}%`)
+      }
+    });
+
+    if (viewtExist?.id) {
+      throw new BadRequestException(`La Vista ya existe`);
+    }
     const mod = this.viewRepository.create(createModuleDto);
     return await this.viewRepository.save(mod);
   }
@@ -65,6 +74,7 @@ export class ViewsService {
       },
       withDeleted: true
     });
+    
     if (!view) {
       throw new NotFoundException(`View #${id} not found`);
     }
@@ -93,6 +103,8 @@ export class ViewsService {
     let roles: any;
     let rolesView: any[] = [];
     
+    // SI EDIT ES TRUE AGREGA NUEVO ROLE
+    // DE LO CONTRARIO LO QUITA
     if (updateModuleDto.edit === true) {
         view.view.roles.forEach((role) => {
           

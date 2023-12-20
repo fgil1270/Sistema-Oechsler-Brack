@@ -3,12 +3,15 @@ import {
     Column, 
     PrimaryGeneratedColumn, 
     ManyToMany,
+    ManyToOne,
     JoinTable,
+    JoinColumn,
     CreateDateColumn,
     UpdateDateColumn, 
     DeleteDateColumn
 } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
+import { Employee } from '../../employees/entities/employee.entity';
 
 @Entity()
 export class User {
@@ -34,6 +37,11 @@ export class User {
         }
     })
     roles: Role[];
+
+    @ManyToOne(() => Employee, post => post.userId)
+    @JoinColumn()
+    employee: Employee;
+
 
     //@CreateDateColumn({nullable: true})
     @CreateDateColumn()

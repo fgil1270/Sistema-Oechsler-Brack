@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository, UpdateResult, DeleteResult, IsNull, Not } from 'typeorm';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Repository, UpdateResult, DeleteResult, IsNull, Not, Like } from 'typeorm';
 import { InjectRepository } from "@nestjs/typeorm";
 import * as bcrypt from "bcrypt";
 
@@ -16,6 +16,15 @@ export class RolesService {
   ) {}
 
   async create(createRoleDto: CreateRoleDto) {
+    const roleExist = await this.roleRepository.findOne({
+      where: {
+        name: Like(`%${createRoleDto.name}%`)
+      }
+    });
+
+    if (roleExist?.id) {
+      throw new BadRequestException(`El Departamento ya existe`);
+    }
     const role = await this.roleRepository.create(createRoleDto);
 
     return await this.roleRepository.save(role);
@@ -23,7 +32,11 @@ export class RolesService {
 
   async findAll() {
     const total = await this.roleRepository.count();
-    const roles = await this.roleRepository.find();
+    const roles = await this.roleRepository.find({
+      relations: {
+          views: true
+      }
+  });
     if (!roles) {
       throw new NotFoundException(`Roles not found`);
     }
