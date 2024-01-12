@@ -20,7 +20,8 @@ import { EmployeeShift } from "../../employee_shift/entities/employee_shift.enti
 import { EmployeeIncidence } from "../../employee_incidence/entities/employee_incidence.entity";
 import { Checador } from "../../checador/entities/checador.entity";
 import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
-import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";       
+import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";    
+import { Calendar } from "../../calendar/entities/calendar.entity";   
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 @Entity()
@@ -182,5 +183,8 @@ export class Employee {
 
     @OneToMany(() => LogAdjustmentVacation, (post) => post.leader)
     logAdjustmentVacationLeader: LogAdjustmentVacation[];
+
+    @OneToMany(() => Calendar, (post) => post.created_by)
+    calendar: Calendar[];
     
 }

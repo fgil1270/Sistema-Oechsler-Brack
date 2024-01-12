@@ -28,6 +28,7 @@ import config from "./config";
 import { ChecadorModule } from './checador/checador.module';
 import { TimeCorrectionModule } from './time_correction/time_correction.module';
 import { LogAdjustmentVacationModule } from './log_adjustment_vacation/log_adjustment_vacation.module';
+import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
   imports: [ 
@@ -74,7 +75,8 @@ import { LogAdjustmentVacationModule } from './log_adjustment_vacation/log_adjus
     EmployeeIncidenceModule,
     ChecadorModule,
     TimeCorrectionModule,
-    LogAdjustmentVacationModule
+    LogAdjustmentVacationModule,
+    CalendarModule
   ],
   controllers: [AppController],
   providers: [

@@ -18,7 +18,6 @@ import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeI
 import { Views } from "../../auth/decorators/views.decorator";
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import { query } from 'express';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Incidencias de empleados')

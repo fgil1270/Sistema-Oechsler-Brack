@@ -31,78 +31,53 @@ export class EmployeeIncidenceService {
   ) {}
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
-   
-    let idsEmployees: any = createEmployeeIncidenceDto.id_employee;
-    const IncidenceCatologue = await this.incidenceCatologueService.findOne(createEmployeeIncidenceDto.id_incidence_catologue);
-    const employee = await this.employeeService.findMore(idsEmployees.split(','));
-    const leader = await this.employeeService.findOne(user.idEmployee);
-    const startDate = new Date(createEmployeeIncidenceDto.start_date);
-    const endDate = new Date(createEmployeeIncidenceDto.end_date);
-    const createdBy = await this.employeeService.findOne(user.idEmployee);
-    const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
     
-    if(IncidenceCatologue.require_shift){
-      for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
-        await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
-      }
-    }
-
-    for (let j = 0; j < employee.emps.length; j++) {
-      const element = employee.emps[j];
-
-      let isLeader: boolean = false;
-      user.roles.forEach(role => {
-        if(role.name == 'Jefe de Area' || role.name == 'RH' || role.name == 'Admin'){
-          isLeader = true;
+      let idsEmployees: any = createEmployeeIncidenceDto.id_employee;
+      const IncidenceCatologue = await this.incidenceCatologueService.findOne(createEmployeeIncidenceDto.id_incidence_catologue);
+      const employee = await this.employeeService.findMore(idsEmployees.split(','));
+      const leader = await this.employeeService.findOne(user.idEmployee);
+      const startDate = new Date(createEmployeeIncidenceDto.start_date);
+      const endDate = new Date(createEmployeeIncidenceDto.end_date);
+      const createdBy = await this.employeeService.findOne(user.idEmployee);
+      const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+      let totalDays = 0;
+      
+      /* if(IncidenceCatologue.require_shift){
+        for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+          await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
         }
-      });
+      } */
 
-      if(employee.emps[j].id == user.idEmployee){
-        isLeader = false;
-      }
+      for (let j = 0; j < employee.emps.length; j++) {
+        const element = employee.emps[j];
 
-      const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
-        employee: employee.emps[j],
-        incidenceCatologue: IncidenceCatologue,
-        descripcion: createEmployeeIncidenceDto.description,
-        total_hour: createEmployeeIncidenceDto.total_hour,
-        start_hour: createEmployeeIncidenceDto.start_hour,
-        end_hour: createEmployeeIncidenceDto.end_hour,
-        date_aproved_leader: isLeader ? new Date() : null,
-        leader: isLeader ? leader.emp : null,
-        status: isLeader ? 'Autorizada' : 'Pendiente',
-        type: createEmployeeIncidenceDto.type, 
-        createdBy: createdBy.emp
-      });
+        let isLeader: boolean = false;
+        user.roles.forEach(role => {
+          if(role.name == 'Jefe de Area' || role.name == 'RH' || role.name == 'Admin'){
+            isLeader = true;
+          }
+        });
 
-      //ENVIO DE CORREO
-      /* const mail = await this.mailService.sendEmail(
-        'Incidencia Creada', 
-        `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-        employeeIncidenceCreate.employee.name
-      ); */
-      
-      const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
-      
-      for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
-            
-        ////////////
-        ////////// revisar
-        /////////
-          /* const shift = await this.shiftService.findOne(createEmployeeShiftDto.shiftId); await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
-          
-          //Se obtiene el perfil del empleado
-          
+        if(employee.emps[j].id == user.idEmployee){
+          isLeader = false;
+        }
 
-          let weekDaysProfile = employee.emps[j].employeeProfile.work_days.split(',');
+        for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+
+          let ifCreate = false;
+          let weekDaysProfile = employee.emps[j].employeeProfile.work_days;
           
           let dayLetter = weekDays[index.getDay()];
-          let dayLetterProfile = weekDaysProfile.some((day) => day == dayLetter);
-          
-          
-          if(shift.shift.code == 'TI'){
-            dayLetterProfile = true;
+          let dayLetterProfile = false;
+
+          for (let index = 0; index < weekDaysProfile.length; index++) {
+            const letraPerfil = weekDaysProfile[index];
+            if(letraPerfil == dayLetter){
+              dayLetterProfile = true;
+            }
+            
           }
+
           //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
           if(dayLetterProfile){
 
@@ -111,79 +86,103 @@ export class EmployeeIncidenceService {
               index,
               [employee.emps[j].id]
             );
+            totalDays++;
             
+          }else{
+            //si el dia no pertenece al perfil
+            //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+            let sql = `select * from employee_shift where employeeId = ${employee.emps[j].id} and start_date = '${format(index, 'yyyy-MM-dd')}'`;
+            const employeeShiftExist = await this.employeeIncidenceRepository.query(sql);
             
-            if(!employeeShiftExist){
-              
-              const employeeShift = this.employeeShiftRepository.create({
-                employee: employee.emp, 
-                shift: shift.shift,
-                start_date: format(index, 'yyyy-MM-dd') as any,
-                end_date: format(index, 'yyyy-MM-dd') as any,
-                pattern: null
-              });
-              
-              await this.employeeShiftRepository.save(employeeShift);
-            }else{
-              employeeShiftExist.shift = shift.shift;
-              
-              await this.employeeShiftRepository.save(employeeShiftExist);
+            if(employeeShiftExist.length > 0){
+              totalDays++;
             }
-          } */
-        const dateEmployeeIncidence = await this.dateEmployeeIncidenceRepository.create({
-          employeeIncidence: employeeIncidence,
-          date: index
-        }); 
+           
+            /* const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
+              index,
+              [employee.emps[j].id]
+            ); */
+            
+          }
 
-        await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
-      }
-      
-    }
-
-    /* employee.emps.forEach(async (emp) => {
-      
-      let isLeader: boolean = false;
-      user.roles.forEach(role => {
-        if(role.name == 'Jefe de Area' || role.name == 'RH'){
-          isLeader = true;
+          
         }
-      });
+        
+        const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
+          employee: employee.emps[j],
+          incidenceCatologue: IncidenceCatologue,
+          descripcion: createEmployeeIncidenceDto.description,
+          total_hour: createEmployeeIncidenceDto.total_hour,
+          start_hour: createEmployeeIncidenceDto.start_hour,
+          end_hour: createEmployeeIncidenceDto.end_hour,
+          date_aproved_leader: isLeader ? new Date() : null,
+          leader: isLeader ? leader.emp : null,
+          status: isLeader ? 'Autorizada' : 'Pendiente',
+          type: createEmployeeIncidenceDto.type, 
+          createdBy: createdBy.emp
+        });
 
-      const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
-        employee: emp,
-        incidenceCatologue: IncidenceCatologue,
-        descripcion: createEmployeeIncidenceDto.description,
-        total_hour: createEmployeeIncidenceDto.total_hour,
-        start_hour: createEmployeeIncidenceDto.start_hour,
-        end_hour: createEmployeeIncidenceDto.end_hour,
-        date_aproved_leader: isLeader ? new Date() : null,
-        leader: isLeader ? leader.emp : null,
-        status: isLeader ? 'Autorizada' : 'Pendiente',
-        type: createEmployeeIncidenceDto.type, 
-        createdBy: createdBy.emp
-      });
+        //ENVIO DE CORREO
+        /* const mail = await this.mailService.sendEmail(
+          'Incidencia Creada', 
+          `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
+          employeeIncidenceCreate.employee.name
+        ); */
 
-      //ENVIO DE CORREO
-      const mail = await this.mailService.sendEmail(
-        'Incidencia Creada', 
-        `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-        employeeIncidenceCreate.employee.name
-      );
-      
-      const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
-      
-      for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
-        const dateEmployeeIncidence = await this.dateEmployeeIncidenceRepository.create({
-          employeeIncidence: employeeIncidence,
-          date: index
-        }); 
+        
+        const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
+        
+        for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
+              
+          ////////////
+          ////////// revisar
+          /////////
+                  
+          //Se obtiene el perfil del empleado
+         
+          let ifCreate = false;
+          let weekDaysProfile = employee.emps[j].employeeProfile.work_days;
+          
+          let dayLetter = weekDays[index.getDay()];
+          let dayLetterProfile = false;
+          for (let index = 0; index < weekDaysProfile.length; index++) {
+            const letraPerfil = weekDaysProfile[index];
+            if(letraPerfil == dayLetter){
+              dayLetterProfile = true;
+            }
+            
+          }
+          //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
+          if(dayLetterProfile){
 
-        await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
+            //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+            ifCreate = true;
+          }else{
+            //si el dia no pertenece al perfil
+            //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+            let sql = `select * from employee_shift where employeeId = ${employee.emps[j].id} and start_date = '${format(index, 'yyyy-MM-dd')}'`;
+            const employeeShiftExist = await this.employeeIncidenceRepository.query(sql);
+            
+            if(employeeShiftExist.length > 0){
+              ifCreate = true;
+            }
+            
+            
+          }
+          //si el dia tiene turno crea la incidencia en el dia
+          if(ifCreate){
+            const dateEmployeeIncidence = await this.dateEmployeeIncidenceRepository.create({
+              employeeIncidence: employeeIncidence,
+              date: index
+            }); 
+  
+            await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
+          }
+
+          
+        }
+        
       }
-
-    });  */
-
-    
 
     return ;
   }
@@ -221,8 +220,45 @@ export class EmployeeIncidenceService {
     });
 
     let i = 0;
-    
-    const incidencesEmployee = incidences.map(incidence => {
+    let newIncidences = [];
+    console.log(incidences[0].dateEmployeeIncidence);
+
+    incidences.forEach(incidence => {
+      let textColor = '#fff';
+
+      if(incidence.incidenceCatologue.color == '#faf20f' || incidence.incidenceCatologue.color == '#ffdeec'){
+        textColor = '#000';
+      }
+
+      incidence.dateEmployeeIncidence.forEach(date => {
+        i++;
+
+        newIncidences.push({
+          id: i,
+          incidenceId: incidence.id,
+          resourceId: incidence.employee.id,
+          title: incidence.incidenceCatologue.name,
+          code: incidence.incidenceCatologue.code,
+          codeBand: incidence.incidenceCatologue.code_band,
+          reportNomina: incidence.incidenceCatologue.repor_nomina,
+          description: incidence.descripcion,
+          total_hour: incidence.total_hour,
+          start: date.date,
+          end: date.date,
+          backgroundColor: incidence.incidenceCatologue.color,
+          unique_day: incidence.incidenceCatologue.unique_day,
+          textColor: textColor,
+          status: incidence.status
+        });
+        
+      });
+
+      
+
+    });
+
+
+    /* const incidencesEmployee = incidences.map(incidence => {
       i++;
       let textColor = '#fff';
       if(incidence.incidenceCatologue.color == '#faf20f' || incidence.incidenceCatologue.color == '#ffdeec'){
@@ -254,9 +290,9 @@ export class EmployeeIncidenceService {
         textColor: textColor,
         status: incidence.status
       }
-    });
+    }); */
     
-    return incidencesEmployee;
+    return newIncidences;
   }
 
   //se obtienen las incidencias de los empleados por dia

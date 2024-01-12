@@ -146,6 +146,7 @@ export class EmployeesService {
     let totalEdit = 0;
     let totalNew = 0;
     let totalError = 0;
+    let errors = [];
     for (let rowNum = 1; rowNum <= range.e.r; rowNum++) {
       
       //for (let colNum = 0; colNum <= 1; colNum++) {
@@ -195,6 +196,10 @@ export class EmployeesService {
           work_term_date === undefined || worker_status === undefined ) {
 
           totalError++;
+          errors.push({
+            id: exNoEmployee.v,
+            error: 'valor vacio'
+          });
           continue;
 
         } else {
@@ -221,6 +226,10 @@ export class EmployeesService {
           const tablePayRoll = await this.payrollsService.findName(nomina.w);
           if(!tablePayRoll){
             totalError++;
+            errors.push({
+              id: exNoEmployee.v,
+              error: 'nomina'
+            });
             continue;
           }
           
@@ -229,6 +238,10 @@ export class EmployeesService {
           const tableVacationProfile = await this.vacationsProfileService.findName(vacationProfile.w);
           if(!tableVacationProfile){
             totalError++;
+            errors.push({
+              id: exNoEmployee.v,
+              error: 'perfil de vacaciones'
+            });
             continue;
           }
           //SE BUSCA EL PERFIL DE EMPLEADO
@@ -236,6 +249,10 @@ export class EmployeesService {
           const tableEmployeeProfile = await this.employeeProfilesService.findOne(profileEmployee.w);
           if(!tableEmployeeProfile){
             totalError++;
+            errors.push({
+              id: exNoEmployee.v,
+              error: 'perfil de empleado'
+            });
             continue;
           }
           
@@ -293,6 +310,10 @@ export class EmployeesService {
             } catch (error) {
               
               totalError++;
+              errors.push({
+                id: exNoEmployee.v,
+                error: 'edita: '+error
+              });
             }
             
           }else{
@@ -342,6 +363,10 @@ export class EmployeesService {
             } catch (error) {
               
               totalError++;
+              errors.push({
+                id: exNoEmployee.v,
+                error: 'se crea: '+error
+              });
             }
             
           }
@@ -352,7 +377,7 @@ export class EmployeesService {
       
     }
     
-    return { total: total, edit: totalEdit, new: totalNew, error: totalError };
+    return { total: total, edit: totalEdit, new: totalNew, error: totalError, empleados: errors };
     
   }
   
