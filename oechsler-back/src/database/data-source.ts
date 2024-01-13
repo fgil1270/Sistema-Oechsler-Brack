@@ -2,15 +2,15 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 
 export const dataSourceOptions:  DataSourceOptions= {
   type: 'mysql',
-  host: '127.0.0.1',
+  host: 'localhost',
   port: 3306,
   username: 'root',
   password: 'root',
   database: 'db_oechsler',
   logging: false,
   synchronize: false,
-  entities: ['src/**/*.entity.ts'],
-  migrations: ['src/database/migrations/*.ts'],
+  entities: ['dist/**/*.entity.{ts,js}'],
+  migrations: ['dist/database/migrations/*.{ts,js}'],
   migrationsTableName: 'migrations',
   
 }
