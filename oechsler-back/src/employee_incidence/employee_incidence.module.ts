@@ -2,7 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EmployeeIncidenceService } from './service/employee_incidence.service';
-import { EmployeeIncidenceController, ReportEmployeeIncidenceController } from './controller/employee_incidence.controller';
+import { EmployeeIncidenceController, ReportEmployeeIncidenceController, ReportFlexTimeController } from './controller/employee_incidence.controller';
 import { EmployeeIncidence } from './entities/employee_incidence.entity';
 import { DateEmployeeIncidence } from './entities/date_employee_incidence.entity';
 import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catologue.module';
@@ -29,7 +29,7 @@ import { MailModule } from '../mail/mail.module';
     OrganigramaModule,
     MailModule
   ],
-  controllers: [EmployeeIncidenceController, ReportEmployeeIncidenceController],
+  controllers: [EmployeeIncidenceController, ReportEmployeeIncidenceController, ReportFlexTimeController],
   providers: [EmployeeIncidenceService, EmployeeIncidence],
   exports: [EmployeeIncidenceService, EmployeeIncidence]
 })

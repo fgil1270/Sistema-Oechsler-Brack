@@ -130,7 +130,7 @@ export class ChecadorService {
             let total
             let totalHrsExtra = 0;
             
-            let i = 0;
+            //let i = 0;
 
             //se recorre el arreglo de dias generados
             for (var index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
@@ -293,7 +293,7 @@ export class ChecadorService {
                     employeeShift: employeeShif.events[0]?.nameShift,
                 });
 
-                i++;
+                //i++;
                 
                 
                  

@@ -48,15 +48,12 @@ export class EmployeeShiftService {
 
         //se realiza for para recorrer los dias seleccionados
         for (let index = new Date(to); index <= new Date(from); index= new Date(index.setDate(index.getDate() + 1))) {
-          
-          
-          
+                
           //SI NO SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
           if(createEmployeeShiftDto.shiftId != 0){
             const shift = await this.shiftService.findOne(createEmployeeShiftDto.shiftId);
             
             //Se obtiene el perfil del empleado
-            
 
             let weekDaysProfile = employee.emp.employeeProfile.work_days;
             
