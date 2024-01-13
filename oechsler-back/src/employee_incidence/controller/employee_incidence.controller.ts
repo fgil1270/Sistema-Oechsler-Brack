@@ -101,7 +101,7 @@ export class EmployeeIncidenceController {
 }
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
-@ApiTags('reportes de incidencias de empleados')
+@ApiTags('Reporte de incidencias de empleados')
 @Controller('report/employee-incidence')
 export class ReportEmployeeIncidenceController {
   constructor(private readonly employeeIncidenceService: EmployeeIncidenceService) {}
@@ -119,7 +119,26 @@ export class ReportEmployeeIncidenceController {
       
   }
 
-  
+}
+
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Reporte Horario Flexible')
+@Controller('report/flex-time')
+export class ReportFlexTimeController {
+  constructor(private readonly employeeIncidenceService: EmployeeIncidenceService) {}
+
+  @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos'})
+  @Views('horario_flexible')
+  @Get()
+  reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
+    console.log("horario flexible");
+    if(report.access == 'true'){
+      return true;
+    }else{
+      return this.employeeIncidenceService.reportFlexTime(report, user);
+    }
+      
+  }
 
 }
 

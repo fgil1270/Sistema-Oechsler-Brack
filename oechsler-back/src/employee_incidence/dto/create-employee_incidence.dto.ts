@@ -78,7 +78,7 @@ export class UpdateEmployeeIncidenceDto extends PartialType(CreateEmployeeIncide
 export class ReportEmployeeIncidenceDto {
     @IsNotEmpty()
     @IsString()
-    @ApiProperty({ description: 'Acceso a la vista tiempo compensatorio y repago' })
+    @ApiProperty({ description: 'true revisa si tiene acceso a la vista, false genera el reporte' })
     access?: string;
 
     @IsNotEmpty()
