@@ -5,9 +5,13 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     DeleteDateColumn,
-    OneToMany
+    OneToMany,
+    ManyToOne,
+    ManyToMany,
+    JoinTable,
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
+import { Competence } from '../../competence/entities/competence.entity';
 
 @Entity()
 export class Job {
@@ -37,4 +41,15 @@ export class Job {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @ManyToMany(() => Competence, (competence) => competence.job)
+    @JoinTable({
+        joinColumn: {
+            name: 'jobId'
+        },
+        inverseJoinColumn: {
+            name: 'competenceId'
+        }
+    })
+    competence: Competence[];
 }

@@ -1,16 +1,28 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from "@nestjs/typeorm";
+
 import { CompetenceController } from './controller/competence.controller';
 import { CompetenceService } from './service/competence.service';
-/*
-https://docs.nestjs.com/modules
-*/
-
-import { Module } from '@nestjs/common';
+import { Competence } from './entities/competence.entity';
+import { TypeCompetence } from './entities/type_competence.entity';
+import { TypeElementCompetence } from './entities/type_element_competence.entity';
 
 @Module({
-    imports: [],
+    imports: [
+        TypeOrmModule.forFeature([
+            Competence,
+            TypeCompetence,
+            TypeElementCompetence,
+        ]),
+    ],
     controllers: [
-        CompetenceController,],
+        CompetenceController
+    ],
     providers: [
-        CompetenceService,],
+        CompetenceService
+    ],
+    exports: [
+        CompetenceService
+    ]
 })
 export class CompetenceModule { }

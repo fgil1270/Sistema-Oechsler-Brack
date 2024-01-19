@@ -13,7 +13,7 @@ import {
 @Entity()
 export class PercentageDefinition {
     @PrimaryGeneratedColumn() 
-    id:string;
+    id: number;
 
     @Column({ type: 'int' })
     year: number;
