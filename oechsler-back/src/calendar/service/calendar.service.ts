@@ -20,7 +20,7 @@ export class CalendarService {
         const calendar = await this.calendarRepository.create(createCalendarDto);
         const emp = await this.employeService.findOne(user.idEmployee);
         calendar.created_by = emp.emp;
-        return this.calendarRepository.save(calendar);
+        return await this.calendarRepository.save(calendar);
     }
 
     async findAll() {

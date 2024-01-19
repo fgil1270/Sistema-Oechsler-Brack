@@ -201,7 +201,6 @@ export class EmployeeIncidenceService {
     let from = format(new Date(data.start), 'yyyy-MM-dd')
     let to = format(new Date(data.end), 'yyyy-MM-dd')
     let tipo = '';
-    console.log('data:', data);
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -221,7 +220,7 @@ export class EmployeeIncidenceService {
         status: In(data.status)
       } 
     });
-    console.log(incidences);
+
     let i = 0;
     let newIncidences = [];
 
