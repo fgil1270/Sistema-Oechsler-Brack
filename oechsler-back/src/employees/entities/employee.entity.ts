@@ -21,7 +21,8 @@ import { EmployeeIncidence } from "../../employee_incidence/entities/employee_in
 import { Checador } from "../../checador/entities/checador.entity";
 import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
 import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";    
-import { Calendar } from "../../calendar/entities/calendar.entity";   
+import { Calendar } from "../../calendar/entities/calendar.entity";
+import { EmployeeObjective } from "../../employee_objective/entities/employee_objective.entity"; 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 @Entity()
@@ -186,5 +187,11 @@ export class Employee {
 
     @OneToMany(() => Calendar, (post) => post.created_by)
     calendar: Calendar[];
+
+    @OneToMany(() => EmployeeObjective, (post) => post.employee)
+    employeeObjective: EmployeeObjective[];
+
+    @OneToMany(() => EmployeeObjective, (post) => post.evaluatedBy)
+    employeeObjectiveEvaluated: EmployeeObjective[];
     
 }

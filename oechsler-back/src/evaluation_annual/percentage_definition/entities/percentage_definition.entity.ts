@@ -9,6 +9,7 @@ import {
     JoinColumn,
     OneToMany
 } from 'typeorm';
+import { EmployeeObjective } from '../../../employee_objective/entities/employee_objective.entity';
 
 @Entity()
 export class PercentageDefinition {
@@ -35,4 +36,7 @@ export class PercentageDefinition {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => EmployeeObjective, post => post.percentageDefinition)
+    employeeObjective: EmployeeObjective[];
 }

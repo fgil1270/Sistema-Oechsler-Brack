@@ -31,6 +31,7 @@ import { LogAdjustmentVacationModule } from './log_adjustment_vacation/log_adjus
 import { CalendarModule } from './calendar/calendar.module';
 import { CompetenceModule } from './competence/competence.module';
 import { PercentageDefinitionModule } from './evaluation_annual/percentage_definition/percentage_definition.module';
+import { EmployeeObjectiveModule } from './employee_objective/employee_objective.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { PercentageDefinitionModule } from './evaluation_annual/percentage_defin
     CalendarModule,
     CompetenceModule,
     PercentageDefinitionModule,
+    EmployeeObjectiveModule
   ],
   controllers: [
     AppController],
