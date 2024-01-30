@@ -131,7 +131,6 @@ export class ReportFlexTimeController {
   @Views('horario_flexible')
   @Get()
   reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
-    console.log("horario flexible");
     if(report.access == 'true'){
       return true;
     }else{

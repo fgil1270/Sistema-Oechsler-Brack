@@ -205,7 +205,7 @@ export class OrganigramaService {
       const levelOne = await this.organigramaRepository.find({
         relations: {
           employee: {
-            department: true, 
+            department: true,
             job: true, 
             payRoll: true, 
             vacationProfile: true, 
