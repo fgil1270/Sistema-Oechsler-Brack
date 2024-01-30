@@ -161,10 +161,10 @@ export class Employee {
     @OneToMany(() => EmployeeIncidence, (post) => post.employee)
     employeeIncidence: EmployeeIncidence[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.employee)
+    @OneToMany(() => EmployeeIncidence, (post) => post.canceledBy)
     employeeIncidenceCancel: EmployeeIncidence[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.employee)
+    @OneToMany(() => EmployeeIncidence, (post) => post.createdBy)
     employeeIncidenceCreate: EmployeeIncidence[];
 
     @OneToMany(() => Checador, (post) => post.employee)
@@ -193,5 +193,11 @@ export class Employee {
 
     @OneToMany(() => EmployeeObjective, (post) => post.evaluatedBy)
     employeeObjectiveEvaluated: EmployeeObjective[];
+
+    @OneToMany(() => EmployeeIncidence, (post) => post.rh)
+    employeeIncidenceRh: EmployeeIncidence[];
+
+    @OneToMany(() => EmployeeIncidence, (post) => post.leader)
+    employeeIncidenceLeader: EmployeeIncidence[];
     
 }
