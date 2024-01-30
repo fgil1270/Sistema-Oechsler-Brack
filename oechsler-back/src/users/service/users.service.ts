@@ -31,7 +31,8 @@ export class UsersService {
             {
                 name: user.name,
                 password: user.password,
-                email: user.email
+                email: user.email,
+                renew_pass: user.renewPass
             }
         );
         
@@ -122,7 +123,8 @@ export class UsersService {
                 name: userData.name,
                 //password: userData.password,
                 email: userData.email,
-                //employee: emp.emp
+                //employee: emp.emp,
+                renew_pass: userData.renewPass
             }
         );
 
@@ -153,7 +155,7 @@ export class UsersService {
         }
 
         //se actualiza la informacion del usuario
-        return await this.userRepository.update(id, {password: newPaswword});
+        return await this.userRepository.update(id, {password: newPaswword, renew_pass: false});
         
     }
 
