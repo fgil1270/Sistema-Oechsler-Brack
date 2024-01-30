@@ -160,7 +160,7 @@ export class TimeCorrectionService {
                 
                 const nowDate = new Date(index);
                 const employeeShif = await this.employeeShiftService.findMore(dataDate, `${iterator.id}`);
-                console.log(iterator.id);
+                
                 //se obtienen las incidencias del dia
                 const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
                     start: format(index, 'yyyy-MM-dd 00:00:00') as any,
