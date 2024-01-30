@@ -6,7 +6,7 @@ export const dataSourceOptions:  DataSourceOptions= {
   port: 3306,
   username: 'root',
   password: 'root',
-  database: 'db_oechsler',
+  database: 'db_oechsler_oits_test',
   logging: false,
   synchronize: false,
   entities: ['dist/**/*.entity.{ts,js}'],

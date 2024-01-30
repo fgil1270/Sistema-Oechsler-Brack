@@ -51,7 +51,7 @@ import { CalendarModule } from './calendar/calendar.module';
       port: 3306,
       username: 'root',
       password: 'root',
-      database: 'db_oechsler',
+      database: 'db_oechsler_oits_test',
       entities: ['dist/**/*.entity{.ts,.js}'],
       autoLoadEntities: true,
       synchronize: false,
