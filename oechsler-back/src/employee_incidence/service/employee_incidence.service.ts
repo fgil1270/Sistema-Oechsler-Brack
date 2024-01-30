@@ -763,7 +763,7 @@ export class EmployeeIncidenceService {
     return `This action removes a #${id} employeeIncidence`;
   }
 
-  //report tiempo compensatorio
+  //report horario flexible
   async reportFlexTime(data: any, userLogin: any){
     
 

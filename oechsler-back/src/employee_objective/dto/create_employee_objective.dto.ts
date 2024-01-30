@@ -1,16 +1,8 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsObject } from "class-validator";
 import { ApiProperty, PartialType } from "@nestjs/swagger";
 
-export class CreateEmployeeObjectiveDto {
-    @IsNotEmpty()
-    @IsNumber()
-    @ApiProperty({ description: 'id del empleado' })
-    idEmployee: number;
+export class EmployeeObjectiveDto {
 
-    @IsNotEmpty()
-    @IsNumber()
-    @ApiProperty({ description: 'id de los porcentajes por año' })
-    idPercentageDefinition: number;
 
     @IsNotEmpty()
     @IsString()
@@ -42,9 +34,22 @@ export class CreateEmployeeObjectiveDto {
     @ApiProperty({ description: 'No definido, Pendiente Evaluado medio año, Pendiente evaluador medio año, Pendiente evaluado Fin de año, Pendiente evaluador fin de año, Finalizado' })
     status?: string;
 
+}
+
+export class CreateEmployeeObjectiveDto {
+    @IsNotEmpty()
     @IsNumber()
-    @ApiProperty({ description: 'Evaluado por' })
-    evaluadtedBy?: number;
+    @ApiProperty({ description: 'id del empleado' })
+    idEmployee: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    @ApiProperty({ description: 'id de los porcentajes por año' })
+    idPercentageDefinition: number;
+
+    @IsObject()
+    @ApiProperty({ description: 'Objetivo de empleado' })
+    employeeObjective: EmployeeObjectiveDto[];
 
 }
 

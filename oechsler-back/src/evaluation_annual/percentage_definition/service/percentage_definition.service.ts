@@ -13,17 +13,92 @@ export class PercentageDefinitionService {
     constructor(
         @InjectRepository(PercentageDefinition) private percentageDefinitionRepository: Repository<PercentageDefinition>
     ) {}
-
+    
+    status: {
+        message: string,
+        code: number,
+        error: boolean
+    };        
+    
     async create(currData: CreatePercentageDefinitionDto){
         const percentaje = await this.percentageDefinitionRepository.create(currData);
         
         
         if(!await this.percentageDefinitionRepository.save(percentaje)){
-            console.log("error");
-            console.log(percentaje);
+            this.status = {
+                message: 'Error al crear la definicion de porcentaje',
+                code: 400,
+                error: true
+            }
+            
+            return this.status;
         }
 
-        return;
+        this.status = {
+            message: 'Definicion de porcentaje creada correctamente',
+            code: 201,
+            error: false
+        }
 
+        return this.status;
+
+    }
+
+    async findAll(){
+        const percentages = await this.percentageDefinitionRepository.find();
+
+        if(!percentages){
+            this.status = {
+                message: 'No se encontraron definiciones de porcentaje',
+                code: 404,
+                error: true
+            }
+
+            return this.status;
+        }
+
+        this.status = {
+            message: 'Definiciones de porcentaje encontradas',
+            code: 200,
+            error: false
+        }
+
+        return {
+            status: this.status,
+            percentages: percentages
+        }
+    }
+
+    async findOne(id: number){
+        const percentage = await this.percentageDefinitionRepository.findOne({
+            where: {
+                id: id
+            }
+        });
+        
+
+        if(!percentage){
+            this.status = {
+                message: 'No se encontro la definicion de porcentaje',
+                code: 404,
+                error: true
+            }
+
+            return {
+                status: this.status,
+                percentage: percentage
+            };
+        }
+
+        this.status = {
+            message: 'Definicion de porcentaje encontrada',
+            code: 200,
+            error: false
+        }
+
+        return {
+            status: this.status,
+            percentage: percentage
+        }
     }
 }

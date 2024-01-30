@@ -31,4 +31,10 @@ export class PercentageDefinitionController {
     async create(@Body() currData: CreatePercentageDefinitionDto){
         return this.percentageDfinitionService.create(currData);
     }
+
+    @ApiOperation({ summary: 'Obtiene todas las definiciones de porcentaje' })
+    @Get()
+    async findAll(){
+        return this.percentageDfinitionService.findAll();
+    }
  }
