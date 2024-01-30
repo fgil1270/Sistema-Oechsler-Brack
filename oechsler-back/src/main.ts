@@ -24,7 +24,7 @@ async function bootstrap() {
     methods: 'GET, PUT, POST, DELETE',
     allowedHeaders: 'Content-Type, Authorization',
   });
-  await app.listen(3000);
+  await app.listen(3501);
 
   const server = app.getHttpServer();
   const router = server._events.request._router;
