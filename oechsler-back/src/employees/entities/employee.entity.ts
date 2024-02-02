@@ -101,13 +101,13 @@ export class Employee {
     @Column({ type: 'date', default: null})
     work_term_date: Date;
 
-    @Column({ type: 'varchar', length: 255})
+    @Column({ type: 'varchar', length: 255, nullable: true})
     email: string;
 
-    @Column({ type: 'varchar', length: 255})
+    @Column({ type: 'varchar', length: 255, nullable: true})
     phone: string;
 
-    @Column({ type: 'varchar', length: 255})
+    @Column({ type: 'varchar', length: 255, nullable: true})
     marital_status: string;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0})
@@ -122,16 +122,16 @@ export class Employee {
     @Column({ type: 'varchar', length: 255})
     type_contract: string;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false,  nullable: true})
     visa: boolean;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false, nullable: true})
     fm_two: boolean;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false, nullable: true})
     travel: boolean;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false, nullable: true})
     brigade_member: boolean;
 
     @Column({ type: 'boolean', default: false})
