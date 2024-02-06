@@ -69,7 +69,7 @@ export class EmployeeIncidenceController {
       end: data.end,
       status: query.status,
       code: query.code,
-    }
+    } 
     return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(dataSerach);
   }
 
