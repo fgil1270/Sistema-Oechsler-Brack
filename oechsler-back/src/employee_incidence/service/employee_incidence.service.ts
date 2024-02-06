@@ -201,6 +201,7 @@ export class EmployeeIncidenceService {
     let from = format(new Date(data.start), 'yyyy-MM-dd')
     let to = format(new Date(data.end), 'yyyy-MM-dd')
     let tipo = '';
+  
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -210,53 +211,57 @@ export class EmployeeIncidenceService {
       where: {
         employee: {
           id: In(data.ids.split(','))
-        },
+        }, 
         dateEmployeeIncidence: {
           date: Between(from as any, to as any)
         },
         incidenceCatologue: {
-          code: data.code? In(data.code) :  Not('')
+          code: data.code? In(data.code.split(',')) :  Not('')
         },
-        status: In(data.status)
+        status: In(data.status.split(',')) 
       } 
     });
-
+    
     let i = 0;
     let newIncidences = [];
 
-    incidences.forEach(incidence => {
-      let textColor = '#fff';
-
-      if(incidence.incidenceCatologue.color == '#faf20f' || incidence.incidenceCatologue.color == '#ffdeec'){
-        textColor = '#000';
-      }
-
-      incidence.dateEmployeeIncidence.forEach(date => {
-        i++;
-
-        newIncidences.push({
-          id: i,
-          incidenceId: incidence.id,
-          resourceId: incidence.employee.id,
-          title: incidence.incidenceCatologue.name,
-          code: incidence.incidenceCatologue.code,
-          codeBand: incidence.incidenceCatologue.code_band,
-          reportNomina: incidence.incidenceCatologue.repor_nomina,
-          description: incidence.descripcion,
-          total_hour: incidence.total_hour,
-          start: date.date,
-          end: date.date,
-          backgroundColor: incidence.incidenceCatologue.color,
-          unique_day: incidence.incidenceCatologue.unique_day,
-          textColor: textColor,
-          status: incidence.status
+    if(incidences){
+      incidences.forEach(incidence => {
+        let textColor = '#fff';
+  
+        if(incidence.incidenceCatologue.color == '#faf20f' || incidence.incidenceCatologue.color == '#ffdeec'){
+          textColor = '#000';
+        }
+  
+        incidence.dateEmployeeIncidence.forEach(date => {
+          i++;
+  
+          newIncidences.push({
+            id: i,
+            incidenceId: incidence.id,
+            resourceId: incidence.employee.id,
+            title: incidence.incidenceCatologue.name,
+            code: incidence.incidenceCatologue.code,
+            codeBand: incidence.incidenceCatologue.code_band,
+            reportNomina: incidence.incidenceCatologue.repor_nomina,
+            description: incidence.descripcion,
+            total_hour: incidence.total_hour,
+            start: date.date,
+            end: date.date,
+            backgroundColor: incidence.incidenceCatologue.color,
+            unique_day: incidence.incidenceCatologue.unique_day,
+            textColor: textColor,
+            status: incidence.status
+          });
+          
         });
+  
         
+  
       });
+    }
 
-      
-
-    });
+    
 
 
     /* const incidencesEmployee = incidences.map(incidence => {

@@ -199,7 +199,7 @@ export class EmployeesService {
 
           totalError++;
           errors.push({
-            id: exNoEmployee.v,
+            id: exNoEmployee.v? exNoEmployee.v : exNoEmployee.v,
             error: 'valor vacio'
           });
           continue;
