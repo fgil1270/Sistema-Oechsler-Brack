@@ -147,7 +147,7 @@ export class EmployeesService {
     let totalNew = 0;
     let totalError = 0;
     let errors = [];
-    for (let rowNum = 1; rowNum <= range.e.r; rowNum++) {
+    for (let rowNum = 1; rowNum < range.e.r; rowNum++) {
       
       //for (let colNum = 0; colNum <= 1; colNum++) {
         var exNoEmployee = workbook.Sheets['Todos'][utils.encode_cell({r:rowNum, c:0 })];
@@ -190,13 +190,17 @@ export class EmployeesService {
         //email === undefined || 
         
         //SE VALIDA QUE NO EXISTAN CAMPOS VACIOS
+        if(exNoEmployee === undefined){
+          continue;
+        }
+        
         if (exNoEmployee === undefined || name === undefined || paternal_surname === undefined || maternal_surname === undefined ||
           puesto === undefined || departamento === undefined || nomina === undefined || tipeEmployee === undefined || profileEmployee === undefined ||
           vacationProfile === undefined || gender === undefined || birthdate === undefined || country === undefined || citizenship === undefined ||
           state === undefined || city === undefined || location === undefined || rfc === undefined || curp === undefined || nss === undefined ||
           salary === undefined || type_contract === undefined || daily_salary === undefined || date_employment === undefined ||
-          work_term_date === undefined || worker_status === undefined ) {
-
+          worker_status === undefined ) {
+            
           totalError++;
           errors.push({
             id: exNoEmployee.v,
@@ -292,9 +296,9 @@ export class EmployeesService {
               row.rfc = rfc.w.trim();
               row.curp = curp.w.trim();
               row.nss = nss.w.toString().trim();
-              row.email = email.w.trim() ? email.w.trim() : '';
-              row.phone = phone.w.trim() ? phone.w.trim() : '';
-              row.marital_status = marital_status.w.trim() ? marital_status.w.trim() : '';
+              row.email = email ? email.w.trim() : '';
+              row.phone = phone ? phone.w.trim() : '';
+              row.marital_status = marital_status ? marital_status.w.trim() : '';
               row.visa = visa.w.trim() === 'SI'? true : false;
               row.fm_two = fm_two.w.trim() === 'SI'? true : false;
               row.travel = travel.w.trim() === 'SI'? true : false;
@@ -305,7 +309,7 @@ export class EmployeesService {
               row.salary = salary.w.trim();
               row.date_employment = date_employment.w.trim();
               row.quote = quote;
-              row.work_term_date = work_term_date.w.trim();
+              row.work_term_date = work_term_date != undefined ? work_term_date.w.trim() : null;
               row.worker_status = worker_status.w.trim() === 'A'? true : false;
               this.employeeRepository.update(tableEmployee.id, row);
               totalEdit++;
@@ -342,9 +346,9 @@ export class EmployeesService {
               row.rfc = rfc.w.trim();
               row.curp = curp.w.trim();
               row.nss = nss.w.toString().trim();
-              row.email = email.w.trim();
-              row.phone = phone.w.trim();
-              row.marital_status = marital_status.w.trim();
+              row.email = email ? email.w.trim() : '';
+              row.phone = phone ? phone.w.trim() : '';
+              row.marital_status = marital_status ? marital_status.w.trim() : '';
               row.visa = visa.w.trim() === 'SI'? true : false;
               row.fm_two = fm_two.w.trim() === 'SI'? true : false;
               row.travel = travel.w.trim() === 'SI'? true : false;
@@ -355,7 +359,7 @@ export class EmployeesService {
               row.salary = salary.w.trim();
               row.date_employment = date_employment.w.trim();
               row.quote = quote;
-              row.work_term_date = work_term_date.w.trim();
+              row.work_term_date = work_term_date != undefined ? work_term_date.w.trim() : null;
               row.worker_status = worker_status.w.trim() === 'A'? true : false;
               const emp = this.employeeRepository.create(row);
               await this.employeeRepository.save(emp);
@@ -367,7 +371,7 @@ export class EmployeesService {
               totalError++;
               errors.push({
                 id: exNoEmployee.v,
-                error: 'se crea: '+error
+                error: 'se crea: '+error,
               });
             }
             
