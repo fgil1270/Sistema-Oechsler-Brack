@@ -603,8 +603,7 @@ export class EmployeesService {
       
       
       const vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
-      
-      
+
       let dayUsedAllYears = 0;
       const adjustmentVacation = await this.employeeRepository.findOne({
         where: {
@@ -625,7 +624,7 @@ export class EmployeesService {
       let arrayAno = anoCumplidos.toFixed(2).split('.');
       let objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]) );
       let objDiasBysiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0? parseInt(arrayAno[0]) + 1  : 1));
-      let totalDiasByAno = objDiasByAno? objDiasByAno.total: 0; 
+      let totalDiasByAno = objDiasByAno? objDiasByAno.total: 0;
       let sumDiasSiguenteAno = ((parseInt(arrayAno[1])/100) * objDiasBysiguenteAno.day);
       let sumaDiasAntiguedad = (totalDiasByAno + sumDiasSiguenteAno);
       //se calculan los dias de vacaciones a fin de año

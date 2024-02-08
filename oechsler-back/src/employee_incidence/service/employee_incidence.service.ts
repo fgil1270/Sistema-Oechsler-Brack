@@ -216,9 +216,9 @@ export class EmployeeIncidenceService {
           date: Between(from as any, to as any)
         },
         incidenceCatologue: {
-          code: data.code? In(data.code.split(',')) :  Not('')
+          code: data.code? In(data.code?.split(',')) :  Not('')
         },
-        status: In(data.status.split(',')) 
+        status: In(data.status) 
       } 
     });
     
