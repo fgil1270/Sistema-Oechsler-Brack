@@ -9,12 +9,12 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class MailService {
     constructor(private readonly mailerService: MailerService) { }
 
-    async sendEmail(subject: string, message:string, name:string = '' ) {
+    async sendEmail(subject: string, message:string, name:string = '', to: string[] ) {
 
         await this.mailerService.sendMail({
             
             //to: 'E.Munoz@oechsler.mx',
-            to: 'f.gil@oechsler.mx',
+            to: to,
             from: 'notificationes@oechsler.mx',
             subject: subject,
             template: 'confirmation', // `.hbs` extension is appended automatically
