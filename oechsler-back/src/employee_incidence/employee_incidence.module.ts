@@ -13,6 +13,7 @@ import { ChecadorModule } from '../checador/checador.module';
 import { PayrollsModule } from '../payrolls/payrolls.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { MailModule } from '../mail/mail.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { MailModule } from '../mail/mail.module';
     forwardRef(() => ChecadorModule),
     PayrollsModule,
     OrganigramaModule,
-    MailModule
+    MailModule,
+    UsersModule
   ],
   controllers: [EmployeeIncidenceController, ReportEmployeeIncidenceController, ReportFlexTimeController],
   providers: [EmployeeIncidenceService, EmployeeIncidence],
