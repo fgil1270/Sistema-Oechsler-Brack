@@ -129,12 +129,12 @@ export class EmployeeIncidenceService {
           let lideres = await this.organigramaService.leaders(employeeIncidenceCreate.employee.id);
           for (let index = 0; index < lideres.orgs.length; index++) {
             const lider = lideres.orgs[index];
-            const userLider = await this.userService.findOne(lider.leader.id);
+            const userLider = await this.userService.findByIdEmployee(lider.leader.id);
             to.push(userLider.user.email);
             
           }
         }else{
-          const mailUser = await this.userService.findOne(employeeIncidenceCreate.employee.id);
+          const mailUser = await this.userService.findByIdEmployee(employeeIncidenceCreate.employee.id);
           to.push(mailUser.user.email);
         }
         
@@ -751,7 +751,7 @@ export class EmployeeIncidenceService {
       throw new NotFoundException('No se encontro la incidencia');
     }
     const to = [];
-    let emailUser = await this.userService.findOne(employeeIncidence.employee.id);
+    let emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
     to.push(emailUser.user.email);
     if(updateEmployeeIncidenceDto.status == 'Autorizada'){
       employeeIncidence.date_aproved_leader = new Date();
