@@ -125,29 +125,41 @@ export class EmployeeIncidenceService {
           createdBy: createdBy.emp
         });
         let to = [];
+        let subject = '';
         if(employeeIncidenceCreate.employee.id == user.idEmployee){
           let lideres = await this.organigramaService.leaders(employeeIncidenceCreate.employee.id);
           for (let index = 0; index < lideres.orgs.length; index++) {
             const lider = lideres.orgs[index];
             const userLider = await this.userService.findByIdEmployee(lider.leader.id);
             to.push(userLider.user.email);
-            
+            to.push('f.gil@oechsler.com');
           }
+          subject = `Autorizar incidencia: ${employeeIncidenceCreate.employee.employee_number} 
+          ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} 
+          ${employeeIncidenceCreate.employee.maternal_surname}, 
+          Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
         }else{
           const mailUser = await this.userService.findByIdEmployee(employeeIncidenceCreate.employee.id);
           to.push(mailUser.user.email);
+          subject = `Incidencia Autorizada: ${employeeIncidenceCreate.employee.employee_number} 
+          ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} 
+          ${employeeIncidenceCreate.employee.maternal_surname}, 
+          Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
         }
-        
+        let mailData = {
+            employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
+            employyeNumber : employeeIncidenceCreate.employee.employee_number,
+            incidence: employeeIncidenceCreate.incidenceCatologue.name,
+            dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
+        };
 
+        
         //ENVIO DE CORREO
-        const mail = await this.mailService.sendEmail(
-          'Incidencia Creada', 
-          `Incidencia: ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-          employeeIncidenceCreate.employee.name,
+        const mail = await this.mailService.sendEmailCreateIncidence(
+          subject, 
+          mailData,
           to
         ); 
-
-        
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
         
         for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
@@ -753,15 +765,24 @@ export class EmployeeIncidenceService {
     const to = [];
     let emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
     to.push(emailUser.user.email);
+    let subject = '';
     if(updateEmployeeIncidenceDto.status == 'Autorizada'){
       employeeIncidence.date_aproved_leader = new Date();
       employeeIncidence.leader = userAutoriza.emp;
       //ENVIO DE CORREO
+      subject = `Incidencia Autorizada: ${employeeIncidence.employee.employee_number} 
+          ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
+          ${employeeIncidence.employee.maternal_surname}`;
+      let mailData = {
+        employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
+        employyeNumber : employeeIncidence.employee.employee_number,
+        incidence: employeeIncidence.incidenceCatologue.name,
+        dia: ``
+      };
       
-      const mail = await this.mailService.sendEmail(
-        'Incidencia Autorizada', 
-        `Incidencia: ${employeeIncidence.id} ${employeeIncidence.incidenceCatologue.name} - Empleado: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-        employeeIncidence.employee.name,
+      const mail = await this.mailService.sendEmailCreateIncidence(
+        subject, 
+        mailData,
         to
       );
     }
@@ -770,12 +791,22 @@ export class EmployeeIncidenceService {
       employeeIncidence.date_canceled = new Date();
       employeeIncidence.canceledBy = userAutoriza.emp;
       //ENVIO DE CORREO
-      const mail = await this.mailService.sendEmail(
-        'Incidencia Rechazada', 
-        `Incidencia: ${employeeIncidence.id} ${employeeIncidence.incidenceCatologue.name} - Empleado: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-        employeeIncidence.employee.name,
+      subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} 
+          ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
+          ${employeeIncidence.employee.maternal_surname}`;
+      let mailData = {
+        employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
+        employyeNumber : employeeIncidence.employee.employee_number,
+        incidence: employeeIncidence.incidenceCatologue.name,
+        dia: ``
+      };
+      
+      const mail = await this.mailService.sendEmailRechazaIncidence(
+        subject, 
+        mailData,
         to
       );
+      
     }
 
     employeeIncidence.status = updateEmployeeIncidenceDto.status;
