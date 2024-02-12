@@ -9,7 +9,10 @@ export interface MailData {
     employee: string;
     employeeNumber: number;
     incidence: string;
+    efectivos: number;
+    totalHours: number;
     dia: string;
+
 }
 
 @Injectable()

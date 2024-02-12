@@ -132,24 +132,20 @@ export class EmployeeIncidenceService {
             const lider = lideres.orgs[index];
             const userLider = await this.userService.findByIdEmployee(lider.leader.id);
             to.push(userLider.user.email);
-            to.push('f.gil@oechsler.com');
+            to.push('f.gil@oechsler.mx');
           }
-          subject = `Autorizar incidencia: ${employeeIncidenceCreate.employee.employee_number} 
-          ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} 
-          ${employeeIncidenceCreate.employee.maternal_surname}, 
-          Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
+          subject = `Autorizar incidencia: ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}, Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
         }else{
           const mailUser = await this.userService.findByIdEmployee(employeeIncidenceCreate.employee.id);
           to.push(mailUser.user.email);
-          subject = `Incidencia Autorizada: ${employeeIncidenceCreate.employee.employee_number} 
-          ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} 
-          ${employeeIncidenceCreate.employee.maternal_surname}, 
-          Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
+          subject = `Incidencia Autorizada: ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}, Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
         }
         let mailData: MailData = {
             employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
             employeeNumber: employeeIncidenceCreate.employee.employee_number,
             incidence: employeeIncidenceCreate.incidenceCatologue.name,
+            efectivos: totalDays,
+            totalHours: createEmployeeIncidenceDto.total_hour,
             dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
         };
 
@@ -777,6 +773,8 @@ export class EmployeeIncidenceService {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
         employeeNumber : employeeIncidence.employee.employee_number,
         incidence: employeeIncidence.incidenceCatologue.name,
+        efectivos: 0,
+        totalHours: employeeIncidence.total_hour,
         dia: ``
       };
       
@@ -798,6 +796,8 @@ export class EmployeeIncidenceService {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
         employeeNumber : Number(employeeIncidence.employee.employee_number),
         incidence: employeeIncidence.incidenceCatologue.name,
+        efectivos: 0,
+        totalHours: employeeIncidence.total_hour,
         dia: ``
       };
       
