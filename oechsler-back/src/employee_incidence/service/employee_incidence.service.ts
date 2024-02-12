@@ -126,11 +126,11 @@ export class EmployeeIncidenceService {
         });
 
         //ENVIO DE CORREO
-        /* const mail = await this.mailService.sendEmail(
+        const mail = await this.mailService.sendEmail(
           'Incidencia Creada', 
           `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
           employeeIncidenceCreate.employee.name
-        ); */
+        ); 
 
         
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
@@ -197,11 +197,11 @@ export class EmployeeIncidenceService {
   //se obtienen las incidencias de los empleados por rango de fechas y ids de empleados
   async findAllIncidencesByIdsEmployee(data: any) {
     
-    let startDate = new Date(data.start);
+    let startDate = new Date(data.start); 
     let from = format(new Date(data.start), 'yyyy-MM-dd')
     let to = format(new Date(data.end), 'yyyy-MM-dd')
     let tipo = '';
-  
+
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -216,9 +216,9 @@ export class EmployeeIncidenceService {
           date: Between(from as any, to as any)
         },
         incidenceCatologue: {
-          code: data.code? In(data.code.split(',')) :  Not('')
+          code: data.code? In(data.code) :  Not(IsNull())
         },
-        status: In(data.status.split(',')) 
+        status: data.status? In(data.status) : Not(IsNull())
       } 
     });
     

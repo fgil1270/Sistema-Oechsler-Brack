@@ -54,7 +54,7 @@ import { EmployeeObjectiveModule } from './employee_objective/employee_objective
       port: 3306,
       username: 'root',
       password: 'root',
-      database: 'db_oechsler_oits_test',
+      database: 'db_oechsler',
       entities: ['dist/**/*.entity{.ts,.js}'],
       autoLoadEntities: true,
       synchronize: false,
