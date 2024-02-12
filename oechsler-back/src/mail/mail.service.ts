@@ -12,6 +12,7 @@ export class MailService {
     async sendEmail(subject: string, message:string, name:string = '' ) {
 
         await this.mailerService.sendMail({
+            
             //to: 'E.Munoz@oechsler.mx',
             to: 'f.gil@oechsler.mx',
             from: 'notificationes@oechsler.mx',
@@ -29,6 +30,7 @@ export class MailService {
         return true;
         })
         .catch((err) => {
+            console.log('error:', err);
             return true;
         });
     }

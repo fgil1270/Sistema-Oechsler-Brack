@@ -67,8 +67,8 @@ export class EmployeeIncidenceController {
       ids: data.ids,
       start: data.start,
       end: data.end,
-      status: query.status,
-      code: query.code,
+      status: query.status? [query.status] : null,
+      code: query.code ? [query.code] : null,
     } 
     return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(dataSerach);
   }
