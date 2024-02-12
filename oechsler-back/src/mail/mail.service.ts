@@ -7,7 +7,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 export interface MailData {
     employee: string;
-    employyeNumber: number;
+    employeeNumber: number;
     incidence: string;
     dia: string;
 }
