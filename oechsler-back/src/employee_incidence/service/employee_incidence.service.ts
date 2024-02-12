@@ -13,7 +13,7 @@ import { EmployeeShiftService } from '../../employee_shift/service/employee_shif
 import { ChecadorService } from '../../checador/service/checador.service';
 import { PayrollsService } from '../../payrolls/service/payrolls.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
-import { MailService } from '../../mail/mail.service';
+import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
 
@@ -146,9 +146,9 @@ export class EmployeeIncidenceService {
           ${employeeIncidenceCreate.employee.maternal_surname}, 
           Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
         }
-        let mailData = {
+        let mailData: MailData = {
             employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
-            employyeNumber : employeeIncidenceCreate.employee.employee_number,
+            employeeNumber: employeeIncidenceCreate.employee.employee_number,
             incidence: employeeIncidenceCreate.incidenceCatologue.name,
             dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
         };
@@ -773,9 +773,9 @@ export class EmployeeIncidenceService {
       subject = `Incidencia Autorizada: ${employeeIncidence.employee.employee_number} 
           ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
           ${employeeIncidence.employee.maternal_surname}`;
-      let mailData = {
+      let mailData: MailData = {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
-        employyeNumber : employeeIncidence.employee.employee_number,
+        employeeNumber : employeeIncidence.employee.employee_number,
         incidence: employeeIncidence.incidenceCatologue.name,
         dia: ``
       };
@@ -794,9 +794,9 @@ export class EmployeeIncidenceService {
       subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} 
           ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
           ${employeeIncidence.employee.maternal_surname}`;
-      let mailData = {
+      let mailData: MailData = {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
-        employyeNumber : employeeIncidence.employee.employee_number,
+        employeeNumber : Number(employeeIncidence.employee.employee_number),
         incidence: employeeIncidence.incidenceCatologue.name,
         dia: ``
       };
