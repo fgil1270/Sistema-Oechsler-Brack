@@ -14,9 +14,8 @@ import { ChecadorService } from '../../checador/service/checador.service';
 import { PayrollsService } from '../../payrolls/service/payrolls.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { MailService } from '../../mail/mail.service';
-import { query } from 'express';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
-import { start } from 'repl';
+import { UsersService } from '../../users/service/users.service';
 
 
 @Injectable()
@@ -30,7 +29,8 @@ export class EmployeeIncidenceService {
     @Inject(forwardRef(() => ChecadorService)) private checadorService: ChecadorService,
     private payRollService: PayrollsService,
     private organigramaService: OrganigramaService,
-    private mailService: MailService
+    private mailService: MailService,
+    private userService: UsersService
   ) {}
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
@@ -124,12 +124,27 @@ export class EmployeeIncidenceService {
           type: createEmployeeIncidenceDto.type, 
           createdBy: createdBy.emp
         });
+        let to = [];
+        if(employeeIncidenceCreate.employee.id == user.idEmployee){
+          let lideres = await this.organigramaService.leaders(employeeIncidenceCreate.employee.id);
+          for (let index = 0; index < lideres.orgs.length; index++) {
+            const lider = lideres.orgs[index];
+            const userLider = await this.userService.findOne(lider.leader.id);
+            to.push(userLider.user.email);
+            
+          }
+        }else{
+          const mailUser = await this.userService.findOne(employeeIncidenceCreate.employee.id);
+          to.push(mailUser.user.email);
+        }
+        
 
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmail(
           'Incidencia Creada', 
-          `Incidencia: ${employeeIncidenceCreate.id} ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-          employeeIncidenceCreate.employee.name
+          `Incidencia: ${employeeIncidenceCreate.incidenceCatologue.name} - Empleado: ${employeeIncidenceCreate.employee.employee_number} ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
+          employeeIncidenceCreate.employee.name,
+          to
         ); 
 
         
@@ -735,15 +750,19 @@ export class EmployeeIncidenceService {
     if(!employeeIncidence){
       throw new NotFoundException('No se encontro la incidencia');
     }
-
+    const to = [];
+    let emailUser = await this.userService.findOne(employeeIncidence.employee.id);
+    to.push(emailUser.user.email);
     if(updateEmployeeIncidenceDto.status == 'Autorizada'){
       employeeIncidence.date_aproved_leader = new Date();
       employeeIncidence.leader = userAutoriza.emp;
       //ENVIO DE CORREO
+      
       const mail = await this.mailService.sendEmail(
         'Incidencia Autorizada', 
         `Incidencia: ${employeeIncidence.id} ${employeeIncidence.incidenceCatologue.name} - Empleado: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-        employeeIncidence.employee.name
+        employeeIncidence.employee.name,
+        to
       );
     }
 
@@ -754,7 +773,8 @@ export class EmployeeIncidenceService {
       const mail = await this.mailService.sendEmail(
         'Incidencia Rechazada', 
         `Incidencia: ${employeeIncidence.id} ${employeeIncidence.incidenceCatologue.name} - Empleado: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} \nPara más información revisar vista de autorización de incidencias.`, 
-        employeeIncidence.employee.name
+        employeeIncidence.employee.name,
+        to
       );
     }
 
