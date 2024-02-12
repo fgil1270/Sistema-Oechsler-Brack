@@ -24,7 +24,7 @@ export class MailService {
             to: to,
             from: 'notificationes@oechsler.mx',
             subject: subject,
-            template: 'confirmation', // `.hbs` extension is appended automatically
+            template: 'crear_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
         }) 
         .then((success) => {
@@ -43,7 +43,7 @@ export class MailService {
             to: to,
             from: 'notificationes@oechsler.mx',
             subject: subject,
-            template: 'confirmation', // `.hbs` extension is appended automatically
+            template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
         }) 
         .then((success) => {
@@ -62,7 +62,7 @@ export class MailService {
             to: to,
             from: 'notificationes@oechsler.mx',
             subject: subject,
-            template: 'confirmation', // `.hbs` extension is appended automatically
+            template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
         }) 
         .then((success) => {
