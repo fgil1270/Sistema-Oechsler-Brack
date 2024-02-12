@@ -96,6 +96,27 @@ export class UsersService {
         }
     }
 
+    async findByIdEmployee(id: number){
+        const user = await this.userRepository.findOne({
+            relations: {
+                roles: true,
+                employee: true
+            },
+            where: {
+                employee: {
+                    id: id
+                }
+            },
+            withDeleted: true
+        });
+        if (!user) {
+            throw new NotFoundException(`User #${id} not found`);
+        }
+        return {
+            user
+        }
+    }
+
     async findByName(name: string){
         
         const user = await this.userRepository.findOne({
