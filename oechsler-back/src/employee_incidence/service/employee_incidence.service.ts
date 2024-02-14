@@ -788,14 +788,13 @@ export class EmployeeIncidenceService {
         dia: ``
       };
       calendar.method(ICalCalendarMethod.REQUEST)
-      
+      calendar.timezone('America/Mexico_City');
       calendar.createEvent({
         start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
         end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date +' '+ employeeIncidence.end_hour),
         summary: 'Incidencia Autorizada',
         description: 'It works ;)',
         url: 'https://example.com',
-        timezone: 'America/Mexico_City',
         busystatus: ICalEventBusyStatus.FREE
       });
       //se envia correo
