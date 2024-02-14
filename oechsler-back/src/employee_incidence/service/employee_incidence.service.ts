@@ -148,7 +148,7 @@ export class EmployeeIncidenceService {
             
           }
           to.push(mailUser.user.email);
-          subject = `${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}, Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
+          subject = `${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
         }
         let mailData: MailData = {
             employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
@@ -159,44 +159,7 @@ export class EmployeeIncidenceService {
             dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
         };
 
-        const calendar = ical();
-        calendar.method(ICalCalendarMethod.REQUEST)
-        calendar.timezone('America/Mexico_City');
-        calendar.createEvent({
-          start: new Date(employeeIncidenceCreate.dateEmployeeIncidence[0].date + ' ' + employeeIncidenceCreate.start_hour),
-          end: new Date(employeeIncidenceCreate.dateEmployeeIncidence[employeeIncidenceCreate.dateEmployeeIncidence.length - 1].date +' '+ employeeIncidenceCreate.end_hour),
-          timezone: 'America/Mexico_City',
-          summary: subject,
-          description: 'It works ;)',
-          url: 'https://example.com',
-          busystatus: ICalEventBusyStatus.FREE,
-          //status: ICalEventStatus.CONFIRMED,
-          attendees: to.length > 0? to.map((email) => {
-            return {
-              email: email,
-              status: ICalAttendeeStatus.ACCEPTED,
-            }
-          }) : [],
-           
-        });
-
-        if(employeeIncidenceCreate.employee.id == user.idEmployee){
-          //ENVIO DE CORREO
-          const mail = await this.mailService.sendEmailCreateIncidence(
-            subject, 
-            mailData,
-            to
-          ); 
-        }else{
-          //ENVIO DE CORREO
-          const mail = await this.mailService.sendEmailAutorizaIncidence(
-            subject, 
-            mailData,
-            to,
-            calendar
-          );
-
-        }
+        
         
 
         
@@ -249,6 +212,55 @@ export class EmployeeIncidenceService {
             }); 
   
             await this.dateEmployeeIncidenceRepository.save(dateEmployeeIncidence);
+          }
+          const findIncidence = await this.employeeIncidenceRepository.findOne({
+            relations:{
+              employee: true,
+              incidenceCatologue: true,
+              dateEmployeeIncidence: true
+            },
+            where:{
+              id: employeeIncidence.id
+            }
+
+          })
+          const calendar = ical();
+          calendar.method(ICalCalendarMethod.REQUEST)
+          calendar.timezone('America/Mexico_City');
+          calendar.createEvent({
+            start: new Date(findIncidence.dateEmployeeIncidence[0].date + ' ' + findIncidence.start_hour),
+            end: new Date(findIncidence.dateEmployeeIncidence[findIncidence.dateEmployeeIncidence.length - 1].date +' '+ findIncidence.end_hour),
+            timezone: 'America/Mexico_City',
+            summary: subject,
+            description: 'It works ;)',
+            url: 'https://example.com',
+            busystatus: ICalEventBusyStatus.FREE,
+            //status: ICalEventStatus.CONFIRMED,
+            attendees: to.length > 0? to.map((email) => {
+              return {
+                email: email,
+                status: ICalAttendeeStatus.ACCEPTED,
+              }
+            }) : [],
+            
+          });
+
+          if(employeeIncidenceCreate.employee.id == user.idEmployee){
+            //ENVIO DE CORREO
+            const mail = await this.mailService.sendEmailCreateIncidence(
+              subject, 
+              mailData,
+              to
+            ); 
+          }else{
+            //ENVIO DE CORREO
+            const mail = await this.mailService.sendEmailAutorizaIncidence(
+              subject, 
+              mailData,
+              to,
+              calendar
+            );
+
           }
 
           
