@@ -4,6 +4,7 @@ https://docs.nestjs.com/providers#services
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ICalEvent } from 'ical-generator'
 
 export interface MailData {
     employee: string;
@@ -19,16 +20,20 @@ export interface MailData {
 export class MailService {
     constructor(private readonly mailerService: MailerService) { }
 
-    async sendEmailCreateIncidence(subject: string, mailData: MailData, to: string[] ) {
+    async sendEmailCreateIncidence(subject: string, mailData: MailData, to: string[],  event: ICalEvent) {
 
         await this.mailerService.sendMail({
-            
-            //to: 'E.Munoz@oechsler.mx',
             to: to,
             from: 'notificationes@oechsler.mx',
             subject: subject,
             template: 'crear_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
+            alternatives: [
+                {
+                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
+                    content: event.toString(),
+                },
+            ],
         }) 
         .then((success) => {
         //console.log('correcto:', success);
