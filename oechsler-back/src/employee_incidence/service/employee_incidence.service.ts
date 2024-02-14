@@ -3,7 +3,7 @@ import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Be
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
-import ical, { ICalCalendarMethod, ICalEventBusyStatus } from 'ical-generator';
+import ical, { ICalAttendee, ICalAttendeeStatus, ICalCalendarMethod, ICalEventBusyStatus, ICalEventStatus } from 'ical-generator';
 
 import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
@@ -134,13 +134,20 @@ export class EmployeeIncidenceService {
             const lider = lideres.orgs[index];
             const userLider = await this.userService.findByIdEmployee(lider.leader.id);
             to.push(userLider.user.email);
-            to.push('f.gil@oechsler.mx');
+            
           }
           subject = `Autorizar incidencia: ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}, Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
         }else{
           const mailUser = await this.userService.findByIdEmployee(employeeIncidenceCreate.employee.id);
+          let lideres = await this.organigramaService.leaders(employeeIncidenceCreate.employee.id);
+          for (let index = 0; index < lideres.orgs.length; index++) {
+            const lider = lideres.orgs[index];
+            const userLider = await this.userService.findByIdEmployee(lider.leader.id);
+            to.push(userLider.user.email);
+            
+          }
           to.push(mailUser.user.email);
-          subject = `Incidencia Autorizada: ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}, Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
+          subject = `${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}, Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
         }
         let mailData: MailData = {
             employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
@@ -151,6 +158,30 @@ export class EmployeeIncidenceService {
             dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
         };
 
+        const calendar = ical();
+        calendar.method(ICalCalendarMethod.REQUEST)
+        calendar.timezone('America/Mexico_City');
+        calendar.createEvent({
+          start: new Date(employeeIncidenceCreate.dateEmployeeIncidence[0].date + ' ' + employeeIncidenceCreate.start_hour),
+          end: new Date(employeeIncidenceCreate.dateEmployeeIncidence[employeeIncidenceCreate.dateEmployeeIncidence.length - 1].date +' '+ employeeIncidenceCreate.end_hour),
+          timezone: 'America/Mexico_City',
+          summary: subject,
+          description: 'It works ;)',
+          url: 'https://example.com',
+          busystatus: ICalEventBusyStatus.FREE,
+          //status: ICalEventStatus.CONFIRMED,
+          attendees: [
+            {
+              email: to[1],
+              status: ICalAttendeeStatus.ACCEPTED,
+            },
+            {
+              email: to[0],
+              rsvp:true,
+              status: ICalAttendeeStatus.ACCEPTED,
+            },
+          ]
+        });
         
 
         //ENVIO DE CORREO
@@ -159,6 +190,8 @@ export class EmployeeIncidenceService {
           mailData,
           to
         ); 
+
+
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
         
         for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
@@ -764,21 +797,24 @@ export class EmployeeIncidenceService {
     }
     const to = [];
     let emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
-    to.push({email: emailUser.user.email});
+    let lideres = await this.organigramaService.leaders(employeeIncidence.employee.id);
+    for (let index = 0; index < lideres.orgs.length; index++) {
+      const lider = lideres.orgs[index];
+      const userLider = await this.userService.findByIdEmployee(lider.leader.id);
+      to.push(userLider.user.email);
+    }
+    to.push(emailUser.user.email);
+
     let subject = '';
     let mailData: MailData;
     
     const calendar = ical();
 
-
-
     if(updateEmployeeIncidenceDto.status == 'Autorizada'){
       employeeIncidence.date_aproved_leader = new Date();
       employeeIncidence.leader = userAutoriza.emp;
       //ENVIO DE CORREO
-      subject = `Incidencia Autorizada: ${employeeIncidence.employee.employee_number} 
-          ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
-          ${employeeIncidence.employee.maternal_surname}`;
+      subject = `${employeeIncidence.incidenceCatologue.name} / ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} / (-)`;
       mailData = {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
         employeeNumber : employeeIncidence.employee.employee_number,
@@ -787,16 +823,30 @@ export class EmployeeIncidenceService {
         totalHours: employeeIncidence.total_hour,
         dia: ``
       };
+
       calendar.method(ICalCalendarMethod.REQUEST)
       calendar.timezone('America/Mexico_City');
       calendar.createEvent({
         start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
         end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date +' '+ employeeIncidence.end_hour),
-        summary: 'Incidencia Autorizada',
+        timezone: 'America/Mexico_City',
+        summary: subject,
         description: 'It works ;)',
         url: 'https://example.com',
         busystatus: ICalEventBusyStatus.FREE,
-        attendees: to
+        //status: ICalEventStatus.CONFIRMED,
+        attendees: [
+          
+          {
+            email: to[1],
+            status: ICalAttendeeStatus.ACCEPTED,
+          },
+          {
+            email: to[0],
+            rsvp:true,
+            status: ICalAttendeeStatus.ACCEPTED,
+          },
+        ]
       });
       //se envia correo
       const mail = await this.mailService.sendEmailAutorizaIncidence(

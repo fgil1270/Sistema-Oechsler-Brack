@@ -47,9 +47,15 @@ export class MailService {
             subject: subject,
             template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
+            /* headers: {
+                'x-invite': {
+                  prepared: true,
+                  value: 'asd'
+                }
+              }, */
             icalEvent: {
                 filename: 'evento.ics',
-                method: 'request',
+                method: 'REQUEST',
                 content: calendar.toString(),
             },
            /*  attachments: [
@@ -63,7 +69,7 @@ export class MailService {
             /* alternatives: [
                 {
                     contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    content: event.toString(),
+                    content: calendar.toString(),
                 },
             ], */
         }) 
