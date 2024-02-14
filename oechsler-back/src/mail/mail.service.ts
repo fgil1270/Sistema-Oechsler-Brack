@@ -4,7 +4,7 @@ https://docs.nestjs.com/providers#services
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { ICalEvent } from 'ical-generator'
+import { ICalCalendar } from 'ical-generator'
 
 export interface MailData {
     employee: string;
@@ -20,7 +20,7 @@ export interface MailData {
 export class MailService {
     constructor(private readonly mailerService: MailerService) { }
 
-    async sendEmailCreateIncidence(subject: string, mailData: MailData, to: string[],  event: ICalEvent) {
+    async sendEmailCreateIncidence(subject: string, mailData: MailData, to: string[],  event: ICalCalendar) {
 
         await this.mailerService.sendMail({
             to: to,
@@ -45,7 +45,7 @@ export class MailService {
         });
     }
 
-    async sendEmailAutorizaIncidence(subject: string, mailData: MailData, to: string[] ) {
+    async sendEmailAutorizaIncidence(subject: string, mailData: MailData, to: string[], event: ICalCalendar ) {
 
         await this.mailerService.sendMail({
             to: to,
@@ -53,6 +53,12 @@ export class MailService {
             subject: subject,
             template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
+            alternatives: [
+                {
+                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
+                    content: event.toString(),
+                },
+            ],
         }) 
         .then((success) => {
         //console.log('correcto:', success);
@@ -64,7 +70,7 @@ export class MailService {
         });
     }
 
-    async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[] ) {
+    async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], event: ICalCalendar ) {
 
         await this.mailerService.sendMail({
             to: to,
@@ -72,6 +78,12 @@ export class MailService {
             subject: subject,
             template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
+            alternatives: [
+                {
+                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
+                    content: event.toString(),
+                },
+            ],
         }) 
         .then((success) => {
         //console.log('correcto:', success);

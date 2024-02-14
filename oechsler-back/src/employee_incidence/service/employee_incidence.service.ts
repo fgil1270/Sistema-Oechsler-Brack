@@ -3,7 +3,7 @@ import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Be
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
-import ical from 'ical-generator';
+import ical, { ICalCalendar } from 'ical-generator';
 
 import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
@@ -153,23 +153,27 @@ export class EmployeeIncidenceService {
         
 
         const filename = 'calendar.ics';
-        const calendar = ical();
+        const calendar = ical({
+          name: 'calendario'
+        });
         
         const event = calendar.createEvent({
           start: moment().add(1, 'hour'),
           end: moment().add(2, 'hours'),
           summary: 'Example Event',
           description: 'It works ;)',
-          organizer: 'Organizer\'s Name <organizer@example.com>',
+          location: 'my room',
           url: 'https://example.com'
         });
+
+        calendar.events();
 
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmailCreateIncidence(
           subject, 
           mailData,
           to, 
-          event
+          calendar
         ); 
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
         
@@ -785,7 +789,7 @@ export class EmployeeIncidenceService {
       end: moment().add(2, 'hours'),
       summary: 'Example Event',
       description: 'It works ;)',
-      organizer: 'Organizer\'s Name <organizer@example.com>',
+      location: 'my room',
       url: 'https://example.com'
     });
 
@@ -806,6 +810,13 @@ export class EmployeeIncidenceService {
         dia: ``
       };
 
+      //se envia correo
+      const mail = await this.mailService.sendEmailAutorizaIncidence(
+        subject, 
+        mailData,
+        to,
+        calendar
+      );
       
       
     }
@@ -826,15 +837,16 @@ export class EmployeeIncidenceService {
         dia: ``
       };
 
+      //se envia correo
+      const mail = await this.mailService.sendEmailRechazaIncidence(
+        subject, 
+        mailData,
+        to,
+        calendar
+      );
       
     }
-    //se envia correo
-    const mail = await this.mailService.sendEmailCreateIncidence(
-      subject, 
-      mailData,
-      to,
-      event
-    );
+    
 
     employeeIncidence.status = updateEmployeeIncidenceDto.status;
     return await this.employeeIncidenceRepository.save(employeeIncidence);
