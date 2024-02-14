@@ -764,7 +764,7 @@ export class EmployeeIncidenceService {
     }
     const to = [];
     let emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
-    to.push(emailUser.user.email);
+    to.push({email: emailUser.user.email});
     let subject = '';
     let mailData: MailData;
     
@@ -795,7 +795,8 @@ export class EmployeeIncidenceService {
         summary: 'Incidencia Autorizada',
         description: 'It works ;)',
         url: 'https://example.com',
-        busystatus: ICalEventBusyStatus.FREE
+        busystatus: ICalEventBusyStatus.FREE,
+        attendees: to
       });
       //se envia correo
       const mail = await this.mailService.sendEmailAutorizaIncidence(
@@ -812,9 +813,7 @@ export class EmployeeIncidenceService {
       employeeIncidence.date_canceled = new Date();
       employeeIncidence.canceledBy = userAutoriza.emp;
       //ENVIO DE CORREO
-      subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} 
-          ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
-          ${employeeIncidence.employee.maternal_surname}`;
+      subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`;
       mailData = {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
         employeeNumber : Number(employeeIncidence.employee.employee_number),
