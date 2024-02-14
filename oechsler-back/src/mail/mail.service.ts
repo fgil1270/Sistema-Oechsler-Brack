@@ -20,7 +20,7 @@ export interface MailData {
 export class MailService {
     constructor(private readonly mailerService: MailerService) { }
 
-    async sendEmailCreateIncidence(subject: string, mailData: MailData, to: string[],  event: ICalCalendar) {
+    async sendEmailCreateIncidence(subject: string, mailData: MailData, to: string[]) {
 
         await this.mailerService.sendMail({
             to: to,
@@ -28,12 +28,6 @@ export class MailService {
             subject: subject,
             template: 'crear_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
-            alternatives: [
-                {
-                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    content: event.toString(),
-                },
-            ],
         }) 
         .then((success) => {
         //console.log('correcto:', success);
@@ -61,6 +55,12 @@ export class MailService {
                     content: calendar.toString(),
                 },
             ],
+            /* alternatives: [
+                {
+                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
+                    content: event.toString(),
+                },
+            ], */
         }) 
         .then((success) => {
         //console.log('correcto:', success);
@@ -72,20 +72,14 @@ export class MailService {
         });
     }
 
-    async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], event: ICalCalendar ) {
+    async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[] ) {
 
         await this.mailerService.sendMail({
             to: to,
             from: 'notificationes@oechsler.mx',
             subject: subject,
             template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
-            context: mailData,
-            alternatives: [
-                {
-                    contentType: 'text/calendar; charset="utf-8";',
-                    content: event.toString(),
-                },
-            ],
+            context: mailData
         }) 
         .then((success) => {
         //console.log('correcto:', success);
