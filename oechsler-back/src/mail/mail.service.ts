@@ -47,14 +47,19 @@ export class MailService {
             subject: subject,
             template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
-            attachments: [
+            icalEvent: {
+                filename: 'evento.ics',
+                method: 'request',
+                content: calendar.toString(),
+            },
+           /*  attachments: [
                 {
-                    /* contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    contentDisposition: 'attachment', */
+                    //contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
+                    //contentDisposition: 'attachment', 
                     filename: 'evento.ics',
                     content: calendar.toString(),
                 },
-            ],
+            ], */
             /* alternatives: [
                 {
                     contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
