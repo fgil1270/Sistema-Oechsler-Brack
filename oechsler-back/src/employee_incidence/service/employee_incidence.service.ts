@@ -150,15 +150,12 @@ export class EmployeeIncidenceService {
             dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
         };
 
-        
-
-        const filename = 'calendar.ics';
         const calendar = ical();
         //calendar.method(ICalCalendarMethod.PUBLISH)
         
         calendar.events([{
-          start: new Date(createEmployeeIncidenceDto.start_date+' '+ createEmployeeIncidenceDto.start_hour),
-          end: new Date(createEmployeeIncidenceDto.end_date+' '+ createEmployeeIncidenceDto.end_hour),
+          start: new Date(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')+' '+ createEmployeeIncidenceDto.start_hour),
+          end: new Date(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')+' '+ createEmployeeIncidenceDto.end_hour),
           summary: 'Example Event',
           description: 'It works ;)',
           url: 'https://example.com'
