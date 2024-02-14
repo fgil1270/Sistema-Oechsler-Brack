@@ -3,6 +3,7 @@ import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Be
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
+import ical from 'ical-generator';
 
 import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
@@ -150,11 +151,25 @@ export class EmployeeIncidenceService {
         };
 
         
+
+        const filename = 'calendar.ics';
+        const calendar = ical();
+        
+        const event = calendar.createEvent({
+          start: moment().add(1, 'hour'),
+          end: moment().add(2, 'hours'),
+          summary: 'Example Event',
+          description: 'It works ;)',
+          organizer: 'Organizer\'s Name <organizer@example.com>',
+          url: 'https://example.com'
+        });
+
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmailCreateIncidence(
           subject, 
           mailData,
-          to
+          to, 
+          event
         ); 
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
         
@@ -762,6 +777,19 @@ export class EmployeeIncidenceService {
     let emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
     to.push(emailUser.user.email);
     let subject = '';
+    let mailData: MailData;
+    const filename = 'calendar.ics';
+    const calendar = ical();
+    const event = calendar.createEvent({
+      start: moment().add(1, 'hour'),
+      end: moment().add(2, 'hours'),
+      summary: 'Example Event',
+      description: 'It works ;)',
+      organizer: 'Organizer\'s Name <organizer@example.com>',
+      url: 'https://example.com'
+    });
+
+
     if(updateEmployeeIncidenceDto.status == 'Autorizada'){
       employeeIncidence.date_aproved_leader = new Date();
       employeeIncidence.leader = userAutoriza.emp;
@@ -769,7 +797,7 @@ export class EmployeeIncidenceService {
       subject = `Incidencia Autorizada: ${employeeIncidence.employee.employee_number} 
           ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
           ${employeeIncidence.employee.maternal_surname}`;
-      let mailData: MailData = {
+      mailData = {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
         employeeNumber : employeeIncidence.employee.employee_number,
         incidence: employeeIncidence.incidenceCatologue.name,
@@ -777,12 +805,9 @@ export class EmployeeIncidenceService {
         totalHours: employeeIncidence.total_hour,
         dia: ``
       };
+
       
-      const mail = await this.mailService.sendEmailCreateIncidence(
-        subject, 
-        mailData,
-        to
-      );
+      
     }
 
     if(updateEmployeeIncidenceDto.status == 'Rechazada'){
@@ -792,7 +817,7 @@ export class EmployeeIncidenceService {
       subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} 
           ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} 
           ${employeeIncidence.employee.maternal_surname}`;
-      let mailData: MailData = {
+      mailData = {
         employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
         employeeNumber : Number(employeeIncidence.employee.employee_number),
         incidence: employeeIncidence.incidenceCatologue.name,
@@ -800,14 +825,16 @@ export class EmployeeIncidenceService {
         totalHours: employeeIncidence.total_hour,
         dia: ``
       };
-      
-      const mail = await this.mailService.sendEmailRechazaIncidence(
-        subject, 
-        mailData,
-        to
-      );
+
       
     }
+    //se envia correo
+    const mail = await this.mailService.sendEmailCreateIncidence(
+      subject, 
+      mailData,
+      to,
+      event
+    );
 
     employeeIncidence.status = updateEmployeeIncidenceDto.status;
     return await this.employeeIncidenceRepository.save(employeeIncidence);
