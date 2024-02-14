@@ -45,7 +45,7 @@ export class MailService {
         });
     }
 
-    async sendEmailAutorizaIncidence(subject: string, mailData: MailData, to: string[], event: ICalCalendar ) {
+    async sendEmailAutorizaIncidence(subject: string, mailData: MailData, to: string[], calendar: ICalCalendar ) {
 
         await this.mailerService.sendMail({
             to: to,
@@ -53,10 +53,12 @@ export class MailService {
             subject: subject,
             template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
-            alternatives: [
+            attachments: [
                 {
-                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    content: event.toString(),
+                    /* contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
+                    contentDisposition: 'attachment', */
+                    filename: 'evento.ics',
+                    content: calendar.toString(),
                 },
             ],
         }) 
@@ -80,7 +82,7 @@ export class MailService {
             context: mailData,
             alternatives: [
                 {
-                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
+                    contentType: 'text/calendar; charset="utf-8";',
                     content: event.toString(),
                 },
             ],
