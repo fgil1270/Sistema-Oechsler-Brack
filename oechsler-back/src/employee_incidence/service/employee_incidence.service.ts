@@ -3,7 +3,7 @@ import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Be
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
-import ical, { ICalCalendarMethod } from 'ical-generator';
+import ical, { ICalCalendarMethod, ICalEventBusyStatus } from 'ical-generator';
 
 import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
@@ -17,6 +17,7 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
+import { ICalEvent, ICalCalendar } from 'ical-generator';
 
 
 @Injectable()
@@ -150,25 +151,13 @@ export class EmployeeIncidenceService {
             dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
         };
 
-        const calendar = ical();
-        //calendar.method(ICalCalendarMethod.PUBLISH)
         
-        calendar.events([{
-          start: new Date(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')+' '+ createEmployeeIncidenceDto.start_hour),
-          end: new Date(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')+' '+ createEmployeeIncidenceDto.end_hour),
-          summary: 'Example Event',
-          description: 'It works ;)',
-          url: 'https://example.com'
-        }]);
-
-        calendar.events();
 
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmailCreateIncidence(
           subject, 
           mailData,
-          to, 
-          calendar
+          to
         ); 
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
         
@@ -763,6 +752,7 @@ export class EmployeeIncidenceService {
       relations: {
         employee: true,
         incidenceCatologue: true,
+        dateEmployeeIncidence: true
       }
 
     });
@@ -777,16 +767,9 @@ export class EmployeeIncidenceService {
     to.push(emailUser.user.email);
     let subject = '';
     let mailData: MailData;
-    const filename = 'calendar.ics';
+    
     const calendar = ical();
-    const event = calendar.createEvent({
-      start: moment().add(1, 'hour'),
-      end: moment().add(2, 'hours'),
-      summary: 'Example Event',
-      description: 'It works ;)',
-      location: 'my room',
-      url: 'https://example.com'
-    });
+
 
 
     if(updateEmployeeIncidenceDto.status == 'Autorizada'){
@@ -804,7 +787,17 @@ export class EmployeeIncidenceService {
         totalHours: employeeIncidence.total_hour,
         dia: ``
       };
-
+      calendar.method(ICalCalendarMethod.REQUEST)
+      
+      calendar.createEvent({
+        start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
+        end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date +' '+ employeeIncidence.end_hour),
+        summary: 'Incidencia Autorizada',
+        description: 'It works ;)',
+        url: 'https://example.com',
+        timezone: 'America/Mexico_City',
+        busystatus: ICalEventBusyStatus.FREE
+      });
       //se envia correo
       const mail = await this.mailService.sendEmailAutorizaIncidence(
         subject, 
@@ -836,8 +829,7 @@ export class EmployeeIncidenceService {
       const mail = await this.mailService.sendEmailRechazaIncidence(
         subject, 
         mailData,
-        to,
-        calendar
+        to
       );
       
     }
