@@ -3,7 +3,7 @@ import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Be
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
-import ical, { ICalCalendar } from 'ical-generator';
+import ical, { ICalCalendarMethod } from 'ical-generator';
 
 import { CreateEmployeeIncidenceDto, UpdateEmployeeIncidenceDto, ReportEmployeeIncidenceDto } from '../dto/create-employee_incidence.dto';
 import { EmployeeIncidence } from "../entities/employee_incidence.entity";
@@ -153,18 +153,16 @@ export class EmployeeIncidenceService {
         
 
         const filename = 'calendar.ics';
-        const calendar = ical({
-          name: 'calendario'
-        });
+        const calendar = ical();
+        //calendar.method(ICalCalendarMethod.PUBLISH)
         
-        const event = calendar.createEvent({
-          start: moment().add(1, 'hour'),
-          end: moment().add(2, 'hours'),
+        calendar.events([{
+          start: new Date(createEmployeeIncidenceDto.start_date+' '+ createEmployeeIncidenceDto.start_hour),
+          end: new Date(createEmployeeIncidenceDto.end_date+' '+ createEmployeeIncidenceDto.end_hour),
           summary: 'Example Event',
           description: 'It works ;)',
-          location: 'my room',
           url: 'https://example.com'
-        });
+        }]);
 
         calendar.events();
 
