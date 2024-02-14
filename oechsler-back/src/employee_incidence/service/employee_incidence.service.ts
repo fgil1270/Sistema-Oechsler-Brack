@@ -128,6 +128,7 @@ export class EmployeeIncidenceService {
         });
         let to = [];
         let subject = '';
+        // si el usuario crea incidencia para el mismo
         if(employeeIncidenceCreate.employee.id == user.idEmployee){
           let lideres = await this.organigramaService.leaders(employeeIncidenceCreate.employee.id);
           for (let index = 0; index < lideres.orgs.length; index++) {
@@ -170,26 +171,35 @@ export class EmployeeIncidenceService {
           url: 'https://example.com',
           busystatus: ICalEventBusyStatus.FREE,
           //status: ICalEventStatus.CONFIRMED,
-          attendees: [
-            {
-              email: to[1],
+          attendees: to.length > 0? to.map((email) => {
+            return {
+              email: email,
               status: ICalAttendeeStatus.ACCEPTED,
-            },
-            {
-              email: to[0],
-              rsvp:true,
-              status: ICalAttendeeStatus.ACCEPTED,
-            },
-          ]
+            }
+          }) : [],
+           
         });
+
+        if(employeeIncidenceCreate.employee.id == user.idEmployee){
+          //ENVIO DE CORREO
+          const mail = await this.mailService.sendEmailCreateIncidence(
+            subject, 
+            mailData,
+            to
+          ); 
+        }else{
+          //ENVIO DE CORREO
+          const mail = await this.mailService.sendEmailAutorizaIncidence(
+            subject, 
+            mailData,
+            to,
+            calendar
+          );
+
+        }
         
 
-        //ENVIO DE CORREO
-        const mail = await this.mailService.sendEmailCreateIncidence(
-          subject, 
-          mailData,
-          to
-        ); 
+        
 
 
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
