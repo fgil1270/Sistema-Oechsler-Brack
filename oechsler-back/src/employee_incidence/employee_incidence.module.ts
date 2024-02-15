@@ -14,6 +14,7 @@ import { PayrollsModule } from '../payrolls/payrolls.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
+import { CalendarModule } from '../calendar/calendar.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { UsersModule } from '../users/users.module';
     PayrollsModule,
     OrganigramaModule,
     MailModule,
-    UsersModule
+    UsersModule,
+    CalendarModule
   ],
   controllers: [EmployeeIncidenceController, ReportEmployeeIncidenceController, ReportFlexTimeController],
   providers: [EmployeeIncidenceService, EmployeeIncidence],
