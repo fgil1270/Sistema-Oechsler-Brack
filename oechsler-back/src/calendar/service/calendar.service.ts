@@ -39,9 +39,29 @@ export class CalendarService {
     }
     async findByDate(date: string) {
         const calendar = await this.calendarRepository.findOne({
+            relations: {
+                created_by: true
+            },
             where: {
                 date: date as any
             }
+        });
+        
+        return calendar;
+    }
+
+    async findRangeDate(dataDate: any) {
+        
+        const startDate = new Date(dataDate.start);
+        const endDate = new Date(dataDate.end);
+        const calendar = await this.calendarRepository.find({
+            relations: {
+                created_by: true
+            },
+            where: {
+                date: Between(format(startDate, 'yyyy-MM-dd') as any, format(endDate, 'yyyy-MM-dd') as any)
+            }
+            
         });
         
         return calendar;

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Between } from "typeorm";
+import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Between, Code } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
 import * as moment from 'moment';
@@ -17,7 +17,7 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
-import { ICalEvent, ICalCalendar } from 'ical-generator';
+import { CalendarService } from '../../calendar/service/calendar.service'; 
 
 
 @Injectable()
@@ -32,7 +32,8 @@ export class EmployeeIncidenceService {
     private payRollService: PayrollsService,
     private organigramaService: OrganigramaService,
     private mailService: MailService,
-    private userService: UsersService
+    private userService: UsersService,
+    private calendarService: CalendarService,
   ) {}
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
@@ -83,34 +84,40 @@ export class EmployeeIncidenceService {
             
           }
 
-          //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
-          if(dayLetterProfile){
+          //VERIFICA SI EL DIA ES FERIADO
+          const dayHoliday = await this.calendarService.findByDate(format(index, 'yyyy-MM-dd'));
 
-            //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
-            const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
-              index,
-              [employee.emps[j].id]
-            );
-            totalDays++;
+          //SI EL DIA NO ES FERIADO
+          if(!dayHoliday){
             
-          }else{
-            //si el dia no pertenece al perfil
-            //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
-            let sql = `select * from employee_shift where employeeId = ${employee.emps[j].id} and start_date = '${format(index, 'yyyy-MM-dd')}'`;
-            const employeeShiftExist = await this.employeeIncidenceRepository.query(sql);
-            
-            if(employeeShiftExist.length > 0){
+            //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
+            if(dayLetterProfile){
+
+              //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+              const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
+                index,
+                [employee.emps[j].id]
+              );
               totalDays++;
-            }
-           
-            /* const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
-              index,
-              [employee.emps[j].id]
-            ); */
+              
+            }else{
+              //si el dia no pertenece al perfil
+              //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
+              let sql = `select * from employee_shift where employeeId = ${employee.emps[j].id} and start_date = '${format(index, 'yyyy-MM-dd')}'`;
+              const employeeShiftExist = await this.employeeIncidenceRepository.query(sql);
+              
+              if(employeeShiftExist.length > 0){
+                totalDays++;
+              }
             
+              /* const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
+                index,
+                [employee.emps[j].id]
+              ); */
+              
+            }
           }
 
-          
         }
         
         const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
@@ -999,7 +1006,7 @@ export class EmployeeIncidenceService {
 
     }
    
-    
+    //se filtran los empleados por perfil MIXTO
     let newArray = employees.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
     //generacion de dias seleccionados
 
@@ -1012,11 +1019,12 @@ export class EmployeeIncidenceService {
     }
     
     
-
+    //se recorre el arreglo de empleados
     for (let i = 0; i < newArray.length; i++) {
       let eventDays = [];
       let totalHrsRequeridas = 0;
       let totalHrsTrabajadas = 0;
+      
 
       for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
             
@@ -1102,8 +1110,10 @@ export class EmployeeIncidenceService {
           }
           
         });
-          
-        
+
+        //se verifica si el dia seleccionado es festivo
+        const dayCalendar = await this.calendarService.findByDate(dia as any);
+
         
 
         //se obtiene el turno del dia seleccionado
@@ -1112,11 +1122,31 @@ export class EmployeeIncidenceService {
           end: format(dia, 'yyyy-MM-dd'),
         }, `${newArray[i].id}`);
 
+        let objIncidencia = [];
+
+        if(dayCalendar){
+          if(dayCalendar.holiday){
+            const holiday = await this.incidenceCatologueService.findName('Dia festivo / Descanso trabajo');
+            objIncidencia.push({
+              code: holiday.code,
+            });
+            sumaHrsIncidencias += newArray[i].employeeProfile.work_shift_hrs;
+          }
+          if(newArray[i].id == 2219){
+            console.log('dia', dia)
+            console.log('sumaHrsIncidencias', sumaHrsIncidencias)
+            console.log('incidencias', incidencias)
+            
+          }
+        }
+
 
         let hrEntrada = '00:00:00';
         let hrSalida = '23:59:59';
         let diaAnterior = dia;
         let diaSiguente = dia;
+        
+        
 
         const registrosChecador = await this.checadorService.findbyDate(parseInt(newArray[i].id), diaAnterior, diaSiguente, hrEntrada, hrSalida);
         let firstHr;
@@ -1129,10 +1159,14 @@ export class EmployeeIncidenceService {
           diffHr = secondHr.diff(firstHr, 'hours', true);
 
         }
-
+        incidencias.forEach(incidence => {
+          objIncidencia.push({
+            code: incidence.incidenceCatologue.code,
+          });
+        });
         eventDays.push({
           date: format(dia, 'yyyy-MM-dd'),
-          incidencia: incidencias,
+          incidencia: objIncidencia,
           employeeShift: shift.events[0]?.nameShift,
           entrada: registrosChecador.length >= 1? format(new Date(firstHr), 'HH:mm:ss') : '',
           salida: registrosChecador.length >= 2? format(new Date(secondHr), 'HH:mm:ss') : '',
