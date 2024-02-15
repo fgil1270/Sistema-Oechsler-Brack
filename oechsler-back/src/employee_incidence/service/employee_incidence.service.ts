@@ -159,11 +159,44 @@ export class EmployeeIncidenceService {
             dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
         };
 
-        
-        
+        const calendar = ical();
+        calendar.method(ICalCalendarMethod.REQUEST)
+        calendar.timezone('America/Mexico_City');
+        calendar.createEvent({
+          start: new Date(employeeIncidenceCreate.dateEmployeeIncidence[0].date + ' ' + employeeIncidenceCreate.start_hour),
+          end: new Date(employeeIncidenceCreate.dateEmployeeIncidence[employeeIncidenceCreate.dateEmployeeIncidence.length - 1].date +' '+ employeeIncidenceCreate.end_hour),
+          timezone: 'America/Mexico_City',
+          summary: subject,
+          description: 'It works ;)',
+          url: 'https://example.com',
+          busystatus: ICalEventBusyStatus.FREE,
+          //status: ICalEventStatus.CONFIRMED,
+          attendees: to.length > 0? to.map((email) => {
+            return {
+              email: email,
+              status: ICalAttendeeStatus.ACCEPTED,
+            }
+          }) : [],
+           
+        });
 
-        
+        if(employeeIncidenceCreate.employee.id == user.idEmployee){
+          //ENVIO DE CORREO
+          const mail = await this.mailService.sendEmailCreateIncidence(
+            subject, 
+            mailData,
+            to
+          ); 
+        }else{
+          //ENVIO DE CORREO
+          const mail = await this.mailService.sendEmailAutorizaIncidence(
+            subject, 
+            mailData,
+            to,
+            calendar
+          );
 
+        }
 
         const employeeIncidence = await this.employeeIncidenceRepository.save(employeeIncidenceCreate);
         
