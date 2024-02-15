@@ -1147,12 +1147,7 @@ export class EmployeeIncidenceService {
             });
             sumaHrsIncidencias += newArray[i].employeeProfile.work_shift_hrs;
           }
-          if(newArray[i].id == 2219){
-            console.log('dia', dia)
-            console.log('sumaHrsIncidencias', sumaHrsIncidencias)
-            console.log('incidencias', incidencias)
-            
-          }
+
         }
 
 
