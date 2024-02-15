@@ -178,11 +178,6 @@ export class TimeCorrectionService {
                     continue;
                 }
                 
-                if(iterator.id == 2019){
-                    console.log(incidencias)
-                    
-                }
-                
                 let turnoActual = employeeShif.events[0]?.nameShift;
                 let hrEntrada = '00:00:00'; 
                 let hrSalida = '23:59:00';

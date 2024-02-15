@@ -44,7 +44,6 @@ export class CalendarController {
   @ApiOperation({ summary: 'Buscar fecha por rango de fechas' })
   @Get('/range-date')
   findRangeDate(@Query() dataDate: any) {
-    console.log(dataDate)
     return this.calendarService.findRangeDate(dataDate);
   }
 }
