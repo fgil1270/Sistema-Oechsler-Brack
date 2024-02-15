@@ -89,6 +89,7 @@ export class UsersService {
             withDeleted: true
         });
         if (!user) {
+            return null;
             throw new NotFoundException(`User #${id} not found`);
         }
         return {
@@ -110,6 +111,7 @@ export class UsersService {
             withDeleted: true
         });
         if (!user) {
+            return null;
             throw new NotFoundException(`User #${id} not found`);
         }
         return {

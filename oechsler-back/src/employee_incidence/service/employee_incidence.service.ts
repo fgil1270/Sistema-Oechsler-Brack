@@ -141,7 +141,10 @@ export class EmployeeIncidenceService {
           for (let index = 0; index < lideres.orgs.length; index++) {
             const lider = lideres.orgs[index];
             const userLider = await this.userService.findByIdEmployee(lider.leader.id);
-            to.push(userLider.user.email);
+            if(userLider){
+              to.push(userLider.user.email);
+            }
+            
             
           }
           subject = `Autorizar incidencia: ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}, Dia: ${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`;
@@ -151,12 +154,19 @@ export class EmployeeIncidenceService {
           for (let index = 0; index < lideres.orgs.length; index++) {
             const lider = lideres.orgs[index];
             const userLider = await this.userService.findByIdEmployee(lider.leader.id);
-            to.push(userLider.user.email);
+            if(userLider){
+              to.push(userLider.user.email);
+            }
             
           }
-          to.push(mailUser.user.email);
+          if(mailUser){
+            to.push(mailUser.user.email);
+          }
+          
           subject = `${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
         }
+        to.push('f.gil@oechsler.mx');
+
         let mailData: MailData = {
             employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
             employeeNumber: employeeIncidenceCreate.employee.employee_number,
@@ -863,9 +873,14 @@ export class EmployeeIncidenceService {
     for (let index = 0; index < lideres.orgs.length; index++) {
       const lider = lideres.orgs[index];
       const userLider = await this.userService.findByIdEmployee(lider.leader.id);
-      to.push(userLider.user.email);
+      if(userLider){
+        to.push(userLider.user.email);
+      }
     }
-    to.push(emailUser.user.email);
+    if(emailUser){
+      to.push(emailUser.user.email);
+    }
+    
 
     let subject = '';
     let mailData: MailData;
