@@ -111,7 +111,7 @@ export class ReportEmployeeIncidenceController {
   @Get()
   reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
     
-    if(report.access == 'true'){
+    if(report.access == true){
       return true;
     }else{
       return this.employeeIncidenceService.reportCompensatoryTime(report, user);
@@ -131,7 +131,7 @@ export class ReportFlexTimeController {
   @Views('horario_flexible')
   @Get()
   reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
-    if(report.access == 'true'){
+    if(report.access == true){
       return true;
     }else{
       return this.employeeIncidenceService.reportFlexTime(report, user);
