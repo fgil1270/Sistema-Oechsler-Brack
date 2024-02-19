@@ -978,8 +978,7 @@ export class EmployeeIncidenceService {
     }else{
       let dataEmployee = await this.employeeService.findOne(userLogin.idEmployee);
       employees = [dataEmployee.emp];
-      console.log(dataEmployee.emp)
-      
+
     }
 
     //se filtran los empleados por perfil MIXTO
