@@ -946,7 +946,6 @@ export class EmployeeIncidenceService {
     let diasGenerados = [];
     let letraSemana = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
-    console.log(userLogin)
     userLogin.roles.forEach(role => {
       if(role.name == 'Admin' || role.name == 'RH'){
         isAdmin = true;
@@ -978,10 +977,11 @@ export class EmployeeIncidenceService {
 
     }else{
       let dataEmployee = await this.employeeService.findOne(userLogin.idEmployee);
+      employees = [dataEmployee.emp];
       console.log(dataEmployee.emp)
       
     }
-    console.log(employees.length)
+
     //se filtran los empleados por perfil MIXTO
     let newArray = employees.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
     //generacion de dias seleccionados
