@@ -41,7 +41,7 @@ export class ChecadorController {
         return this.checadorService.findbyDate(data.empleadoId, data.startDate, data.endDate, data.startTime, data.endTime);
     }
 
-    @ApiOperation({ summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq' })
+    @ApiOperation({ summary: 'Acceso a la vista de Nomipaq' })
     @Views('nomipaq')
     @Get('nomipaq')
     findView(){

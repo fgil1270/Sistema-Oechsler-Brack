@@ -34,7 +34,7 @@ export class TimeCorrectionController {
   @ApiOperation({ summary: 'Acceso a la vista corrección de tiempo' })
   @Views('correccion_tiempo')
   @Get()
-  reportNomipaq(@Query() data:any, @CurrentUser() user: any){
+  correctionTime(@Query() data:any, @CurrentUser() user: any){
 
     return this.timeCorrectionService.find(data, user);
   }

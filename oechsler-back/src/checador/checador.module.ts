@@ -7,7 +7,8 @@ import { ChecadorService } from './service/checador.service';
 import { EmployeesModule } from '../employees/employees.module';
 import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
 import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidence.module';
-import { IncidenceCatologueModule } from '..//incidence_catologue/incidence_catologue.module';
+import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catologue.module';
+import { CalendarModule } from '../calendar/calendar.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { IncidenceCatologueModule } from '..//incidence_catologue/incidence_cato
     EmployeesModule,
     EmployeeShiftModule,
     forwardRef( () => EmployeeIncidenceModule),
-    IncidenceCatologueModule
+    IncidenceCatologueModule,
+    CalendarModule
   ],
   providers: [ChecadorService],
   controllers: [ChecadorController],

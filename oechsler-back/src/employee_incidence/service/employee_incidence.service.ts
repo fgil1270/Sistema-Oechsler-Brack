@@ -173,7 +173,8 @@ export class EmployeeIncidenceService {
             incidence: employeeIncidenceCreate.incidenceCatologue.name,
             efectivos: totalDays,
             totalHours: createEmployeeIncidenceDto.total_hour,
-            dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`
+            dia: `${format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd')} al ${format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd')}`,
+            employeeAutoriza: leader.emp.employee_number + ' ' + leader.emp.name + ' ' + leader.emp.paternal_surname + ' ' + leader.emp.maternal_surname
         };
         
         const calendar = ical();
@@ -859,7 +860,8 @@ export class EmployeeIncidenceService {
         incidence: employeeIncidence.incidenceCatologue.name,
         efectivos: 0,
         totalHours: employeeIncidence.total_hour,
-        dia: ``
+        dia: ``,
+        employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`
       };
 
       calendar.method(ICalCalendarMethod.REQUEST)
@@ -908,7 +910,8 @@ export class EmployeeIncidenceService {
         incidence: employeeIncidence.incidenceCatologue.name,
         efectivos: 0,
         totalHours: employeeIncidence.total_hour,
-        dia: ``
+        dia: ``,
+        employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`
       };
 
       //se envia correo
@@ -1143,7 +1146,7 @@ export class EmployeeIncidenceService {
         });
 
         
-        totalHrsTrabajadas += diffHr > 0? diffHr : 0;
+        totalHrsTrabajadas += Number(diffHr) > 0? Number(diffHr) : 0;
         totalHrsTrabajadas += sumaHrsIncidencias;
                 
       }
