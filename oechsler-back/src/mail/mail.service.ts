@@ -13,7 +13,7 @@ export interface MailData {
     efectivos: number;
     totalHours: number;
     dia: string;
-
+    employeeAutoriza: string;
 }
 
 @Injectable()

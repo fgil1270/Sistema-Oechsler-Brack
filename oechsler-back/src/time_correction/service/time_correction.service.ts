@@ -13,6 +13,7 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { ChecadorService } from '../../checador/service/checador.service';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
+import { CalendarService } from '../../calendar/service/calendar.service';
 
 import { read } from 'xlsx';
 
@@ -28,7 +29,8 @@ export class TimeCorrectionService {
         private readonly employeesService: EmployeesService,
         private readonly checadorService: ChecadorService,
         private readonly incidenceCatalogueService: IncidenceCatologueService,
-        private readonly organigramaService: OrganigramaService
+        private readonly organigramaService: OrganigramaService,
+        private readonly calendarService: CalendarService
     ) {}
 
     async create(data: CreateTimeCorrectionDto){
@@ -153,6 +155,15 @@ export class TimeCorrectionService {
                         }
                     }
                 });
+                //se verifica si el dia es festivo
+                const dayCalendar = await this.calendarService.findByDate(index as any);
+                
+                if(dayCalendar){
+                    if(dayCalendar.holiday){
+                        continue;
+                    }
+
+                }
 
                 if(searchTimeCorrection){
                     continue;
