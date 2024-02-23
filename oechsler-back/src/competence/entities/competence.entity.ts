@@ -13,6 +13,7 @@ import {
 import { TypeCompetence } from './type_competence.entity';
 import { TypeElementCompetence } from './type_element_competence.entity';
 import { Job } from 'src/jobs/entities/job.entity';
+import { Course } from '../../course/entities/course.entity';
 
 @Entity()
 export class Competence {
@@ -44,5 +45,8 @@ export class Competence {
 
     @ManyToMany(() => Job, (job) => job.competence)
     job: Job[];
+
+    @OneToMany(() => Course, (course) => course.competence)
+    course: Course[];
 
 }

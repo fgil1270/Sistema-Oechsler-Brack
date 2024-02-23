@@ -29,4 +29,22 @@ export class CompetenceService {
 
         return competence;
     }
+
+    async findOne(id: number){
+        let competence = await this.competence.findOne({
+            where: {
+                id: id
+            },
+            relations:{
+                typeCompetence: true,
+                typeElementCompetence: true,
+                job: true,
+                course: true
+            }
+        });
+
+
+        return competence;
+
+    }
 }

@@ -32,6 +32,7 @@ import { CalendarModule } from './calendar/calendar.module';
 import { CompetenceModule } from './competence/competence.module';
 import { PercentageDefinitionModule } from './evaluation_annual/percentage_definition/percentage_definition.module';
 import { EmployeeObjectiveModule } from './employee_objective/employee_objective.module';
+import { CourseModule } from './course/course.module';
 
 @Module({
   imports: [
@@ -54,7 +55,7 @@ import { EmployeeObjectiveModule } from './employee_objective/employee_objective
       port: 3306,
       username: 'root',
       password: 'root',
-      database: process.env.MYSQL_DATABASE, 
+      database: process.env.MYSQL_DATABASE,
       entities: ['dist/**/*.entity{.ts,.js}'],
       autoLoadEntities: true,
       synchronize: false,
@@ -82,7 +83,8 @@ import { EmployeeObjectiveModule } from './employee_objective/employee_objective
     CalendarModule,
     CompetenceModule,
     PercentageDefinitionModule,
-    EmployeeObjectiveModule
+    EmployeeObjectiveModule,
+    CourseModule,
   ],
   controllers: [
     AppController],
