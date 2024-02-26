@@ -52,7 +52,11 @@ export class CourseService {
 
     async findAll() {
         const total = await this.courseRepository.count();
-        const courses = await this.courseRepository.find();
+        const courses = await this.courseRepository.find({
+            relations: {
+                competence: true
+            }
+        });
         
         if (!courses) {
             throw new NotFoundException(`Courses not found`);
