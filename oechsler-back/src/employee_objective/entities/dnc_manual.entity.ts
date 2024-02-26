@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { DefinitionObjectiveAnnual } from './definition_objective_annual.entity';
 import { Competence } from '../../competence/entities/competence.entity';
+import { CourseEvaluationMannual } from './course_evaluation_mannual.entity';
 
 @Entity()
 export class DncCourseManual {
@@ -41,5 +42,12 @@ export class DncCourseManual {
     @ManyToOne(() => DefinitionObjectiveAnnual, post => post.dncCourseManual)
     @JoinColumn()
     definitionObjectiveAnnual: DefinitionObjectiveAnnual;
+
+    @ManyToOne(() => Competence, post => post.dncCourseManual)
+    @JoinColumn()
+    competence: Competence;
+
+    @OneToMany(() => CourseEvaluationMannual, post => post.dncCourseManual)
+    courseEvaluationMannual: CourseEvaluationMannual[];
     
 }

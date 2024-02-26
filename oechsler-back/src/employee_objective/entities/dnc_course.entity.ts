@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { DefinitionObjectiveAnnual } from './definition_objective_annual.entity';
 import { Course } from '../../course/entities/course.entity';
+import { CourseEvaluation } from './course_evaluation.entity';
 
 @Entity()
 export class DncCourse {
@@ -42,6 +43,9 @@ export class DncCourse {
     @ManyToOne(() => Course, post => post.dncCourse)
     @JoinColumn()
     course: Course;
+
+    @OneToMany(() => CourseEvaluation, post => post.dncCourse)
+    courseEvaluation: CourseEvaluation[];
 
     
 }

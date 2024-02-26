@@ -14,6 +14,8 @@ import { PercentageDefinitionModule } from '../evaluation_annual/percentage_defi
 import { CourseModule } from 'src/course/course.module';
 import { DncCourse } from './entities/dnc_course.entity';
 import { DncCourseManual } from './entities/dnc_manual.entity';
+import { CourseEvaluation } from './entities/course_evaluation.entity';
+import { CourseEvaluationMannual } from './entities/course_evaluation_mannual.entity';
 
 @Module({
     imports: [
@@ -22,7 +24,9 @@ import { DncCourseManual } from './entities/dnc_manual.entity';
             EmployeeObjective,
             EmployeeObjectiveEvaluation,
             DncCourse,
-            DncCourseManual
+            DncCourseManual,
+            CourseEvaluation,
+            CourseEvaluationMannual
         ]),
         OrganigramaModule,
         PercentageDefinitionModule,
