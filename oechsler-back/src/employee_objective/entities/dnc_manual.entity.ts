@@ -7,29 +7,27 @@ import {
     DeleteDateColumn,
     ManyToOne,
     JoinColumn,
-    ManyToMany,
     OneToMany
 } from 'typeorm';
+import { DefinitionObjectiveAnnual } from './definition_objective_annual.entity';
 import { Competence } from '../../competence/entities/competence.entity';
-import { DncCourse } from '../../employee_objective/entities/dnc_course.entity';
-
 
 @Entity()
-export class Course {
+export class DncCourseManual {
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column({ type: 'varchar', length: 255 })
-    name: string;
+    goal: string;
 
     @Column({ type: 'varchar', length: 255 })
-    description: string;
+    train: string;
 
     @Column({ type: 'varchar', length: 255 })
-    status: string;
+    priority: string;
 
-    @Column({ type: 'boolean', default: false})
-    req_efficiency: boolean;
+    @Column({ type: 'text' })
+    comment: string;
 
     @CreateDateColumn()
     created_at: Date;
@@ -40,11 +38,8 @@ export class Course {
     @DeleteDateColumn()
     deleted_at: Date;
 
-    @ManyToOne(() => Competence, post => post.course)
+    @ManyToOne(() => DefinitionObjectiveAnnual, post => post.dncCourseManual)
     @JoinColumn()
-    competence: Competence;
-
-    @OneToMany(() => DncCourse, post => post.course)
-    dncCourse: DncCourse[];
+    definitionObjectiveAnnual: DefinitionObjectiveAnnual;
     
 }
