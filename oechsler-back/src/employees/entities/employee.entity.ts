@@ -22,7 +22,7 @@ import { Checador } from "../../checador/entities/checador.entity";
 import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
 import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";    
 import { Calendar } from "../../calendar/entities/calendar.entity";
-import { EmployeeObjective } from "../../employee_objective/entities/employee_objective.entity"; 
+import { DefinitionObjectiveAnnual } from "../../employee_objective/entities/definition_objective_annual.entity";
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 @Entity()
@@ -188,16 +188,17 @@ export class Employee {
     @OneToMany(() => Calendar, (post) => post.created_by)
     calendar: Calendar[];
 
-    @OneToMany(() => EmployeeObjective, (post) => post.employee)
-    employeeObjective: EmployeeObjective[];
-
-    @OneToMany(() => EmployeeObjective, (post) => post.evaluatedBy)
-    employeeObjectiveEvaluated: EmployeeObjective[];
-
     @OneToMany(() => EmployeeIncidence, (post) => post.rh)
     employeeIncidenceRh: EmployeeIncidence[];
 
     @OneToMany(() => EmployeeIncidence, (post) => post.leader)
     employeeIncidenceLeader: EmployeeIncidence[];
+
+    @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.employee)
+    definitionObjectiveAnnual: DefinitionObjectiveAnnual[];
+
+    @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.evaluatedBy)
+    definitionObjectiveAnnualEvaluatedBy: DefinitionObjectiveAnnual[];
+
     
 }

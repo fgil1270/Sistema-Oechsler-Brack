@@ -3,7 +3,7 @@ import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Be
 import { InjectRepository } from "@nestjs/typeorm";
 
 import { CreateEmployeeObjectiveDto } from '../dto/create_employee_objective.dto';
-import { EmployeeObjective } from '../entities/employee_objective.entity';
+import { EmployeeObjective } from '../entities/objective.entity';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { PercentageDefinitionService } from '../../evaluation_annual/percentage_definition/service/percentage_definition.service';
 import { PercentageDefinition } from '../../evaluation_annual/percentage_definition/entities/percentage_definition.entity';
@@ -40,17 +40,20 @@ export class EmployeeObjetiveService {
             const element = employee[index];
             const employeeObjetive = await this.employeeObjective.find({
                 relations: {
-                    employee: true,
-                    employeeObjectiveEvaluation: true,
-                    percentageDefinition: true
+                    objectiveEvaluation: true,
+                    definitionObjectiveAnnual: true,
+                    
                 },
                 where: {
-                    employee: {
-                        id: element.id
-                    },
-                    percentageDefinition: {
-                        id: currdata.idYear
+                    definitionObjectiveAnnual: {
+                        employee: {
+                            id: element.id
+                        },
+                        percentageDefinition: {
+                            id: currdata.idYear
+                        }
                     }
+                    
                 }
             });
 

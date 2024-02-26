@@ -66,7 +66,7 @@ export class EmployeeIncidenceService {
 
         if(employee.emps[j].id == user.idEmployee){
           isLeader = false;
-        }
+        } 
 
         for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
 

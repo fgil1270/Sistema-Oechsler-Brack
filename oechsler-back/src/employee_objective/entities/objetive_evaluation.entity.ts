@@ -9,7 +9,7 @@ import {
     JoinColumn,
     OneToMany
 } from 'typeorm';
-import { EmployeeObjective } from '../../employee_objective/entities/employee_objective.entity';
+import { EmployeeObjective } from './objective.entity';
 
 @Entity()
 export class EmployeeObjectiveEvaluation {
@@ -37,8 +37,8 @@ export class EmployeeObjectiveEvaluation {
     @DeleteDateColumn()
     deleted_at: Date;
 
-    @ManyToOne(() => EmployeeObjective, post => post.employeeObjectiveEvaluation)
+    @ManyToOne(() => EmployeeObjective, post => post.objectiveEvaluation)
     @JoinColumn()
-    employeeObjective: EmployeeObjective;
+    objective: EmployeeObjective;
 
 }

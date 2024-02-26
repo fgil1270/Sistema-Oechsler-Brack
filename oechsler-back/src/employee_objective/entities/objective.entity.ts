@@ -9,9 +9,8 @@ import {
     JoinColumn,
     OneToMany
 } from 'typeorm';
-import { Employee } from '../../employees/entities/employee.entity';
-import { EmployeeObjectiveEvaluation } from './employee_objetive_evaluation.entity';
-import { PercentageDefinition } from '../../evaluation_annual/percentage_definition/entities/percentage_definition.entity';
+import { DefinitionObjectiveAnnual } from './definition_objective_annual.entity';
+import { EmployeeObjectiveEvaluation } from './objetive_evaluation.entity';
 
 @Entity()
 export class EmployeeObjective {
@@ -45,19 +44,13 @@ export class EmployeeObjective {
     @DeleteDateColumn()
     deleted_at: Date;
 
-    @ManyToOne(() => Employee, post => post.employeeObjective)
+    @ManyToOne(() => DefinitionObjectiveAnnual, post => post.objective)
     @JoinColumn()
-    employee: Employee;
+    definitionObjectiveAnnual: DefinitionObjectiveAnnual;
 
-    @ManyToOne(() => PercentageDefinition, post => post.employeeObjective)
-    @JoinColumn()
-    percentageDefinition: EmployeeObjective;
+    @OneToMany(() => EmployeeObjectiveEvaluation, post => post.objective)
+    objectiveEvaluation: EmployeeObjectiveEvaluation[];
 
-    @ManyToOne(() => Employee, post => post.employeeObjectiveEvaluated)
-    @JoinColumn()
-    evaluatedBy: Employee;
 
-    @OneToMany(() => EmployeeObjectiveEvaluation, post => post.employeeObjective)
-    employeeObjectiveEvaluation: EmployeeObjectiveEvaluation[];
     
 }

@@ -48,6 +48,12 @@ export class JobsController {
     return this.jobsService.update(id, updateJobDto);
   }
 
+  @ApiOperation({ summary: 'Obtener Competencias del Puesto' })
+  @Get(':id/competence')
+  getCompetencies(@Param('id', ParseIntPipe) id: number) {
+    return this.jobsService.getCompetencies(id);
+  }
+
   @ApiOperation({ summary: 'Eliminar Puesto'})
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
