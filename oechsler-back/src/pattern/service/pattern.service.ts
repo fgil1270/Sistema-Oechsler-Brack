@@ -76,6 +76,6 @@ export class PatternService {
     if (!pattern) {
       throw new NotFoundException(`Pattern #${id} not found`);
     }
-    return await this.patternRepository.softDelete(pattern);
+    return await this.patternRepository.softRemove(pattern);
   }
 }

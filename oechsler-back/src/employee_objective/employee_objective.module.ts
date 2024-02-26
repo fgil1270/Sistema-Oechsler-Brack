@@ -16,6 +16,7 @@ import { DncCourse } from './entities/dnc_course.entity';
 import { DncCourseManual } from './entities/dnc_manual.entity';
 import { CourseEvaluation } from './entities/course_evaluation.entity';
 import { CourseEvaluationMannual } from './entities/course_evaluation_mannual.entity';
+import { CompetenceEvaluation } from './entities/competence_evaluation.entity';
 
 @Module({
     imports: [
@@ -26,7 +27,8 @@ import { CourseEvaluationMannual } from './entities/course_evaluation_mannual.en
             DncCourse,
             DncCourseManual,
             CourseEvaluation,
-            CourseEvaluationMannual
+            CourseEvaluationMannual,
+            CompetenceEvaluation
         ]),
         OrganigramaModule,
         PercentageDefinitionModule,
