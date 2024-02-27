@@ -32,9 +32,8 @@ export class EmployeeObjetiveController {
         private employeeObjetiveService: EmployeeObjetiveService
     ) {}
     
-    @ApiOperation({ summary: 'Crea un objetivo de empleado' })
+    @ApiOperation({ summary: 'se asignan los objetivos de empleado' })
     @Post()
-    @Views('employee-objective', 'create')
     async create(
         @Body() currData: CreateEmployeeObjectiveDto,
         @CurrentUser() user: any
@@ -58,16 +57,16 @@ export class EmployeeObjetiveController {
         
     }
 
-    /* @ApiOperation({ summary: 'Obtiene todos los objetivos de empleado de un empleado' })
-    @Get('employee/:id')
-    @Views('employee-objective', 'read')
-    async findAllByEmployee(
-        @Param('id', ParseIntPipe) id: number
+    @ApiOperation({ summary: 'Obtiene todos los objetivos de empleado de un empleado' })
+    @Get('employee/:id/:year')
+    async findOneByEmployeeAndYear(
+        @Param('id', ParseIntPipe) id: number,
+        @Param('year', ParseIntPipe) year: number
     ){
-        return this.employeeObjetiveService.findAllByEmployee(id);
+        return this.employeeObjetiveService.findOneByEmployeeAndYear(id, year);
     }
 
-    @ApiOperation({ summary: 'Obtiene todos los objetivos de empleado de un empleado' })
+    /* @ApiOperation({ summary: 'Obtiene todos los objetivos de empleado de un empleado' })
     @Get('employee/:id/evaluation')
     @Views('employee-objective', 'read')
     async findAllByEmployeeEvaluation(

@@ -101,4 +101,37 @@ export class PercentageDefinitionService {
             percentage: percentage
         }
     }
+
+    async findByYear(year: number){
+        const percentage = await this.percentageDefinitionRepository.findOne({
+            where: {
+                year: year
+            }
+        });
+        
+
+        if(!percentage){
+            this.status = {
+                message: 'No se encontro la definicion de porcentaje',
+                code: 404,
+                error: true
+            }
+
+            return {
+                status: this.status,
+                percentage: percentage
+            };
+        }
+
+        this.status = {
+            message: 'Definicion de porcentaje encontrada',
+            code: 200,
+            error: false
+        }
+
+        return {
+            status: this.status,
+            percentage: percentage
+        }
+    }
 }

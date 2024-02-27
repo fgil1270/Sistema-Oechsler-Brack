@@ -16,8 +16,13 @@ import { CompetenceModule } from '../competence/competence.module';
         CompetenceModule
     ],
     controllers: [
-        CourseController, CourseController],
+        CourseController
+    ],
     providers: [
-        CourseService, CourseService],
+        CourseService
+    ],
+    exports: [
+        CourseService
+    ]
 })
 export class CourseModule { }

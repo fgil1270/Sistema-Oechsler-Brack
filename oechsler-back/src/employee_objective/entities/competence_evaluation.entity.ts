@@ -20,16 +20,16 @@ export class CompetenceEvaluation {
     @Column({ type: 'varchar', length: 255 })
     type: string;
 
-    @Column({ type: 'int' })
+    @Column({ type: 'int', nullable: true})
     value_half_year: number;
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text', nullable: true})
     comment_half_year: string;
 
-    @Column({ type: 'int' })
+    @Column({ type: 'int', nullable: true})
     value_end_year: number;
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text', nullable: true})
     comment_end_year: string;
 
     @CreateDateColumn()
