@@ -56,5 +56,8 @@ export class DefinitionObjectiveAnnual {
 
     @OneToMany(() => CompetenceEvaluation, post => post.definitionObjectiveAnnual)
     competenceEvaluation: CompetenceEvaluation[];
+
+    @Column({ type: 'text', nullable: true})
+    comment_edit: string;
     
 }
