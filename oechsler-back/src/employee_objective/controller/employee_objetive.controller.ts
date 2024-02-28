@@ -41,7 +41,7 @@ export class EmployeeObjetiveController {
         return this.employeeObjetiveService.create(currData, user);
     }
 
-    @ApiOperation({ summary: 'Obtiene todos los objetivos de empleado' })
+    @ApiOperation({ summary: 'Acceso a la vista para definir objetivos, ademas se verifica si el em´leado tiene objetivos asignados' })
     @Get()
     @Views('definir_objetivo')
     findAll(@Query() currData: any, @CurrentUser() user: any){
