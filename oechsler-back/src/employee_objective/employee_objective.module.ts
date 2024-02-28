@@ -9,8 +9,16 @@ import { EmployeeObjetiveService } from './service/employee_objective.service';
 import { DefinitionObjectiveAnnual } from './entities/definition_objective_annual.entity';
 import { EmployeeObjective } from './entities/objective.entity';
 import { EmployeeObjectiveEvaluation } from './entities/objetive_evaluation.entity';
+import { DncCourse } from './entities/dnc_course.entity';
+import { DncCourseManual } from './entities/dnc_manual.entity';
+import { CourseEvaluation } from './entities/course_evaluation.entity';
+import { CourseEvaluationMannual } from './entities/course_evaluation_mannual.entity';
+import { CompetenceEvaluation } from './entities/competence_evaluation.entity';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { PercentageDefinitionModule } from '../evaluation_annual/percentage_definition/percentage_definition.module';
+import { CompetenceModule } from '../competence/competence.module';
+import { EmployeesModule } from '../employees/employees.module';
+import { CourseModule } from '../course/course.module';
 
 @Module({
     imports: [
@@ -18,9 +26,17 @@ import { PercentageDefinitionModule } from '../evaluation_annual/percentage_defi
             DefinitionObjectiveAnnual,
             EmployeeObjective,
             EmployeeObjectiveEvaluation,
+            DncCourse,
+            DncCourseManual,
+            CourseEvaluation,
+            CourseEvaluationMannual,
+            CompetenceEvaluation
         ]),
         OrganigramaModule,
-        PercentageDefinitionModule
+        PercentageDefinitionModule,
+        CompetenceModule,
+        EmployeesModule,
+        CourseModule,
     ],
     controllers: [EmployeeObjetiveController],
     providers: [EmployeeObjetiveService],

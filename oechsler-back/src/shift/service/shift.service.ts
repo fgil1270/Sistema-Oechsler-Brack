@@ -101,6 +101,6 @@ export class ShiftService {
       throw new NotFoundException(`Shift #${id} not found`);
     }
 
-    return await this.shiftRepository.softDelete(shift);
+    return await this.shiftRepository.softRemove(shift);
   }
 }

@@ -12,6 +12,9 @@ import {
 import { Employee } from '../../employees/entities/employee.entity';
 import { PercentageDefinition } from '../../evaluation_annual/percentage_definition/entities/percentage_definition.entity';
 import { EmployeeObjective } from './objective.entity';
+import { DncCourse } from './dnc_course.entity';
+import { DncCourseManual } from './dnc_manual.entity';
+import { CompetenceEvaluation } from './competence_evaluation.entity';
 
 @Entity()
 export class DefinitionObjectiveAnnual {
@@ -45,5 +48,16 @@ export class DefinitionObjectiveAnnual {
     @OneToMany(() => EmployeeObjective, post => post.definitionObjectiveAnnual)
     objective: EmployeeObjective[];
 
+    @OneToMany(() => DncCourse, post => post.definitionObjectiveAnnual)
+    dncCourse: DncCourse[];
+
+    @OneToMany(() => DncCourseManual, post => post.definitionObjectiveAnnual)
+    dncCourseManual: DncCourseManual[];
+
+    @OneToMany(() => CompetenceEvaluation, post => post.definitionObjectiveAnnual)
+    competenceEvaluation: CompetenceEvaluation[];
+
+    @Column({ type: 'text', nullable: true})
+    comment_edit: string;
     
 }
