@@ -170,7 +170,7 @@ export class EmployeeObjetiveService {
 
             dataEmployee.push({
                 employee: element,
-                status: isDefine,
+                objective: definitionObjectiveAnnual? definitionObjectiveAnnual : null,
                 year: percentage.status.code == 200 ? percentage.percentage.year : null
             });
             
