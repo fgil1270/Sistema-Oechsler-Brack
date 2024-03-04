@@ -16,13 +16,13 @@ import { MailService } from './mail.service';
         MailerModule.forRootAsync({
             useFactory: async () => ({
                 transport: {
-                    host: '192.168.26.6', //host: '192.168.26.6', smtp.gmail.com
-                    port: 25,
+                    host: process.env.MAIL_HOST, //host: '192.168.26.6', smtp.gmail.com
+                    port: Number(process.env.MAIL_PORT),
                     secure: false, // true for 465, false for other ports
                     //ignoreTLS: true,
                     auth: {
-                        user: 'notificationes@oechsler.mx', //user: 'erikmv021@gmail.com', // generated ethereal user
-                        pass: '' //pass: 'nhic fewe fvxf nbrc', // generated ethereal password
+                        user: process.env.MAIL_USERNAME, //user: 'erikmv021@gmail.com', // generated ethereal user
+                        pass: process.env.MAIL_PASSWORD //pass: 'nhic fewe fvxf nbrc', // generated ethereal password
                     },
                     /* tls: {
                         // do not fail on invalid certs
