@@ -44,7 +44,7 @@ export class OrganigramaController {
     return this.organigramaService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Buscar organigrama'})
+  @ApiOperation({ summary: 'Buscar posibles lideres del empleado'})
   @Get('/leaders/:id')
   findLiders(@Param('id', ParseIntPipe) id: number) {
     return this.organigramaService.findLeader(id);
@@ -54,6 +54,12 @@ export class OrganigramaController {
   @Get('/leaders/gerarquia/organigrama')
   findGerarquia(@Query() gerarquia: OrganigramaGerarquia, @CurrentUser() user: any) {
     return this.organigramaService.findJerarquia(gerarquia, user);
+  }
+
+  @ApiOperation({ summary: 'Buscar lider del empleado'})
+  @Get('/leaders/gerarquia/organigrama/:idEmployee')
+  findlider(@Param('idEmployee', ParseIntPipe) id: number) {
+    return this.organigramaService.leaders(id);
   }
 
   @ApiOperation({ summary: 'Actualizar organigrama'})

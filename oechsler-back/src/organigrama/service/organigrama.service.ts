@@ -90,7 +90,7 @@ export class OrganigramaService {
     };
   }
 
-  //SE OBTIENEN posibles lideres
+  //SE OBTIENEN lideres
   async leaders(id: number) {
     
     const leaders = await this.organigramaRepository.find({
