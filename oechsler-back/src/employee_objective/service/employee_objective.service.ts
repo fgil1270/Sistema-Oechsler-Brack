@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Between } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
+import * as PDFDocument from 'pdfkit';
+import * as fs from 'fs';
 
 import { CreateEmployeeObjectiveDto } from '../dto/create_employee_objective.dto';
 import { DefinitionObjectiveAnnual } from '../entities/definition_objective_annual.entity';
@@ -13,7 +15,8 @@ import { CourseService } from '../../course/service/course.service';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { PercentageDefinitionService } from '../../evaluation_annual/percentage_definition/service/percentage_definition.service';
-import { de } from 'date-fns/locale';
+import { MailService } from '../../mail/mail.service';
+
 
 @Injectable()
 export class EmployeeObjetiveService {
@@ -30,6 +33,7 @@ export class EmployeeObjetiveService {
         private employeeService: EmployeesService,
         private competenceService: CompetenceService,
         private courseService: CourseService,
+        private mailerService: MailService
     ) { }
 
     async create(currData: CreateEmployeeObjectiveDto, user: any){
@@ -109,7 +113,27 @@ export class EmployeeObjetiveService {
                 await this.competenceEvaluation.save(createCompetence);
             
             }
-            
+
+            //se crea pdf con los objetivos del empleado
+            const pdfPath = 'objetivos.pdf';
+            const doc = new PDFDocument();
+            doc.pipe(fs.createWriteStream(pdfPath));
+
+            // Add an image, constrain it to a given size, and center it vertically and horizontally
+            doc.image('../../assets/imgs/logo.png', 50, 45, { width: 50 });
+
+            //Add a title to the PDF
+            doc.fontSize(20).text('Objetivos de Empleado', 110, 57)
+
+            // Add table
+            doc.moveDown();
+            doc.table(createDefinitionObjetive, 100, 100, { width: 200 });
+
+            // Finalize PDF file
+            doc.end();
+
+            //se envia el pdf al empleado por correo
+            await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', pdfPath, ['f.gil@oechsler.mx']);
 
             this.status.code = 201;
             this.status.message = 'Objetivos de empleado asignados correctamente';

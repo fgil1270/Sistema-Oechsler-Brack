@@ -5,6 +5,7 @@ https://docs.nestjs.com/providers#services
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ICalCalendar } from 'ical-generator'
+import * as fs from 'fs';
 
 export interface MailData {
     employee: string;
@@ -87,7 +88,7 @@ export class MailService {
 
         await this.mailerService.sendMail({
             to: to,
-            from: 'notificationes@oechsler.mx',
+            from: process.env.MAIL_USERNAME,
             subject: subject,
             template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
             context: mailData
@@ -100,6 +101,20 @@ export class MailService {
             console.log('error:', err);
             return true;
         });
+    }
+
+    async sendEmailPDFFile(subject: string, pdfPath: string, to: string[] ) {
+
+        await this.mailerService.sendMail({
+            to: to,
+            from: process.env.MAIL_USERNAME,
+            subject: subject,
+            text: 'Adjunto está el informe en PDF.',
+            attachments: [{ filename: 'informe.pdf', path: pdfPath }],
+        });
+
+        fs.unlinkSync(pdfPath);
+
     }
 
 
