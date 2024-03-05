@@ -30,7 +30,7 @@ export class JobsController {
   }
 
   @ApiOperation({ summary: 'Listar Puestos'})
-  
+  @Views('puestos')
   @Get()
   findAll() {
     return this.jobsService.findAll();
