@@ -237,6 +237,7 @@ export class EmployeeObjetiveService {
                     }, 
                 }, 
             });
+            console.log(definitionObjectiveAnnual)
             this.status.code = 200;
             this.status.message = 'OK';
             this.status.error = false;
