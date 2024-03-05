@@ -237,6 +237,7 @@ export class EmployeeObjetiveService {
                     }, 
                 }, 
             });
+
             this.status.code = 200;
             this.status.message = 'OK';
             this.status.error = false;

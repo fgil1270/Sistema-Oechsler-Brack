@@ -43,11 +43,11 @@ export class DncCourseManual {
     @JoinColumn()
     definitionObjectiveAnnual: DefinitionObjectiveAnnual;
 
+    @OneToMany(() => CourseEvaluationMannual, post => post.dncCourseManual)
+    courseEvaluationMannual: CourseEvaluationMannual[];
+
     @ManyToOne(() => Competence, post => post.dncCourseManual)
     @JoinColumn()
     competence: Competence;
-
-    @OneToMany(() => CourseEvaluationMannual, post => post.dncCourseManual)
-    courseEvaluationMannual: CourseEvaluationMannual[];
     
 }
