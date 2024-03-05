@@ -19,6 +19,7 @@ import { PercentageDefinitionModule } from '../evaluation_annual/percentage_defi
 import { CompetenceModule } from '../competence/competence.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { CourseModule } from '../course/course.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
     imports: [
@@ -37,6 +38,7 @@ import { CourseModule } from '../course/course.module';
         CompetenceModule,
         EmployeesModule,
         CourseModule,
+        MailModule
     ],
     controllers: [EmployeeObjetiveController],
     providers: [EmployeeObjetiveService],
