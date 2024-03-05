@@ -1002,6 +1002,7 @@ export class EmployeeIncidenceService {
       let eventDays = [];
       let totalHrsRequeridas = 0;
       let totalHrsTrabajadas = 0;
+      let totalMinutisTrabados = 0;
       
 
       for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
@@ -1092,8 +1093,6 @@ export class EmployeeIncidenceService {
         //se verifica si el dia seleccionado es festivo
         const dayCalendar = await this.calendarService.findByDate(dia as any);
 
-        
-
         //se obtiene el turno del dia seleccionado
         let shift = await this.employeeShiftService.findMore({
           start: format(dia, 'yyyy-MM-dd'),
@@ -1108,7 +1107,7 @@ export class EmployeeIncidenceService {
             objIncidencia.push({
               code: holiday.code,
             });
-            sumaHrsIncidencias += newArray[i].employeeProfile.work_shift_hrs;
+            sumaHrsIncidencias += Number(newArray[i].employeeProfile.work_shift_hrs);
           }
 
         }
@@ -1118,20 +1117,35 @@ export class EmployeeIncidenceService {
         let hrSalida = '23:59:59';
         let diaAnterior = dia;
         let diaSiguente = dia;
-        
-        
-
+ 
         const registrosChecador = await this.checadorService.findbyDate(parseInt(newArray[i].id), diaAnterior, diaSiguente, hrEntrada, hrSalida);
         let firstHr;
         let secondHr;
         let diffHr;
+        let diffMin;
+        let modMin = 0;
+        let divMin = 0;
 
         if(registrosChecador.length > 0){
           firstHr = moment(new Date(registrosChecador[0]?.date));
           secondHr = registrosChecador.length > 1? moment(new Date(registrosChecador[registrosChecador.length-1]?.date)) : moment(new Date(registrosChecador[0]?.date));
-          diffHr = secondHr.diff(firstHr, 'hours', true);
+          
+          //se obtiene la diferencia en milisegundos
+          diffHr = secondHr.diff(firstHr, 'hours');
+          diffMin = secondHr.diff(firstHr, 'minutes');
+          totalMinutisTrabados += diffMin%60;
 
+          if(totalMinutisTrabados > 60){
+            modMin = totalMinutisTrabados%60;
+            divMin = totalMinutisTrabados/60;
+            totalHrsTrabajadas += Math.floor(divMin)
+            totalMinutisTrabados = modMin;
+          }
+
+        
         }
+
+
         incidencias.forEach(incidence => {
           objIncidencia.push({
             code: incidence.incidenceCatologue.code,
@@ -1151,7 +1165,6 @@ export class EmployeeIncidenceService {
                 
       }
 
-      
       registros.push({
         idEmpleado: newArray[i].id,
         numeroNomina: newArray[i].employee_number,
@@ -1159,15 +1172,14 @@ export class EmployeeIncidenceService {
         perfile: newArray[i].employeeProfile.name,
         date: eventDays,
         horas_objetivo: totalHrsRequeridas.toFixed(2),
-        horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas
+        horasTrabajadas: totalHrsTrabajadas +"."+ totalMinutisTrabados, //total hrs trabajadas
       }); 
 
-      
-    
       //registros.concat(eventDays); 
 
         
     }
+
 
     return {
       registros,
