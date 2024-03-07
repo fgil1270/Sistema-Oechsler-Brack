@@ -21,9 +21,11 @@ async function bootstrap() {
   // URL API
   SwaggerModule.setup('docs', app, document);
   app.enableCors({
-    methods: 'GET, PUT, POST, DELETE',
+    origin: '*',
+    methods: 'GET, PUT, POST, PATCH, DELETE',
     allowedHeaders: 'Content-Type, Authorization',
   });
+
   await app.listen(process.env.PORT);
 
   const server = app.getHttpServer();
