@@ -349,7 +349,7 @@ export class EmployeeShiftService {
     const to = format(new Date(data.end), 'yyyy-MM-dd'); 
     //const employees = await this.employeesService.findByEmployeeNumber(ids.split(','));
     
-    const employees = await this.employeesService.findMore(ids.split(','));
+    const employees = await this.employeesService.findMore(ids);
     const resource = employees.emps.map((employee: any) => {
       return { 
         id: employee.id, 
@@ -366,7 +366,7 @@ export class EmployeeShiftService {
       },
       where: {
         employee: {
-          id: In(ids.split(','))
+          id: In(ids)
         },
         //start_date: MoreThanOrEqual(new Date(data.start)),
         start_date: MoreThanOrEqual(from as any),
