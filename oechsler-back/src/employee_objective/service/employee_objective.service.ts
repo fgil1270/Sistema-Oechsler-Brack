@@ -120,7 +120,7 @@ export class EmployeeObjetiveService {
             doc.pipe(fs.createWriteStream(pdfPath));
 
             // Add an image, constrain it to a given size, and center it vertically and horizontally
-            doc.image('../../assets/imgs/logo.png', 50, 45, { width: 50 });
+            doc.image('../../../assets/imgs/logo.png', 50, 45, { width: 50 });
 
             //Add a title to the PDF
             doc.fontSize(20).text('Objetivos de Empleado', 110, 57)
