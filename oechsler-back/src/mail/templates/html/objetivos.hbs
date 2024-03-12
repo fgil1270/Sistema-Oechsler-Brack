@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Empleado</th>
+                <th>Numero de Empleado</th>
+                <th>Puesto Actual</th>
+                <th>Año de Evaluación</th>
+                <th>Antiguedad en el Puesto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each objetivos}}
+                <tr>
+                    <td>{{this.nombre}}</td>
+                    <td>{{this.employeeNumber}}</td>
+                    <td>{{this.contratacion}}</td>
+                    <td>{{this.yearEvaluation}}</td>
+                    <td>{{this.antiguedad}}</td>
+                </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</body>
+</html>
+    
+

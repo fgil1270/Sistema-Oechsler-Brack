@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Between } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
-import * as PDFDocument from 'pdfkit';
 import * as fs from 'fs';
+import * as handlebars from 'handlebars';
+import * as path from 'path';
+//import PDFDocument from 'pdfkit'; //pdfkit 
+import PDFDocument from 'pdfkit-table'; 
 
 import { CreateEmployeeObjectiveDto } from '../dto/create_employee_objective.dto';
 import { DefinitionObjectiveAnnual } from '../entities/definition_objective_annual.entity';
@@ -16,6 +19,9 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { PercentageDefinitionService } from '../../evaluation_annual/percentage_definition/service/percentage_definition.service';
 import { MailService } from '../../mail/mail.service';
+import { he } from 'date-fns/locale';
+import { render } from 'ejs';
+import { title } from 'process';
 
 
 @Injectable()
@@ -113,27 +119,401 @@ export class EmployeeObjetiveService {
                 await this.competenceEvaluation.save(createCompetence);
             
             }
+            
+            try {
+                const asigmentObjective = await this.definitionObjectiveAnnual.findOne({
+                    relations: {
+                        employee: true,
+                        percentageDefinition: true,
+                        evaluatedBy: true,
+                        objective: true,
+                        dncCourse: true,
+                        dncCourseManual: true, 
+                        competenceEvaluation: {
+                            competence: true
+                        },
+                    },
+                    where: {
+                        id: saveDefinitionObjetive.id
+                    }
+                })
+                //se crea pdf con los objetivos del empleado
+                // Create a new PDF document
+                const doc = new PDFDocument({
+                    bufferPages: true
+                });
+                const pdftable = new PDFDocument({
+                    bufferPages: true
+                });
+       
+                let i;
+                let end;
 
-            //se crea pdf con los objetivos del empleado
-            const pdfPath = 'objetivos.pdf';
-            const doc = new PDFDocument();
-            doc.pipe(fs.createWriteStream(pdfPath));
+                //image
+                const logoImg = path.resolve(__dirname, '../../../assets/imgs/logo.png');
+                doc.image(logoImg, 50, 50, {
+                    width: 90,
+                    height: 30,
+                    align: 'center',
+                });
+                //titulo
+                doc.fontSize(20).text('Objetivos de Empleado', 200, 65);
 
-            // Add an image, constrain it to a given size, and center it vertically and horizontally
-            doc.image('../../../assets/imgs/logo.png', 50, 45, { width: 50 });
+                doc.moveDown();
 
-            //Add a title to the PDF
-            doc.fontSize(20).text('Objetivos de Empleado', 110, 57)
+                //tabla de datos generales
+                const table1 = {
+                    title: "Datos Generales",
+                    headers: [
+                        "Nombre de Empleado", "Numero de Nomina", "Fecha de contratación", "Puesto Actual", "Año de Evaluación", "Antiguedad en Puesto"],
+                    rows: [
+                        [
+                            `${employee.emp.name} ${employee.emp.paternal_surname} ${employee.emp.maternal_surname}`, 
+                            `${employee.emp.employee_number}`, 
+                            `${employee.emp.date_employment}`, 
+                            `${employee.emp.job.cv_name}`, 
+                            `${asigmentObjective.percentageDefinition.year}`, 
+                            '11'
+                        ],
+                        [
+                            `${employee.emp.name} ${employee.emp.paternal_surname} ${employee.emp.maternal_surname}`, 
+                            `${employee.emp.employee_number}`, 
+                            `${employee.emp.date_employment}`, 
+                            `${employee.emp.job.cv_name}`, 
+                            `${asigmentObjective.percentageDefinition.year}`, 
+                            '11'
+                        ]
+                    ],
+                };
+                
+                doc.table( table1, { 
+                    x: 40, 
+                    width: 550, 
+                    divider: {
+                        header: {
+                            disabled: false,
+                            width: 2,
+                            opacity: 0.5,
+                        },
+                        horizontal: {
+                            disabled: false,
+                            width: 1,
+                            opacity: 0.5,
+                        },
+                        vertical: {
+                            disabled: false,
+                            width: 1,
+                            opacity: 0.5,
+                        },
+                    },
+                }); 
 
-            // Add table
-            doc.moveDown();
-            doc.table(createDefinitionObjetive, 100, 100, { width: 200 });
+                doc.moveDown();
 
-            // Finalize PDF file
-            doc.end();
+                const table2 = {
+                    
+                    headers: [
+                    "Nombre del jefe superiro directo", 
+                    "Fecha de asignación de objetivos", 
+                    "Ultima fecha de Edición", 
+                    "Comentario de Edición"
+                    ],
+                    rows: [
+                        [
+                            `${evaluatedBy.emp.name} ${evaluatedBy.emp.paternal_surname} ${evaluatedBy.emp.maternal_surname}`, 
+                            `${asigmentObjective.created_at}`, 
+                            `${asigmentObjective.updated_at}`, 
+                            `${asigmentObjective.comment_edit}`
+                            
+                        ]
+                    ],
+                }
+                    
+                doc.table( table2, { 
+                    x: 40, 
+                    width: 550,  
+                    divider: {
+                        horizontal: {
+                            width: 2,
+                            opacity: 0.5,
+                        },
 
+                    },
+                    
+                });
+
+                doc.moveDown();
+                
+                //tabla de metas y objetivos
+                let arrayObjective = [];
+                asigmentObjective.objective.forEach(element => {
+                    arrayObjective.push([`${element.goal}`, `${element.percentage}`, ``, ``, ``]);
+                });
+                arrayObjective.push(["Total", "", "", "", ""]);
+                const table3 = {
+                    title: "Metas y Objetivos",
+                    headers: [
+                        "Metas y objetivos", "Definición", "Mitad de año", "Fin de año", "Porcenyaje logrado"],
+                    rows: arrayObjective
+                };
+
+                doc.table( table3, {
+                    x: 40,
+                    width: 550,  
+                    divider: {
+                        horizontal: {
+                            width: 2,
+                            opacity: 0.5,
+                        },
+
+                    },
+                })
+
+
+                //tabla de desempeño personal
+
+                const table4 = {
+                    title: "Desempeño Personal",
+                    headers:[
+                        "Factor", "Grado", "Comentarios", "Detalle"
+                    ],
+                    rows: [
+                        [
+                            "Conocimientos Tecnicos normativos",
+                            "",
+                            "",
+                            "",
+                        ],
+                        [
+                            "Trabajo bajo presión",
+                            "",
+                            "",
+                            "",
+                        ],
+                        [
+                            "Administración del tiempo",
+                            "",
+                            "",
+                            "",
+                        ],
+                        [
+                            "Compromiso",
+                            "",
+                            "",
+                            "",
+                        ],
+                        [
+                            "Toma de decisiones",
+                            "",
+                            "",
+                            "",
+                        ],
+                        [
+                            "Promedio",
+                            "",
+                            "",
+                            "",
+                        ],
+                        [
+                            "Procentaje logrado",
+                            "",
+                            "",
+                            "",
+                        ]
+                    ]
+                }
+
+                doc.table( table4, {
+                    x: 40,
+                    width: 550,  
+                    divider: {
+                        horizontal: {
+                            width: 2,
+                            opacity: 0.5,
+                        },
+
+                    },
+                })
+
+                doc.moveDown();
+                
+                //Competencias
+                let arrayCompetence = [];
+                asigmentObjective.competenceEvaluation.forEach(element => {
+                    arrayCompetence.push([`${element.type}`, `${element.competence.name}`, ``]);
+                });
+                arrayCompetence.push([
+                    "Promedio Competencias",
+                    "",
+                    ""
+                ],
+                [
+                    "Porcentaje logrado",
+                    "",
+                    ""
+                ]);
+
+                const table5 = {
+                    title: "Competencias",
+                    headers: [
+                        "Tipo", "Competencia/Habilidad", "Calificación"
+                    ],
+                    rows: arrayCompetence                     
+                    
+                }
+
+                doc.table( table5, {
+                    x: 40,
+                    width: 550,  
+                    divider: {
+                        horizontal: {
+                            width: 2,
+                            opacity: 0.5,
+                        },
+
+                    },
+                })
+
+                doc.moveDown();
+
+                //evaluacion empleado
+                const table6 = {
+                    title: "Evaluación de Empleado",
+                    headers: [
+                        "Tipo", "Calificación", "Detalle", "Comentarios"
+                    ],
+                    rows: [
+                        [
+                            `Medio Año`, 
+                            ``, 
+                            ``, 
+                            ``
+                        ],
+                        [
+                            `Fin de Año`, 
+                            ``, 
+                            ``, 
+                            ``
+                        ]
+                    ]
+                }
+
+                doc.table( table6, {
+                    x: 40,
+                    width: 550,  
+                    divider: {
+                        horizontal: {
+                            width: 2,
+                            opacity: 0.5,
+                        },
+
+                    },
+                })
+
+                doc.moveDown();
+
+                //evaluacion jefe directo
+
+                const table7 = {
+                    title: "Evaluación de Jefe Directo",
+                    headers: [
+                        "Tipo", "Calificación", "Detalle", "Comentarios"
+                    ],
+                    rows: [
+                        [
+                            `Medio Año`, 
+                            ``, 
+                            ``, 
+                            ``
+                        ],
+                        [
+                            `Fin de Año`, 
+                            ``, 
+                            ``, 
+                            ``
+                        ]
+                    ]
+                }
+
+                doc.table( table7, {
+                    x: 40,
+                    width: 550,  
+                    divider: {
+                        horizontal: {
+                            width: 2,
+                            opacity: 0.5,
+                        },
+
+                    },
+                })
+
+                doc.moveDown();
+
+
+                //resumen
+                const table8 = {
+                    title: "Resumen",
+                    headers: [
+                        "Año", "Metas y Objetivos", "Desempeño Personal", "Competencias/Habilidades", "Total"
+                    ],
+                    rows: [
+                        [
+                            `${asigmentObjective.percentageDefinition.year}`, 
+                            `${asigmentObjective.percentageDefinition.value_objetive}`, 
+                            `${asigmentObjective.percentageDefinition.value_performance}`, 
+                            `${asigmentObjective.percentageDefinition.value_competence}`,
+                            `${Number(asigmentObjective.percentageDefinition.value_objetive)+Number(asigmentObjective.percentageDefinition.value_performance)+Number(asigmentObjective.percentageDefinition.value_competence)}`
+                        ],
+                        [
+                            `Obtenido`, 
+                            ``, 
+                            ``, 
+                            ``,
+                            ``
+                        ],
+                        [
+                            `Resumen`, 
+                            ``, 
+                            ``, 
+                            ``,
+                            ``
+                        ]
+                    ]
+                }
+
+
+
+                //add page
+                doc.addPage();
+                doc.fontSize(20).text('Objetivos de Empleado 2', 200, 65);
+                
+                // see the range of buffered pages
+                const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }
+                // Footer
+                for (i = range.start, end = range.start + range.count, range.start <= end; i < end; i++) {
+                    doc.switchToPage(i);
+                    doc.fontSize(10).text(`Page ${i + 1} of ${range.count}`, 0, doc.page.height - 90 , { align: 'right',  });
+                }
+
+                // manually flush pages that have been buffered
+                doc.flushPages();
+                
+
+                let datePDF = new Date();
+                const pdfPath= path.resolve(__dirname, `../../../documents/temp/objetivos/${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`);
+                doc.pipe(fs.createWriteStream(pdfPath));
+                doc.end();
+
+                //se envia el pdf al empleado por correo
+                await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', pdfPath, ['f.gil@oechsler.mx', 'e.munoz@oechsler.mx']);
+                
+            } catch (error) {
+                console.log(error);
+            }
+
+           
             //se envia el pdf al empleado por correo
-            await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', pdfPath, ['f.gil@oechsler.mx']);
+            //await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', pdfPath, ['f.gil@oechsler.mx']);
 
             this.status.code = 201;
             this.status.message = 'Objetivos de empleado asignados correctamente';

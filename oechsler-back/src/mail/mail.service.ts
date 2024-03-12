@@ -110,7 +110,7 @@ export class MailService {
             from: process.env.MAIL_USERNAME,
             subject: subject,
             text: 'Adjunto está el informe en PDF.',
-            attachments: [{ filename: 'informe.pdf', path: pdfPath }],
+            attachments: [{ filename: 'objetivos.pdf', path: pdfPath }],
         });
 
         fs.unlinkSync(pdfPath);
