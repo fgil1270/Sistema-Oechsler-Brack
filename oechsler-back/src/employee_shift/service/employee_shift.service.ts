@@ -350,6 +350,7 @@ export class EmployeeShiftService {
     //const employees = await this.employeesService.findByEmployeeNumber(ids.split(','));
     
     const employees = await this.employeesService.findMore(ids);
+
     const resource = employees.emps.map((employee: any) => {
       return { 
         id: employee.id, 

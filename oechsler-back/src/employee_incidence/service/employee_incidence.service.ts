@@ -1094,10 +1094,10 @@ export class EmployeeIncidenceService {
         const dayCalendar = await this.calendarService.findByDate(dia as any);
 
         //se obtiene el turno del dia seleccionado
-        let shift = await this.employeeShiftService.findMore({
+        const shift = await this.employeeShiftService.findMore({
           start: format(dia, 'yyyy-MM-dd'),
           end: format(dia, 'yyyy-MM-dd'),
-        }, `${newArray[i].id}`);
+        }, [newArray[i].id]);
 
         let objIncidencia = [];
 
