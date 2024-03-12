@@ -175,14 +175,6 @@ export class EmployeeObjetiveService {
                             `${asigmentObjective.percentageDefinition.year}`, 
                             '11'
                         ],
-                        [
-                            `${employee.emp.name} ${employee.emp.paternal_surname} ${employee.emp.maternal_surname}`, 
-                            `${employee.emp.employee_number}`, 
-                            `${employee.emp.date_employment}`, 
-                            `${employee.emp.job.cv_name}`, 
-                            `${asigmentObjective.percentageDefinition.year}`, 
-                            '11'
-                        ]
                     ],
                 };
                 
@@ -246,14 +238,16 @@ export class EmployeeObjetiveService {
                 
                 //tabla de metas y objetivos
                 let arrayObjective = [];
+                let totalObjective = 0;
                 asigmentObjective.objective.forEach(element => {
                     arrayObjective.push([`${element.goal}`, `${element.percentage}`, ``, ``, ``]);
+                    totalObjective += Number(element.percentage);
                 });
-                arrayObjective.push(["Total", "", "", "", ""]);
+                arrayObjective.push(["Total", `${totalObjective}`, "", "", ""]);
                 const table3 = {
                     title: "Metas y Objetivos",
                     headers: [
-                        "Metas y objetivos", "Definición", "Mitad de año", "Fin de año", "Porcenyaje logrado"],
+                        "Metas y objetivos", "Definición", "Mitad de año", "Fin de año", "Porcentaje logrado"],
                     rows: arrayObjective
                 };
 
@@ -481,11 +475,18 @@ export class EmployeeObjetiveService {
                     ]
                 }
 
+                doc.table( table8, {
+                    x: 40,
+                    width: 550,  
+                    divider: {
+                        horizontal: {
+                            width: 2,
+                            opacity: 0.5,
+                        },
 
+                    },
+                })
 
-                //add page
-                doc.addPage();
-                doc.fontSize(20).text('Objetivos de Empleado 2', 200, 65);
                 
                 // see the range of buffered pages
                 const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }
@@ -504,22 +505,18 @@ export class EmployeeObjetiveService {
                 doc.pipe(fs.createWriteStream(pdfPath));
                 doc.end();
 
+                console.log(pdfPath);
                 //se envia el pdf al empleado por correo
-                await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', pdfPath, ['f.gil@oechsler.mx', 'e.munoz@oechsler.mx']);
-                
+                let email: any = await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', `${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`, [asigmentObjective.employee.email? asigmentObjective.employee.email : '']);
+                this.status.code = 201;
+                this.status.message = 'Objetivos de empleado asignados correctamente, '+ email.msg;
+                this.status.error = false;
+
+            return this.status
             } catch (error) {
                 console.log(error);
             }
-
-           
-            //se envia el pdf al empleado por correo
-            //await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', pdfPath, ['f.gil@oechsler.mx']);
-
-            this.status.code = 201;
-            this.status.message = 'Objetivos de empleado asignados correctamente';
-            this.status.error = false;
-
-            return this.status
+            
 
         } catch (error) {
             this.status.error = true;
