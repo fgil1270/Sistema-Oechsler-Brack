@@ -6,6 +6,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ICalCalendar } from 'ical-generator'
 import * as fs from 'fs';
+import * as path from 'path';
 
 export interface MailData {
     employee: string;
@@ -44,7 +45,7 @@ export class MailService {
 
         await this.mailerService.sendMail({
             to: to,
-            from: 'notificationes@oechsler.mx',
+            from: 'OechslerMX<notificationes@oechsler.mx>',
             subject: subject,
             template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
             context: mailData,
@@ -103,17 +104,45 @@ export class MailService {
         });
     }
 
-    async sendEmailPDFFile(subject: string, pdfPath: string, to: string[] ) {
+    async sendEmailPDFFile(subject: string, pdfPath: any, to: string[] ) {
+        let resp = {error: false, msg: ''};
+        let newpath: string = path.resolve(__dirname, `../../documents/temp/objetivos/${pdfPath}`);
 
+        //console.log(newpath);
         await this.mailerService.sendMail({
             to: to,
             from: process.env.MAIL_USERNAME,
             subject: subject,
-            text: 'Adjunto está el informe en PDF.',
-            attachments: [{ filename: 'objetivos.pdf', path: pdfPath }],
-        });
+            //text: 'Adjunto está el informe en PDF.',
+            html: '<b>Adjunto está el informe en PDF.</b>',  
+            attachments: [
+                /* {
+                    filename: 'license.txt',
+                    path: 'https://raw.github.com/nodemailer/nodemailer/master/LICENSE',
+                    contentType: 'text/plain'
+                } */
+                { 
+                    filename: 'objetivos.pdf',
+                    content: fs.createReadStream(newpath), // file path or Buffer or Stream instance
+                    contentType: 'application/pdf',
+                } 
+            ],
+        }).then((success) => {
+        //console.log('correcto:', success);
+            resp.error = false;
+            resp.msg = 'success';
+        })
+        .catch((err) => {
+            console.log('error:', err);
+            resp.error = true;
+            resp.msg = err;
+        });;
 
-        fs.unlinkSync(pdfPath);
+        return resp;
+
+
+
+        //fs.unlinkSync(pdfPath);
 
     }
 
