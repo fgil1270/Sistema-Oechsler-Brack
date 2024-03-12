@@ -22,6 +22,8 @@ import { MailService } from '../../mail/mail.service';
 import { he } from 'date-fns/locale';
 import { render } from 'ejs';
 import { title } from 'process';
+import { add } from 'date-fns';
+import { addPage } from 'pdfkit';
 
 
 @Injectable()
@@ -123,7 +125,9 @@ export class EmployeeObjetiveService {
             try {
                 const asigmentObjective = await this.definitionObjectiveAnnual.findOne({
                     relations: {
-                        employee: true,
+                        employee: {
+                            userId: true,
+                        },
                         percentageDefinition: true,
                         evaluatedBy: true,
                         objective: true,
@@ -145,6 +149,10 @@ export class EmployeeObjetiveService {
                 const pdftable = new PDFDocument({
                     bufferPages: true
                 });
+
+                let datePDF = new Date();
+                const pdfPath= path.resolve(__dirname, `../../../documents/temp/objetivos/${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`);
+                doc.pipe(fs.createWriteStream(pdfPath));
        
                 let i;
                 let end;
@@ -263,6 +271,7 @@ export class EmployeeObjetiveService {
                     },
                 })
 
+                doc.moveDown();
 
                 //tabla de desempeño personal
 
@@ -328,8 +337,13 @@ export class EmployeeObjetiveService {
 
                     },
                 })
-
+               
                 doc.moveDown();
+
+                // Check if we need to add a new page
+                if (doc.y > doc.page.height - 50) {
+                    doc.addPage();
+                }
                 
                 //Competencias
                 let arrayCompetence = [];
@@ -368,7 +382,18 @@ export class EmployeeObjetiveService {
                     },
                 })
 
+                // Check if we need to add a new page
+                if (doc.y > 700) {
+                    doc.addPage();
+                }
+                
+                
                 doc.moveDown();
+
+                // Check if we need to add a new page
+                if (doc.y > 700) {
+                    doc.addPage();
+                }
 
                 //evaluacion empleado
                 const table6 = {
@@ -403,6 +428,11 @@ export class EmployeeObjetiveService {
 
                     },
                 })
+
+                // Check if we need to add a new page
+                if (doc.y > 700) {
+                    doc.addPage();
+                }
 
                 doc.moveDown();
 
@@ -488,6 +518,9 @@ export class EmployeeObjetiveService {
                 })
 
                 
+
+                
+                
                 // see the range of buffered pages
                 const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }
                 // Footer
@@ -498,16 +531,16 @@ export class EmployeeObjetiveService {
 
                 // manually flush pages that have been buffered
                 doc.flushPages();
-                
 
-                let datePDF = new Date();
-                const pdfPath= path.resolve(__dirname, `../../../documents/temp/objetivos/${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`);
-                doc.pipe(fs.createWriteStream(pdfPath));
                 doc.end();
 
-                console.log(pdfPath);
+               
                 //se envia el pdf al empleado por correo
-                let email: any = await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', `${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`, [asigmentObjective.employee.email? asigmentObjective.employee.email : '']);
+
+                let email;
+                if(asigmentObjective.employee.userId.length > 0){
+                    email = await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', `${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`, [asigmentObjective.employee.userId? asigmentObjective.employee.userId[0].email : '']);
+                }
                 this.status.code = 201;
                 this.status.message = 'Objetivos de empleado asignados correctamente, '+ email.msg;
                 this.status.error = false;
