@@ -507,7 +507,7 @@ export class EmployeeObjetiveService {
 
                 console.log(pdfPath);
                 //se envia el pdf al empleado por correo
-                let email: any = await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', `${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`, ['f.gil@oechsler.mx', 'e.munoz@oechsler.mx']);
+                let email: any = await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', `${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`, [asigmentObjective.employee.email? asigmentObjective.employee.email : '']);
                 this.status.code = 201;
                 this.status.message = 'Objetivos de empleado asignados correctamente, '+ email.msg;
                 this.status.error = false;
@@ -516,11 +516,6 @@ export class EmployeeObjetiveService {
             } catch (error) {
                 console.log(error);
             }
-
-           
-            //se envia el pdf al empleado por correo
-            //await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', pdfPath, ['f.gil@oechsler.mx']);
-
             
 
         } catch (error) {
