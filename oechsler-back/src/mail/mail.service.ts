@@ -136,13 +136,13 @@ export class MailService {
             console.log('error:', err);
             resp.error = true;
             resp.msg = err;
-        });;
+        });
 
+        
+
+        fs.unlinkSync(newpath);
         return resp;
 
-
-
-        //fs.unlinkSync(pdfPath);
 
     }
 
