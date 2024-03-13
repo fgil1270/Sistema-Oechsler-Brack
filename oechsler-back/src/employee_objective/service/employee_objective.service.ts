@@ -2,10 +2,9 @@ import { Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/commo
 import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Between } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import * as fs from 'fs';
-import * as handlebars from 'handlebars';
 import * as path from 'path';
-//import PDFDocument from 'pdfkit'; //pdfkit 
 import PDFDocument from 'pdfkit-table'; 
+import * as moment from 'moment';
 
 import { CreateEmployeeObjectiveDto } from '../dto/create_employee_objective.dto';
 import { DefinitionObjectiveAnnual } from '../entities/definition_objective_annual.entity';
@@ -19,11 +18,6 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { PercentageDefinitionService } from '../../evaluation_annual/percentage_definition/service/percentage_definition.service';
 import { MailService } from '../../mail/mail.service';
-import { he } from 'date-fns/locale';
-import { render } from 'ejs';
-import { title } from 'process';
-import { add } from 'date-fns';
-import { addPage } from 'pdfkit';
 
 
 @Injectable()
@@ -149,7 +143,7 @@ export class EmployeeObjetiveService {
                 const pdftable = new PDFDocument({
                     bufferPages: true
                 });
-
+                let age = moment().diff(employee.emp.date_employment, 'years');
                 let datePDF = new Date();
                 const pdfPath= path.resolve(__dirname, `../../../documents/temp/objetivos/${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`);
                 doc.pipe(fs.createWriteStream(pdfPath));
@@ -181,7 +175,7 @@ export class EmployeeObjetiveService {
                             `${employee.emp.date_employment}`, 
                             `${employee.emp.job.cv_name}`, 
                             `${asigmentObjective.percentageDefinition.year}`, 
-                            '11'
+                            `${age} años`
                         ],
                     ],
                 };
