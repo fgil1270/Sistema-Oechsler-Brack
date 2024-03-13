@@ -242,14 +242,14 @@ export class EmployeeObjetiveService {
                 let arrayObjective = [];
                 let totalObjective = 0;
                 asigmentObjective.objective.forEach(element => {
-                    arrayObjective.push([`${element.goal}`, `${element.percentage}`, ``, ``, ``]);
+                    arrayObjective.push([`${element.goal}`, `${element.calculation}`, `${element.percentage}`, ``, ``, ``]);
                     totalObjective += Number(element.percentage);
                 });
-                arrayObjective.push(["Total", `${totalObjective}`, "", "", ""]);
+                arrayObjective.push(["Total", "", `${totalObjective}`, "", "", ""]);
                 const table3 = {
                     title: "Metas y Objetivos",
                     headers: [
-                        "Metas y objetivos", "Definición", "Mitad de año", "Fin de año", "Porcentaje logrado"],
+                        "Metas y objetivos", "Criterio de Evaluación", "Definición", "Mitad de año", "Fin de año", "Porcentaje logrado"],
                     rows: arrayObjective
                 };
 
@@ -511,10 +511,7 @@ export class EmployeeObjetiveService {
                     },
                 })
 
-                
 
-                
-                
                 // see the range of buffered pages
                 const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }
                 // Footer
