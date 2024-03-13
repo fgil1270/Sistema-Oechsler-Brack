@@ -303,7 +303,7 @@ export class EmployeeIncidenceService {
       },
       where: {
         employee: {
-          id: In(data.ids.split(','))
+          id: In(data.ids)
         }, 
         dateEmployeeIncidence: {
           date: Between(from as any, to as any)
