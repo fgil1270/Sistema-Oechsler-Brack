@@ -52,5 +52,8 @@ export class User {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @Column({ type: 'boolean', default: false })
+    renew_pass: boolean;
     
 }

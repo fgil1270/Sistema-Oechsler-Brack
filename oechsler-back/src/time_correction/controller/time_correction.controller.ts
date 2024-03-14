@@ -31,15 +31,15 @@ export class TimeCorrectionController {
     return this.timeCorrectionService.create(createCorrectionTime);
   } 
 
-  @ApiOperation({ summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq' })
+  @ApiOperation({ summary: 'Acceso a la vista corrección de tiempo' })
   @Views('correccion_tiempo')
   @Get()
-  reportNomipaq(@Query() data:any, @CurrentUser() user: any){
+  correctionTime(@Query() data:any, @CurrentUser() user: any){
 
     return this.timeCorrectionService.find(data, user);
   }
 
-  @ApiOperation({ summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq' })
+  @ApiOperation({ summary: 'se obtienen las checacadas' })
   @Get('checadas')
   getChecadas(@Query() data:any, @CurrentUser() user: any){
     return this.timeCorrectionService.findByEmployee(data, user);

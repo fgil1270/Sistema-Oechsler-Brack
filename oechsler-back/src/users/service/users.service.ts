@@ -31,7 +31,8 @@ export class UsersService {
             {
                 name: user.name,
                 password: user.password,
-                email: user.email
+                email: user.email,
+                renew_pass: user.renewPass
             }
         );
         
@@ -88,6 +89,29 @@ export class UsersService {
             withDeleted: true
         });
         if (!user) {
+            return null;
+            throw new NotFoundException(`User #${id} not found`);
+        }
+        return {
+            user
+        }
+    }
+
+    async findByIdEmployee(id: number){
+        const user = await this.userRepository.findOne({
+            relations: {
+                roles: true,
+                employee: true
+            },
+            where: {
+                employee: {
+                    id: id
+                }
+            },
+            withDeleted: true
+        });
+        if (!user) {
+            return null;
             throw new NotFoundException(`User #${id} not found`);
         }
         return {
@@ -122,7 +146,8 @@ export class UsersService {
                 name: userData.name,
                 //password: userData.password,
                 email: userData.email,
-                //employee: emp.emp
+                //employee: emp.emp,
+                renew_pass: userData.renewPass
             }
         );
 
@@ -153,7 +178,7 @@ export class UsersService {
         }
 
         //se actualiza la informacion del usuario
-        return await this.userRepository.update(id, {password: newPaswword});
+        return await this.userRepository.update(id, {password: newPaswword, renew_pass: false});
         
     }
 

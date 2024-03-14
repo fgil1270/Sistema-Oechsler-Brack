@@ -61,17 +61,28 @@ export class EmployeeIncidenceController {
   //buscar incidencias de empleados por ids de empleados
   //y por rango de fechas
   @ApiOperation({ summary: 'Listar todas las incidencias por ids de empleados'})
-  @Get('incidences/:ids/:start/:end')
+  @Post('incidences')
+  findAllIncidencesByIdsEmployee(@Body() data: any, @Query() query: any) {
+    let dataSerach = {
+      ids: data.employees,
+      start: data.start,
+      end: data.end,
+      status: data.status? [data.status] : null,
+      code: data.code ? [data.code] : null,
+    } 
+    return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(dataSerach);
+  }
+  /* @Get('incidences/:ids/:start/:end')
   findAllIncidencesByIdsEmployee(@Param() data: any, @Query() query: any) {
     let dataSerach = {
       ids: data.ids,
       start: data.start,
       end: data.end,
-      status: query.status,
-      code: query.code,
-    }
+      status: query.status? [query.status] : null,
+      code: query.code ? [query.code] : null,
+    } 
     return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(dataSerach);
-  }
+  } */
 
   //buscar incidencias del empleado por dia 
   @ApiOperation({ summary: 'Listar todas las incidencias que corresponden al día de ese empleado'})
@@ -111,7 +122,7 @@ export class ReportEmployeeIncidenceController {
   @Get()
   reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
     
-    if(report.access == 'true'){
+    if(report.access == true){
       return true;
     }else{
       return this.employeeIncidenceService.reportCompensatoryTime(report, user);
@@ -131,8 +142,7 @@ export class ReportFlexTimeController {
   @Views('horario_flexible')
   @Get()
   reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
-    console.log("horario flexible");
-    if(report.access == 'true'){
+    if(report.access == true){
       return true;
     }else{
       return this.employeeIncidenceService.reportFlexTime(report, user);

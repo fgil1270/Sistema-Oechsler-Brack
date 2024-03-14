@@ -62,22 +62,22 @@ export class EmployeeIncidence {
     @JoinColumn()
     incidenceCatologue: IncidenceCatologue;
 
-    @ManyToOne(() => Employee, post => post.employeeIncidence)
+    @ManyToOne(() => Employee, post => post.employeeIncidenceLeader)
     @JoinColumn()
     leader: Employee;
 
-    @ManyToOne(() => Employee, post => post.employeeIncidence)
+    @ManyToOne(() => Employee, post => post.employeeIncidenceRh)
     @JoinColumn()
     rh: Employee;
 
     @OneToMany(() => DateEmployeeIncidence, post => post.employeeIncidence)
     dateEmployeeIncidence: DateEmployeeIncidence[];
 
-    @ManyToOne(() => Employee, post => post.employeeIncidence)
+    @ManyToOne(() => Employee, post => post.employeeIncidenceCancel)
     @JoinColumn()
     canceledBy: Employee;
 
-    @ManyToOne(() => Employee, post => post.employeeIncidence)
+    @ManyToOne(() => Employee, post => post.employeeIncidenceCreate)
     @JoinColumn()
     createdBy: Employee;
 }

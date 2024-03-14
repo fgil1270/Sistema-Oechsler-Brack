@@ -7,6 +7,7 @@ import { User } from './entities/user.entity';
 import { Role } from '../roles/entities/role.entity';
 import { Employee } from '../employees/entities/employee.entity';
 import { EmployeesModule } from '../employees/employees.module';
+import { Competence } from '../competence/entities/competence.entity';
 
 
 @Module({
@@ -14,7 +15,8 @@ import { EmployeesModule } from '../employees/employees.module';
     TypeOrmModule.forFeature([
       User,
       Role,
-      Employee
+      Employee,
+      Competence
     ]),
     EmployeesModule
   ],

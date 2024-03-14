@@ -79,7 +79,7 @@ export class ReportEmployeeIncidenceDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: 'true revisa si tiene acceso a la vista, false genera el reporte' })
-    access?: string;
+    access?: boolean;
 
     @IsNotEmpty()
     @IsString()

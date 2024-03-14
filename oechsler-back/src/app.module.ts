@@ -29,9 +29,13 @@ import { ChecadorModule } from './checador/checador.module';
 import { TimeCorrectionModule } from './time_correction/time_correction.module';
 import { LogAdjustmentVacationModule } from './log_adjustment_vacation/log_adjustment_vacation.module';
 import { CalendarModule } from './calendar/calendar.module';
+import { CompetenceModule } from './competence/competence.module';
+import { PercentageDefinitionModule } from './evaluation_annual/percentage_definition/percentage_definition.module';
+import { EmployeeObjectiveModule } from './employee_objective/employee_objective.module';
+import { CourseModule } from './course/course.module';
 
 @Module({
-  imports: [ 
+  imports: [
     MailModule,
     ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
@@ -51,7 +55,7 @@ import { CalendarModule } from './calendar/calendar.module';
       port: 3306,
       username: 'root',
       password: 'root',
-      database: 'db_oechsler',
+      database: process.env.MYSQL_DATABASE,
       entities: ['dist/**/*.entity{.ts,.js}'],
       autoLoadEntities: true,
       synchronize: false,
@@ -76,9 +80,14 @@ import { CalendarModule } from './calendar/calendar.module';
     ChecadorModule,
     TimeCorrectionModule,
     LogAdjustmentVacationModule,
-    CalendarModule
+    CalendarModule,
+    CompetenceModule,
+    PercentageDefinitionModule,
+    EmployeeObjectiveModule,
+    CourseModule,
   ],
-  controllers: [AppController],
+  controllers: [
+    AppController],
   providers: [
     AppService],
 })

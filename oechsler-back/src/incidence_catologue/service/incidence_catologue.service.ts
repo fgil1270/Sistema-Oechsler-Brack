@@ -51,7 +51,7 @@ export class IncidenceCatologueService {
       throw new NotFoundException(`IncidenceCatologue #${name} not found`);
     }
 
-    return incidenceCatologue;
+    return incidenceCatologue; 
   }
 
   async update(id: number, updateIncidenceCatologueDto: UpdateIncidenceCatologueDto) {
@@ -67,8 +67,8 @@ export class IncidenceCatologueService {
 
     if (!incidenceCatologue) {
       throw new NotFoundException(`IncidenceCatologue #${id} not found`);
-    }
+    } 
 
-    return await this.incidenceCatologueRepository.softDelete(incidenceCatologue);
+    return await this.incidenceCatologueRepository.softRemove(incidenceCatologue); 
   }
 }

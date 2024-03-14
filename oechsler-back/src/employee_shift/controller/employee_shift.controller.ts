@@ -48,10 +48,16 @@ export class EmployeeShiftController {
     return this.employeeShiftService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Buscar turno de empleados seleccionados'})
+  /* @ApiOperation({ summary: 'Buscar turno de empleados seleccionados'})
   @Get('/shift-emps/:ids/:start/:end')
   findMore(@Param() data: any, @Param('ids') ids: any) {
     return this.employeeShiftService.findMore(data, ids);
+  } */
+
+  @ApiOperation({ summary: 'Buscar turno de empleados seleccionados'})
+  @Post('/shift-emps')
+  findMore(@Body() data: any) {
+    return this.employeeShiftService.findMore(data, data.employees);
   }
 
   @ApiOperation({ summary: 'Buscar empleados por departamento y leader'})

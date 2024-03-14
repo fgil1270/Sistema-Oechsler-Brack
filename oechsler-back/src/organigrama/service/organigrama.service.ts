@@ -90,13 +90,38 @@ export class OrganigramaService {
     };
   }
 
-  //SE OBTIENEN LOS LIDERES DEL EMPLEADO
+  //SE OBTIENEN lideres
+  async leaders(id: number) {
+    
+    const leaders = await this.organigramaRepository.find({
+      relations: {
+        leader: true,
+        employee: {
+          userId: true
+        },
+      },
+      where: {
+        employee: {
+          id: id
+        }
+      },
+    });
+    
+    
+    return {
+      orgs: leaders
+    };
+  }
+
+  //SE OBTIENEN posibles lideres
   async findLeader(id: number) {
     
     const leaders = await this.organigramaRepository.find({
       relations: {
         leader: true,
-        employee: true,
+        employee: {
+          userId: true
+        },
       },
       where: {
         employee: {
@@ -205,7 +230,7 @@ export class OrganigramaService {
       const levelOne = await this.organigramaRepository.find({
         relations: {
           employee: {
-            department: true, 
+            department: true,
             job: true, 
             payRoll: true, 
             vacationProfile: true, 

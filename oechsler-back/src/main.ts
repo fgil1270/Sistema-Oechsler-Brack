@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as expressListRoutes from "express-list-endpoints";
 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({
@@ -20,14 +21,19 @@ async function bootstrap() {
 
   // URL API
   SwaggerModule.setup('docs', app, document);
-  app.enableCors({
-    methods: 'GET, PUT, POST, DELETE',
+  app.enableCors(/* {
+    origin: '*',
+    methods: 'GET, PUT, POST, PATCH, DELETE',
     allowedHeaders: 'Content-Type, Authorization',
-  });
-  await app.listen(3000);
+    optionsSuccessStatus: 200
+  } */);
+
+
+
+  await app.listen(process.env.PORT);
 
   const server = app.getHttpServer();
   const router = server._events.request._router;
-  console.log(expressListRoutes({}, 'API:', router));
+  //console.log(expressListRoutes({}, 'API:', router));
 }
 bootstrap();

@@ -30,7 +30,7 @@ export class JobsController {
   }
 
   @ApiOperation({ summary: 'Listar Puestos'})
-  
+  @Views('puestos')
   @Get()
   findAll() {
     return this.jobsService.findAll();
@@ -46,6 +46,12 @@ export class JobsController {
   @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateJobDto: CreateJobDto) {
     return this.jobsService.update(id, updateJobDto);
+  }
+
+  @ApiOperation({ summary: 'Obtener Competencias del Puesto' })
+  @Get(':id/competence')
+  getCompetencies(@Param('id', ParseIntPipe) id: number) {
+    return this.jobsService.getCompetencies(id);
   }
 
   @ApiOperation({ summary: 'Eliminar Puesto'})

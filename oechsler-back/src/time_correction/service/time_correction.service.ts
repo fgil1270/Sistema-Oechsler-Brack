@@ -13,6 +13,7 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { ChecadorService } from '../../checador/service/checador.service';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
+import { CalendarService } from '../../calendar/service/calendar.service';
 
 import { read } from 'xlsx';
 
@@ -28,7 +29,8 @@ export class TimeCorrectionService {
         private readonly employeesService: EmployeesService,
         private readonly checadorService: ChecadorService,
         private readonly incidenceCatalogueService: IncidenceCatologueService,
-        private readonly organigramaService: OrganigramaService
+        private readonly organigramaService: OrganigramaService,
+        private readonly calendarService: CalendarService
     ) {}
 
     async create(data: CreateTimeCorrectionDto){
@@ -153,6 +155,15 @@ export class TimeCorrectionService {
                         }
                     }
                 });
+                //se verifica si el dia es festivo
+                const dayCalendar = await this.calendarService.findByDate(index as any);
+                
+                if(dayCalendar){
+                    if(dayCalendar.holiday){
+                        continue;
+                    }
+
+                }
 
                 if(searchTimeCorrection){
                     continue;
@@ -160,15 +171,15 @@ export class TimeCorrectionService {
                 
                 const nowDate = new Date(index);
                 const employeeShif = await this.employeeShiftService.findMore(dataDate, `${iterator.id}`);
-                console.log(iterator.id);
+                
                 //se obtienen las incidencias del dia
                 const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
                     start: format(index, 'yyyy-MM-dd 00:00:00') as any,
                     end: format(index, 'yyyy-MM-dd 23:59:00') as any,
-                    status: 'Autorizada',
+                    status: ['Autorizada'],
                     ids: `${iterator.id}`,
+                    code: ['Vac', 'PCG', 'PSS', 'S', 'PCGS', 'Inc']
                 });
-
                 
                 if(employeeShif.events.length == 0){
                     continue;
@@ -177,6 +188,7 @@ export class TimeCorrectionService {
                 if(incidencias.length > 0){
                     continue;
                 }
+                
                 let turnoActual = employeeShif.events[0]?.nameShift;
                 let hrEntrada = '00:00:00'; 
                 let hrSalida = '23:59:00';
@@ -233,6 +245,12 @@ export class TimeCorrectionService {
                                 diaAnterior = new Date(index);
                                 diaSiguente = new Date(index); 
                                 break;
+                            case 'T4':
+                                hrEntrada = '21:00:00'; //dia anterior
+                                hrSalida = '22:00:00'; //dia actual
+                                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                                diaSiguente = new Date(index);
+                                break;
                         }
 
                     }else{
@@ -267,6 +285,12 @@ export class TimeCorrectionService {
                                 diaAnterior = new Date(index);
                                 diaSiguente = new Date(index); 
                                 break;
+                            case 'T1':
+                                hrEntrada = '21:00:00'; //dia anterior
+                                hrSalida = '15:00:00'; //dia actual
+                                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                                diaSiguente = new Date(index);
+                                break;
                         }
                     }
                 }else{
@@ -300,6 +324,12 @@ export class TimeCorrectionService {
                             hrSalida = '23:00:00';  //dia siguiente
                             diaAnterior = new Date(index);
                             diaSiguente = new Date(index); 
+                            break;
+                        case 'T1':
+                            hrEntrada = '03:00:00'; //dia anterior
+                            hrSalida = '16:00:00'; //dia actual
+                            diaAnterior = new Date(index);
+                            diaSiguente = new Date(index);
                             break;
                     }
                 }
@@ -450,7 +480,7 @@ export class TimeCorrectionService {
             diasGenerados};
     }
 
-    
+    //agregar checadas
     async findByEmployee(data: any, user: any){
 
         let tipoNomina = data.tipoEmpleado;
@@ -461,6 +491,7 @@ export class TimeCorrectionService {
         let diasGenerados = [];
         let empleados = [];
         
+
         // Perform a union operation using a raw query
         
        /*  const results = await this.timeCorrectionRepository.query(query);
@@ -507,6 +538,7 @@ export class TimeCorrectionService {
                     start: format(index, 'yyyy-MM-dd 00:00:00') as any,
                     end: format(index, 'yyyy-MM-dd 23:59:00') as any,
                     ids: `${iterator.id}`,
+                    status: ['Autorizada']
                 });
 
                 if(employeeShif.events.length == 0){
@@ -514,8 +546,9 @@ export class TimeCorrectionService {
                 }
 
                 if(incidencias.length > 0){
-                    continue;
+                    //continue;
                 }
+                
                 let turnoActual = employeeShif.events[0]?.nameShift;
                 let hrEntrada = '00:00:00'; 
                 let hrSalida = '23:59:00';
@@ -567,6 +600,18 @@ export class TimeCorrectionService {
                                 diaAnterior = new Date(index);
                                 diaSiguente = new Date(index); 
                                 break;
+                            case 'TI':
+                                hrEntrada = '02:00:00';  //dia actual 
+                                hrSalida = '23:00:00';  //dia siguiente
+                                diaAnterior = new Date(index);
+                                diaSiguente = new Date(index); 
+                                break;
+                            case 'T4':
+                                hrEntrada = '21:00:00'; //dia anterior
+                                hrSalida = '22:00:00'; //dia actual
+                                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                                diaSiguente = new Date(index);
+                                break;
                         }
 
                     }else{
@@ -595,6 +640,18 @@ export class TimeCorrectionService {
                                 diaAnterior = new Date(index);
                                 diaSiguente = new Date(index); 
                                 break;
+                            case 'TI':
+                                hrEntrada = '02:00:00';  //dia actual 
+                                hrSalida = '23:00:00';  //dia siguiente
+                                diaAnterior = new Date(index);
+                                diaSiguente = new Date(index); 
+                                break;
+                            case 'T4':
+                                hrEntrada = '21:00:00'; //dia anterior
+                                hrSalida = '15:00:00'; //dia actual
+                                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                                diaSiguente = new Date(index);
+                                break;
                         }
                     }
                 }else{
@@ -622,6 +679,18 @@ export class TimeCorrectionService {
                             hrSalida = '22:00:00';  //dia siguiente
                             diaAnterior = new Date(index);
                             diaSiguente = new Date(index); 
+                            break;
+                        case 'TI':
+                            hrEntrada = '02:00:00';  //dia actual 
+                            hrSalida = '23:00:00';  //dia siguiente
+                            diaAnterior = new Date(index);
+                            diaSiguente = new Date(index); 
+                            break;
+                        case 'T4':
+                            hrEntrada = '03:00:00'; //dia anterior
+                            hrSalida = '16:00:00'; //dia actual
+                            diaAnterior = new Date(index);
+                            diaSiguente = new Date(index);
                             break;
                     }
                 }
@@ -687,10 +756,10 @@ export class TimeCorrectionService {
                 
                 
                 
-                if(diffDate >= (diffTimeShift - 2) && diffDate <= (diffTimeShift + 2) ){
+                /* if(diffDate >= (diffTimeShift - 2) && diffDate <= (diffTimeShift + 2) ){
                     
                     continue;
-                }
+                } */
 
                 registros.push({
                     id: iterator.id,
@@ -714,6 +783,8 @@ export class TimeCorrectionService {
                     horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('H.mm'), */
                     //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
                 });
+
+                
                 
                 //si existe incidencia de vacaciones se toma como hrs trabajadas
                 if(incidenciaVac){

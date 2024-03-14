@@ -14,6 +14,7 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
+import { CalendarService } from '../../calendar/service/calendar.service';
 
 @Injectable()
 export class ChecadorService {
@@ -22,7 +23,8 @@ export class ChecadorService {
         private readonly employeesService: EmployeesService,
         private readonly employeeShiftService: EmployeeShiftService,
         @Inject(forwardRef(() => EmployeeIncidenceService)) private employeeIncidenceService: EmployeeIncidenceService,
-        private readonly incidenceCatalogueService: IncidenceCatologueService
+        private readonly incidenceCatalogueService: IncidenceCatologueService,
+        private readonly calendarService: CalendarService
     ){}
 
     async create(createChecadaDto: CreateChecadaDto){
@@ -232,6 +234,16 @@ export class ChecadorService {
 
                     
                 }
+
+                //se verifica si el dia seleccionado es festivo
+                const dayCalendar = await this.calendarService.findByDate(index as any);
+
+                if(dayCalendar){
+                    if(dayCalendar.holiday){
+                        let horasPerfile = iterator.employeeProfile.work_shift_hrs;
+                        totalHrsTrabajadas += horasPerfile;
+                    }
+                }
                 
                 //si existe incidencia de vacaciones se toma como hrs trabajadas
                 if(incidenciaVac){
@@ -239,7 +251,7 @@ export class ChecadorService {
                 }
                 
                 //falta injustificada
-                if(registrosChecador.length == 0 && incidencias.length == 0){
+                if(registrosChecador.length == 0 && incidencias.length == 0 && !dayCalendar){
                     incidenciaFalta = true;
                     incidenceExtra.push(`1` + faltaInjustificada.code_band);
 
@@ -284,8 +296,10 @@ export class ChecadorService {
                     
                 }
                 
-                
+                //se realiza la suma de las horas trabajadas
                 totalHrsTrabajadas += diffDate >= 0? diffDate : 0;
+
+                
 
                 eventDays.push({
                     date: format(index, 'yyyy-MM-dd'),

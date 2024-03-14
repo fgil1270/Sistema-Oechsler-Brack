@@ -28,4 +28,22 @@ export class CalendarController {
     return this.calendarService.create(createCalendarDto, user);
   }
 
+  @ApiOperation({ summary: 'Listar fechas del calendario' })
+  @Get()
+  findAll() {
+    return this.calendarService.findAll();
+  }
+
+
+  @ApiOperation({ summary: 'Buscar fecha por fecha' })
+  @Get('/date/:date')
+  findByDate(@Param('date') date: string) {
+    return this.calendarService.findByDate(date);
+  }
+
+  @ApiOperation({ summary: 'Buscar fecha por rango de fechas' })
+  @Get('/range-date')
+  findRangeDate(@Query() dataDate: any) {
+    return this.calendarService.findRangeDate(dataDate);
+  }
 }

@@ -21,7 +21,8 @@ import { EmployeeIncidence } from "../../employee_incidence/entities/employee_in
 import { Checador } from "../../checador/entities/checador.entity";
 import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
 import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";    
-import { Calendar } from "../../calendar/entities/calendar.entity";   
+import { Calendar } from "../../calendar/entities/calendar.entity";
+import { DefinitionObjectiveAnnual } from "../../employee_objective/entities/definition_objective_annual.entity";
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 @Entity()
@@ -100,13 +101,13 @@ export class Employee {
     @Column({ type: 'date', default: null})
     work_term_date: Date;
 
-    @Column({ type: 'varchar', length: 255})
+    @Column({ type: 'varchar', length: 255, nullable: true})
     email: string;
 
-    @Column({ type: 'varchar', length: 255})
+    @Column({ type: 'varchar', length: 255, nullable: true})
     phone: string;
 
-    @Column({ type: 'varchar', length: 255})
+    @Column({ type: 'varchar', length: 255, nullable: true})
     marital_status: string;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0})
@@ -121,16 +122,16 @@ export class Employee {
     @Column({ type: 'varchar', length: 255})
     type_contract: string;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false,  nullable: true})
     visa: boolean;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false, nullable: true})
     fm_two: boolean;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false, nullable: true})
     travel: boolean;
 
-    @Column({ type: 'boolean', default: false})
+    @Column({ type: 'boolean', default: false, nullable: true})
     brigade_member: boolean;
 
     @Column({ type: 'boolean', default: false})
@@ -160,10 +161,10 @@ export class Employee {
     @OneToMany(() => EmployeeIncidence, (post) => post.employee)
     employeeIncidence: EmployeeIncidence[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.employee)
+    @OneToMany(() => EmployeeIncidence, (post) => post.canceledBy)
     employeeIncidenceCancel: EmployeeIncidence[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.employee)
+    @OneToMany(() => EmployeeIncidence, (post) => post.createdBy)
     employeeIncidenceCreate: EmployeeIncidence[];
 
     @OneToMany(() => Checador, (post) => post.employee)
@@ -186,5 +187,18 @@ export class Employee {
 
     @OneToMany(() => Calendar, (post) => post.created_by)
     calendar: Calendar[];
+
+    @OneToMany(() => EmployeeIncidence, (post) => post.rh)
+    employeeIncidenceRh: EmployeeIncidence[];
+
+    @OneToMany(() => EmployeeIncidence, (post) => post.leader)
+    employeeIncidenceLeader: EmployeeIncidence[];
+
+    @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.employee)
+    definitionObjectiveAnnual: DefinitionObjectiveAnnual[];
+
+    @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.evaluatedBy)
+    definitionObjectiveAnnualEvaluatedBy: DefinitionObjectiveAnnual[];
+
     
 }

@@ -75,6 +75,19 @@ export class JobsService {
     return {job};
   }
 
+  async getCompetencies(id: number) {
+    const job = await this.jobRepository.findOne({
+      relations: {
+        competence: true
+      },
+      where: {
+        id: id
+      }
+    });
+    
+    return job;
+  }
+
   async update(id: number, updateJobDto: CreateJobDto) {
     const job = await this.jobRepository.findOne({
       where: {

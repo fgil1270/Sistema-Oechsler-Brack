@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, IsUrl, IsEmail, Min, MinLength, IsArray } from "class-validator";
+import { IsNotEmpty, IsString, IsNumber, IsUrl, IsEmail, Min, MinLength, IsArray, IsBoolean } from "class-validator";
 import { PartialType, ApiProperty} from "@nestjs/swagger";
 
 export class CreateUserDto {
@@ -27,6 +27,11 @@ export class CreateUserDto {
     @IsNumber()
     @ApiProperty({ description: 'Id del empleado' })
     employee: number;
+
+    @IsNotEmpty()
+    @IsBoolean()
+    @ApiProperty({ description: 'Requiere renovar contraseña' })
+    renewPass: boolean;
 
 
 

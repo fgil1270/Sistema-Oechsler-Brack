@@ -12,6 +12,7 @@ import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catol
 import { EmployeesModule } from '../employees/employees.module';
 import { ChecadorModule } from '../checador/checador.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
+import { CalendarModule } from '../calendar/calendar.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
     IncidenceCatologueModule,
     EmployeesModule,
     ChecadorModule,
-    OrganigramaModule
+    OrganigramaModule,
+    CalendarModule
   ],
   providers: [TimeCorrectionService],
   controllers: [TimeCorrectionController],
