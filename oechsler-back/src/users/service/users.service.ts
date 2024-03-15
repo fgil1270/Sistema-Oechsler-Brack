@@ -175,10 +175,11 @@ export class UsersService {
             await this.hashPassword(password).then((x) => {
                 newPaswword = x
             });
+            
         }
 
         //se actualiza la informacion del usuario
-        return await this.userRepository.update(id, {password: newPaswword, renew_pass: false});
+        return await this.userRepository.update(id, {password: newPaswword, renew_pass: true});
         
     }
 
