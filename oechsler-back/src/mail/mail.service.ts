@@ -109,38 +109,36 @@ export class MailService {
         let newpath: string = path.resolve(__dirname, `../../documents/temp/objetivos/${pdfPath}`);
 
         //console.log(newpath);
-        await this.mailerService.sendMail({
-            to: to,
-            from: process.env.MAIL_USERNAME,
-            subject: subject,
-            //text: 'Adjunto está el informe en PDF.',
-            html: '<b>Adjunto está el informe en PDF.</b>',  
-            attachments: [
-                /* {
-                    filename: 'license.txt',
-                    path: 'https://raw.github.com/nodemailer/nodemailer/master/LICENSE',
-                    contentType: 'text/plain'
-                } */
-                { 
-                    filename: 'objetivos.pdf',
-                    content: fs.createReadStream(newpath), // file path or Buffer or Stream instance
-                    contentType: 'application/pdf',
-                } 
-            ],
-        }).then((success) => {
-        //console.log('correcto:', success);
-            resp.error = false;
-            resp.msg = 'success';
-        })
-        .catch((err) => {
-            console.log('error:', err);
+        try {
+            await this.mailerService.sendMail({
+                to: to,
+                from: process.env.MAIL_USERNAME,
+                subject: subject,
+                html: '<b>Adjunto está el informe en PDF.</b>',  
+                attachments: [
+                    { 
+                        filename: 'objetivos.pdf',
+                        content: fs.createReadStream(newpath), // file path or Buffer or Stream instance
+                        contentType: 'application/pdf',
+                    } 
+                ],
+    
+            })
+            resp.msg = 'Email enviado con éxito.';
+        } catch (error) {
             resp.error = true;
-            resp.msg = err;
-        });
+            resp.msg = error.message || 'Error al enviar el email.';
+        }
+       
+        // Eliminar el archivo después de enviar el email
+        try {
+            
+            await fs.unlinkSync(newpath);
+        } catch (error) {
+            console.log('Error al eliminar el archivo:', error);
+            // Aunque ocurra un error al eliminar el archivo, el email ya fue enviado correctamente
+        }
 
-        
-
-        fs.unlinkSync(newpath);
         return resp;
 
 
