@@ -24,7 +24,7 @@ export class DncCourse {
     @Column({ type: 'varchar', length: 255 })
     priority: string;
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text', nullable: true})
     comment: string;
 
     @CreateDateColumn()

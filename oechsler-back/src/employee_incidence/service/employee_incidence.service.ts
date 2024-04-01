@@ -1133,11 +1133,11 @@ export class EmployeeIncidenceService {
           //se obtiene la diferencia en milisegundos
           diffHr = secondHr.diff(firstHr, 'hours');
           diffMin = secondHr.diff(firstHr, 'minutes');
-          totalMinutisTrabados += diffMin%60;
+          totalMinutisTrabados += diffMin % 60;
 
-          if(totalMinutisTrabados > 60){
-            modMin = totalMinutisTrabados%60;
-            divMin = totalMinutisTrabados/60;
+          if(totalMinutisTrabados >= 60){
+            modMin = totalMinutisTrabados % 60;
+            divMin = totalMinutisTrabados / 60;
             totalHrsTrabajadas += Math.floor(divMin)
             totalMinutisTrabados = modMin;
           }

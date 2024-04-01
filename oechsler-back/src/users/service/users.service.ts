@@ -167,19 +167,27 @@ export class UsersService {
         return await this.userRepository.update(id, mapUser);
     }
 
-    async updatePassword(id: number, password: string){
+    async updatePassword(id: number, data: any){
         const user = await this.findOne(id);
         let newPaswword = "";
         
         if (user) {
-            await this.hashPassword(password).then((x) => {
+            await this.hashPassword(data.password).then((x) => {
                 newPaswword = x
             });
             
         }
 
+        let renewPass = false;
+        if(data.action == 'reset'){
+            renewPass = true;
+
+        }else if(data.action == 'edit'){
+            renewPass = false;
+        }
+
         //se actualiza la informacion del usuario
-        return await this.userRepository.update(id, {password: newPaswword, renew_pass: true});
+        return await this.userRepository.update(id, {password: newPaswword, renew_pass: renewPass});
         
     }
 

@@ -29,7 +29,7 @@ export class EmployeeObjective {
     @Column({ type: 'int' })
     percentage: number;
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text', nullable: true})
     comment: string;
 
     @Column({ type: 'varchar' })
