@@ -9,8 +9,7 @@ export class AppService {
   ) {}
 
   getHello(): string {
-    console.log(this.configService.apiKey);
-    console.log(this.configService.database.name);
+
     return 'Hello World!';
   }
 }

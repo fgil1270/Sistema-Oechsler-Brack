@@ -60,7 +60,6 @@ export class PayrollsService {
       }
     });
     if (!payroll) {
-      console.log(`Payroll #${name} not found`);
       return {payroll};
       throw new NotFoundException(`Payroll #${name} not found`);
     }
