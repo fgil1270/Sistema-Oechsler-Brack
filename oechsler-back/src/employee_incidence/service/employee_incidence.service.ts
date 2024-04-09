@@ -634,13 +634,14 @@ export class EmployeeIncidenceService {
     let report: any;
     let query = '';
     let dataEmployee = [];
+    let arrayEmployeebyJefe = [];
 
 
     userLogin.roles.forEach(role => {
       if(role.name == 'Admin' || role.name == 'RH'){
         isAdmin = true;
       }
-      if(role.name == 'Jefe de Area' || role.name == 'RH'){
+      if(role.name == 'Jefe de Area' || role.name == 'RH' || role.name == 'Jefe de Turno'){
         isLeader = true;
       } 
       
@@ -651,6 +652,7 @@ export class EmployeeIncidenceService {
       };
       query = `SELECT * FROM employee AS e
       `; 
+      arrayEmployeebyJefe = await this.employeeIncidenceRepository.query(query);
     }
 
     if(isLeader){ //leader o jefe de turno
@@ -661,20 +663,23 @@ export class EmployeeIncidenceService {
         organigramaL: userLogin.idEmployee
       };
 
-      query = `
-            SELECT * FROM employee AS e
-            INNER JOIN job AS j ON e.jobId = j.id
-            WHERE j.shift_leader = 1 
-            UNION
-            SELECT * FROM employee AS e
-            INNER JOIN organigrama AS o ON e.id = o.employeeId
-            WHERE o.leaderId = ${userLogin.idEmployee}
-            `;
+      let queryPuesto =  `SELECT * FROM employee AS e
+      INNER JOIN job AS j ON e.jobId = j.id
+      WHERE j.shift_leader = 1`;
+      const porPuesto = await this.employeeIncidenceRepository.query(queryPuesto);
+
+      let queryOrganigrama = `SELECT * FROM employee AS e
+      INNER JOIN organigrama AS o ON e.id = o.employeeId
+      WHERE o.leaderId = ${userLogin.idEmployee}`;
+
+      const porOrganigrama = await this.employeeIncidenceRepository.query(queryOrganigrama);
+
+      arrayEmployeebyJefe = porPuesto.concat(porOrganigrama);
 
 
     }
-    
-    const employees = await this.employeeIncidenceRepository.query(query);
+
+    const employees = arrayEmployeebyJefe;
 
     for (let i = 0; i < employees.length; i++) {
       let dataIncidence = [];
@@ -736,6 +741,7 @@ export class EmployeeIncidenceService {
 
         
         switch (turnoActual) {
+
           case 'T1':
               hrEntrada = '04:00:00'; //dia anterior
               hrSalida = '23:00:00'; //dia actual
@@ -751,6 +757,12 @@ export class EmployeeIncidenceService {
           case 'T3':
               hrEntrada = '12:00:00';  //dia actual 
               hrSalida = '23:00:00';  //dia siguiente
+              diaAnterior = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
+              diaSiguente = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date); 
+              break;
+            case 'T4':
+              hrEntrada = '04:00:00'; //dia anterior
+              hrSalida = '23:00:00'; //dia actual
               diaAnterior = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date);
               diaSiguente = new Date(incidenciaCompensatorio[j].dateEmployeeIncidence[0].date); 
               break;

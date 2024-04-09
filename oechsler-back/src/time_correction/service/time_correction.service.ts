@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadGatewayException } from '@nestjs/comm
 import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, LessThanOrEqual, Between } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import * as moment from 'moment';
 
 import { TimeCorrection } from '../entities/time_correction.entity';
@@ -87,12 +88,14 @@ export class TimeCorrectionService {
         INNER JOIN organigrama AS o ON e.id = o.employeeId
         WHERE o.leaderId = ${user.idEmployee}`;
 
+        //si es administrador
         if(isAdmin){
             query = `
             SELECT * FROM employee
             `;
         }
 
+        //si es jefe de turno
         if(isJefeTurno){
             query = `
             SELECT * FROM employee AS e
@@ -105,7 +108,7 @@ export class TimeCorrectionService {
             `;
         }
         
-        const employees = await this.employeesService.findByNomina(tipoNomina);
+        //const employees = await this.employeesService.findByNomina(tipoNomina);
         let registros = [];
         let diasGenerados = [];
         let empleados = [];
@@ -127,12 +130,12 @@ export class TimeCorrectionService {
             diasGenerados.push(
                 format(x, 'yyyy-MM-dd')
             );
-            
         }
-        
+        //console.log(organigrama)
         //se recorre el arreglo de empleados
         //employees.emps
         for (const iterator of organigrama) {
+            
             let eventDays = [];
             let totalHrsRequeridas = 0;
             let totalHrsTrabajadas = 0;
@@ -170,7 +173,7 @@ export class TimeCorrectionService {
                 }
                 
                 const nowDate = new Date(index);
-                const employeeShif = await this.employeeShiftService.findMore(dataDate, `${iterator.id}`);
+                const employeeShif = await this.employeeShiftService.findMore(dataDate, [iterator.id]);
                 
                 //se obtienen las incidencias del dia
                 const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
@@ -180,11 +183,11 @@ export class TimeCorrectionService {
                     ids: `${iterator.id}`,
                     code: ['Vac', 'PCG', 'PSS', 'S', 'PCGS', 'Inc']
                 });
-                
+
                 if(employeeShif.events.length == 0){
                     continue;
                 }
-
+                
                 if(incidencias.length > 0){
                     continue;
                 }
@@ -208,6 +211,7 @@ export class TimeCorrectionService {
                 const employeeShifSiguiente = await this.employeeShiftService.findMore(dataDateSiguiente, `${iterator.id}`);
                 let turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
                 let turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
+
 
                 //turno actual es igual al turno del dia anterior
                 if(turnoActual == turnoAnterior){
@@ -285,7 +289,7 @@ export class TimeCorrectionService {
                                 diaAnterior = new Date(index);
                                 diaSiguente = new Date(index); 
                                 break;
-                            case 'T1':
+                            case 'T4':
                                 hrEntrada = '21:00:00'; //dia anterior
                                 hrSalida = '15:00:00'; //dia actual
                                 diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
@@ -325,7 +329,7 @@ export class TimeCorrectionService {
                             diaAnterior = new Date(index);
                             diaSiguente = new Date(index); 
                             break;
-                        case 'T1':
+                        case 'T4':
                             hrEntrada = '03:00:00'; //dia anterior
                             hrSalida = '16:00:00'; //dia actual
                             diaAnterior = new Date(index);
@@ -336,7 +340,7 @@ export class TimeCorrectionService {
 
                 const registrosChecadorNuevo = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
 
-
+                
                 
                 //se verifica si el dia anterior para el turno 1 es el mismo turno
                 //se toman los horarios de entra del segundo Turno pero si son distintos
@@ -392,7 +396,13 @@ export class TimeCorrectionService {
                 let diffDate = secondDate.diff(firstDate, 'hours', true); 
                 let calculoHrsExtra = 0;
                 let incidenciaVac = false;
-                
+
+                const hours = Math.floor(diffDate);
+                const minutes = (diffDate - hours) * 60;
+
+                const date = new Date();
+                date.setHours(hours);
+                date.setMinutes(minutes);
                 
                 
                 if(diffDate >= (diffTimeShift - 2) && diffDate <= (diffTimeShift + 2) ){
@@ -401,21 +411,27 @@ export class TimeCorrectionService {
                 }
 
                 
+                if(iterator.id == 2221 && employeeShif.events[0].start == '2024-03-28'){
+                    console.log(diffDate)
+                    console.log(date.toTimeString().split(' ')[0])
+                    
+                    
+                }
+                let horas_realizadas = date.toTimeString().split(' ')[0].split(':');
                 
-
                 registros.push({
-                    id: i,
+                    id: iterator.id,
                     id_empleado: iterator.id,
                     employee_number: iterator.employee_number,
                     nombre: iterator.name+' '+iterator.paternal_surname+' '+iterator.maternal_surname,
-                    date: format(index, 'yyyy-MM-dd'),
+                    date: format(index, 'EEEE d \'de\' MMMM \'de\' yyyy', { locale: es }),
                     turno: employeeShif.events[0]?.nameShift,
                     hora_inicio: startTimeShift.format('HH:mm'),
                     hora_fin: endTimeShift.format('HH:mm'),
                     hora_inicio_reloj: firstDate.format('HH:mm'),
                     hora_fin_reloj: secondDate.format('HH:mm'),
                     horas_esperadas: moment(diffTimeShift, 'HH:mm').format('HH:mm'),
-                    horas_realizadas: diffDate >= 0? moment(diffDate, 'HH:mm').format('HH:mm') : 0,
+                    horas_realizadas: diffDate >= 0? horas_realizadas[0]+':'+horas_realizadas[1] : 0,
                     suma_hrs: diffTimeShift + 2,
                     comments: '',
                     checadas: registrosChecadorNuevo
@@ -426,6 +442,7 @@ export class TimeCorrectionService {
                     horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('H.mm'), */
                     //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
                 });
+
                 
                 //si existe incidencia de vacaciones se toma como hrs trabajadas
                 if(incidenciaVac){
@@ -477,14 +494,15 @@ export class TimeCorrectionService {
         
         return {
             registros,
-            diasGenerados};
+            diasGenerados
+        };
     }
 
     //agregar checadas
     async findByEmployee(data: any, user: any){
 
         let tipoNomina = data.tipoEmpleado;
-        
+
         //const employees = await this.employeesService.findByNomina(tipoNomina);
         const employees = await this.employeesService.findMore(data.employees.split(',') );
         let registros = [];
@@ -528,11 +546,11 @@ export class TimeCorrectionService {
                     start: index,
                     end: index
                 }
-                
+
                 const nowDate = new Date(index);
-                const employeeShif = await this.employeeShiftService.findMore(dataDate, `${iterator.id}`);
+                const employeeShif = await this.employeeShiftService.findMore(dataDate, [iterator.id]);
                 
-                
+
                 //se obtienen las incidencias del dia
                 const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
                     start: format(index, 'yyyy-MM-dd 00:00:00') as any,
@@ -548,7 +566,7 @@ export class TimeCorrectionService {
                 if(incidencias.length > 0){
                     //continue;
                 }
-                
+
                 let turnoActual = employeeShif.events[0]?.nameShift;
                 let hrEntrada = '00:00:00'; 
                 let hrSalida = '23:59:00';

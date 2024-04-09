@@ -33,9 +33,14 @@ import { CompetenceModule } from './competence/competence.module';
 import { PercentageDefinitionModule } from './evaluation_annual/percentage_definition/percentage_definition.module';
 import { EmployeeObjectiveModule } from './employee_objective/employee_objective.module';
 import { CourseModule } from './course/course.module';
+import { DocumentModule } from './document/document.module';
+import { DocumentClasificationModule } from './document_clasification/document_clasification.module';
 
 @Module({
   imports: [
+    DocumentClasificationModule,
+    DocumentModule,
+
     MailModule,
     ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
