@@ -1,38 +1,7 @@
 import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsObject } from "class-validator";
 import { ApiProperty, PartialType } from "@nestjs/swagger";
 
-export class CreateEmployeeObjectiveDto {
-    @IsNotEmpty()
-    @IsNumber()
-    @ApiProperty({ description: 'id del empleado' })
-    idEmployee: number;
 
-    @IsNotEmpty()
-    @IsNumber()
-    @ApiProperty({ description: 'id de los porcentajes por año' })
-    idPercentageDefinition: number;
-    
-    @IsArray()
-    @ApiProperty({ description: 'Objetivo de empleado' })
-    employeeObjective: EmployeeObjectiveDto[];
-
-    @IsArray()
-    @ApiProperty({ description: 'Cursos de empleado' })
-    dncCourse: DncCourseDto[];
-
-    @IsArray()
-    @ApiProperty({ description: 'Cursos manuales de empleado' })
-    dncCourseManual: DncCourseManualDto[];
-
-    @IsArray()
-    @ApiProperty({ description: 'Evaluacion de competencias' })
-    competenceEvaluation: CompetenceEvaluationDto[];
-
-}
-
-export class UpdateEmployeeObjectiveDto extends PartialType(CreateEmployeeObjectiveDto){
-
-}
 
 export class EmployeeObjectiveDto {
 
@@ -67,6 +36,12 @@ export class EmployeeObjectiveDto {
 
 }
 
+export class UpdateObjectiveDTO extends PartialType(EmployeeObjectiveDto) {
+    @IsNumber()
+    @ApiProperty({ description: 'Id del objectivo si ya esta creado' })
+    id?: number;
+}
+
 export class DncCourseDto {
 
     @IsNotEmpty()
@@ -89,6 +64,12 @@ export class DncCourseDto {
     @ApiProperty({ description: 'id del curso' })
     idCourse: number;
 
+}
+
+export class UpdateDncCourseDto extends PartialType(DncCourseDto) {
+    @IsNumber()
+    @ApiProperty({ description: 'Id del dnc si ya esta creado' })
+    id?: number;
 }
 
 export class DncCourseManualDto {
@@ -120,6 +101,12 @@ export class DncCourseManualDto {
 
 }
 
+export class UpdateDncCourseManualDto extends PartialType(DncCourseManualDto) {
+    @IsNumber()
+    @ApiProperty({ description: 'Id del dncManual si ya esta creado' })
+    id?: number;
+}
+
 export class CompetenceEvaluationDto {
 
     @IsNotEmpty()
@@ -146,4 +133,84 @@ export class CompetenceEvaluationDto {
     @ApiProperty({ description: 'id de la competencia' })
     idCompetence: number;
 
+}
+
+export class UpdateCompetenceEvaluationDto extends PartialType(CompetenceEvaluationDto) {}
+
+export class CreateEmployeeObjectiveDto {
+    @IsOptional()
+    @IsNumber()
+    @ApiProperty({ description: 'id de la asignacion de objetivos anual si existe' })
+    idObjectiveAnnual?: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    @ApiProperty({ description: 'id del empleado' })
+    idEmployee: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    @ApiProperty({ description: 'id de los porcentajes por año' })
+    idPercentageDefinition: number;
+    
+    @IsArray()
+    @ApiProperty({ description: 'Objetivo de empleado' })
+    employeeObjective: EmployeeObjectiveDto[];
+
+    @IsArray()
+    @ApiProperty({ description: 'Cursos de empleado' })
+    dncCourse: DncCourseDto[];
+
+    @IsArray()
+    @ApiProperty({ description: 'Cursos manuales de empleado' })
+    dncCourseManual: DncCourseManualDto[];
+
+    @IsArray()
+    @ApiProperty({ description: 'Evaluacion de competencias' })
+    competenceEvaluation: CompetenceEvaluationDto[];
+
+}
+
+export class UpdateEmployeeObjectiveDto extends PartialType(CreateEmployeeObjectiveDto){}
+
+export class CreateEmployeeObjectiveDtoParcial {
+    @IsOptional()
+    @IsNotEmpty()
+    @IsNumber()
+    @ApiProperty({ description: 'id del empleado' })
+    idEmployee: number;
+
+    @IsOptional()
+    @IsNotEmpty()
+    @IsNumber()
+    @ApiProperty({ description: 'id de los porcentajes por año' })
+    year: number;
+    
+    @IsOptional()
+    @IsObject()
+    @ApiProperty({ description: 'Objetivo de empleado' })
+    employeeObjective: EmployeeObjectiveDto;
+
+    @IsOptional()
+    @IsObject()
+    @ApiProperty({ description: 'Cursos de empleado' })
+    dncCourse: DncCourseDto;
+
+    @IsOptional()
+    @IsObject()
+    @ApiProperty({ description: 'Cursos manuales de empleado' })
+    dncCourseManual: DncCourseManualDto;
+
+    @IsOptional()
+    @IsObject()
+    @ApiProperty({ description: 'Evaluacion de competencias' })
+    competenceEvaluation: CompetenceEvaluationDto;
+
+}
+
+export class UpdateEmployeeObjectiveDtoPartial extends PartialType(CreateEmployeeObjectiveDtoParcial){
+    @IsOptional()
+    @IsNumber()
+    @ApiProperty({ description: 'Id de la asignacion de objetivos anual' })
+    id: number;
 }

@@ -64,8 +64,9 @@ export class UsersController {
 
     @ApiOperation({ summary: 'Editar contraseña'})
     @Put('password/:id')
-    updatePassword(@Param('id') id: number, @Body('editPassword') password: string) {
-      return this.usersService.updatePassword(id, password);
+    updatePassword(@Param('id') id: number, @Body() data: any) {
+      
+      return this.usersService.updatePassword(id, data);
     }
     
     @ApiOperation({ summary: 'Restaurar usuario'})

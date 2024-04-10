@@ -119,12 +119,13 @@ export class ReportEmployeeIncidenceController {
 
   @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos'})
   @Views('tiempo_compensatorio_repago')
-  @Get()
-  reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
-    
-    if(report.access == true){
+  @Post()
+  reportCompensatoryTime(@Body() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
+    console.log(report)
+    if(report.access == 'true'){
       return true;
     }else{
+      console.log("genera reporte")
       return this.employeeIncidenceService.reportCompensatoryTime(report, user);
     }
       
@@ -142,7 +143,7 @@ export class ReportFlexTimeController {
   @Views('horario_flexible')
   @Get()
   reportCompensatoryTime(@Query() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
-    if(report.access == true){
+    if(report.access == 'true'){
       return true;
     }else{
       return this.employeeIncidenceService.reportFlexTime(report, user);

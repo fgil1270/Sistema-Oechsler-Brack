@@ -76,10 +76,10 @@ export class CreateEmployeeIncidenceDto {
 export class UpdateEmployeeIncidenceDto extends PartialType(CreateEmployeeIncidenceDto) {}
 
 export class ReportEmployeeIncidenceDto {
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @ApiProperty({ description: 'true revisa si tiene acceso a la vista, false genera el reporte' })
-    access?: boolean;
+    access?: string;
 
     @IsNotEmpty()
     @IsString()

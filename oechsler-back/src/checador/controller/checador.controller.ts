@@ -61,5 +61,11 @@ export class ChecadorController {
         return this.checadorService.update(data, id);
     }
 
+    @ApiOperation({ summary: 'Eliminar registro de checada' })
+    @Delete(':id')
+    delete(@Param('id', ParseIntPipe) id: number){
+        return this.checadorService.remove(id);
+    }
+
     
 }

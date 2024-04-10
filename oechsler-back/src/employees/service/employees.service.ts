@@ -151,38 +151,39 @@ export class EmployeesService {
       
       //for (let colNum = 0; colNum <= 1; colNum++) {
         var exNoEmployee = workbook.Sheets['Todos'][utils.encode_cell({r:rowNum, c:0 })];
-        let name = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 6})];
-        let paternal_surname = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 7})];
-        let maternal_surname = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 8})];
-        let puesto = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 2})];
-        let departamento = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 3})];
-        let nomina = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 4})];
-        let tipeEmployee = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 5})];
-        let profileEmployee = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 35})];
-        let vacationProfile = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 36})];
-        let gender = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 9})];
-        let birthdate = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 10})];
-        let country = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 11})];
-        let citizenship = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 12})];
-        let state = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 13})];
-        let city = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 14})];
-        let location = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 15})];
-        let rfc = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 16})];
-        let curp = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 17})];
-        let nss = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 18})];
-        let email = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 20})];
-        let phone = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 21})];
-        let marital_status = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 22})];
-        let visa = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 23})];
-        let fm_two = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 24})];
-        let travel = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 25})];
-        let brigade_member = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 26})];
-        let salary = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 27})];
-        let type_contract = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 28})];
-        let daily_salary = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 29})];
-        let date_employment = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 30})];
-        let work_term_date = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 31})];
-        let worker_status = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 32})];
+        let idJob = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 2})];
+        let name = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 7})];
+        let paternal_surname = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 8})];
+        let maternal_surname = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 9})];
+        let puesto = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 3})];
+        let departamento = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 4})];
+        let nomina = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 5})];
+        let tipeEmployee = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 6})];
+        let profileEmployee = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 36})];
+        let vacationProfile = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 37})];
+        let gender = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 10})];
+        let birthdate = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 11})];
+        let country = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 12})];
+        let citizenship = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 13})];
+        let state = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 14})];
+        let city = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 15})];
+        let location = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 16})];
+        let rfc = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 17})];
+        let curp = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 18})];
+        let nss = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 19})];
+        let email = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 21})];
+        let phone = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 22})];
+        let marital_status = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 23})];
+        let visa = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 24})];
+        let fm_two = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 25})];
+        let travel = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 26})];
+        let brigade_member = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 27})];
+        let salary = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 28})];
+        let type_contract = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 29})];
+        let daily_salary = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 30})];
+        let date_employment = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 31})];
+        let work_term_date = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 32})];
+        let worker_status = workbook.Sheets['Todos'][utils.encode_cell({r: rowNum, c: 33})];
 
         let quote = 1;
 
@@ -194,7 +195,7 @@ export class EmployeesService {
           continue;
         }
         
-        if (exNoEmployee === undefined || name === undefined || paternal_surname === undefined || maternal_surname === undefined ||
+        if (exNoEmployee === undefined || idJob === undefined || name === undefined || paternal_surname === undefined || maternal_surname === undefined ||
           puesto === undefined || departamento === undefined || nomina === undefined || tipeEmployee === undefined || profileEmployee === undefined ||
           vacationProfile === undefined || gender === undefined || birthdate === undefined || country === undefined || citizenship === undefined ||
           state === undefined || city === undefined || location === undefined || rfc === undefined || curp === undefined || nss === undefined ||
@@ -211,14 +212,18 @@ export class EmployeesService {
         } else {
           //BUSCAMOS el puesto, departamento, nomina, tipo de empleado
           
-          const tableJob = await this.jobsService.findName(puesto.w);
+          const tableJob = await this.jobsService.findOne(idJob.w);
          
           //SI NO EXISTE EL PUESTO SE CREA
           let newJob = {};
           let newDepartment = {};
           if(!tableJob){
-            const tableJobTotal = await this.jobsService.findAll();
-            newJob = await this.jobsService.create({cv_code: (tableJobTotal.total+1).toString(), cv_name: puesto.w, shift_leader: false, plc: false});
+            totalError++;
+            errors.push({
+              id: exNoEmployee.v,
+              error: 'puesto'
+            });
+            continue;
           }
          
           const tableDepartment = await this.departmentsService.findName(departamento.w);
@@ -280,7 +285,7 @@ export class EmployeesService {
               row.department = tableDepartment? tableDepartment.dept : {};
               row.vacationProfile = tableVacationProfile? tableVacationProfile.vacationsProfile : {};
               row.employeeProfile = tableEmployeeProfile? tableEmployeeProfile.emp : {};
-              row.job = tableJob? tableJob.job: newJob;
+              row.job = tableJob? tableJob: newJob;
               row.worker = tipeEmployee.w.toUpperCase();
               row.employee_number = exNoEmployee.w.trim();
               row.name = name.w.trim();
@@ -330,7 +335,7 @@ export class EmployeesService {
               row.department = tableDepartment? tableDepartment.dept : {};
               row.vacationProfile = tableVacationProfile? tableVacationProfile.vacationsProfile : {};
               row.employeeProfile = tableEmployeeProfile? tableEmployeeProfile.emp : {};
-              row.job = tableJob? tableJob.job: newJob;
+              row.job = tableJob? tableJob: newJob;
               row.worker = tipeEmployee.w.toUpperCase();
               row.employee_number = exNoEmployee.w.trim();
               row.name = name.w.trim();
@@ -580,6 +585,7 @@ export class EmployeesService {
     return await this.employeeRepository.softDelete(id);
   }
 
+  //reporte de vacaciones
   async vacationReport(data, user){
     
     const employee = await this.organigramaService.findJerarquia(
