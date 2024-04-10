@@ -10,9 +10,12 @@ import {
   ParseIntPipe,
   Query,
   Res,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 import { DocumentClasificationDto } from '../dto/document_clasification.dto';
 import { DocumentClasification } from '../entities/document_clasification.entity';
@@ -27,7 +30,15 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 export class DocumentClasificationController {
 
   constructor(
-    private service: DocumentClasificationService
+    private documentClasificationService: DocumentClasificationService
   ) { }
+
+  @ApiOperation({ summary: 'Crear clasificacion de documentos' })
+  @Post()
+  @UseInterceptors(FilesInterceptor('files', 10))
+  uploadMultipleFiles(@UploadedFiles() files: Express.Multer.File[]) {
+    return this.documentClasificationService.uploadFile(files);
+  }
+
 
 }
