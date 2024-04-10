@@ -58,7 +58,7 @@ export class ChecadorService {
         if(createChecadaDto.status != ''){
             checada.status = createChecadaDto.status;
 
-        }
+        } 
 
         const checadaSave = await this.checadorRepository.save(checada);
 
@@ -73,7 +73,7 @@ export class ChecadorService {
 
     //buscar registros de entrada y salida por ids de empleado y rango de fechas
     async findbyDate(id: any, start: any, end: any, hrEntrada: any, hrSalida: any){
-        
+
         const checador = await this.checadorRepository.find( {
             where: { 
                 employee: {
@@ -102,7 +102,7 @@ export class ChecadorService {
 
     
 
-
+    //reporte Nomipaq
     async reportNomipaq(data: any){
         
         let tipoNomina = data.tipoEmpleado;

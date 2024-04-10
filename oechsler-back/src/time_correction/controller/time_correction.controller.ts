@@ -35,7 +35,6 @@ export class TimeCorrectionController {
   @Views('correccion_tiempo')
   @Get()
   correctionTime(@Query() data:any, @CurrentUser() user: any){
-
     return this.timeCorrectionService.find(data, user);
   }
 
