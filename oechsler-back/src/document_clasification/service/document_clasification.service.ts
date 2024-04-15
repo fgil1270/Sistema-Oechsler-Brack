@@ -22,12 +22,12 @@ export class DocumentClasificationService {
     async uploadFile(files: Express.Multer.File[]){
         const urls: string[] = [];
         files.forEach(archivo => {
-            console.log('archivo', archivo);
+
             let name = archivo.originalname.split('-');
-            const path = join(__dirname, `../../../documents/empleados/${name[1]}`);
+            const path = join(__dirname, `../../../documents/empleados/${name[1]}/${name[0]}`);
            
             const filepath = join(path, name[2]);
-            console.log(filepath) // Cambiar 'archivos' por la ruta donde deseas almacenar los archivos
+            // Cambiar 'archivos' por la ruta donde deseas almacenar los archivos
 
             // Verifica si la ruta existe, si no, la crea
             if (!existsSync(path)) {

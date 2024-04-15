@@ -35,6 +35,7 @@ export class TimeCorrectionController {
   @Views('correccion_tiempo')
   @Get()
   correctionTime(@Query() data:any, @CurrentUser() user: any){
+
     if(data.action == 'acceso'){
       return true;
     }else{

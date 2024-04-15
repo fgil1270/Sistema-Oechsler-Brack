@@ -9,8 +9,10 @@ import {
     JoinColumn,
     OneToMany
 } from 'typeorm';
+import { DocumentClasification } from '../../document_clasification/entities/document_clasification.entity';
+import { DocumentEmployee } from '../../document_employee/entities/document_employee.entity';
 
-@Entity('Document')
+@Entity()
 export class Document {
     @PrimaryGeneratedColumn() 
     id: number;
@@ -29,4 +31,12 @@ export class Document {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @ManyToOne(() => DocumentClasification, post => post.document)
+    @JoinColumn()
+    documentClasification: DocumentClasification;
+
+    @OneToMany(() => DocumentEmployee, post => post.document)
+    documentEmployee: DocumentEmployee[];
+
 }

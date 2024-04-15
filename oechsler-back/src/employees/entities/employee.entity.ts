@@ -23,6 +23,7 @@ import { TimeCorrection } from "../../time_correction/entities/time_correction.e
 import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";    
 import { Calendar } from "../../calendar/entities/calendar.entity";
 import { DefinitionObjectiveAnnual } from "../../employee_objective/entities/definition_objective_annual.entity";
+import { DocumentEmployee } from "src/document_employee/entities/document_employee.entity";
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 @Entity()
@@ -199,6 +200,9 @@ export class Employee {
 
     @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.evaluatedBy)
     definitionObjectiveAnnualEvaluatedBy: DefinitionObjectiveAnnual[];
+
+    @OneToMany(() => DocumentEmployee, post => post.employee)
+    documentEmployee: DocumentEmployee[];
 
     
 }

@@ -121,11 +121,11 @@ export class ReportEmployeeIncidenceController {
   @Views('tiempo_compensatorio_repago')
   @Post()
   reportCompensatoryTime(@Body() report: ReportEmployeeIncidenceDto, @CurrentUser() user: any) {
-    console.log(report)
+
     if(report.access == 'true'){
       return true;
     }else{
-      console.log("genera reporte")
+
       return this.employeeIncidenceService.reportCompensatoryTime(report, user);
     }
       
