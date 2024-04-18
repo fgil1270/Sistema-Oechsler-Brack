@@ -20,8 +20,8 @@ export class DocumentEmployee {
     @Column({ type: 'varchar' })
     name: string;
 
-    @Column({ type: 'boolean' })
-    required: boolean;
+    @Column({ type: 'text' })
+    route: string;
 
     @CreateDateColumn()
     created_at: Date;

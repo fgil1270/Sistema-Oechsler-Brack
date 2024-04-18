@@ -8,6 +8,8 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { DocumentEmployeeService } from './service/document_employee.service';
 import { DocumentEmployeeController } from './controller/document_employee.controller';
 import { DocumentEmployee } from './entities/document_employee.entity';
+import { DocumentModule } from '../document/document.module';
+import { EmployeesModule } from '../employees/employees.module';
 
 
 @Module({
@@ -15,6 +17,8 @@ import { DocumentEmployee } from './entities/document_employee.entity';
         TypeOrmModule.forFeature([
             DocumentEmployee
         ]),
+        forwardRef(() => DocumentModule),
+        forwardRef(() => EmployeesModule)
     ],
     controllers: [
         DocumentEmployeeController,
