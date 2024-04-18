@@ -10,7 +10,9 @@ import {
     OneToMany
 } from 'typeorm';
 
-@Entity('Document_clasification')
+import { Document } from '../../document/entities/document.entity';
+
+@Entity()
 export class DocumentClasification {
     @PrimaryGeneratedColumn() 
     id: number;
@@ -26,4 +28,7 @@ export class DocumentClasification {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => Document, post => post.documentClasification) 
+    document: Document[];
 }

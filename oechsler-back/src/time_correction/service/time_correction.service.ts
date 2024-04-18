@@ -81,6 +81,12 @@ export class TimeCorrectionService {
             endDate: ''
         }, user);
 
+        //si es distinto a admin se filtra el organigrama y se quita al usuario logueado
+        if(!isAdmin){
+            organigrama = organigrama.filter((item) => item.id != user.idEmployee);
+        }
+        
+
         
         //return organigrama;
 
@@ -410,13 +416,7 @@ export class TimeCorrectionService {
                     continue;
                 }
 
-                
-                if(iterator.id == 2221 && employeeShif.events[0].start == '2024-03-28'){
-                    console.log(diffDate)
-                    console.log(date.toTimeString().split(' ')[0])
-                    
-                    
-                }
+
                 let horas_realizadas = date.toTimeString().split(' ')[0].split(':');
                 
                 registros.push({

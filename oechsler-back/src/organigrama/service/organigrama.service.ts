@@ -240,7 +240,14 @@ export class OrganigramaService {
         },
         where: {
           leader: In([user.idEmployee]) 
+        },
+        order: {
+          employee: {
+            name: 'ASC',
+            employee_number: 'ASC'
+          }
         }
+
       });
 
       levelOne.forEach(element => {

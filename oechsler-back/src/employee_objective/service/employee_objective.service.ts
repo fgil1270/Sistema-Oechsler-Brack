@@ -598,7 +598,7 @@ export class EmployeeObjetiveService {
                 email = await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', `${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`, [asigmentObjective.employee.userId? asigmentObjective.employee.userId[0].email : '']);
             }
             status.code = 201;
-            status.message = 'Objetivos de empleado asignados correctamente, ' ;//email.msg;
+            status.message = 'Objetivos de empleado asignados correctamente, '+email.msg ;//email.msg;
             status.error = false;
 
             return status
