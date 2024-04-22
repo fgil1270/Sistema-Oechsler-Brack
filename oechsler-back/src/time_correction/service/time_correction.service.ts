@@ -394,7 +394,7 @@ export class TimeCorrectionService {
               
                 
                 //se obtienen los registros del dia
-                const registrosChecador = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
+                //const registrosChecador = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
                 
                 
                 let firstDate = moment(new Date(registrosChecadorNuevo[0]?.date));
@@ -420,7 +420,7 @@ export class TimeCorrectionService {
                 let horas_realizadas = date.toTimeString().split(' ')[0].split(':');
                 
                 registros.push({
-                    id: iterator.id,
+                    id: i,
                     id_empleado: iterator.id,
                     employee_number: iterator.employee_number,
                     nombre: iterator.name+' '+iterator.paternal_surname+' '+iterator.maternal_surname,
