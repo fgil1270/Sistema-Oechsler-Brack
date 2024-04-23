@@ -12,7 +12,7 @@ export class CourseDto {
     @ApiProperty({description: 'Descripcion del curso', example: 'Curso de programacion basica'})
     description: string;
 
-    @IsBoolean()
+    @IsString()
     @IsNotEmpty()
     @ApiProperty({description: 'Estado del curso', example: 'Activo'})
     status: string;
@@ -26,6 +26,11 @@ export class CourseDto {
     @IsNotEmpty()
     @ApiProperty({description: 'Id de la competencia', example: 1})
     competences: number;
+
+    @IsNumber()
+    @IsNotEmpty()
+    @ApiProperty({description: 'Id del objetivo de entrenamiento', example: 1})
+    traininGoal: number;
 
 }
 

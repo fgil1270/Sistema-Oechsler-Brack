@@ -142,9 +142,9 @@ export class ChecadorService {
                 }
                 
                
-                const employeeShif = await this.employeeShiftService.findMore(dataDate, `${iterator.id}`);
-                
+                const employeeShif = await this.employeeShiftService.findMore(dataDate, [iterator.id]);
 
+                //si en la fecha el empleado no tiene turno se continua con el siguiente dia
                 if(employeeShif.events.length == 0){
                     continue;
                 }
@@ -194,10 +194,10 @@ export class ChecadorService {
                     } 
                 });
                 
-                
+                //se obtiene la diferencia de horas trabajadas
+                //de la entra y salida del empleado
                 let firstDate = moment(new Date(registrosChecador[0]?.date));
                 let secondDate = moment(new Date(registrosChecador[registrosChecador.length-1]?.date));
-                
                 let diffDate = secondDate.diff(firstDate, 'hours', true); 
                 
                 let calculoHrsExtra = 0;
