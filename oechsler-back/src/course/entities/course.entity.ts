@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { Competence } from '../../competence/entities/competence.entity';
 import { DncCourse } from '../../employee_objective/entities/dnc_course.entity';
+import { TraininGoal } from './trainin_goal.entity';
 
 
 @Entity()
@@ -46,5 +47,11 @@ export class Course {
 
     @OneToMany(() => DncCourse, post => post.course)
     dncCourse: DncCourse[];
+
+    @ManyToOne(() => TraininGoal, post => post.course)
+    @JoinColumn()
+    traininGoal: TraininGoal;
+
+
     
 }
