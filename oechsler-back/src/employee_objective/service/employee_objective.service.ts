@@ -51,6 +51,7 @@ export class EmployeeObjetiveService {
             let evaluatedBy: any;
             
             if(currData.idObjectiveAnnual){
+                
                 employee = await this.employeeService.findOne(currData.idEmployee);
                 evaluatedBy = await this.employeeService.findOne(user.idEmployee);
                 saveDefinitionObjetive = await this.definitionObjectiveAnnual.findOne({
@@ -167,7 +168,8 @@ export class EmployeeObjetiveService {
                         status: 'Pendiente',
                         courseId: course.id,
                         competenceId: course.competence.id,
-                        origin: 'Objetivo'
+                        origin: 'Objetivo',
+                        evaluation_tool: null
                         
                     };
                     await this.requestCourseService.create(dataRequestCourse, user);
@@ -213,7 +215,8 @@ export class EmployeeObjetiveService {
                         status: 'Pendiente',
                         courseId: null,
                         competenceId: dncCourseManual.competence.id,
-                        origin: 'Objetivo'
+                        origin: 'Objetivo',
+                        evaluation_tool: null
                         
                     };
                     await this.requestCourseService.create(dataRequestCourse, user);
@@ -657,15 +660,16 @@ export class EmployeeObjetiveService {
                 email = await this.mailerService.sendEmailPDFFile('Objetivos de Empleado', `${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`, [asigmentObjective.employee.userId? asigmentObjective.employee.userId[0].email : '']);
             }
             status.code = 201;
-            status.message = 'Objetivos de empleado asignados correctamente, '+email.msg ;//email.msg;
+            status.message = 'Objetivos de empleado asignados correctamente, ';//email.msg;
             status.error = false;
 
             return status
 
         } catch (error) {
             status.error = true;
-            status.message = error.message;
+            status.message = error;
             status.code = 400;
+
             return status || 'Error al crear objetivos de empleado.';
         }
 
@@ -731,7 +735,7 @@ export class EmployeeObjetiveService {
                     const dataRequestCourse = {
                         requestBy: null,
                         courseName: course.name,
-                        employeeId: saveDefinitionObjetive.employee.id,
+                        employeeId: [saveDefinitionObjetive.employee.id],
                         traininReason: dncCourse.train,
                         priority: dncCourse.priority,
                         efficiencyPeriod: null,
@@ -749,9 +753,11 @@ export class EmployeeObjetiveService {
                         status: 'Pendiente',
                         courseId: course.id,
                         competenceId: course.competence.id,
-                        origin: 'Objetivo'
+                        origin: 'Objetivo',
+                        evaluation_tool: null
                         
                     };
+
                     const requestCourse = await this.requestCourseService.create(dataRequestCourse, user);
 
                     status.message = 'Curso asignado correctamente';
@@ -793,7 +799,8 @@ export class EmployeeObjetiveService {
                         status: 'Pendiente',
                         courseId: null,
                         competenceId: dncManual.competence.id,
-                        origin: 'Objetivo'
+                        origin: 'Objetivo',
+                        evaluation_tool: null
                         
                     };
                     const requestCourse = await this.requestCourseService.create(dataRequestCourse, user);
@@ -901,7 +908,8 @@ export class EmployeeObjetiveService {
                         status: 'Pendiente',
                         courseId: course.id,
                         competenceId: course.competence.id,
-                        origin: 'Objetivo'
+                        origin: 'Objetivo',
+                        evaluation_tool: null
                         
                     };
 
@@ -946,7 +954,8 @@ export class EmployeeObjetiveService {
                         status: 'Pendiente',
                         courseId: null,
                         competenceId: dncManual.competence.id,
-                        origin: 'Objetivo'
+                        origin: 'Objetivo',
+                        evaluation_tool: null
                         
                     };
                     const requestCourse = await this.requestCourseService.create(dataRequestCourse, user);

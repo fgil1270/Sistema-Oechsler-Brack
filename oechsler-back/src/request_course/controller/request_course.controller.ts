@@ -19,6 +19,7 @@ import { RequestCourseService } from '../service/request_course.service';
 import { RequestCourseDto } from '../dto/create_request_course.dto';
 import { RoleGuard } from "../../auth/guards/role.guard";
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Views } from '../../auth/decorators/views.decorator';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Solicitud de curso')
@@ -41,6 +42,19 @@ export class RequestCourseController {
   @Get()
   async findAll(@CurrentUser() user: any){
     return this.service.findAll(user);
+  }
+
+  @ApiOperation({ summary: 'Acceso a solicitudes de curso'})
+  @Views('solicitud_curso')
+  @Get('/access')
+  async access(){
+    return true;
+  }
+
+  @ApiOperation({ summary: 'Obtener solicitudes de curso por id'})
+  @Get(':id')
+  async findRequestCourseById(@Param('id', ParseIntPipe) id: number){
+    return this.service.findRequestCourseById(id);
   }
 
   @ApiOperation({ summary: 'Actualizar solicitud de curso'})

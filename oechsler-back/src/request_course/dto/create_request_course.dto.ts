@@ -107,6 +107,11 @@ export class RequestCourseDto {
     @ApiProperty({ description: 'Origen de la solicitud de curso'})
     origin: string;
 
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ description: 'Herramienta de evaluación'})
+    evaluation_tool: string;
+
 }
 
 export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {}

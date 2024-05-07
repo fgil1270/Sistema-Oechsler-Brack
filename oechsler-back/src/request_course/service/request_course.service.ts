@@ -27,6 +27,7 @@ export class RequestCourseService{
     async create(data: RequestCourseDto, user: any){
 
         try {
+            
             const employee = await this.employeeService.findMore(data.employeeId);
             const approvated = await this.employeeService.findOne(user.idEmployee);
             const department = await this.departmentService.findOne(approvated.emp.department.id);
@@ -62,11 +63,10 @@ export class RequestCourseService{
                     requestBy: approvated.emp,
                     status: data.status,
                     type: data.type,
-    
+                    evaluation_tool: data.evaluation_tool,
                 
                 });
-                
-                
+
                 const requestCourse = await this.requestCourse.save(requestCourseCreate);
             }
 
@@ -85,6 +85,25 @@ export class RequestCourseService{
             };
         }
 
+    }
+
+    findRequestCourseById(id: number){
+        return this.requestCourse.findOne({
+            relations: {
+                employee: true,
+                department: true,
+                competence: true,
+                course: true,
+                leader: true,
+                rh: true,
+                gm: true,
+                requestBy: true
+            },
+            where: {
+                id: id
+            }
+        
+        });
     }
 
     async findAll(user: any){

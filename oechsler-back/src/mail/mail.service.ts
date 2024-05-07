@@ -135,7 +135,9 @@ export class MailService {
             
             await fs.unlinkSync(newpath);
         } catch (error) {
-            console.log('Error al eliminar el archivo:', error);
+            resp.error = true;
+            resp.msg = error.message || 'Error al eliminar el archivo:', error;
+            
             // Aunque ocurra un error al eliminar el archivo, el email ya fue enviado correctamente
         }
 

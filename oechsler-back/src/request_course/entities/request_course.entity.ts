@@ -117,4 +117,7 @@ export class RequestCourse {
     @JoinTable()
     requestBy: Employee;
 
+    @Column({ type: 'varchar', length: 255, default: null })
+    evaluation_tool: string;
+
 }
