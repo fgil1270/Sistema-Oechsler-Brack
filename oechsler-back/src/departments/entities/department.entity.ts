@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { TrainingBudget } from "./training-budget.entity";
 import { Employee } from "../../employees/entities/employee.entity";
+import { RequestCourse } from "../../request_course/entities/request_course.entity";
 
 @Entity()
 export class Department {
@@ -38,4 +39,7 @@ export class Department {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => RequestCourse, (post) => post.department)
+    requestDepartment: RequestCourse[];
 }

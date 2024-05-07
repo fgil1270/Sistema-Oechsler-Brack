@@ -13,6 +13,7 @@ import {
 import { Competence } from '../../competence/entities/competence.entity';
 import { DncCourse } from '../../employee_objective/entities/dnc_course.entity';
 import { TraininGoal } from './trainin_goal.entity';
+import { RequestCourse } from '../../request_course/entities/request_course.entity';
 
 
 @Entity()
@@ -51,6 +52,9 @@ export class Course {
     @ManyToOne(() => TraininGoal, post => post.course)
     @JoinColumn()
     traininGoal: TraininGoal;
+
+    @OneToMany(() => RequestCourse, (post) => post.course)
+    requestCourse: RequestCourse[];
 
 
     
