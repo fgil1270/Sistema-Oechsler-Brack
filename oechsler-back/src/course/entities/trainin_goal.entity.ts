@@ -7,17 +7,17 @@ import {
     DeleteDateColumn,
     ManyToOne,
     JoinColumn,
+    ManyToMany,
     OneToMany
 } from 'typeorm';
-
-import { Document } from '../../document/entities/document.entity';
+import { Course } from './course.entity';
 
 @Entity()
-export class DocumentClasification {
-    @PrimaryGeneratedColumn() 
+export class TraininGoal {
+    @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: 'varchar' })
+    @Column({ type: 'varchar', length: 255 })
     name: string;
 
     @CreateDateColumn()
@@ -28,7 +28,8 @@ export class DocumentClasification {
 
     @DeleteDateColumn()
     deleted_at: Date;
-
-    @OneToMany(() => Document, post => post.documentClasification) 
-    document: Document[];
+    
+    @OneToMany(() => Course, post => post.traininGoal)
+    course: Course[];
+    
 }

@@ -1,3 +1,4 @@
+
 import { MailModule } from './mail/mail.module';
 import { Module } from '@nestjs/common';
 import * as Joi from 'joi';
@@ -35,12 +36,12 @@ import { EmployeeObjectiveModule } from './employee_objective/employee_objective
 import { CourseModule } from './course/course.module';
 import { DocumentModule } from './document/document.module';
 import { DocumentClasificationModule } from './document_clasification/document_clasification.module';
+import { DocumentEmployeeModule } from './document_employee/document_employee.module';
+import { RequestCourseModule } from './request_course/request_course.module';
 
 @Module({
   imports: [
-    DocumentClasificationModule,
-    DocumentModule,
-
+    RequestCourseModule,
     MailModule,
     ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
@@ -90,6 +91,9 @@ import { DocumentClasificationModule } from './document_clasification/document_c
     PercentageDefinitionModule,
     EmployeeObjectiveModule,
     CourseModule,
+    DocumentModule,
+    DocumentEmployeeModule,
+    DocumentClasificationModule,
   ],
   controllers: [
     AppController],

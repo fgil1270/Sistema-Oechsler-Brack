@@ -40,5 +40,19 @@ export class CourseController {
     return this.courseService.findAll();
   }
 
-  // Add more controller methods as needed
+  @Get('acceso')
+  @Views('cursos')
+  findOne() {
+    return this.courseService.findAll();
+  }
+
+  @Get('trainin-goal')
+  getTraininGoalAll() {
+    return this.courseService.getTraininGoalAll();
+  }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.courseService.delete(id);
+  }
 }

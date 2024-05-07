@@ -81,6 +81,12 @@ export class TimeCorrectionService {
             endDate: ''
         }, user);
 
+        //si es distinto a admin se filtra el organigrama y se quita al usuario logueado
+        if(!isAdmin){
+            organigrama = organigrama.filter((item) => item.id != user.idEmployee);
+        }
+        
+
         
         //return organigrama;
 
@@ -388,7 +394,7 @@ export class TimeCorrectionService {
               
                 
                 //se obtienen los registros del dia
-                const registrosChecador = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
+                //const registrosChecador = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
                 
                 
                 let firstDate = moment(new Date(registrosChecadorNuevo[0]?.date));
@@ -410,17 +416,11 @@ export class TimeCorrectionService {
                     continue;
                 }
 
-                
-                if(iterator.id == 2221 && employeeShif.events[0].start == '2024-03-28'){
-                    console.log(diffDate)
-                    console.log(date.toTimeString().split(' ')[0])
-                    
-                    
-                }
+
                 let horas_realizadas = date.toTimeString().split(' ')[0].split(':');
                 
                 registros.push({
-                    id: iterator.id,
+                    id: i,
                     id_empleado: iterator.id,
                     employee_number: iterator.employee_number,
                     nombre: iterator.name+' '+iterator.paternal_surname+' '+iterator.maternal_surname,

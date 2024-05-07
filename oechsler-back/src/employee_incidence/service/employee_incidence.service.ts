@@ -183,6 +183,7 @@ export class EmployeeIncidenceService {
         calendar.createEvent({
           start: new Date(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd') + ' ' + employeeIncidenceCreate.start_hour),
           end: new Date(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd') +' '+ employeeIncidenceCreate.end_hour),
+          allDay: true,
           timezone: 'America/Mexico_City',
           summary: subject,
           description: 'It works ;)',
@@ -881,6 +882,7 @@ export class EmployeeIncidenceService {
       calendar.createEvent({
         start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
         end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date +' '+ employeeIncidence.end_hour),
+        allDay: true,
         timezone: 'America/Mexico_City',
         summary: subject,
         description: 'It works ;)',

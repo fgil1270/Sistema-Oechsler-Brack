@@ -35,7 +35,7 @@ export class TimeCorrectionController {
   @Views('correccion_tiempo')
   @Get()
   correctionTime(@Query() data:any, @CurrentUser() user: any){
-    return this.timeCorrectionService.find(data, user);
+    return true;
   }
 
   @ApiOperation({ summary: 'se obtienen las checacadas' })
@@ -43,5 +43,13 @@ export class TimeCorrectionController {
   getChecadas(@Query() data:any, @CurrentUser() user: any){
     return this.timeCorrectionService.findByEmployee(data, user);
   }
+
+  @ApiOperation({ summary: 'Acceso a la vista corrección de tiempo' })
+  @Get('report')
+  correctionTimeReport(@Query() data:any, @CurrentUser() user: any){
+    return this.timeCorrectionService.find(data, user);
+
+  }
+
 
 }

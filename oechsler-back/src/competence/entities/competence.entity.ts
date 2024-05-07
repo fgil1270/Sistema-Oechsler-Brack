@@ -16,6 +16,7 @@ import { Job } from 'src/jobs/entities/job.entity';
 import { Course } from '../../course/entities/course.entity';
 import { DncCourseManual } from '../../employee_objective/entities/dnc_manual.entity';
 import { CompetenceEvaluation } from '../../employee_objective/entities/competence_evaluation.entity';
+import { RequestCourse } from '../../request_course/entities/request_course.entity';
 
 @Entity()
 export class Competence {
@@ -56,5 +57,8 @@ export class Competence {
 
     @OneToMany(() => CompetenceEvaluation, post => post.competence)
     competenceEvaluation: CompetenceEvaluation[];
+
+    @OneToMany(() => RequestCourse, (post) => post.competence)
+    requestCompetence: RequestCourse[];
 
 }

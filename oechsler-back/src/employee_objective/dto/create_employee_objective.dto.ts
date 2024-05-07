@@ -1,8 +1,6 @@
 import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsObject } from "class-validator";
 import { ApiProperty, PartialType } from "@nestjs/swagger";
 
-
-
 export class EmployeeObjectiveDto {
 
     @IsNotEmpty()

@@ -440,6 +440,7 @@ export class EmployeesService {
     };
   }
 
+  //buscar por id
   async findOne(id: number) {
 
     const emp = await this.employeeRepository.findOne({
@@ -468,7 +469,7 @@ export class EmployeesService {
     };
   }
 
-  //Buscar por array de ids
+  //Buscar por array de ids de empleados
   async findMore(ids: any) {
     const emps = await this.employeeRepository.find({
       where: {
