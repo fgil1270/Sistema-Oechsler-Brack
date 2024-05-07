@@ -24,6 +24,8 @@ import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/lo
 import { Calendar } from "../../calendar/entities/calendar.entity";
 import { DefinitionObjectiveAnnual } from "../../employee_objective/entities/definition_objective_annual.entity";
 import { DocumentEmployee } from "src/document_employee/entities/document_employee.entity";
+import { RequestCourse } from "../../request_course/entities/request_course.entity";
+
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 @Entity()
@@ -204,5 +206,18 @@ export class Employee {
     @OneToMany(() => DocumentEmployee, post => post.employee)
     documentEmployee: DocumentEmployee[];
 
-    
+    @OneToMany(() => RequestCourse, (post) => post.employee)
+    requestEmployee: RequestCourse[];
+
+    @OneToMany(() => RequestCourse, (post) => post.leader)
+    requestEmployeeLeader: RequestCourse[];
+
+    @OneToMany(() => RequestCourse, (post) => post.rh)
+    requestEmployeeRh: RequestCourse[];
+
+    @OneToMany(() => RequestCourse, (post) => post.gm)
+    requestEmployeeGm: RequestCourse[];
+
+    @OneToMany(() => RequestCourse, (post) => post.requestBy)
+    requestEmployeeBy: RequestCourse[];
 }

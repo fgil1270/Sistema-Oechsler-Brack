@@ -20,6 +20,8 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { PercentageDefinitionService } from '../../evaluation_annual/percentage_definition/service/percentage_definition.service';
 import { MailService } from '../../mail/mail.service';
 import { save } from 'pdfkit';
+import { RequestCourseService } from '../../request_course/service/request_course.service';
+import { id } from 'date-fns/locale';
 
 
 @Injectable()
@@ -37,6 +39,7 @@ export class EmployeeObjetiveService {
         private competenceService: CompetenceService,
         private courseService: CourseService,
         private mailerService: MailService,
+        private requestCourseService: RequestCourseService
     ) { }
 
     async create(currData: CreateEmployeeObjectiveDto, user: any){
@@ -140,7 +143,36 @@ export class EmployeeObjetiveService {
                         course: course,
                     });
 
-                    await this.dncCourse.save(createDncCourse);
+                    const dncCourse = await this.dncCourse.save(createDncCourse);
+
+                    //se crea la solicitud de curso
+                    const dataRequestCourse = {
+                        requestBy: null,
+                        courseName: course.name,
+                        employeeId: employee.id,
+                        traininReason: dncCourse.train,
+                        priority: dncCourse.priority,
+                        efficiencyPeriod: '',
+                        cost: 0,
+                        currency: '',
+                        type: '',
+                        tentativeDateStart: '',
+                        tentativeDateEnd: '',
+                        approved_at_leader: '',
+                        canceled_at_leader: '',
+                        approved_at_rh: '',
+                        canceled_at_rh: '',
+                        approved_at_gm: '',
+                        canceled_at_gm: '',
+                        status: 'Pendiente',
+                        courseId: course.id,
+                        competenceId: course.competence.id,
+                        origin: 'Objetivo'
+                        
+                    };
+                    await this.requestCourseService.create(dataRequestCourse, user);
+
+
                 
                 }
 
@@ -157,7 +189,34 @@ export class EmployeeObjetiveService {
                         competence: competence,
                     });
 
-                    await this.dncCourseManual.save(createDncCourseManual);
+                    const dncCourseManual = await this.dncCourseManual.save(createDncCourseManual);
+
+                    //se crea la solicitud de curso
+                    const dataRequestCourse = {
+                        requestBy: null,
+                        courseName: dncCourseManual.goal,
+                        employeeId: employee.id,
+                        traininReason: dncCourseManual.train,
+                        priority: dncCourseManual.priority,
+                        efficiencyPeriod: '',
+                        cost: 0,
+                        currency: '',
+                        type: '',
+                        tentativeDateStart: '',
+                        tentativeDateEnd: '',
+                        approved_at_leader: '',
+                        canceled_at_leader: '',
+                        approved_at_rh: '',
+                        canceled_at_rh: '',
+                        approved_at_gm: '',
+                        canceled_at_gm: '',
+                        status: 'Pendiente',
+                        courseId: null,
+                        competenceId: dncCourseManual.competence.id,
+                        origin: 'Objetivo'
+                        
+                    };
+                    await this.requestCourseService.create(dataRequestCourse, user);
                 
                 }
 
@@ -613,14 +672,16 @@ export class EmployeeObjetiveService {
  
     }
 
+    //se asignan los objetivos de manera parcial
     async createDefinitionObjectiveAnnual(currData: UpdateEmployeeObjectiveDtoPartial, user: any){
 
         let status = {code: 200, message: 'OK', error: false, data: {}, status: 'success'};
         let saveDefinitionObjetive = null;
+        const evaluatedBy = await this.employeeService.findOne(user.idEmployee);
 
         try {
             
-
+            //si ya existe la asignacion de objetivos solo asigna las competencias por puesto
             if(currData.id){
 
                 saveDefinitionObjetive = await this.definitionObjectiveAnnual.findOne({
@@ -664,7 +725,35 @@ export class EmployeeObjetiveService {
                         course: course,
                     });
     
-                    await this.dncCourse.save(createDncCourse);
+                    const dncCourse = await this.dncCourse.save(createDncCourse);
+
+                    //se crea la solicitud de curso
+                    const dataRequestCourse = {
+                        requestBy: null,
+                        courseName: course.name,
+                        employeeId: saveDefinitionObjetive.employee.id,
+                        traininReason: dncCourse.train,
+                        priority: dncCourse.priority,
+                        efficiencyPeriod: null,
+                        cost: 0,
+                        currency: 'MXN',
+                        type: null,
+                        tentativeDateStart: null,
+                        tentativeDateEnd: null,
+                        approved_at_leader: null,
+                        canceled_at_leader: null,
+                        approved_at_rh: null,
+                        canceled_at_rh: null,
+                        approved_at_gm: null,
+                        canceled_at_gm: null,
+                        status: 'Pendiente',
+                        courseId: course.id,
+                        competenceId: course.competence.id,
+                        origin: 'Objetivo'
+                        
+                    };
+                    const requestCourse = await this.requestCourseService.create(dataRequestCourse, user);
+
                     status.message = 'Curso asignado correctamente';
                 }
 
@@ -680,7 +769,35 @@ export class EmployeeObjetiveService {
                         competence: competence,
                     });
     
-                    await this.dncCourseManual.save(createDncCourseManual);
+                    const dncManual = await this.dncCourseManual.save(createDncCourseManual);
+
+                    //se crea la solicitud de curso
+                    const dataRequestCourse = {
+                        requestBy: null,
+                        courseName: dncManual.goal,
+                        employeeId: saveDefinitionObjetive.employee.id,
+                        traininReason: dncManual.train,
+                        priority: dncManual.priority,
+                        efficiencyPeriod: null,
+                        cost: 0,
+                        currency: 'MXN',
+                        type: null,
+                        tentativeDateStart: null,
+                        tentativeDateEnd: null,
+                        approved_at_leader: null,
+                        canceled_at_leader: null,
+                        approved_at_rh: null,
+                        canceled_at_rh: null,
+                        approved_at_gm: null,
+                        canceled_at_gm: null,
+                        status: 'Pendiente',
+                        courseId: null,
+                        competenceId: dncManual.competence.id,
+                        origin: 'Objetivo'
+                        
+                    };
+                    const requestCourse = await this.requestCourseService.create(dataRequestCourse, user);
+
                     status.message = 'Curso asignado correctamente';
                 }
 
@@ -721,7 +838,7 @@ export class EmployeeObjetiveService {
                 //si no se ha creado la definicion de objetivos se pone con status Incompleto
                 const percentage = await this.percentageDefinitionService.findByYear(currData.year);
                 const employee = await this.employeeService.findOne(currData.idEmployee);
-                const evaluatedBy = await this.employeeService.findOne(user.idEmployee);
+                
                 const createDefinitionObjetive = this.definitionObjectiveAnnual.create({
                     percentageDefinition: percentage.percentage,
                     employee: employee.emp,
@@ -760,7 +877,36 @@ export class EmployeeObjetiveService {
                         course: course,
                     });
     
-                    await this.dncCourse.save(createDncCourse);
+                    const dncCourse = await this.dncCourse.save(createDncCourse);
+
+                    //se crea la solicitud de curso
+                    const dataRequestCourse = {
+                        requestBy: null,
+                        courseName: course.name,
+                        employeeId: saveDefinitionObjetive.employee.id,
+                        traininReason: dncCourse.train,
+                        priority: dncCourse.priority,
+                        efficiencyPeriod: null,
+                        cost: 0,
+                        currency: null,
+                        type: null,
+                        tentativeDateStart: null,
+                        tentativeDateEnd: null,
+                        approved_at_leader: null,
+                        canceled_at_leader: null,
+                        approved_at_rh: null,
+                        canceled_at_rh: null,
+                        approved_at_gm: null,
+                        canceled_at_gm: null,
+                        status: 'Pendiente',
+                        courseId: course.id,
+                        competenceId: course.competence.id,
+                        origin: 'Objetivo'
+                        
+                    };
+
+                    const requestCourse = await this.requestCourseService.create(dataRequestCourse, user);
+
                     status.message = 'Curso asignado correctamente';
                 }
 
@@ -776,7 +922,35 @@ export class EmployeeObjetiveService {
                         competence: competence,
                     });
     
-                    await this.dncCourseManual.save(createDncCourseManual);
+                    const dncManual = await this.dncCourseManual.save(createDncCourseManual);
+
+                    //se crea la solicitud de curso
+                    const dataRequestCourse = {
+                        requestBy: null,
+                        courseName: dncManual.goal,
+                        employeeId: saveDefinitionObjetive.employee.id,
+                        traininReason: dncManual.train,
+                        priority: dncManual.priority,
+                        efficiencyPeriod: null,
+                        cost: 0,
+                        currency: null,
+                        type: null,
+                        tentativeDateStart: null,
+                        tentativeDateEnd: null,
+                        approved_at_leader: null,
+                        canceled_at_leader: null,
+                        approved_at_rh: null,
+                        canceled_at_rh: null,
+                        approved_at_gm: null,
+                        canceled_at_gm: null,
+                        status: 'Pendiente',
+                        courseId: null,
+                        competenceId: dncManual.competence.id,
+                        origin: 'Objetivo'
+                        
+                    };
+                    const requestCourse = await this.requestCourseService.create(dataRequestCourse, user);
+
                     status.message = 'Curso asignado correctamente';
                 }
 

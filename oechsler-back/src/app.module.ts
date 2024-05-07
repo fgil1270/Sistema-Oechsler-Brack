@@ -37,9 +37,11 @@ import { CourseModule } from './course/course.module';
 import { DocumentModule } from './document/document.module';
 import { DocumentClasificationModule } from './document_clasification/document_clasification.module';
 import { DocumentEmployeeModule } from './document_employee/document_employee.module';
+import { RequestCourseModule } from './request_course/request_course.module';
 
 @Module({
   imports: [
+    RequestCourseModule,
     MailModule,
     ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
