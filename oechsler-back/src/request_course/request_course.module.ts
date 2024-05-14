@@ -8,23 +8,19 @@ import { CourseModule } from '../course/course.module';
 import { DepartmentsModule } from '../departments/departments.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { CompetenceModule } from '../competence/competence.module';
-import { OrganigramaModule } from '../organigrama/organigrama.module';
-
+import { OrganigramaModule } from '../organigrama/organigrama.module'; 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      RequestCourse,
-      RequestCourseAssignment
-    ]),
+    TypeOrmModule.forFeature([RequestCourse, RequestCourseAssignment]),
     CourseModule,
     DepartmentsModule,
     EmployeesModule,
     CompetenceModule,
-    OrganigramaModule
+    OrganigramaModule,
   ],
   providers: [RequestCourseService],
   controllers: [RequestCourseController],
-  exports: [RequestCourseService]
+  exports: [RequestCourseService],
 })
-export class RequestCourseModule { }
+export class RequestCourseModule {}

@@ -1,15 +1,15 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
   Put,
-  Param, 
+  Param,
   Delete,
   ParseIntPipe,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from "@nestjs/swagger";
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 import { JobsService } from '../service/jobs.service';
@@ -23,28 +23,31 @@ import { RoleGuard } from '../../auth/guards/role.guard';
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 
-  @ApiOperation({ summary: 'Crear Puesto'})
+  @ApiOperation({ summary: 'Crear Puesto' })
   @Post()
   create(@Body() createJobDto: CreateJobDto) {
     return this.jobsService.create(createJobDto);
   }
 
-  @ApiOperation({ summary: 'Listar Puestos'})
+  @ApiOperation({ summary: 'Listar Puestos' })
   @Views('puestos')
   @Get()
   findAll() {
     return this.jobsService.findAll();
   }
 
-  @ApiOperation({ summary: 'Buscar Puesto'})
+  @ApiOperation({ summary: 'Buscar Puesto' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.jobsService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Editar Puesto'})
+  @ApiOperation({ summary: 'Editar Puesto' })
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateJobDto: CreateJobDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateJobDto: CreateJobDto,
+  ) {
     return this.jobsService.update(id, updateJobDto);
   }
 
@@ -54,7 +57,7 @@ export class JobsController {
     return this.jobsService.getCompetencies(id);
   }
 
-  @ApiOperation({ summary: 'Eliminar Puesto'})
+  @ApiOperation({ summary: 'Eliminar Puesto' })
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.jobsService.remove(id);

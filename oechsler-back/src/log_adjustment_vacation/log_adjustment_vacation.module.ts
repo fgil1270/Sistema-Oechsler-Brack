@@ -10,16 +10,10 @@ import { LogAdjustmentVacationController } from './controller/log_adjustment_vac
 import { LogAdjustmentVacation } from './entities/log_adjustment_vacation.entity';
 import { EmployeesModule } from '../employees/employees.module';
 
-
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            LogAdjustmentVacation
-        ]),
-        EmployeesModule
-    ],
-    controllers: [ LogAdjustmentVacationController ],
-    providers: [ LogAdjustmentVacationService ],
-    exports: [ LogAdjustmentVacationService ]
+  imports: [TypeOrmModule.forFeature([LogAdjustmentVacation]), EmployeesModule],
+  controllers: [LogAdjustmentVacationController],
+  providers: [LogAdjustmentVacationService],
+  exports: [LogAdjustmentVacationService],
 })
-export class LogAdjustmentVacationModule { }
+export class LogAdjustmentVacationModule {}

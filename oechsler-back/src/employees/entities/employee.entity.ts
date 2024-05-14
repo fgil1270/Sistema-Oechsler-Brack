@@ -1,223 +1,221 @@
 import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    CreateDateColumn,
-    UpdateDateColumn,
-    DeleteDateColumn,
-    ManyToOne,
-    OneToMany,
-    JoinColumn
-} from "typeorm";
-import { Department } from "../../departments/entities/department.entity";
-import { VacationsProfile } from "../../vacations-profile/entities/vacations-profile.entity";
-import { Payroll } from "../../payrolls/entities/payroll.entity";
-import { EmployeeProfile } from "../../employee-profiles/entities/employee-profile.entity";
-import { Job } from "../../jobs/entities/job.entity";
-import { User } from "../../users/entities/user.entity";
-import { Organigrama } from "../../organigrama/entities/organigrama.entity";
-import { EmployeeShift } from "../../employee_shift/entities/employee_shift.entity";
-import { EmployeeIncidence } from "../../employee_incidence/entities/employee_incidence.entity";
-import { Checador } from "../../checador/entities/checador.entity";
-import { TimeCorrection } from "../../time_correction/entities/time_correction.entity";
-import { LogAdjustmentVacation } from "../../log_adjustment_vacation/entities/log_adjustment_vacation.entity";    
-import { Calendar } from "../../calendar/entities/calendar.entity";
-import { DefinitionObjectiveAnnual } from "../../employee_objective/entities/definition_objective_annual.entity";
-import { DocumentEmployee } from "src/document_employee/entities/document_employee.entity";
-import { RequestCourse } from "../../request_course/entities/request_course.entity";
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
+import { Department } from '../../departments/entities/department.entity';
+import { VacationsProfile } from '../../vacations-profile/entities/vacations-profile.entity';
+import { Payroll } from '../../payrolls/entities/payroll.entity';
+import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
+import { Job } from '../../jobs/entities/job.entity';
+import { User } from '../../users/entities/user.entity';
+import { Organigrama } from '../../organigrama/entities/organigrama.entity';
+import { EmployeeShift } from '../../employee_shift/entities/employee_shift.entity';
+import { EmployeeIncidence } from '../../employee_incidence/entities/employee_incidence.entity';
+import { Checador } from '../../checador/entities/checador.entity';
+import { TimeCorrection } from '../../time_correction/entities/time_correction.entity';
+import { LogAdjustmentVacation } from '../../log_adjustment_vacation/entities/log_adjustment_vacation.entity';
+import { Calendar } from '../../calendar/entities/calendar.entity';
+import { DefinitionObjectiveAnnual } from '../../employee_objective/entities/definition_objective_annual.entity';
+import { DocumentEmployee } from 'src/document_employee/entities/document_employee.entity';
+import { RequestCourse } from '../../request_course/entities/request_course.entity';
 
 @Entity()
 export class Employee {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @ManyToOne(() => Payroll, post => post.employee)
-    @JoinColumn()
-    payRoll: Payroll;
-    
-    @ManyToOne(() => Department, post => post.employee)
-    @JoinColumn()
-    department: Department;
-    
-    @ManyToOne(() => VacationsProfile, post => post.employee)
-    @JoinColumn()
-    vacationProfile: VacationsProfile;
-    
-    @ManyToOne(() => EmployeeProfile, post => post.employee)
-    @JoinColumn()
-    employeeProfile: EmployeeProfile;
-    
-    @ManyToOne(() => Job, post => post.employee)
-    @JoinColumn()
-    job: Job;
+  @ManyToOne(() => Payroll, (post) => post.employee)
+  @JoinColumn()
+  payRoll: Payroll;
 
-    @Column({ type: 'varchar', length: 255})
-    worker: string;
+  @ManyToOne(() => Department, (post) => post.employee)
+  @JoinColumn()
+  department: Department;
 
-    @Column({ type: 'int', default: 0})
-    employee_number:number;
+  @ManyToOne(() => VacationsProfile, (post) => post.employee)
+  @JoinColumn()
+  vacationProfile: VacationsProfile;
 
-    @Column({ type: 'varchar', length: 255})
-    name: string;
+  @ManyToOne(() => EmployeeProfile, (post) => post.employee)
+  @JoinColumn()
+  employeeProfile: EmployeeProfile;
 
-    @Column({ type: 'varchar', length: 255})
-    paternal_surname: string;
+  @ManyToOne(() => Job, (post) => post.employee)
+  @JoinColumn()
+  job: Job;
 
-    @Column({ type: 'varchar', length: 255})
-    maternal_surname: string;
+  @Column({ type: 'varchar', length: 255 })
+  worker: string;
 
-    @Column({ type: 'varchar', length: 255})
-    gender: string;
+  @Column({ type: 'int', default: 0 })
+  employee_number: number;
 
-    @Column({ type: 'date'})
-    birthdate: Date;
+  @Column({ type: 'varchar', length: 255 })
+  name: string;
 
-    @Column({ type: 'varchar', length: 255})
-    country: string;
+  @Column({ type: 'varchar', length: 255 })
+  paternal_surname: string;
 
-    @Column({ type: 'varchar', length: 255})
-    citizenship: string;
+  @Column({ type: 'varchar', length: 255 })
+  maternal_surname: string;
 
-    @Column({ type: 'varchar', length: 255})
-    state: string;
+  @Column({ type: 'varchar', length: 255 })
+  gender: string;
 
-    @Column({ type: 'varchar', length: 255})
-    city: string;
+  @Column({ type: 'date' })
+  birthdate: Date;
 
-    @Column({ type: 'varchar', length: 255})
-    location: string;
+  @Column({ type: 'varchar', length: 255 })
+  country: string;
 
-    @Column({ type: 'varchar', length: 255})
-    rfc: string;
+  @Column({ type: 'varchar', length: 255 })
+  citizenship: string;
 
-    @Column({ type: 'varchar', length: 255})
-    curp: string;
+  @Column({ type: 'varchar', length: 255 })
+  state: string;
 
-    @Column({ type: 'varchar', length: 255})
-    nss: string;
+  @Column({ type: 'varchar', length: 255 })
+  city: string;
 
-    @Column({ type: 'date'})
-    date_employment: Date;
+  @Column({ type: 'varchar', length: 255 })
+  location: string;
 
-    @Column({ type: 'date', default: null})
-    work_term_date: Date;
+  @Column({ type: 'varchar', length: 255 })
+  rfc: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true})
-    email: string;
+  @Column({ type: 'varchar', length: 255 })
+  curp: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true})
-    phone: string;
+  @Column({ type: 'varchar', length: 255 })
+  nss: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true})
-    marital_status: string;
+  @Column({ type: 'date' })
+  date_employment: Date;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0})
-    salary: number;
+  @Column({ type: 'date', default: null })
+  work_term_date: Date;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0})
-    daily_salary: number;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  email: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0})
-    quote: number;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  phone: string;
 
-    @Column({ type: 'varchar', length: 255})
-    type_contract: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  marital_status: string;
 
-    @Column({ type: 'boolean', default: false,  nullable: true})
-    visa: boolean;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  salary: number;
 
-    @Column({ type: 'boolean', default: false, nullable: true})
-    fm_two: boolean;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  daily_salary: number;
 
-    @Column({ type: 'boolean', default: false, nullable: true})
-    travel: boolean;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  quote: number;
 
-    @Column({ type: 'boolean', default: false, nullable: true})
-    brigade_member: boolean;
+  @Column({ type: 'varchar', length: 255 })
+  type_contract: string;
 
-    @Column({ type: 'boolean', default: false})
-    worker_status: boolean;
+  @Column({ type: 'boolean', default: false, nullable: true })
+  visa: boolean;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @Column({ type: 'boolean', default: false, nullable: true })
+  fm_two: boolean;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @Column({ type: 'boolean', default: false, nullable: true })
+  travel: boolean;
 
-    @DeleteDateColumn()
-    deleted_at: Date;
+  @Column({ type: 'boolean', default: false, nullable: true })
+  brigade_member: boolean;
 
-    @OneToMany(() => User, (post) => post.employee)
-    userId: User[];
+  @Column({ type: 'boolean', default: false })
+  worker_status: boolean;
 
-    @OneToMany(() => Organigrama, (post) => post.employee)
-    organigramaL: Organigrama[];
+  @CreateDateColumn()
+  created_at: Date;
 
-    @OneToMany(() => Organigrama, (post) => post.employee)
-    organigramaE: Organigrama[];
+  @UpdateDateColumn()
+  updated_at: Date;
 
-    @OneToMany(() => EmployeeShift, (post) => post.employee)
-    employeeShift: EmployeeShift[];
+  @DeleteDateColumn()
+  deleted_at: Date;
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.employee)
-    employeeIncidence: EmployeeIncidence[];
+  @OneToMany(() => User, (post) => post.employee)
+  userId: User[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.canceledBy)
-    employeeIncidenceCancel: EmployeeIncidence[];
+  @OneToMany(() => Organigrama, (post) => post.employee)
+  organigramaL: Organigrama[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.createdBy)
-    employeeIncidenceCreate: EmployeeIncidence[];
+  @OneToMany(() => Organigrama, (post) => post.employee)
+  organigramaE: Organigrama[];
 
-    @OneToMany(() => Checador, (post) => post.employee)
-    employeeChecadas: Checador[];
+  @OneToMany(() => EmployeeShift, (post) => post.employee)
+  employeeShift: EmployeeShift[];
 
-    @OneToMany(() => TimeCorrection, (post) => post.employee)
-    timeCorrection: TimeCorrection[];
+  @OneToMany(() => EmployeeIncidence, (post) => post.employee)
+  employeeIncidence: EmployeeIncidence[];
 
-    @OneToMany(() => TimeCorrection, (post) => post.created_by)
-    timeCorrectionCreateBy: TimeCorrection[];
+  @OneToMany(() => EmployeeIncidence, (post) => post.canceledBy)
+  employeeIncidenceCancel: EmployeeIncidence[];
 
-    @OneToMany(() => Checador, (post) => post.createdBy)
-    employeeChecadasCreateBy: Checador[];
+  @OneToMany(() => EmployeeIncidence, (post) => post.createdBy)
+  employeeIncidenceCreate: EmployeeIncidence[];
 
-    @OneToMany(() => LogAdjustmentVacation, (post) => post.employee)
-    logAdjustmentVacationEmployee: LogAdjustmentVacation[];
+  @OneToMany(() => Checador, (post) => post.employee)
+  employeeChecadas: Checador[];
 
-    @OneToMany(() => LogAdjustmentVacation, (post) => post.leader)
-    logAdjustmentVacationLeader: LogAdjustmentVacation[];
+  @OneToMany(() => TimeCorrection, (post) => post.employee)
+  timeCorrection: TimeCorrection[];
 
-    @OneToMany(() => Calendar, (post) => post.created_by)
-    calendar: Calendar[];
+  @OneToMany(() => TimeCorrection, (post) => post.created_by)
+  timeCorrectionCreateBy: TimeCorrection[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.rh)
-    employeeIncidenceRh: EmployeeIncidence[];
+  @OneToMany(() => Checador, (post) => post.createdBy)
+  employeeChecadasCreateBy: Checador[];
 
-    @OneToMany(() => EmployeeIncidence, (post) => post.leader)
-    employeeIncidenceLeader: EmployeeIncidence[];
+  @OneToMany(() => LogAdjustmentVacation, (post) => post.employee)
+  logAdjustmentVacationEmployee: LogAdjustmentVacation[];
 
-    @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.employee)
-    definitionObjectiveAnnual: DefinitionObjectiveAnnual[];
+  @OneToMany(() => LogAdjustmentVacation, (post) => post.leader)
+  logAdjustmentVacationLeader: LogAdjustmentVacation[];
 
-    @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.evaluatedBy)
-    definitionObjectiveAnnualEvaluatedBy: DefinitionObjectiveAnnual[];
+  @OneToMany(() => Calendar, (post) => post.created_by)
+  calendar: Calendar[];
 
-    @OneToMany(() => DocumentEmployee, post => post.employee)
-    documentEmployee: DocumentEmployee[];
+  @OneToMany(() => EmployeeIncidence, (post) => post.rh)
+  employeeIncidenceRh: EmployeeIncidence[];
 
-    @OneToMany(() => RequestCourse, (post) => post.employee)
-    requestEmployee: RequestCourse[];
+  @OneToMany(() => EmployeeIncidence, (post) => post.leader)
+  employeeIncidenceLeader: EmployeeIncidence[];
 
-    @OneToMany(() => RequestCourse, (post) => post.leader)
-    requestEmployeeLeader: RequestCourse[];
+  @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.employee)
+  definitionObjectiveAnnual: DefinitionObjectiveAnnual[];
 
-    @OneToMany(() => RequestCourse, (post) => post.rh)
-    requestEmployeeRh: RequestCourse[];
+  @OneToMany(() => DefinitionObjectiveAnnual, (post) => post.evaluatedBy)
+  definitionObjectiveAnnualEvaluatedBy: DefinitionObjectiveAnnual[];
 
-    @OneToMany(() => RequestCourse, (post) => post.gm)
-    requestEmployeeGm: RequestCourse[];
+  @OneToMany(() => DocumentEmployee, (post) => post.employee)
+  documentEmployee: DocumentEmployee[];
 
-    @OneToMany(() => RequestCourse, (post) => post.requestBy)
-    requestEmployeeBy: RequestCourse[];
+  @OneToMany(() => RequestCourse, (post) => post.employee)
+  requestEmployee: RequestCourse[];
+
+  @OneToMany(() => RequestCourse, (post) => post.leader)
+  requestEmployeeLeader: RequestCourse[];
+
+  @OneToMany(() => RequestCourse, (post) => post.rh)
+  requestEmployeeRh: RequestCourse[];
+
+  @OneToMany(() => RequestCourse, (post) => post.gm)
+  requestEmployeeGm: RequestCourse[];
+
+  @OneToMany(() => RequestCourse, (post) => post.requestBy)
+  requestEmployeeBy: RequestCourse[];
 }

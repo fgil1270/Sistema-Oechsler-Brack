@@ -1,21 +1,23 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Repository, In, Not, IsNull, Like } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateJobDto } from '../dto/create-job.dto';
 import { Job } from '../entities/job.entity';
 
 @Injectable()
 export class JobsService {
-  constructor(
-    @InjectRepository(Job) private jobRepository: Repository<Job>
-  ) {}
+  constructor(@InjectRepository(Job) private jobRepository: Repository<Job>) {}
 
   async create(createJobDto: CreateJobDto) {
     const jobCodeExist = await this.jobRepository.findOne({
       where: {
-        cv_code: Like(`%${createJobDto.cv_code}%`)
-      }
+        cv_code: Like(`%${createJobDto.cv_code}%`),
+      },
     });
 
     if (jobCodeExist) {
@@ -24,8 +26,8 @@ export class JobsService {
 
     const jobNameExist = await this.jobRepository.findOne({
       where: {
-        cv_name: Like(`%${createJobDto.cv_name}%`)
-      }
+        cv_name: Like(`%${createJobDto.cv_name}%`),
+      },
     });
 
     if (jobNameExist) {
@@ -39,23 +41,23 @@ export class JobsService {
   async findAll() {
     const total = await this.jobRepository.count();
     const jobs = await this.jobRepository.find();
-    
+
     if (!jobs) {
       throw new NotFoundException(`Jobs not found`);
     }
     return {
       total: total,
-      jobs: jobs
+      jobs: jobs,
     };
   }
 
   async findOne(id: number) {
     const job = await this.jobRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
-    
+
     if (!job) {
       throw new NotFoundException(`Job #${id} not found`);
     }
@@ -65,40 +67,40 @@ export class JobsService {
   async findName(name: string) {
     const job = await this.jobRepository.findOne({
       where: {
-        cv_name: Like(`%${name}%`)
-      }
+        cv_name: Like(`%${name}%`),
+      },
     });
     if (!job) {
       return null;
       //throw new NotFoundException(`Job #${name} not found`);
     }
-    return {job};
+    return { job };
   }
 
   async getCompetencies(id: number) {
     const job = await this.jobRepository.findOne({
       relations: {
-        competence: true
+        competence: true,
       },
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
-    
+
     return job;
   }
 
   async update(id: number, updateJobDto: CreateJobDto) {
     const job = await this.jobRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
 
     const jobCodeExist = await this.jobRepository.findOne({
       where: {
-        cv_code: Like(`%${updateJobDto.cv_code}%`)
-      }
+        cv_code: Like(`%${updateJobDto.cv_code}%`),
+      },
     });
 
     if (jobCodeExist?.id) {
@@ -107,8 +109,8 @@ export class JobsService {
 
     const jobNameExist = await this.jobRepository.findOne({
       where: {
-        cv_name: Like(`%${updateJobDto.cv_name}%`)
-      }
+        cv_name: Like(`%${updateJobDto.cv_name}%`),
+      },
     });
 
     if (jobNameExist?.id) {
@@ -121,8 +123,8 @@ export class JobsService {
   async remove(id: number) {
     const job = await this.jobRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
 
     if (!job) {

@@ -12,17 +12,15 @@ import { CalendarModule } from '../calendar/calendar.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Checador
-    ]),
+    TypeOrmModule.forFeature([Checador]),
     EmployeesModule,
     EmployeeShiftModule,
-    forwardRef( () => EmployeeIncidenceModule),
+    forwardRef(() => EmployeeIncidenceModule),
     IncidenceCatologueModule,
-    CalendarModule
+    CalendarModule,
   ],
   providers: [ChecadorService],
   controllers: [ChecadorController],
-  exports: [ChecadorService]
+  exports: [ChecadorService],
 })
-export class ChecadorModule { }
+export class ChecadorModule {}

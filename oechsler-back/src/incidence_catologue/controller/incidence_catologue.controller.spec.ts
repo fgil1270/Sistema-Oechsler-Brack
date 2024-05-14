@@ -11,7 +11,9 @@ describe('IncidenceCatologueController', () => {
       providers: [IncidenceCatologueService],
     }).compile();
 
-    controller = module.get<IncidenceCatologueController>(IncidenceCatologueController);
+    controller = module.get<IncidenceCatologueController>(
+      IncidenceCatologueController,
+    );
   });
 
   it('should be defined', () => {

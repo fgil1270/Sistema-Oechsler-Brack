@@ -1,16 +1,15 @@
-
 import { MailModule } from './mail/mail.module';
 import { Module } from '@nestjs/common';
 import * as Joi from 'joi';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from "@nestjs/config";
+import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
-import { enviroments } from "./enviroments";
+import { enviroments } from './enviroments';
 import { RolesModule } from './roles/roles.module';
 import { ViewsModule } from './views/views.module';
 import { DepartmentsModule } from './departments/departments.module';
@@ -25,7 +24,7 @@ import { PatternModule } from './pattern/pattern.module';
 import { EmployeeShiftModule } from './employee_shift/employee_shift.module';
 import { IncidenceCatologueModule } from './incidence_catologue/incidence_catologue.module';
 import { EmployeeIncidenceModule } from './employee_incidence/employee_incidence.module';
-import config from "./config";
+import config from './config';
 import { ChecadorModule } from './checador/checador.module';
 import { TimeCorrectionModule } from './time_correction/time_correction.module';
 import { LogAdjustmentVacationModule } from './log_adjustment_vacation/log_adjustment_vacation.module';
@@ -38,10 +37,11 @@ import { DocumentModule } from './document/document.module';
 import { DocumentClasificationModule } from './document_clasification/document_clasification.module';
 import { DocumentEmployeeModule } from './document_employee/document_employee.module';
 import { RequestCourseModule } from './request_course/request_course.module';
+import { SupplierModule } from './supplier/supplier.module';
+
 
 @Module({
   imports: [
-    RequestCourseModule,
     MailModule,
     ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
@@ -94,10 +94,10 @@ import { RequestCourseModule } from './request_course/request_course.module';
     DocumentModule,
     DocumentEmployeeModule,
     DocumentClasificationModule,
+    RequestCourseModule,
+    SupplierModule,
   ],
-  controllers: [
-    AppController],
-  providers: [
-    AppService],
+  controllers: [AppController],
+  providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -1,12 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, UpdateResult, DeleteResult, IsNull, Not, Like } from 'typeorm';
-import { InjectRepository } from "@nestjs/typeorm";
-import * as bcrypt from "bcrypt";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  Repository,
+  UpdateResult,
+  DeleteResult,
+  IsNull,
+  Not,
+  Like,
+} from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 
 import { CreateRoleDto, UpdateRoleDto } from '../dto/create-role.dto';
 import { Role } from '../entities/role.entity';
 import { ConfigService } from '@nestjs/config';
-
 
 @Injectable()
 export class RolesService {
@@ -18,8 +28,8 @@ export class RolesService {
   async create(createRoleDto: CreateRoleDto) {
     const roleExist = await this.roleRepository.findOne({
       where: {
-        name: Like(`%${createRoleDto.name}%`)
-      }
+        name: Like(`%${createRoleDto.name}%`),
+      },
     });
 
     if (roleExist?.id) {
@@ -34,42 +44,43 @@ export class RolesService {
     const total = await this.roleRepository.count();
     const roles = await this.roleRepository.find({
       relations: {
-          views: true
-      }
-  });
+        views: true,
+      },
+    });
     if (!roles) {
       throw new NotFoundException(`Roles not found`);
     }
     return {
       total: total,
-      roles: roles
+      roles: roles,
     };
   }
 
   async findAllDeleted() {
     const roleAll = await this.roleRepository.count();
-    const roles = await this.roleRepository.find({ 
-        where: { deleted_at: Not(IsNull()) }, withDeleted: true 
+    const roles = await this.roleRepository.find({
+      where: { deleted_at: Not(IsNull()) },
+      withDeleted: true,
     });
     return {
-        total: roleAll,
-        roles: roles
-    }
+      total: roleAll,
+      roles: roles,
+    };
   }
 
   async findOne(id: number) {
-    const role = await this.roleRepository.findOneBy({id:id});
-        
-        if (!role) {
-            throw new NotFoundException(`Role #${id} not found`);
-        }
-        return {
-          role
-        };
+    const role = await this.roleRepository.findOneBy({ id: id });
+
+    if (!role) {
+      throw new NotFoundException(`Role #${id} not found`);
+    }
+    return {
+      role,
+    };
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
-    const role = await this.roleRepository.findOneBy({id});
+    const role = await this.roleRepository.findOneBy({ id });
     await this.roleRepository.merge(role, updateRoleDto);
     return await this.roleRepository.update(id, role);
   }
@@ -79,7 +90,7 @@ export class RolesService {
     return await this.roleRepository.softDelete(id);
   }
 
-  async restore (id: number) {
+  async restore(id: number) {
     return await this.roleRepository.restore(id);
   }
 }

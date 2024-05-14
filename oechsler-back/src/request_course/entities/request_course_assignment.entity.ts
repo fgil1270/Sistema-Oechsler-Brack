@@ -1,45 +1,54 @@
-import { 
-    Entity, 
-    Column, 
-    PrimaryGeneratedColumn, 
-    ManyToMany,
-    ManyToOne,
-    JoinTable,
-    JoinColumn,
-    CreateDateColumn,
-    UpdateDateColumn, 
-    DeleteDateColumn
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToMany,
+  ManyToOne,
+  JoinTable,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { RequestCourse } from './request_course.entity';
 
 @Entity()
 export class RequestCourseAssignment {
-    @PrimaryGeneratedColumn() 
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({ type: 'timestamp', default: null})
-    date_start: Date;
+  @Column({ type: 'timestamp', default: null })
+  date_start: Date;
 
-    @Column({ type: 'timestamp', default: null})
-    date_end: Date;
+  @Column({ type: 'timestamp', default: null })
+  date_end: Date;
 
-    @Column({ type: 'set', enum: ['L', 'M', 'X', 'J', 'V', 'S', 'D']})
-    day: string;
+  @Column({ type: 'set', enum: ['L', 'M', 'X', 'J', 'V', 'S', 'D'] })
+  day: string;
 
-    @Column({ type: 'text', default: null})
-    comment: string;
+  @Column({ type: 'text', default: null })
+  comment: string;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-    @DeleteDateColumn()
-    deleted_at: Date;
+  @DeleteDateColumn()
+  deleted_at: Date;
 
-    @ManyToOne(() => RequestCourse, post => post.requestCourseAssignment)
-    @JoinColumn()
-    requestCourse: RequestCourse;
-
+  @ManyToMany(
+    () => RequestCourse,
+    (requestCourse) => requestCourse.requestCourseAssignment,
+  )
+  @JoinTable({
+    joinColumn: {
+      name: 'requestCourseAssignmentId',
+    },
+    inverseJoinColumn: {
+      name: 'requestCourseId',
+    },
+  })
+  requestCourse: RequestCourse[];
 }

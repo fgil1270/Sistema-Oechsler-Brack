@@ -8,16 +8,15 @@ import { DocumentModule } from '../document/document.module';
 import { DocumentEmployeeModule } from '../document_employee/document_employee.module';
 import { EmployeesModule } from '../employees/employees.module';
 
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([DocumentClasification]),
     forwardRef(() => DocumentModule),
     DocumentEmployeeModule,
-    EmployeesModule
+    EmployeesModule,
   ],
   providers: [DocumentClasificationService],
   controllers: [DocumentClasificationController],
-  exports: [DocumentClasificationService]
+  exports: [DocumentClasificationService],
 })
-export class DocumentClasificationModule { }
+export class DocumentClasificationModule {}

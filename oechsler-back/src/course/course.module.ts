@@ -12,18 +12,9 @@ import { CompetenceModule } from '../competence/competence.module';
 import { TraininGoal } from './entities/trainin_goal.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Course, TraininGoal]),
-        CompetenceModule
-    ],
-    controllers: [
-        CourseController
-    ],
-    providers: [
-        CourseService
-    ],
-    exports: [
-        CourseService
-    ]
+  imports: [TypeOrmModule.forFeature([Course, TraininGoal]), CompetenceModule],
+  controllers: [CourseController],
+  providers: [CourseService],
+  exports: [CourseService],
 })
-export class CourseModule { }
+export class CourseModule {}

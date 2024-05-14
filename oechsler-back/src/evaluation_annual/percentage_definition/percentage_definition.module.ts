@@ -9,17 +9,9 @@ import { PercentageDefinitionService } from './service/percentage_definition.ser
 import { PercentageDefinition } from './entities/percentage_definition.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([PercentageDefinition])
-    ],
-    providers: [
-        PercentageDefinitionService
-    ],
-    controllers: [
-        PercentageDefinitionController
-    ],
-    exports: [
-        PercentageDefinitionService
-    ]
+  imports: [TypeOrmModule.forFeature([PercentageDefinition])],
+  providers: [PercentageDefinitionService],
+  controllers: [PercentageDefinitionController],
+  exports: [PercentageDefinitionService],
 })
-export class PercentageDefinitionModule { }
+export class PercentageDefinitionModule {}

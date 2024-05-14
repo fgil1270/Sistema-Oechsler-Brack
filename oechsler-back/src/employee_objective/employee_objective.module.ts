@@ -23,27 +23,27 @@ import { MailModule } from '../mail/mail.module';
 import { RequestCourseModule } from '../request_course/request_course.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            DefinitionObjectiveAnnual,
-            EmployeeObjective,
-            EmployeeObjectiveEvaluation,
-            DncCourse,
-            DncCourseManual,
-            CourseEvaluation,
-            CourseEvaluationMannual,
-            CompetenceEvaluation
-        ]),
-        OrganigramaModule,
-        PercentageDefinitionModule,
-        CompetenceModule,
-        EmployeesModule,
-        CourseModule,
-        MailModule,
-        RequestCourseModule
-    ],
-    controllers: [EmployeeObjetiveController],
-    providers: [EmployeeObjetiveService],
-    exports: [EmployeeObjetiveService]
+  imports: [
+    TypeOrmModule.forFeature([
+      DefinitionObjectiveAnnual,
+      EmployeeObjective,
+      EmployeeObjectiveEvaluation,
+      DncCourse,
+      DncCourseManual,
+      CourseEvaluation,
+      CourseEvaluationMannual,
+      CompetenceEvaluation,
+    ]),
+    OrganigramaModule,
+    PercentageDefinitionModule,
+    CompetenceModule,
+    EmployeesModule,
+    CourseModule,
+    MailModule,
+    RequestCourseModule,
+  ],
+  controllers: [EmployeeObjetiveController],
+  providers: [EmployeeObjetiveService],
+  exports: [EmployeeObjetiveService],
 })
 export class EmployeeObjectiveModule {}

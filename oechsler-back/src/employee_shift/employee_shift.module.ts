@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from "@nestjs/typeorm";
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EmployeeShiftService } from './service/employee_shift.service';
 import { EmployeeShiftController } from './controller/employee_shift.controller';
@@ -16,20 +16,17 @@ import { de } from 'date-fns/locale';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      EmployeeShift,
-      Department
-    ]),
+    TypeOrmModule.forFeature([EmployeeShift, Department]),
     EmployeesModule,
     ShiftModule,
     PatternModule,
     OrganigramaModule,
     RolesModule,
     DepartmentsModule,
-    EmployeeProfilesModule
+    EmployeeProfilesModule,
   ],
   controllers: [EmployeeShiftController],
   providers: [EmployeeShiftService],
-  exports: [EmployeeShiftService]
+  exports: [EmployeeShiftService],
 })
 export class EmployeeShiftModule {}
