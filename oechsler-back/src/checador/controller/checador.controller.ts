@@ -2,18 +2,18 @@
 https://docs.nestjs.com/controllers#controllers
 */
 
-import { 
-    Controller,
-    Get,
-    Post,
-    Body,
-    Put,
-    Param,
-    Delete,
-    UseGuards,
-    ParseIntPipe,
-    Req,
-    Query
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  UseGuards,
+  ParseIntPipe,
+  Req,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -26,46 +26,58 @@ import { CreateChecadaDto, UpdateChecadaDto } from '../dto/create-checada.dto';
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Reloj Checador')
 @Controller('checador')
-export class ChecadorController { 
-    constructor(private readonly checadorService: ChecadorService){}
+export class ChecadorController {
+  constructor(private readonly checadorService: ChecadorService) {}
 
-    @ApiOperation({ summary: 'Crear registro de entrada o salida del empleado' })
-    @Post()
-    create(@Body() createChecadaDto: CreateChecadaDto){
-        return this.checadorService.create(createChecadaDto);
-    }
+  @ApiOperation({ summary: 'Crear registro de entrada o salida del empleado' })
+  @Post()
+  create(@Body() createChecadaDto: CreateChecadaDto) {
+    return this.checadorService.create(createChecadaDto);
+  }
 
-    @ApiOperation({ summary: 'buscar registros de entrada y salida por ids de empleado y rango de fechas' })
-    @Get()
-    findbyDate(@Query() data: UpdateChecadaDto){
-        return this.checadorService.findbyDate(data.empleadoId, data.startDate, data.endDate, data.startTime, data.endTime);
-    }
+  @ApiOperation({
+    summary:
+      'buscar registros de entrada y salida por ids de empleado y rango de fechas',
+  })
+  @Get()
+  findbyDate(@Query() data: UpdateChecadaDto) {
+    return this.checadorService.findbyDate(
+      data.empleadoId,
+      data.startDate,
+      data.endDate,
+      data.startTime,
+      data.endTime,
+    );
+  }
 
-    @ApiOperation({ summary: 'Acceso a la vista de Nomipaq' })
-    @Views('nomipaq')
-    @Get('nomipaq')
-    findView(){
-        return true;
-    }
+  @ApiOperation({ summary: 'Acceso a la vista de Nomipaq' })
+  @Views('nomipaq')
+  @Get('nomipaq')
+  findView() {
+    return true;
+  }
 
-    @ApiOperation({ summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq' })
-    @Views('nomipaq')
-    @Get('nomipaq/report')
-    reportNomipaq(@Query() data:any){
-        return this.checadorService.reportNomipaq(data);
-    }
+  @ApiOperation({
+    summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq',
+  })
+  @Views('nomipaq')
+  @Get('nomipaq/report')
+  reportNomipaq(@Query() data: any) {
+    return this.checadorService.reportNomipaq(data);
+  }
 
-    @ApiOperation({ summary: 'Actualizar Checada' })
-    @Put(':id')
-    update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateChecadaDto){
-        return this.checadorService.update(data, id);
-    }
+  @ApiOperation({ summary: 'Actualizar Checada' })
+  @Put(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateChecadaDto,
+  ) {
+    return this.checadorService.update(data, id);
+  }
 
-    @ApiOperation({ summary: 'Eliminar registro de checada' })
-    @Delete(':id')
-    delete(@Param('id', ParseIntPipe) id: number){
-        return this.checadorService.remove(id);
-    }
-
-    
+  @ApiOperation({ summary: 'Eliminar registro de checada' })
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.checadorService.remove(id);
+  }
 }

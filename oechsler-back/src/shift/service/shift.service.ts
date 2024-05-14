@@ -1,21 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Repository, In, Not, IsNull, Like } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateShiftDto, UpdateShiftDto } from '../dto/create-shift.dto';
-import { Shift } from "../entities/shift.entity";
+import { Shift } from '../entities/shift.entity';
 
 @Injectable()
 export class ShiftService {
   constructor(
-    @InjectRepository(Shift) private shiftRepository: Repository<Shift>
-  ){}
+    @InjectRepository(Shift) private shiftRepository: Repository<Shift>,
+  ) {}
 
   async create(createShiftDto: CreateShiftDto) {
     const shiftExist = await this.shiftRepository.findOne({
       where: {
-        code: Like(`%${createShiftDto.code}%`)
-      }
+        code: Like(`%${createShiftDto.code}%`),
+      },
     });
 
     if (shiftExist?.id) {
@@ -28,58 +32,58 @@ export class ShiftService {
 
   async findAll() {
     const total = await this.shiftRepository.count({
-      where:{
-        special: false
-      }
+      where: {
+        special: false,
+      },
     });
     const shifts = await this.shiftRepository.find({
-      where:{
-        special: false
-      }
+      where: {
+        special: false,
+      },
     });
-    
+
     if (!shifts) {
       throw new NotFoundException(`Shift not found`);
     }
     return {
       total: total,
-      shifts: shifts
+      shifts: shifts,
     };
   }
 
   async findOne(id: number) {
     const shift = await this.shiftRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!shift) {
       throw new NotFoundException(`Shift #${id} not found`);
     }
     return {
-      shift
+      shift,
     };
   }
 
   async findByName(code: string) {
     const shift = await this.shiftRepository.findOne({
       where: {
-        code: code
-      }
+        code: code,
+      },
     });
     if (!shift) {
       throw new NotFoundException(`Shift #${code} not found`);
     }
     return {
-      shift
+      shift,
     };
   }
 
   async update(id: number, updateShiftDto: UpdateShiftDto) {
     const shift = await this.shiftRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
 
     if (!shift) {
@@ -93,8 +97,8 @@ export class ShiftService {
   async remove(id: number) {
     const shift = await this.shiftRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
 
     if (!shift) {

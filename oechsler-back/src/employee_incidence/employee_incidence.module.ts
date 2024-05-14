@@ -2,7 +2,11 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EmployeeIncidenceService } from './service/employee_incidence.service';
-import { EmployeeIncidenceController, ReportEmployeeIncidenceController, ReportFlexTimeController } from './controller/employee_incidence.controller';
+import {
+  EmployeeIncidenceController,
+  ReportEmployeeIncidenceController,
+  ReportFlexTimeController,
+} from './controller/employee_incidence.controller';
 import { EmployeeIncidence } from './entities/employee_incidence.entity';
 import { DateEmployeeIncidence } from './entities/date_employee_incidence.entity';
 import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catologue.module';
@@ -18,10 +22,7 @@ import { CalendarModule } from '../calendar/calendar.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      EmployeeIncidence,
-      DateEmployeeIncidence
-    ]),
+    TypeOrmModule.forFeature([EmployeeIncidence, DateEmployeeIncidence]),
     IncidenceCatologueModule,
     EmployeesModule,
     EmployeeShiftModule,
@@ -31,10 +32,14 @@ import { CalendarModule } from '../calendar/calendar.module';
     OrganigramaModule,
     MailModule,
     UsersModule,
-    CalendarModule
+    CalendarModule,
   ],
-  controllers: [EmployeeIncidenceController, ReportEmployeeIncidenceController, ReportFlexTimeController],
+  controllers: [
+    EmployeeIncidenceController,
+    ReportEmployeeIncidenceController,
+    ReportFlexTimeController,
+  ],
   providers: [EmployeeIncidenceService, EmployeeIncidence],
-  exports: [EmployeeIncidenceService, EmployeeIncidence]
+  exports: [EmployeeIncidenceService, EmployeeIncidence],
 })
 export class EmployeeIncidenceModule {}

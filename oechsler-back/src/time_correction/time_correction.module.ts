@@ -16,11 +16,7 @@ import { CalendarModule } from '../calendar/calendar.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      TimeCorrection,
-      EmployeeIncidence
-      
-    ]), 
+    TypeOrmModule.forFeature([TimeCorrection, EmployeeIncidence]),
     MailModule,
     EmployeeIncidenceModule,
     EmployeeShiftModule,
@@ -28,10 +24,10 @@ import { CalendarModule } from '../calendar/calendar.module';
     EmployeesModule,
     ChecadorModule,
     OrganigramaModule,
-    CalendarModule
+    CalendarModule,
   ],
   providers: [TimeCorrectionService],
   controllers: [TimeCorrectionController],
-  exports: [TimeCorrectionService]
+  exports: [TimeCorrectionService],
 })
-export class TimeCorrectionModule { }
+export class TimeCorrectionModule {}

@@ -1,15 +1,16 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from "@nestjs/common";
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
-import * as expressListRoutes from "express-list-endpoints";
-
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as expressListRoutes from 'express-list-endpoints';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+    }),
+  );
   process.env.TZ = 'Etc/Universal'; //establece la zona horaria universal
   // Configuración Swagger en NestJS
   const config = new DocumentBuilder()
@@ -27,8 +28,6 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Authorization',
     optionsSuccessStatus: 200
   } */);
-
-
 
   await app.listen(process.env.PORT);
 
