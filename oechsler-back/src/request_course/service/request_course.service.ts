@@ -19,24 +19,24 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { RequestCourse } from '../entities/request_course.entity';
+import { RequestCourseAssignment } from '../entities/request_course_assignment.entity';
 import {
   RequestCourseDto,
   UpdateRequestCourseDto,
+  RequestCourseAssignmentDto
 } from '../dto/create_request_course.dto';
 import { CourseService } from '../../course/service/course.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { CompetenceService } from '../../competence/service/competence.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
-import { data } from 'jquery';
-import { error } from 'console';
-import { groupBy } from 'rxjs';
+
 
 @Injectable()
 export class RequestCourseService {
   constructor(
-    @InjectRepository(RequestCourse)
-    private requestCourse: Repository<RequestCourse>,
+    @InjectRepository(RequestCourse) private requestCourse: Repository<RequestCourse>,
+    @InjectRepository(RequestCourseAssignment) private requestCourseAssignment: Repository<RequestCourseAssignment>,
     private courseService: CourseService,
     private departmentService: DepartmentsService,
     private employeeService: EmployeesService,
@@ -252,5 +252,28 @@ export class RequestCourseService {
       courseApproved,
       employees,
     };
+  }
+
+  //crear asignacion de curso
+  async createAssignmentCourse(currData: RequestCourseAssignmentDto){
+    try {
+      const assignment = await this.requestCourseAssignment.create({
+        date_start: currData.dateStart,
+        date_end: currData.dateEnd,
+        day: currData.day,
+        time_start: currData.timeStart,
+        time_end: currData.timeEnd
+      });
+      return {
+        error: false,
+        msg: 'Asignación de curso creada correctamente',
+        data: currData
+      };
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message
+      };
+    }
   }
 }

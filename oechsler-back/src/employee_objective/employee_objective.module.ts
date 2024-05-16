@@ -21,6 +21,7 @@ import { EmployeesModule } from '../employees/employees.module';
 import { CourseModule } from '../course/course.module';
 import { MailModule } from '../mail/mail.module';
 import { RequestCourseModule } from '../request_course/request_course.module';
+import { SupplierModule } from '../supplier/supplier.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { RequestCourseModule } from '../request_course/request_course.module';
     CourseModule,
     MailModule,
     RequestCourseModule,
+    SupplierModule,
   ],
   controllers: [EmployeeObjetiveController],
   providers: [EmployeeObjetiveService],

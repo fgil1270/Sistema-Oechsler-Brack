@@ -1037,9 +1037,10 @@ export class EmployeeObjetiveService {
 
     for (let index = 0; index < employee.length; index++) {
       const element = employee[index];
-      if (user.idEmployee == element.id) {
+      if(currdata.consulta != 'consulta' && user.idEmployee == element.id){
         continue;
       }
+      
       //se busca si el empleado tiene objetivos asignados para el año seleccionado
       const definitionObjectiveAnnual =
         await this.definitionObjectiveAnnual.findOne({

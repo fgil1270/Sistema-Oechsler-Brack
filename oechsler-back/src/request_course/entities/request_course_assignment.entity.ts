@@ -11,6 +11,7 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 import { RequestCourse } from './request_course.entity';
+import { Teacher } from '../../supplier/entities/teacher.entity';
 
 @Entity()
 export class RequestCourseAssignment {
@@ -25,6 +26,12 @@ export class RequestCourseAssignment {
 
   @Column({ type: 'set', enum: ['L', 'M', 'X', 'J', 'V', 'S', 'D'] })
   day: string;
+
+  @Column({ type: 'time', default: null })
+  time_start: string;
+
+  @Column({ type: 'time', default: null })
+  time_end: string;
 
   @Column({ type: 'text', default: null })
   comment: string;
@@ -51,4 +58,8 @@ export class RequestCourseAssignment {
     },
   })
   requestCourse: RequestCourse[];
+
+  @ManyToOne(() => Teacher, (post) => post.requestCourseAssignment)
+  @JoinColumn()
+  teacher: Teacher;
 }
