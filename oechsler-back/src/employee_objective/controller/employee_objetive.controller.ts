@@ -54,9 +54,7 @@ export class EmployeeObjetiveController {
     return this.employeeObjetiveService.create(currData, user);
   }
 
-  @ApiOperation({
-    summary: 'se asignan los objetivos de empleado de manera parcial',
-  })
+  @ApiOperation({ summary: 'se asignan los objetivos de empleado de manera parcial'})
   @Post('partial')
   async createDefinitionObjectiveAnnualPartial(
     @Body() currData: UpdateEmployeeObjectiveDtoPartial,
@@ -68,10 +66,7 @@ export class EmployeeObjetiveController {
     );
   }
 
-  @ApiOperation({
-    summary:
-      'Acceso a la vista para definir objetivos, ademas se verifica si el empleado tiene objetivos asignados',
-  })
+  @ApiOperation({ summary: 'Acceso a la vista para definir objetivos, ademas se verifica si el empleado tiene objetivos asignados'})
   @Get()
   @Views('definir_objetivo')
   findAll(@Query() currData: any, @CurrentUser() user: any) {

@@ -16,7 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseService } from '../service/request_course.service';
-import { RequestCourseDto } from '../dto/create_request_course.dto';
+import { RequestCourseDto, RequestCourseAssignmentDto } from '../dto/create_request_course.dto';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Views } from '../../auth/decorators/views.decorator';
@@ -25,12 +25,18 @@ import { Views } from '../../auth/decorators/views.decorator';
 @ApiTags('Solicitud de curso')
 @Controller('request_course')
 export class RequestCourseController {
-  constructor(private service: RequestCourseService) {}
+  constructor(private requestCourseService: RequestCourseService) {}
 
   @ApiOperation({ summary: 'Crear solicitud de curso' })
   @Post()
   async create(@Body() currData: RequestCourseDto, @CurrentUser() user: any) {
-    return this.service.create(currData, user);
+    return this.requestCourseService.create(currData, user);
+  }
+
+  @ApiOperation({ summary: 'Crear asignacion de curso' })
+  @Post('assignment')
+  async createAssignment(@Body() currData: RequestCourseAssignmentDto, @CurrentUser() user: any) {
+    return this.requestCourseService.createAssignmentCourse(currData);
   }
 
   @ApiOperation({ summary: 'Obtener solicitudes de curso' })
@@ -39,7 +45,7 @@ export class RequestCourseController {
     @Query() query: Partial<RequestCourse>,
     @CurrentUser() user: any,
   ) {
-    return this.service.findAll(query, user);
+    return this.requestCourseService.findAll(query, user);
   }
 
   @ApiOperation({ summary: 'Acceso a solicitudes de curso' })
@@ -52,7 +58,7 @@ export class RequestCourseController {
   @ApiOperation({ summary: 'Obtener solicitudes de curso por id' })
   @Get(':id')
   async findRequestCourseById(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findRequestCourseById(id);
+    return this.requestCourseService.findRequestCourseById(id);
   }
 
   @ApiOperation({
@@ -60,7 +66,7 @@ export class RequestCourseController {
   })
   @Get('/find/by')
   async findRequestCourseBy(@Query() query: Partial<RequestCourse>) {
-    return this.service.findRequestCourseBy(query);
+    return this.requestCourseService.findRequestCourseBy(query);
   }
 
   @ApiOperation({ summary: 'Obtener solicitudes de curso por empleado' })
@@ -69,7 +75,7 @@ export class RequestCourseController {
     @Param('status') status: string,
     @CurrentUser() user: any,
   ) {
-    return this.service.findRequestCourseApprove(status, user);
+    return this.requestCourseService.findRequestCourseApprove(status, user);
   }
 
   @ApiOperation({ summary: 'Actualizar solicitud de curso' })
@@ -78,6 +84,6 @@ export class RequestCourseController {
     @Param('id', ParseIntPipe) id: number,
     @Body() data: Partial<RequestCourse>,
   ) {
-    return this.service.update(id, data);
+    return this.requestCourseService.update(id, data);
   }
 }

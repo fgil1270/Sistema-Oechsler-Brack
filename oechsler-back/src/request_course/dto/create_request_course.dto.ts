@@ -123,3 +123,45 @@ export class RequestCourseDto {
 }
 
 export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {}
+
+export class RequestCourseAssignmentDto {
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({ description: 'id del curso' })
+  courseId: number;
+
+  @IsNotEmpty()
+  @IsArray()
+  @ApiProperty({ description: 'id del empleado' })
+  employeeId: number[];
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Dias de la semana' })
+  day: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Hora de inicio' })
+  timeStart: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Hora de fin' })
+  timeEnd: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Fecha de inicio' })
+  dateStart: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Fecha de fin' })
+  dateEnd: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({ description: 'Costo total' })
+  totalCost: number;
+}
