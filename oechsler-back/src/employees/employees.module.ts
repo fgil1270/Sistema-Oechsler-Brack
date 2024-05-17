@@ -1,8 +1,11 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from "@nestjs/typeorm";
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EmployeesService } from '../employees/service/employees.service';
-import { EmployeesController, VacationsReportController } from '../employees/controller/employees.controller';
+import {
+  EmployeesController,
+  VacationsReportController,
+} from '../employees/controller/employees.controller';
 import { Employee } from '../employees/entities/employee.entity';
 import { JobsModule } from '../jobs/jobs.module';
 import { DepartmentsModule } from '../departments/departments.module';
@@ -12,12 +15,9 @@ import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.m
 import { UsersModule } from '../users/users.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 
-
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Employee
-    ]),
+    TypeOrmModule.forFeature([Employee]),
     JobsModule,
     DepartmentsModule,
     PayrollsModule,
@@ -25,10 +25,9 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
     EmployeeProfilesModule,
     forwardRef(() => UsersModule),
     OrganigramaModule,
-        
   ],
   controllers: [EmployeesController, VacationsReportController],
   providers: [EmployeesService],
-  exports: [EmployeesService]
+  exports: [EmployeesService],
 })
 export class EmployeesModule {}

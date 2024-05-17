@@ -1,21 +1,25 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Repository, In, Not, IsNull, Like } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreatePatternDto, UpdatePatternDto } from '../dto/create-pattern.dto';
-import { Pattern } from "../entities/pattern.entity";
+import { Pattern } from '../entities/pattern.entity';
 
 @Injectable()
 export class PatternService {
   constructor(
-    @InjectRepository(Pattern) private patternRepository: Repository<Pattern>
+    @InjectRepository(Pattern) private patternRepository: Repository<Pattern>,
   ) {}
 
   async create(createPatternDto: CreatePatternDto) {
     const patternExist = await this.patternRepository.findOne({
       where: {
-        name: Like(`%${createPatternDto.name}%`)
-      }
+        name: Like(`%${createPatternDto.name}%`),
+      },
     });
 
     if (patternExist?.id) {
@@ -29,40 +33,40 @@ export class PatternService {
   async findAll() {
     const total = await this.patternRepository.count();
     const patterns = await this.patternRepository.find();
-    
+
     if (!patterns) {
       throw new NotFoundException(`Patterns not found`);
     }
     return {
       total: total,
-      patterns: patterns
+      patterns: patterns,
     };
   }
 
   async findOne(id: number) {
     const pattern = await this.patternRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!pattern) {
       throw new NotFoundException(`Pattern #${id} not found`);
     }
     return {
-      pattern
+      pattern,
     };
   }
 
   async update(id: number, updatePatternDto: UpdatePatternDto) {
     const pattern = await this.patternRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!pattern) {
       throw new NotFoundException(`Pattern #${id} not found`);
     }
-    
+
     const patternUpdated = Object.assign(pattern, updatePatternDto);
     return await this.patternRepository.update(id, patternUpdated);
   }
@@ -70,8 +74,8 @@ export class PatternService {
   async remove(id: number) {
     const pattern = await this.patternRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!pattern) {
       throw new NotFoundException(`Pattern #${id} not found`);

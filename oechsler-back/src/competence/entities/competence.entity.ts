@@ -1,14 +1,14 @@
 import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    CreateDateColumn,
-    UpdateDateColumn,
-    DeleteDateColumn,
-    ManyToOne,
-    JoinColumn,
-    ManyToMany,
-    OneToMany
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
+  ManyToMany,
+  OneToMany,
 } from 'typeorm';
 import { TypeCompetence } from './type_competence.entity';
 import { TypeElementCompetence } from './type_element_competence.entity';
@@ -20,45 +20,44 @@ import { RequestCourse } from '../../request_course/entities/request_course.enti
 
 @Entity()
 export class Competence {
-    @PrimaryGeneratedColumn() 
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({ type: 'varchar', length: 255 })
-    name: string;
+  @Column({ type: 'varchar', length: 255 })
+  name: string;
 
-    @Column({ type: 'varchar', length: 255 })
-    code: string;
+  @Column({ type: 'varchar', length: 255 })
+  code: string;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @CreateDateColumn()
+  created_at: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @UpdateDateColumn()
+  updated_at: Date;
 
-    @DeleteDateColumn()
-    deleted_at: Date;
+  @DeleteDateColumn()
+  deleted_at: Date;
 
-    @ManyToOne(() => TypeCompetence, post => post.competence)
-    @JoinColumn()
-    typeCompetence: TypeCompetence;
+  @ManyToOne(() => TypeCompetence, (post) => post.competence)
+  @JoinColumn()
+  typeCompetence: TypeCompetence;
 
-    @ManyToOne(() => TypeElementCompetence, post => post.competence)
-    @JoinColumn()
-    typeElementCompetence: TypeElementCompetence;
+  @ManyToOne(() => TypeElementCompetence, (post) => post.competence)
+  @JoinColumn()
+  typeElementCompetence: TypeElementCompetence;
 
-    @ManyToMany(() => Job, (job) => job.competence)
-    job: Job[];
+  @ManyToMany(() => Job, (job) => job.competence)
+  job: Job[];
 
-    @OneToMany(() => Course, (course) => course.competence)
-    course: Course[];
+  @OneToMany(() => Course, (course) => course.competence)
+  course: Course[];
 
-    @OneToMany(() => DncCourseManual, post => post.competence)
-    dncCourseManual: DncCourseManual[];
+  @OneToMany(() => DncCourseManual, (post) => post.competence)
+  dncCourseManual: DncCourseManual[];
 
-    @OneToMany(() => CompetenceEvaluation, post => post.competence)
-    competenceEvaluation: CompetenceEvaluation[];
+  @OneToMany(() => CompetenceEvaluation, (post) => post.competence)
+  competenceEvaluation: CompetenceEvaluation[];
 
-    @OneToMany(() => RequestCourse, (post) => post.competence)
-    requestCompetence: RequestCourse[];
-
+  @OneToMany(() => RequestCourse, (post) => post.competence)
+  requestCompetence: RequestCourse[];
 }

@@ -6,13 +6,9 @@ import { IncidenceCatologueController } from './controller/incidence_catologue.c
 import { IncidenceCatologue } from './entities/incidence_catologue.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      IncidenceCatologue
-    ])
-  ],
+  imports: [TypeOrmModule.forFeature([IncidenceCatologue])],
   controllers: [IncidenceCatologueController],
   providers: [IncidenceCatologueService],
-  exports: [IncidenceCatologueService]
+  exports: [IncidenceCatologueService],
 })
 export class IncidenceCatologueModule {}

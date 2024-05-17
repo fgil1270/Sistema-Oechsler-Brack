@@ -1,8 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, forwardRef, Inject } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like, Admin } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
+import { Repository, In, Not, IsNull, Like, Admin } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateOrganigramaDto, OrganigramaGerarquia } from '../dto/create-organigrama.dto';
+import {
+  CreateOrganigramaDto,
+  UpdateOrganigramaDto,
+  OrganigramaGerarquia,
+} from '../dto/create-organigrama.dto';
 import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { UsersService } from '../../users/service/users.service';
@@ -10,136 +20,141 @@ import { UsersService } from '../../users/service/users.service';
 @Injectable()
 export class OrganigramaService {
   constructor(
-    @InjectRepository(Organigrama) private organigramaRepository: Repository<Organigrama>,
-    @Inject(forwardRef(() => EmployeesService)) private employeeService: EmployeesService,
-    @Inject(forwardRef(() => UsersService)) private userService: UsersService
-  ){}
+    @InjectRepository(Organigrama)
+    private organigramaRepository: Repository<Organigrama>,
+    @Inject(forwardRef(() => EmployeesService))
+    private employeeService: EmployeesService,
+    @Inject(forwardRef(() => UsersService)) private userService: UsersService,
+  ) {}
 
   async create(createOrganigramaDto: CreateOrganigramaDto) {
-    
-    let orgDTO = {
+    const orgDTO = {
       leader: null,
       employee: null,
-      evaluar: false
+      evaluar: false,
     };
 
     const orgExist = await this.organigramaRepository.findOne({
       relations: {
         leader: true,
-        employee: true
+        employee: true,
       },
-      where : {
+      where: {
         leader: {
-          id: createOrganigramaDto.leader
+          id: createOrganigramaDto.leader,
         },
         employee: {
-          id: createOrganigramaDto.employee
-        }
-      }
+          id: createOrganigramaDto.employee,
+        },
+      },
     });
 
     if (orgExist?.id) {
       throw new BadRequestException(`La Relacion ya existe`);
     }
     try {
-      const leader = await this.employeeService.findOne(createOrganigramaDto.leader);
-      const employee = await this.employeeService.findOne(createOrganigramaDto.employee);
-      
+      const leader = await this.employeeService.findOne(
+        createOrganigramaDto.leader,
+      );
+      const employee = await this.employeeService.findOne(
+        createOrganigramaDto.employee,
+      );
+
       orgDTO.leader = leader.emp;
       orgDTO.employee = employee.emp;
       orgDTO.evaluar = createOrganigramaDto.evaluar;
     } catch (error) {
       throw new BadRequestException(`Error al crear la Relación`);
     }
-    
 
     const org = this.organigramaRepository.create(orgDTO);
     return await this.organigramaRepository.save(org);
   }
 
   async findAll(user: any) {
-    let isAdmin = user.roles.some((role) => role.name === 'Admin' || role.name === 'RH');
-    let isJefeTurno = user.roles.some((role) => role.name === 'Jefe de Turno');
+    const isAdmin = user.roles.some(
+      (role) => role.name === 'Admin' || role.name === 'RH',
+    );
+    const isJefeTurno = user.roles.some(
+      (role) => role.name === 'Jefe de Turno',
+    );
     const total = await this.organigramaRepository.count();
     const orgs = await this.organigramaRepository.find({
       relations: {
         leader: {
           department: true,
-          job: true
+          job: true,
         },
         employee: {
           department: true,
-          job: true
+          job: true,
         },
-      }
+      },
     });
-    let query = `
+    const query = `
             SELECT * FROM employee AS e
             INNER JOIN job AS j ON e.jobId = j.id
             INNER JOIN department AS d On e.departmentId = d.id
             WHERE j.shift_leader = 1
             `;
     const visibleJefeTurno = await this.organigramaRepository.query(query);
-    
+
     if (!orgs) {
       throw new NotFoundException(`Organigrama not found`);
     }
     return {
-      total: orgs.length ,
-      orgs: orgs
+      total: orgs.length,
+      orgs: orgs,
     };
   }
 
   //SE OBTIENEN lideres
   async leaders(id: number) {
-    
     const leaders = await this.organigramaRepository.find({
       relations: {
         leader: true,
         employee: {
-          userId: true
+          userId: true,
         },
       },
       where: {
         employee: {
-          id: id
-        }
+          id: id,
+        },
       },
     });
-    
-    
+
     return {
-      orgs: leaders
+      orgs: leaders,
     };
   }
 
   //SE OBTIENEN posibles lideres
   async findLeader(id: number) {
-    
     const leaders = await this.organigramaRepository.find({
       relations: {
         leader: true,
         employee: {
-          userId: true
+          userId: true,
         },
       },
       where: {
         employee: {
-          id: id
-        }
+          id: id,
+        },
       },
     });
-    
-    let idsLeaders = [];
+
+    const idsLeaders = [];
     idsLeaders.push(id);
     leaders.forEach((leader) => {
       idsLeaders.push(leader.leader.id);
     });
-    
+
     const newLeaders = await this.employeeService.findLeaders(idsLeaders);
-    
+
     return {
-      orgs: newLeaders
+      orgs: newLeaders,
     };
   }
 
@@ -148,80 +163,80 @@ export class OrganigramaService {
     const leader = await this.employeeService.findOne(idLeader);
     const admin = await this.userService.findOne(idUser);
     let isAdmin = false;
-    admin.user.roles.find((role) => role.name === 'Admin') ? isAdmin = true : isAdmin = false;
-    
-    let isRh = false;
+    admin.user.roles.find((role) => role.name === 'Admin')
+      ? (isAdmin = true)
+      : (isAdmin = false);
+
+    const isRh = false;
     /* user.roles.find((role) => {
       role.name === 'Admin' ? isAdmin = true : isAdmin = false;
       role.name === 'RH' ? isRh = true : isRh = false;
     });  */
     const employeesAdmin = await this.employeeService.findAll();
 
-    const employeesLeader =  await this.organigramaRepository.find({
-        relations: {
-          leader: true,
-          employee: true,
+    const employeesLeader = await this.organigramaRepository.find({
+      relations: {
+        leader: true,
+        employee: true,
+      },
+      where: {
+        leader: {
+          id: idLeader,
         },
-        where: {
-          leader: {
-            id: idLeader
-          },
-          
-        },
-        
-      });
-    
-    let idsEmployees = [];
+      },
+    });
+
+    const idsEmployees = [];
     idsEmployees.push(idLeader);
-    if(isAdmin){
+    if (isAdmin) {
       employeesAdmin.emps.forEach((emp) => {
         idsEmployees.push(emp.id);
       });
-    }else{
+    } else {
       employeesLeader.forEach((emp) => {
         idsEmployees.push(emp.employee.id);
       });
     }
-    
+
     return {
-      orgs: isAdmin ? employeesAdmin: employeesLeader,
-      idsEmployees: idsEmployees
+      orgs: isAdmin ? employeesAdmin : employeesLeader,
+      idsEmployees: idsEmployees,
     };
   }
 
   async findOne(id: number) {
-    
     const org = await this.organigramaRepository.findOne({
       relations: {
         leader: {
           department: true,
-          job: true
+          job: true,
         },
         employee: {
           department: true,
-          job: true
+          job: true,
         },
       },
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!org) {
       throw new NotFoundException(`Organigrama #${id} not found`);
     }
-    return {org};
+    return { org };
   }
 
-  async findJerarquia(data: OrganigramaGerarquia, user: any){
-
+  async findJerarquia(data: OrganigramaGerarquia, user: any) {
     try {
       //se verifica si el usuario logueado tiene role de Admin o RH
       //si es asi se obtienen todos los empleados
-      let isAdmin = user.roles.some((role) => role.name === 'Admin' || role.name === 'RH');
-      let employees = [];
-      if(isAdmin){
+      const isAdmin = user.roles.some(
+        (role) => role.name === 'Admin' || role.name === 'RH',
+      );
+      const employees = [];
+      if (isAdmin) {
         const levelOne = await this.employeeService.findAll();
-        levelOne.emps.forEach(element => {
+        levelOne.emps.forEach((element) => {
           employees.push(element);
         });
         return employees;
@@ -231,92 +246,100 @@ export class OrganigramaService {
         relations: {
           employee: {
             department: true,
-            job: true, 
-            payRoll: true, 
-            vacationProfile: true, 
-            employeeProfile: true
+            job: true,
+            payRoll: true,
+            vacationProfile: true,
+            employeeProfile: true,
           },
-          leader: true
+          leader: true,
         },
         where: {
-          leader: In([user.idEmployee]) 
+          leader: In([user.idEmployee]),
         },
         order: {
           employee: {
             name: 'ASC',
-            employee_number: 'ASC'
-          }
-        }
-
+            employee_number: 'ASC',
+          },
+        },
       });
 
-      levelOne.forEach(element => {
+      levelOne.forEach((element) => {
         employees.push(element.employee);
       });
-      
-      if(data.type == 'Normal'){
+
+      if (data.type == 'Normal') {
         const userLogin = await this.employeeService.findOne(user.idEmployee);
 
         //levelOne.employee.push(...userLogin);
         employees.push(userLogin.emp);
-        
+
         return employees;
       }
 
-      let idsEmployees = [];
+      const idsEmployees = [];
 
       for (let index = 0; index < employees.length; index++) {
         idsEmployees.push(employees[index].id);
-        
       }
 
       const levelTwo = await this.organigramaRepository.find({
         relations: {
           employee: {
-            department: true, 
-            job: true, 
-            payRoll: true, 
-            vacationProfile: true, 
-            employeeProfile: true
+            department: true,
+            job: true,
+            payRoll: true,
+            vacationProfile: true,
+            employeeProfile: true,
           },
-          leader: true
+          leader: true,
         },
         where: {
-          leader: In(idsEmployees) 
+          leader: In(idsEmployees),
         },
-        
       });
 
-      levelTwo.forEach(element => {
+      levelTwo.forEach((element) => {
         employees.push(element.employee);
       });
-      
+
       //levelTwo.push(...levelOne);
 
       return employees;
-
     } catch (error) {
       console.log(error.message);
     }
-    
   }
 
-  async update(id: number, updateOrganigramaDto: CreateOrganigramaDto) {
+  async update(id: number, updateOrganigramaDto: UpdateOrganigramaDto) {
     const org = await this.organigramaRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!org) {
       throw new NotFoundException(`Organigrama #${id} not found`);
     }
-    const leader = await this.employeeService.findOne(updateOrganigramaDto.leader);
+    console.log(updateOrganigramaDto)
+    
+    const leader = await this.employeeService.findOne(
+      updateOrganigramaDto.leader,
+    );
     org.leader = leader.emp;
     org.evaluar = updateOrganigramaDto.evaluar;
     return await this.organigramaRepository.save(org);
   }
 
   async remove(id: number) {
-    return `This action removes a #${id} organigrama`;
+    const org = await this.organigramaRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+    if (!org) {
+      throw new NotFoundException(`Organigrama #${id} not found`);
+    }
+    
+    return await this.organigramaRepository.remove(org);
   }
 }

@@ -1,18 +1,18 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Put, 
-  Param, 
-  Delete, 
-  HttpStatus, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  HttpStatus,
   HttpCode,
   ParseIntPipe,
-  UseGuards 
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from "@nestjs/swagger";
-import { AuthGuard } from "@nestjs/passport";
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 import { ViewsService } from '../service/views.service';
 import { CreateViewDto } from '../dto/create-view.dto';
@@ -25,13 +25,13 @@ import { RoleGuard } from 'src/auth/guards/role.guard';
 export class ViewsController {
   constructor(private readonly viewsService: ViewsService) {}
 
-  @ApiOperation({ summary: 'Crear vista'})
+  @ApiOperation({ summary: 'Crear vista' })
   @Post()
   create(@Body() createViewDto: CreateViewDto) {
     return this.viewsService.create(createViewDto);
   }
 
-  @ApiOperation({ summary: 'Listar vistas'})
+  @ApiOperation({ summary: 'Listar vistas' })
   @Views('vistas', 'roles_permisos')
   @Get()
   findAll() {
@@ -39,38 +39,41 @@ export class ViewsController {
   }
 
   @ApiOperation({ summary: 'Obtener lista de vistas eliminadas' })
-    @Get('/deleted')
-    getDeletedUsers() {
-      return this.viewsService.findAllDeleted();
-    }
+  @Get('/deleted')
+  getDeletedUsers() {
+    return this.viewsService.findAllDeleted();
+  }
 
-  @ApiOperation({ summary: 'Buscar vista'})
+  @ApiOperation({ summary: 'Buscar vista' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.viewsService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Editar vista'})
+  @ApiOperation({ summary: 'Editar vista' })
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateViewDto: CreateViewDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateViewDto: CreateViewDto,
+  ) {
     return this.viewsService.update(id, updateViewDto);
   }
 
-  @ApiOperation({ summary: 'Editar permisos'})
+  @ApiOperation({ summary: 'Editar permisos' })
   @Put('/permission/:id')
   addRole(@Param('id', ParseIntPipe) id: number, @Body() updateViewDto: any) {
     return this.viewsService.addRole(id, updateViewDto);
   }
 
-  @ApiOperation({ summary: 'Eliminar vista'})
+  @ApiOperation({ summary: 'Eliminar vista' })
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.viewsService.remove(id);
   }
 
-  @ApiOperation({ summary: 'Restaurar vista'})
+  @ApiOperation({ summary: 'Restaurar vista' })
   @Put('restore/:id')
-  restore(@Param('id', ParseIntPipe) id: number){
+  restore(@Param('id', ParseIntPipe) id: number) {
     return this.viewsService.restore(id);
   }
 }

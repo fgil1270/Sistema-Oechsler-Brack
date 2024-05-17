@@ -21,29 +21,31 @@ import { EmployeesModule } from '../employees/employees.module';
 import { CourseModule } from '../course/course.module';
 import { MailModule } from '../mail/mail.module';
 import { RequestCourseModule } from '../request_course/request_course.module';
+import { SupplierModule } from '../supplier/supplier.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            DefinitionObjectiveAnnual,
-            EmployeeObjective,
-            EmployeeObjectiveEvaluation,
-            DncCourse,
-            DncCourseManual,
-            CourseEvaluation,
-            CourseEvaluationMannual,
-            CompetenceEvaluation
-        ]),
-        OrganigramaModule,
-        PercentageDefinitionModule,
-        CompetenceModule,
-        EmployeesModule,
-        CourseModule,
-        MailModule,
-        RequestCourseModule
-    ],
-    controllers: [EmployeeObjetiveController],
-    providers: [EmployeeObjetiveService],
-    exports: [EmployeeObjetiveService]
+  imports: [
+    TypeOrmModule.forFeature([
+      DefinitionObjectiveAnnual,
+      EmployeeObjective,
+      EmployeeObjectiveEvaluation,
+      DncCourse,
+      DncCourseManual,
+      CourseEvaluation,
+      CourseEvaluationMannual,
+      CompetenceEvaluation,
+    ]),
+    OrganigramaModule,
+    PercentageDefinitionModule,
+    CompetenceModule,
+    EmployeesModule,
+    CourseModule,
+    MailModule,
+    RequestCourseModule,
+    SupplierModule,
+  ],
+  controllers: [EmployeeObjetiveController],
+  providers: [EmployeeObjetiveService],
+  exports: [EmployeeObjetiveService],
 })
 export class EmployeeObjectiveModule {}

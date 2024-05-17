@@ -6,20 +6,13 @@ import { DocumentService } from './service/document.service';
 import { Document } from './entities/document.entity';
 import { DocumentClasificationModule } from '../document_clasification/document_clasification.module';
 
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([Document]),
-    forwardRef(() => DocumentClasificationModule)
+    forwardRef(() => DocumentClasificationModule),
   ],
-  providers: [
-    DocumentService,
-  ],
-  controllers: [
-    DocumentController, 
-  ],
-  exports: [
-    DocumentService
-  ]
+  providers: [DocumentService],
+  controllers: [DocumentController],
+  exports: [DocumentService],
 })
-export class DocumentModule { }
+export class DocumentModule {}

@@ -1,21 +1,26 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Repository, In, Not, IsNull, Like } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateEmployeeProfileDto } from '../dto/create-employee-profile.dto';
-import { EmployeeProfile } from "../entities/employee-profile.entity";
+import { EmployeeProfile } from '../entities/employee-profile.entity';
 
 @Injectable()
 export class EmployeeProfilesService {
   constructor(
-    @InjectRepository(EmployeeProfile) private employeeProfileRepository: Repository<EmployeeProfile>
-  ){}
+    @InjectRepository(EmployeeProfile)
+    private employeeProfileRepository: Repository<EmployeeProfile>,
+  ) {}
 
   async create(createEmployeeProfileDto: CreateEmployeeProfileDto) {
     const empExist = await this.employeeProfileRepository.findOne({
       where: {
-        code: Like(`%${createEmployeeProfileDto.code}%`)
-      }
+        code: Like(`%${createEmployeeProfileDto.code}%`),
+      },
     });
 
     if (empExist?.id) {
@@ -29,52 +34,50 @@ export class EmployeeProfilesService {
   async findAll() {
     const total = await this.employeeProfileRepository.count();
     const emps = await this.employeeProfileRepository.find();
-    
+
     if (!emps) {
       throw new NotFoundException(`Profiles not found`);
     }
     return {
       total: total,
-      emps: emps
+      emps: emps,
     };
   }
 
   async findOne(id: number) {
     const emp = await this.employeeProfileRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!emp) {
       return null;
       throw new NotFoundException(`Profile #${id} not found`);
     }
     return {
-      emp
+      emp,
     };
   }
 
   //Buscar dia de la semana del perfil de empleado
   //Return true or false
   async findWeekDay(day: string, idProfile: number) {
-    
     const weekDay = await this.employeeProfileRepository.findOne({
       where: {
         id: idProfile,
-        work_days: Like(`%${day}%`)
-      }
+        work_days: Like(`%${day}%`),
+      },
     });
-    
+
     if (!weekDay) {
       return null;
     }
 
     return true;
-
   }
 
   async update(id: number, updateEmployeeProfileDto: CreateEmployeeProfileDto) {
-    const emp = await this.employeeProfileRepository.findOneBy({id});
+    const emp = await this.employeeProfileRepository.findOneBy({ id });
     this.employeeProfileRepository.merge(emp, updateEmployeeProfileDto);
     return await this.employeeProfileRepository.update(id, emp);
   }
@@ -82,8 +85,8 @@ export class EmployeeProfilesService {
   async remove(id: number) {
     const emp = await this.employeeProfileRepository.findOne({
       where: {
-        id: id
-      }
+        id: id,
+      },
     });
     if (!emp) {
       throw new NotFoundException(`Profile #${id} not found`);

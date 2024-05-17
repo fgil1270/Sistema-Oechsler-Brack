@@ -11,7 +11,9 @@ describe('VacationsProfileController', () => {
       providers: [VacationsProfileService],
     }).compile();
 
-    controller = module.get<VacationsProfileController>(VacationsProfileController);
+    controller = module.get<VacationsProfileController>(
+      VacationsProfileController,
+    );
   });
 
   it('should be defined', () => {

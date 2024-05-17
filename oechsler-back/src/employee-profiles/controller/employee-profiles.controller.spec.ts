@@ -11,7 +11,9 @@ describe('EmployeeProfilesController', () => {
       providers: [EmployeeProfilesService],
     }).compile();
 
-    controller = module.get<EmployeeProfilesController>(EmployeeProfilesController);
+    controller = module.get<EmployeeProfilesController>(
+      EmployeeProfilesController,
+    );
   });
 
   it('should be defined', () => {

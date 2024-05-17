@@ -1,5 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from "@nestjs/typeorm";
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { OrganigramaService } from './service/organigrama.service';
 import { OrganigramaController } from './controller/organigrama.controller';
@@ -10,14 +10,12 @@ import { VacationsProfileModule } from '../vacations-profile/vacations-profile.m
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Organigrama
-    ]),
+    TypeOrmModule.forFeature([Organigrama]),
     forwardRef(() => EmployeesModule),
     forwardRef(() => UsersModule),
   ],
   controllers: [OrganigramaController],
   providers: [OrganigramaService],
-  exports: [OrganigramaService]
+  exports: [OrganigramaService],
 })
 export class OrganigramaModule {}

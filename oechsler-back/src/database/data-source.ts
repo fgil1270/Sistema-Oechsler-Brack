@@ -6,7 +6,7 @@ const mysqlUser = process.env.MYSQL_USER;
 const mysqlRootPassword = process.env.MYSQL_ROOT_PASSWORD;
 const mysqlDatabase = process.env.MYSQL_DATABASE;
 
-export const dataSourceOptions:  DataSourceOptions= {
+export const dataSourceOptions: DataSourceOptions = {
   type: 'mysql',
   host: 'localhost',
   port: 3306,
@@ -18,9 +18,7 @@ export const dataSourceOptions:  DataSourceOptions= {
   entities: ['dist/**/*.entity.{ts,js}'],
   migrations: ['dist/database/migrations/*.{ts,js}'],
   migrationsTableName: 'migrations',
-  
-}
+};
 
 const dataSource = new DataSource(dataSourceOptions);
 export default dataSource;
-

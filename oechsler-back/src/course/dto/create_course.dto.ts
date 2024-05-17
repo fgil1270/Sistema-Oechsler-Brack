@@ -1,39 +1,49 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsObject } from "class-validator";
-import { ApiProperty, PartialType } from "@nestjs/swagger";
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsObject,
+} from 'class-validator';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CourseDto {
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({description: 'Nombre del curso', example: 'Curso de programacion'})
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'Nombre del curso',
+    example: 'Curso de programacion',
+  })
+  name: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({description: 'Descripcion del curso', example: 'Curso de programacion basica'})
-    description: string;
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: 'Descripcion del curso',
+    example: 'Curso de programacion basica',
+  })
+  description: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({description: 'Estado del curso', example: 'Activo'})
-    status: string;
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Estado del curso', example: 'Activo' })
+  status: string;
 
-    @IsBoolean()
-    @IsNotEmpty()
-    @ApiProperty({description: 'Requiere eficiencia', example: 'true'})
-    req_efficiency: boolean;
+  @IsBoolean()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Requiere eficiencia', example: 'true' })
+  req_efficiency: boolean;
 
-    @IsNumber()
-    @IsNotEmpty()
-    @ApiProperty({description: 'Id de la competencia', example: 1})
-    competences: number;
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Id de la competencia', example: 1 })
+  competences: number;
 
-    @IsNumber()
-    @IsNotEmpty()
-    @ApiProperty({description: 'Id del objetivo de entrenamiento', example: 1})
-    traininGoal: number;
-
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Id del objetivo de entrenamiento', example: 1 })
+  traininGoal: number;
 }
 
-export class UpdateCourseDto extends PartialType(CourseDto){
-
-}
+export class UpdateCourseDto extends PartialType(CourseDto) {}

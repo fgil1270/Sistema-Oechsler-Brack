@@ -11,7 +11,9 @@ describe('EmployeeIncidenceController', () => {
       providers: [EmployeeIncidenceService],
     }).compile();
 
-    controller = module.get<EmployeeIncidenceController>(EmployeeIncidenceController);
+    controller = module.get<EmployeeIncidenceController>(
+      EmployeeIncidenceController,
+    );
   });
 
   it('should be defined', () => {
