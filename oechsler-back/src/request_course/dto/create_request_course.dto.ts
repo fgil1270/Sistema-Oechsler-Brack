@@ -142,16 +142,6 @@ export class RequestCourseAssignmentDto {
 
   @IsNotEmpty()
   @IsString()
-  @ApiProperty({ description: 'Hora de inicio' })
-  timeStart: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty({ description: 'Hora de fin' })
-  timeEnd: string;
-
-  @IsNotEmpty()
-  @IsString()
   @ApiProperty({ description: 'Fecha de inicio' })
   dateStart: string;
 
@@ -164,4 +154,10 @@ export class RequestCourseAssignmentDto {
   @IsNumber()
   @ApiProperty({ description: 'Costo total' })
   totalCost: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({ description: 'id del instructor' })
+  teacherId: number;
+
 }

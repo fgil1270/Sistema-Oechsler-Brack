@@ -380,7 +380,7 @@ export class EmployeeIncidenceService {
     const from = format(new Date(data.start), 'yyyy-MM-dd')
     const to = format(new Date(data.end), 'yyyy-MM-dd')
     const tipo = '';
-
+    
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -403,6 +403,7 @@ export class EmployeeIncidenceService {
 
     let i = 0;
     const newIncidences = [];
+    
 
     if (incidences) {
       incidences.forEach((incidence) => {
@@ -483,7 +484,7 @@ export class EmployeeIncidenceService {
     const date = startDate.getUTCDate();
     const month = startDate.getMonth() + 1;
     const startDateFormat = format(new Date(year + '-' + month + '-' + date) , 'yyyy-MM-dd');
-    const to = format(new Date(data.end), 'yyyy-MM-dd');
+    const to = new Date(data.end + ' 00:00:00');
 
     //datos del empleado
     const employee = await this.employeeService.findOne(data.ids);

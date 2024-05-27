@@ -9,6 +9,8 @@ import { DepartmentsModule } from '../departments/departments.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { CompetenceModule } from '../competence/competence.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module'; 
+import { SupplierModule } from '../supplier/supplier.module';
+import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidence.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
     EmployeesModule,
     CompetenceModule,
     OrganigramaModule,
+    SupplierModule,
+    EmployeeIncidenceModule,
   ],
   providers: [RequestCourseService],
   controllers: [RequestCourseController],

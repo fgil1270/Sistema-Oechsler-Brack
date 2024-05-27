@@ -16,7 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseService } from '../service/request_course.service';
-import { RequestCourseDto, RequestCourseAssignmentDto } from '../dto/create_request_course.dto';
+import { RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto } from '../dto/create_request_course.dto';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Views } from '../../auth/decorators/views.decorator';
@@ -82,8 +82,9 @@ export class RequestCourseController {
   @Put(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: Partial<RequestCourse>,
+    @Body() data: UpdateRequestCourseDto,
+    @CurrentUser() user: any,
   ) {
-    return this.requestCourseService.update(id, data);
+    return this.requestCourseService.update(id, data, user);
   }
 }

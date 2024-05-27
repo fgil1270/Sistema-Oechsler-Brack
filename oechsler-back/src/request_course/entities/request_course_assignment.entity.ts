@@ -27,12 +27,6 @@ export class RequestCourseAssignment {
   @Column({ type: 'set', enum: ['L', 'M', 'X', 'J', 'V', 'S', 'D'] })
   day: string;
 
-  @Column({ type: 'time', default: null })
-  time_start: string;
-
-  @Column({ type: 'time', default: null })
-  time_end: string;
-
   @Column({ type: 'text', default: null })
   comment: string;
 
@@ -45,10 +39,7 @@ export class RequestCourseAssignment {
   @DeleteDateColumn()
   deleted_at: Date;
 
-  @ManyToMany(
-    () => RequestCourse,
-    (requestCourse) => requestCourse.requestCourseAssignment,
-  )
+  @ManyToMany( () => RequestCourse, (requestCourse) => requestCourse.requestCourseAssignment )
   @JoinTable({
     joinColumn: {
       name: 'requestCourseAssignmentId',
