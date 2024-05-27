@@ -58,6 +58,11 @@ export class RequestCourseDto {
 
   @IsOptional()
   @IsString()
+  @ApiProperty({ description: 'Lugar del curso(Interno, Externo)' })
+  place: string;
+
+  @IsOptional()
+  @IsString()
   @ApiProperty({ description: 'Fecha tentativa de inicio' })
   tentativeDateStart: string;
 
