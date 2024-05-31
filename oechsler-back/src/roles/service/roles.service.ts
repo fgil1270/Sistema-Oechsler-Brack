@@ -33,7 +33,7 @@ export class RolesService {
     });
 
     if (roleExist?.id) {
-      throw new BadRequestException(`El Departamento ya existe`);
+      throw new BadRequestException(`El Role ya existe`);
     }
     const role = await this.roleRepository.create(createRoleDto);
 

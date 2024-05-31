@@ -307,7 +307,7 @@ export class OrganigramaService {
 
       return employees;
     } catch (error) {
-      console.log(error.message);
+      return error;
     }
   }
 
@@ -320,7 +320,7 @@ export class OrganigramaService {
     if (!org) {
       throw new NotFoundException(`Organigrama #${id} not found`);
     }
-    console.log(updateOrganigramaDto)
+    
     
     const leader = await this.employeeService.findOne(
       updateOrganigramaDto.leader,

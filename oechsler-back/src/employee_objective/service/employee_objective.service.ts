@@ -194,6 +194,7 @@ export class EmployeeObjetiveService {
             cost: 0,
             currency: '',
             type: '',
+            place: null,
             tentativeDateStart: '',
             tentativeDateEnd: '',
             approved_at_leader: '',
@@ -241,6 +242,7 @@ export class EmployeeObjetiveService {
             cost: 0,
             currency: '',
             type: '',
+            place: null,
             tentativeDateStart: '',
             tentativeDateEnd: '',
             approved_at_leader: '',
@@ -684,7 +686,10 @@ export class EmployeeObjetiveService {
     const evaluatedBy = await this.employeeService.findOne(user.idEmployee);
 
     try {
-      //si ya existe la asignacion de objetivos solo asigna las competencias por puesto
+      //si ya existe la asignacion de objetivos se asignan
+      //objetivos
+      //cursos(dnc)
+      //competencias
       if (currData.id) {
         saveDefinitionObjetive = await this.definitionObjectiveAnnual.findOne({
           relations: {
@@ -725,6 +730,7 @@ export class EmployeeObjetiveService {
             definitionObjectiveAnnual: saveDefinitionObjetive,
             course: course,
           });
+          
 
           const dncCourse = await this.dncCourse.save(createDncCourse);
 
@@ -739,6 +745,7 @@ export class EmployeeObjetiveService {
             cost: 0,
             currency: 'MXN',
             type: null,
+            place: null,
             tentativeDateStart: null,
             tentativeDateEnd: null,
             approved_at_leader: null,
@@ -753,6 +760,7 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
           };
+          
 
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
@@ -784,13 +792,14 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: dncManual.goal,
-            employeeId: saveDefinitionObjetive.employee.id,
+            employeeId: [saveDefinitionObjetive.employee.id],
             traininReason: dncManual.train,
             priority: dncManual.priority,
             efficiencyPeriod: null,
             cost: 0,
             currency: 'MXN',
             type: null,
+            place: null,
             tentativeDateStart: null,
             tentativeDateEnd: null,
             approved_at_leader: null,
@@ -805,6 +814,7 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
           };
+          
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
             user,
@@ -907,6 +917,7 @@ export class EmployeeObjetiveService {
             cost: 0,
             currency: null,
             type: null,
+            place: null,
             tentativeDateStart: null,
             tentativeDateEnd: null,
             approved_at_leader: null,
@@ -959,6 +970,7 @@ export class EmployeeObjetiveService {
             cost: 0,
             currency: null,
             type: null,
+            place: null,
             tentativeDateStart: null,
             tentativeDateEnd: null,
             approved_at_leader: null,

@@ -40,7 +40,7 @@ export class MailService {
         return true;
       })
       .catch((err) => {
-        console.log('error:', err);
+        
         return true;
       });
   }
@@ -89,7 +89,7 @@ export class MailService {
         return true;
       })
       .catch((err) => {
-        console.log('error:', err);
+        
         return true;
       });
   }
@@ -112,7 +112,7 @@ export class MailService {
         return true;
       })
       .catch((err) => {
-        console.log('error:', err);
+        
         return true;
       });
   }
