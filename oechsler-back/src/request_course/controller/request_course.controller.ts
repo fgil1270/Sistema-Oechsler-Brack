@@ -16,7 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseService } from '../service/request_course.service';
-import { RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto } from '../dto/create_request_course.dto';
+import { RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto, UpdateAssignmentCourseDto } from '../dto/create_request_course.dto';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Views } from '../../auth/decorators/views.decorator';
@@ -31,12 +31,6 @@ export class RequestCourseController {
   @Post()
   async create(@Body() currData: RequestCourseDto, @CurrentUser() user: any) {
     return this.requestCourseService.create(currData, user);
-  }
-
-  @ApiOperation({ summary: 'Crear asignacion de curso' })
-  @Post('assignment')
-  async createAssignment(@Body() currData: RequestCourseAssignmentDto, @CurrentUser() user: any) {
-    return this.requestCourseService.createAssignmentCourse(currData);
   }
 
   @ApiOperation({ summary: 'Obtener solicitudes de curso' })
@@ -65,7 +59,7 @@ export class RequestCourseController {
     summary: 'Realizar busqueda por algun campo de solicitud de curso',
   })
   @Get('/find/by')
-  async findRequestCourseBy(@Query() query: Partial<RequestCourse>) {
+  async findRequestCourseBy(@Query() query: Partial<RequestCourseDto>) {
     return this.requestCourseService.findRequestCourseBy(query);
   }
 
@@ -87,4 +81,27 @@ export class RequestCourseController {
   ) {
     return this.requestCourseService.update(id, data, user);
   }
+}
+
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Solicitud de curso')
+@Controller('assignment_course')
+export class AssignmentCourseController {
+  constructor(private requestCourseService: RequestCourseService) {}
+
+  @ApiOperation({ summary: 'Crear asignacion de curso' })
+  @Views('asignar_curso')
+  @Post()
+  async createAssignment(@Body() currData: RequestCourseAssignmentDto, @CurrentUser() user: any) {
+    return this.requestCourseService.createAssignmentCourse(currData);
+  }
+
+  @ApiOperation({ summary: 'Buscar Asignación de curso por algun parametro' })
+  @Get()
+  async getAssignmentBy(@Query() currData: UpdateAssignmentCourseDto, @CurrentUser() user: any) {
+    
+    return this.requestCourseService.getAssignmentBy(currData);
+  }
+
+
 }

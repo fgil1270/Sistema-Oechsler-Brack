@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RequestCourseController } from './controller/request_course.controller';
+import { RequestCourseController, AssignmentCourseController } from './controller/request_course.controller';
 import { RequestCourse } from './entities/request_course.entity';
 import { RequestCourseAssignment } from './entities/request_course_assignment.entity';
 import { RequestCourseService } from './service/request_course.service';
@@ -24,7 +24,7 @@ import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidenc
     EmployeeIncidenceModule,
   ],
   providers: [RequestCourseService],
-  controllers: [RequestCourseController],
+  controllers: [RequestCourseController, AssignmentCourseController],
   exports: [RequestCourseService],
 })
 export class RequestCourseModule {}

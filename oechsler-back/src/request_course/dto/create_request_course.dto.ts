@@ -127,7 +127,12 @@ export class RequestCourseDto {
   evaluation_tool: string;
 }
 
-export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {}
+export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Evitar Aprobación' })
+  avoidApprove: boolean;
+}
 
 export class RequestCourseAssignmentDto {
   @IsNotEmpty()
@@ -157,12 +162,28 @@ export class RequestCourseAssignmentDto {
 
   @IsNotEmpty()
   @IsNumber()
-  @ApiProperty({ description: 'Costo total' })
-  totalCost: number;
-
-  @IsNotEmpty()
-  @IsNumber()
   @ApiProperty({ description: 'id del instructor' })
   teacherId: number;
 
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Tipo de curso (Interno, Externo)' })
+  type: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Lugar del curso (Interno, Externo)' })
+  place: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Estatus del curso' })
+  status: string;
+
 }
+
+export class UpdateAssignmentCourseDto extends PartialType(RequestCourseAssignmentDto) {
+
+}
+
+
