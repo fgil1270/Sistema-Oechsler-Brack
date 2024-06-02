@@ -134,4 +134,12 @@ export class VacationsReportController {
       return this.employeesService.vacationReport(data, user);
     }
   }
+
+  @ApiOperation({ summary: 'Vacaciones por empleado' })
+  @Get(':id')
+  vacationByEmployee(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+   
+    return this.employeesService.vacationByEmployee(id);
+    
+  }
 }
