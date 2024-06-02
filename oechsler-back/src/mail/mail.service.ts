@@ -98,6 +98,7 @@ export class MailService {
     subject: string,
     mailData: MailData,
     to: string[],
+    
   ) {
     await this.mailerService
       .sendMail({

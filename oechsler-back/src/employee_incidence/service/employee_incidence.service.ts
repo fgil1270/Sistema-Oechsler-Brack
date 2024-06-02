@@ -19,12 +19,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { format } from 'date-fns';
 import * as moment from 'moment';
 import ical, {
+  ICalCalendar,
   ICalAttendee,
   ICalAttendeeStatus,
   ICalCalendarMethod,
   ICalEventBusyStatus,
   ICalEventStatus,
+  ICalEvent,
 } from 'ical-generator';
+import * as fs from 'fs';
+import * as leerCal from 'node-ical';
 
 import {
   CreateEmployeeIncidenceDto,
@@ -43,6 +47,7 @@ import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
+
 
 @Injectable()
 export class EmployeeIncidenceService {
@@ -925,133 +930,150 @@ export class EmployeeIncidenceService {
     return dataEmployee;
   }
 
-  async update(
-    id: number,
-    updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto,
-    user: any,
-  ) {
-    const employeeIncidence = await this.employeeIncidenceRepository.findOne({
-      where: {
-        id: id,
-      },
-      relations: {
-        employee: true,
-        incidenceCatologue: true,
-        dateEmployeeIncidence: true,
-      },
-    });
-
-    const userAutoriza = await this.employeeService.findOne(user.idEmployee);
-
-    if (!employeeIncidence) {
-      throw new NotFoundException('No se encontro la incidencia');
-    }
-    const to = [];
-    const emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
-    const lideres = await this.organigramaService.leaders(employeeIncidence.employee.id);
-    for (let index = 0; index < lideres.orgs.length; index++) {
-      const lider = lideres.orgs[index];
-      const userLider = await this.userService.findByIdEmployee(
-        lider.leader.id,
-      );
-      if (userLider) {
-        to.push(userLider.user.email);
-      }
-    }
-    if (emailUser) {
-      to.push(emailUser.user.email);
-    }
-
-    let subject = '';
-    let mailData: MailData;
-
-    const calendar = ical();
-
-    if (updateEmployeeIncidenceDto.status == 'Autorizada') {
-      employeeIncidence.date_aproved_leader = new Date();
-      employeeIncidence.leader = userAutoriza.emp;
-      //ENVIO DE CORREO
-      subject = `${employeeIncidence.incidenceCatologue.name} / ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} / (-)`;
-      mailData = {
-        employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
-        employeeNumber: employeeIncidence.employee.employee_number,
-        incidence: employeeIncidence.incidenceCatologue.name,
-        efectivos: 0,
-        totalHours: employeeIncidence.total_hour,
-        dia: ``,
-        employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
-      };
-
-      calendar.method(ICalCalendarMethod.REQUEST);
-      calendar.timezone('America/Mexico_City');
-      calendar.createEvent({
-        start: new Date(
-          employeeIncidence.dateEmployeeIncidence[0].date +
-            ' ' +
-            employeeIncidence.start_hour,
-        ),
-        end: new Date(
-          employeeIncidence.dateEmployeeIncidence[
-            employeeIncidence.dateEmployeeIncidence.length - 1
-          ].date +
-            ' ' +
-            employeeIncidence.end_hour,
-        ),
-        allDay: true,
-        timezone: 'America/Mexico_City',
-        summary: subject,
-        description: 'It works ;)',
-        url: 'https://example.com',
-        busystatus: ICalEventBusyStatus.FREE,
-        //status: ICalEventStatus.CONFIRMED,
-        attendees: [
-          {
-            email: to[1],
-            status: ICalAttendeeStatus.ACCEPTED,
-          },
-          {
-            email: to[0],
-            rsvp: true,
-            status: ICalAttendeeStatus.ACCEPTED,
-          },
-        ],
+  async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, user: any) {
+    
+    try {
+      const employeeIncidence = await this.employeeIncidenceRepository.findOne({
+        where: {
+          id: id,
+        },
+        relations: {
+          employee: true,
+          incidenceCatologue: true,
+          dateEmployeeIncidence: true,
+        },
       });
-      //se envia correo
-      const mail = await this.mailService.sendEmailAutorizaIncidence(
-        subject,
-        mailData,
-        to,
-        calendar,
-      );
+  
+      const userAutoriza = await this.employeeService.findOne(user.idEmployee);
+  
+      if (!employeeIncidence) {
+        throw new NotFoundException('No se encontro la incidencia');
+      }
+      const to = [];
+      const emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
+      const lideres = await this.organigramaService.leaders(employeeIncidence.employee.id);
+      for (let index = 0; index < lideres.orgs.length; index++) {
+        const lider = lideres.orgs[index];
+        const userLider = await this.userService.findByIdEmployee(
+          lider.leader.id,
+        );
+        if (userLider) {
+          to.push(userLider.user.email);
+        }
+      }
+      if (emailUser) {
+        to.push(emailUser.user.email);
+      }
+  
+      let subject = '';
+      let mailData: MailData;
+  
+      const calendar = ical();
+      console.log("entra")
+      if (updateEmployeeIncidenceDto.status == 'Autorizada') {
+        employeeIncidence.date_aproved_leader = new Date();
+        employeeIncidence.leader = userAutoriza.emp;
+        //ENVIO DE CORREO
+        subject = `${employeeIncidence.incidenceCatologue.name} / ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} / (-)`;
+        mailData = {
+          employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
+          employeeNumber: employeeIncidence.employee.employee_number,
+          incidence: employeeIncidence.incidenceCatologue.name,
+          efectivos: 0,
+          totalHours: employeeIncidence.total_hour,
+          dia: ``,
+          employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
+        };
+  
+        calendar.method(ICalCalendarMethod.REQUEST);
+        calendar.timezone('America/Mexico_City');
+        calendar.createEvent({
+          start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
+          end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour),
+          allDay: true,
+          timezone: 'America/Mexico_City',
+          summary: subject,
+          description: 'It works ;)',
+          url: 'https://example.com',
+          busystatus: ICalEventBusyStatus.FREE,
+          //status: ICalEventStatus.CONFIRMED,
+          attendees: [
+            {
+              email: to[1],
+              status: ICalAttendeeStatus.ACCEPTED,
+            },
+            {
+              email: to[0],
+              rsvp: true,
+              status: ICalAttendeeStatus.ACCEPTED,
+            },
+          ],
+        });
+        let day = new Date();
+        // Generar archivo .ics y guardar en la ruta especificada
+        const icsFilePath = 'documents/calendar/empleados';
+        const icsFileName = `${employeeIncidence.employee.employee_number}_${employeeIncidence.id}_${day.getFullYear()}${day.getMonth()}${day.getDate()}${day.getHours()}${day.getMinutes()}${day.getSeconds()}.ics`;
+        const icsFileContent = calendar.toString();
+  
+        // Guardar archivo .ics
+        fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent);
+  
+        // Continuar con el resto del código...
+  
+        //se envia correo
+        const mail = await this.mailService.sendEmailAutorizaIncidence(
+          subject,
+          mailData,
+          to,
+          calendar,
+        );
+      }else if (updateEmployeeIncidenceDto.status == 'Rechazada') {
+        employeeIncidence.date_canceled = new Date();
+        employeeIncidence.canceledBy = userAutoriza.emp;
+        //ENVIO DE CORREO
+        subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`;
+        mailData = {
+          employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
+          employeeNumber: Number(employeeIncidence.employee.employee_number),
+          incidence: employeeIncidence.incidenceCatologue.name,
+          efectivos: 0,
+          totalHours: employeeIncidence.total_hour,
+          dia: ``,
+          employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
+        };
+  
+        const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
+        const jcalData = leerCal.parseICS(icsData);
+        const c = ical();
+        
+        const vcalendar = jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] as leerCal.VEvent;
+        
+        vcalendar.status = 'CANCELLED';
+        
+        jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar;
+        
+
+        
+        
+
+        //se envia correo
+        const mail = await this.mailService.sendEmailRechazaIncidence(
+          subject,
+          mailData,
+          to,
+          
+        );
+      }
+      return;
+      employeeIncidence.status = updateEmployeeIncidenceDto.status;
+      return await this.employeeIncidenceRepository.save(employeeIncidence);
+    } catch (error) {
+      console.log(error)
+      return error;
     }
+    
 
-    if (updateEmployeeIncidenceDto.status == 'Rechazada') {
-      employeeIncidence.date_canceled = new Date();
-      employeeIncidence.canceledBy = userAutoriza.emp;
-      //ENVIO DE CORREO
-      subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`;
-      mailData = {
-        employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
-        employeeNumber: Number(employeeIncidence.employee.employee_number),
-        incidence: employeeIncidence.incidenceCatologue.name,
-        efectivos: 0,
-        totalHours: employeeIncidence.total_hour,
-        dia: ``,
-        employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
-      };
-
-      //se envia correo
-      const mail = await this.mailService.sendEmailRechazaIncidence(
-        subject,
-        mailData,
-        to,
-      );
-    }
-
-    employeeIncidence.status = updateEmployeeIncidenceDto.status;
-    return await this.employeeIncidenceRepository.save(employeeIncidence);
-
-    //return await this.employeeIncidenceRepository.update(employeeIncidence.id, employeeIncidence);
+    
   }
 
   async remove(id: number) {

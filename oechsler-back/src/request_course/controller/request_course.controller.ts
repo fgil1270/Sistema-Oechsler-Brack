@@ -90,7 +90,6 @@ export class AssignmentCourseController {
   constructor(private requestCourseService: RequestCourseService) {}
 
   @ApiOperation({ summary: 'Crear asignacion de curso' })
-  @Views('asignar_curso')
   @Post()
   async createAssignment(@Body() currData: RequestCourseAssignmentDto, @CurrentUser() user: any) {
     return this.requestCourseService.createAssignmentCourse(currData);
@@ -101,6 +100,14 @@ export class AssignmentCourseController {
   async getAssignmentBy(@Query() currData: UpdateAssignmentCourseDto, @CurrentUser() user: any) {
     
     return this.requestCourseService.getAssignmentBy(currData);
+  }
+
+  @ApiOperation({ summary: 'Acceso a la vista asignación y seguimiento de cursos' })
+  @Views('asignar_curso')
+  @Get('access')
+  async getAccessAssignmentCourse(@CurrentUser() user: any) {
+    
+    return true
   }
 
 
