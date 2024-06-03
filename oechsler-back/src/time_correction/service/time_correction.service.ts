@@ -144,30 +144,21 @@ export class TimeCorrectionService {
     const to = format(new Date(data.fecha_fin), 'yyyy-MM-dd 23:59:59');
 
     //se genera un arreglo con los dias entre el rango de fechas
-    for (
-      let x = new Date(from);
-      x <= new Date(to);
-      x = new Date(x.setDate(x.getDate() + 1))
-    ) {
+    for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
       diasGenerados.push(format(x, 'yyyy-MM-dd'));
     }
 
     //se recorre el arreglo de empleados
     //employees.emps
+    let i = 0;
     for (const iterator of organigrama) {
       const eventDays = [];
       let totalHrsRequeridas = 0;
       let totalHrsTrabajadas = 0;
       const totalHrsExtra = 0;
 
-      let i = 0;
-
       //se recorre el arreglo de dias generados
-      for (
-        let index = new Date(from);
-        index <= new Date(to);
-        index = new Date(index.setDate(index.getDate() + 1))
-      ) {
+      for ( let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
         const dataDate = {
           start: index,
           end: index,
@@ -181,7 +172,9 @@ export class TimeCorrectionService {
                 id: iterator.id,
               },
             },
-          });
+        });
+
+        
         //se verifica si el dia es festivo
         const dayCalendar = await this.calendarService.findByDate(index as any);
 
@@ -202,14 +195,13 @@ export class TimeCorrectionService {
         );
 
         //se obtienen las incidencias del dia
-        const incidencias =
-          await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
-            start: format(index, 'yyyy-MM-dd 00:00:00') as any,
-            end: format(index, 'yyyy-MM-dd 23:59:00') as any,
-            status: ['Autorizada'],
-            ids: `${iterator.id}`,
-            code: ['Vac', 'PCG', 'PSS', 'S', 'PCGS', 'Inc'],
-          });
+        const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
+          start: format(index, 'yyyy-MM-dd 00:00:00') as any,
+          end: format(index, 'yyyy-MM-dd 23:59:00') as any,
+          status: ['Autorizada'],
+          ids: `${iterator.id}`,
+          code: ['Vac', 'PCG', 'PSS', 'S', 'PCGS', 'Inc'],
+        });
 
         if (employeeShif.events.length == 0) {
           continue;
@@ -455,9 +447,12 @@ export class TimeCorrectionService {
 
         const date = new Date();
         date.setHours(hours);
-        date.setMinutes(minutes);
+        date.setMinutes(minutes); 
 
-        if (diffDate >= diffTimeShift - 2 && diffDate <= diffTimeShift + 2) {
+
+        //si el total de horas registradas en menor al total de horas por dia -3
+        //o el total de horas registradas es mayor al total de horas por dia +3
+        if (diffDate >= diffTimeShift - 3 && diffDate <= diffTimeShift + 3) {
           continue;
         }
 

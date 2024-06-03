@@ -40,7 +40,7 @@ export class MailService {
         return true;
       })
       .catch((err) => {
-        console.log('error:', err);
+        
         return true;
       });
   }
@@ -89,7 +89,7 @@ export class MailService {
         return true;
       })
       .catch((err) => {
-        console.log('error:', err);
+        
         return true;
       });
   }
@@ -98,6 +98,7 @@ export class MailService {
     subject: string,
     mailData: MailData,
     to: string[],
+    
   ) {
     await this.mailerService
       .sendMail({
@@ -112,7 +113,7 @@ export class MailService {
         return true;
       })
       .catch((err) => {
-        console.log('error:', err);
+        
         return true;
       });
   }
@@ -124,7 +125,7 @@ export class MailService {
       `../../documents/temp/objetivos/${pdfPath}`,
     );
 
-    //console.log(newpath);
+    
     try {
       await this.mailerService.sendMail({
         to: to,

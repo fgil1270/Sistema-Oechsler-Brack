@@ -86,4 +86,19 @@ export class SupplierService {
 
     return teacher;
   }
+
+  //buscar un instructor por id
+  async findTeacherById(id: number) {
+ 
+    const teacher = await this.teacherRepository.findOne({
+      relations: {
+        supplier: true,
+      },
+      where: {
+        id: id,
+      },
+    });
+
+    return teacher;
+  }
 }

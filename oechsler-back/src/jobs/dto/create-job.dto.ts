@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsString, IsBoolean, IsOptional } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateJobDto {
@@ -12,14 +12,14 @@ export class CreateJobDto {
   @ApiProperty({ description: 'Nombre del puesto' })
   cv_name: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsBoolean()
   @ApiProperty({
     description: 'Indica si el puesto es visuble para el lider de turno',
   })
   shift_leader: boolean;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsBoolean()
   @ApiProperty({ description: 'Indica si el puesto es visible por plc' })
   plc: boolean;

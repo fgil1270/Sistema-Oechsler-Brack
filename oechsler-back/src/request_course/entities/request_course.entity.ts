@@ -43,6 +43,9 @@ export class RequestCourse {
   @Column({ type: 'varchar', length: 255, default: null })
   type: string;
 
+  @Column({ type: 'varchar', length: 255, default: null })
+  place: string;  
+
   @Column({ type: 'timestamp', default: null })
   tentative_date_start: Date;
 
@@ -107,9 +110,6 @@ export class RequestCourse {
   @JoinTable()
   gm: Employee;
 
-  @OneToMany(() => RequestCourseAssignment, (post) => post.requestCourse)
-  requestCourseAssignment: RequestCourseAssignment[];
-
   @Column({ type: 'varchar', length: 255, default: null })
   origin: string;
 
@@ -124,5 +124,7 @@ export class RequestCourse {
     () => RequestCourseAssignment,
     (requestCourseAssignment) => requestCourseAssignment.requestCourse,
   )
-  RequestCourseAssignment: RequestCourseAssignment[];
+  requestCourseAssignment: RequestCourseAssignment[];
+
+
 }

@@ -76,7 +76,7 @@ export class EmployeesController {
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     return this.employeesService.readExcel(file);
     /* return this.employeesService.readExcel(file).catch((err) => {
-      console.log(err);
+      
       return {
         status: HttpStatus.BAD_REQUEST,
         message: err.message
@@ -133,5 +133,13 @@ export class VacationsReportController {
     } else if (data.action == 'vacation_report') {
       return this.employeesService.vacationReport(data, user);
     }
+  }
+
+  @ApiOperation({ summary: 'Vacaciones por empleado' })
+  @Get(':id')
+  vacationByEmployee(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+   
+    return this.employeesService.vacationByEmployee(id);
+    
   }
 }
