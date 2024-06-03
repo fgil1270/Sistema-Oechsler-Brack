@@ -1041,8 +1041,9 @@ export class EmployeeIncidenceService {
           dia: ``,
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
-  
-        const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
+        
+        //codigo para cancelar incidencia en outlook
+        /* const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
         const jcalData = leerCal.parseICS(icsData);
         const c = ical();
         
@@ -1050,7 +1051,7 @@ export class EmployeeIncidenceService {
         
         vcalendar.status = 'CANCELLED';
         
-        jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar;
+        jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar; */
         
 
         //se envia correo
