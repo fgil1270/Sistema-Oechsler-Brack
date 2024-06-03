@@ -969,7 +969,7 @@ export class EmployeeIncidenceService {
       let mailData: MailData;
   
       const calendar = ical();
-      console.log("entra")
+  
       if (updateEmployeeIncidenceDto.status == 'Autorizada') {
         employeeIncidence.date_aproved_leader = new Date();
         employeeIncidence.leader = userAutoriza.emp;
@@ -1053,9 +1053,6 @@ export class EmployeeIncidenceService {
         jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar;
         
 
-        
-        
-
         //se envia correo
         const mail = await this.mailService.sendEmailRechazaIncidence(
           subject,
@@ -1064,11 +1061,11 @@ export class EmployeeIncidenceService {
           
         );
       }
-      return;
+      
       employeeIncidence.status = updateEmployeeIncidenceDto.status;
       return await this.employeeIncidenceRepository.save(employeeIncidence);
     } catch (error) {
-      console.log(error)
+      
       return error;
     }
     
@@ -1145,7 +1142,7 @@ export class EmployeeIncidenceService {
       const eventDays = [];
       let totalHrsRequeridas = 0;
       let totalHrsTrabajadas = 0;
-      let totalMinutisTrabados = 0;
+      let totalMinutisTrabados:number = 0;
 
       for (
         let x = new Date(from);
@@ -1226,18 +1223,30 @@ export class EmployeeIncidenceService {
               id: incidence.id
             }
           });
+          //se obtiene las horas y minutos de la incidencia
+          
+
+
+
+          
+          let horaMinIncidencia = Number(currentIncidence.total_hour);
+          let hrs = Math.floor(horaMinIncidencia / 60);
+          let mins = horaMinIncidencia % 60;
+          //console.log(`Horas: ${hrs}, Minutos: ${mins}`);
+          totalMinutisTrabados += Number(mins) % 60;
+
+          if (totalMinutisTrabados >= 60) {
+            modMin = totalMinutisTrabados % 60;
+            divMin = totalMinutisTrabados / 60;
+            totalHrsTrabajadas += Math.floor(divMin);
+            totalMinutisTrabados = modMin;
+          }
 
           if (incidence.incidenceCatologue.affected_type == 'Sumar horas') {
-            sumaHrsIncidencias += Number(
-              incidence.total_hour /
-                currentIncidence.dateEmployeeIncidence.length,
-            );
+            sumaHrsIncidencias += Number(hrs / currentIncidence.dateEmployeeIncidence.length);
           }
           if (incidence.incidenceCatologue.affected_type == 'Restar horas') {
-            sumaHrsIncidencias -= Number(
-              incidence.total_hour /
-                currentIncidence.dateEmployeeIncidence.length,
-            );
+            sumaHrsIncidencias -= Number(hrs / currentIncidence.dateEmployeeIncidence.length);
           }
         });
 
@@ -1302,7 +1311,7 @@ export class EmployeeIncidenceService {
           //se obtiene la diferencia en milisegundos
           diffHr = secondHr.diff(firstHr, 'hours');
           diffMin = secondHr.diff(firstHr, 'minutes');
-          totalMinutisTrabados += diffMin % 60;
+          totalMinutisTrabados += Number(diffMin) % 60;
 
           if (totalMinutisTrabados >= 60) {
             modMin = totalMinutisTrabados % 60;
@@ -1331,8 +1340,14 @@ export class EmployeeIncidenceService {
               : '',
         });
 
+        
+
         totalHrsTrabajadas += Number(diffHr) > 0 ? Number(diffHr) : 0;
         totalHrsTrabajadas += sumaHrsIncidencias;
+        if(newArray[i].employee_number == 2 && format(dia, 'yyyy-MM-dd') == '2024-05-28'){
+          console.log(newArray[i].employee_number)
+          console.log(totalHrsTrabajadas)
+        }
       }
 
       registros.push({
@@ -1349,6 +1364,10 @@ export class EmployeeIncidenceService {
         horas_objetivo: totalHrsRequeridas.toFixed(2),
         horasTrabajadas: totalHrsTrabajadas + '.' + totalMinutisTrabados, //total hrs trabajadas
       });
+
+      if(newArray[i].employee_number == 2){
+        console.log(registros)
+      }
 
       //registros.concat(eventDays);
     }
