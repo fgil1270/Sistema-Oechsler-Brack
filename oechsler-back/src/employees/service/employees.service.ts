@@ -40,7 +40,7 @@ export class EmployeesService {
     if (file.mimetype === 'text/plain') {
       //primera opción
       /*  var content =  readFileSync(`./documents/temp/emp/${file.filename}`, 'utf8');
-      console.log(content[0]); */
+      
 
       const objRead = JSON.parse(
         readFileSync(`./documents/temp/emp/${file.filename}`, {
@@ -53,7 +53,7 @@ export class EmployeesService {
                  throw err;
              }
              content = data;
-             console.log(data);
+             
          }); */
 
       //opcion 2
@@ -74,7 +74,7 @@ export class EmployeesService {
               dataDemo1 += '\n' +  await readDemo1('url')
       
               await writeDemo2(dataDemo1)
-              console.log(dataDemo1)
+              
           } catch (error) {
               console.error(error);
           }

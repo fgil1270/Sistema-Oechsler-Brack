@@ -233,6 +233,11 @@ export class OrganigramaService {
       const isAdmin = user.roles.some(
         (role) => role.name === 'Admin' || role.name === 'RH',
       );
+
+      const isJefeTurno = user.roles.some(
+        (role) => role.name === 'Jefe de Turno',
+      );
+
       const employees = [];
       if (isAdmin) {
         const levelOne = await this.employeeService.findAll();
@@ -263,10 +268,50 @@ export class OrganigramaService {
           },
         },
       });
+      
+      let visibleJefeTurno = await this.organigramaRepository.find({
+        relations: {
+          employee: {
+            department: true,
+            job: true,
+            payRoll: true,
+            vacationProfile: true,
+            employeeProfile: true,
+          },
+          leader: true,
+        },
+        where: {
+          employee: {
+            job: {
+              shift_leader : true
+            }
+          }
+        },
+        order: {
+          employee: {
+            name: 'ASC',
+            employee_number: 'ASC',
+          },
+        },
+      });
 
       levelOne.forEach((element) => {
         employees.push(element.employee);
       });
+      
+      //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
+      if(isJefeTurno){
+        let test: any[] = [];
+        let test2: any[] = [];
+        visibleJefeTurno.forEach((element) => {
+          test.push(element.employee);
+        });
+        test2 = test.filter((element) => !employees.some((emp) => emp.id === element.id));
+        employees.push(...test2);
+        
+      }
+
+      
 
       if (data.type == 'Normal') {
         const userLogin = await this.employeeService.findOne(user.idEmployee);

@@ -76,7 +76,7 @@ export class EmployeesController {
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     return this.employeesService.readExcel(file);
     /* return this.employeesService.readExcel(file).catch((err) => {
-      console.log(err);
+      
       return {
         status: HttpStatus.BAD_REQUEST,
         message: err.message

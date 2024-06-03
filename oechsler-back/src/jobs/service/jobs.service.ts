@@ -97,25 +97,32 @@ export class JobsService {
       },
     });
 
-    const jobCodeExist = await this.jobRepository.findOne({
-      where: {
-        cv_code: Like(`%${updateJobDto.cv_code}%`),
-      },
-    });
+    
+    //si el codigo es distinto verifica que no exista otro codigo igual
+    if(job.cv_code != updateJobDto.cv_code){
+      const jobCodeExist = await this.jobRepository.findOne({
+        where: {
+          cv_code: Like(`%${updateJobDto.cv_code}%`),
+        },
+      });
 
-    if (jobCodeExist?.id) {
-      throw new BadRequestException(`El Codigo ya existe`);
+      if (jobCodeExist?.id) {
+        throw new BadRequestException(`El Codigo ya existe`);
+      }
     }
-
-    const jobNameExist = await this.jobRepository.findOne({
-      where: {
-        cv_name: Like(`%${updateJobDto.cv_name}%`),
-      },
-    });
-
-    if (jobNameExist?.id) {
-      throw new BadRequestException(`El Puesto ya existe`);
+    //si el nombre es distinto verifica que no exista otro nombre igual
+    if(job.cv_name != updateJobDto.cv_name){
+      const jobNameExist = await this.jobRepository.findOne({
+        where: {
+          cv_name: Like(`%${updateJobDto.cv_name}%`),
+        },
+      });
+  
+      if (jobNameExist?.id) {
+        throw new BadRequestException(`El Puesto ya existe`);
+      }
     }
+    
 
     return await this.jobRepository.update({ id }, updateJobDto);
   }

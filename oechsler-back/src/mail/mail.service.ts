@@ -125,7 +125,7 @@ export class MailService {
       `../../documents/temp/objetivos/${pdfPath}`,
     );
 
-    //console.log(newpath);
+    
     try {
       await this.mailerService.sendMail({
         to: to,
