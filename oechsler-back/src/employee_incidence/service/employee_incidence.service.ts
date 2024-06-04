@@ -227,7 +227,7 @@ export class EmployeeIncidenceService {
 
         subject = `${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
       }
-      to.push('f.gil@oechsler.mx');
+      
 
       let mailData: MailData = {
         employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
@@ -1011,12 +1011,12 @@ export class EmployeeIncidenceService {
         });
         let day = new Date();
         // Generar archivo .ics y guardar en la ruta especificada
-        const icsFilePath = 'documents/calendar/empleados';
+        /* const icsFilePath = 'documents/calendar/empleados';
         const icsFileName = `${employeeIncidence.employee.employee_number}_${employeeIncidence.id}_${day.getFullYear()}${day.getMonth()}${day.getDate()}${day.getHours()}${day.getMinutes()}${day.getSeconds()}.ics`;
         const icsFileContent = calendar.toString();
   
         // Guardar archivo .ics
-        fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent);
+        fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
   
         // Continuar con el resto del código...
   
@@ -1041,7 +1041,7 @@ export class EmployeeIncidenceService {
           dia: ``,
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
-        
+
         //codigo para cancelar incidencia en outlook
         /* const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
         const jcalData = leerCal.parseICS(icsData);
@@ -1080,6 +1080,7 @@ export class EmployeeIncidenceService {
 
   //report horario flexible
   async reportFlexTime(data: any, userLogin: any) {
+    console.log(data)
     const from = format(new Date(data.start_date), 'yyyy-MM-dd')
     const to = format(new Date(data.end_date), 'yyyy-MM-dd')
     let isAdmin = false;
