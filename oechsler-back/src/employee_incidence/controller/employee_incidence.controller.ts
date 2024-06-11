@@ -179,9 +179,9 @@ export class ReportFlexTimeController {
 
   @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos' })
   @Views('horario_flexible')
-  @Post()
+  @Get()
   reportCompensatoryTime(
-    @Body() report: ReportEmployeeIncidenceDto,
+    @Query() report: ReportEmployeeIncidenceDto,
     @CurrentUser() user: any,
   ) {
     if (report.access == 'true') {

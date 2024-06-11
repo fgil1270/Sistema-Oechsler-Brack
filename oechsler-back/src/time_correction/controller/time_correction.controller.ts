@@ -47,7 +47,7 @@ export class TimeCorrectionController {
     return this.timeCorrectionService.findByEmployee(data, user);
   }
 
-  @ApiOperation({ summary: 'Acceso a la vista corrección de tiempo' })
+  @ApiOperation({ summary: 'Reporte corrección de tiempo' })
   @Get('report')
   correctionTimeReport(@Query() data: any, @CurrentUser() user: any) {
     return this.timeCorrectionService.find(data, user);

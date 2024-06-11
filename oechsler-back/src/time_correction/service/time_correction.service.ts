@@ -199,7 +199,7 @@ export class TimeCorrectionService {
           start: format(index, 'yyyy-MM-dd 00:00:00') as any,
           end: format(index, 'yyyy-MM-dd 23:59:00') as any,
           status: ['Autorizada'],
-          ids: `${iterator.id}`,
+          ids: [`${iterator.id}`],
           code: ['Vac', 'PCG', 'PSS', 'S', 'PCGS', 'Inc'],
         });
 
