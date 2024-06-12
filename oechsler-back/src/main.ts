@@ -6,6 +6,12 @@ import * as expressListRoutes from 'express-list-endpoints';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors(/* {
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Authorization',
+    optionsSuccessStatus: 200
+  }  */);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -22,12 +28,7 @@ async function bootstrap() {
 
   // URL API
   SwaggerModule.setup('docs', app, document);
-  app.enableCors(/* {
-    origin: '*',
-    methods: 'GET, PUT, POST, PATCH, DELETE',
-    allowedHeaders: 'Content-Type, Authorization',
-    optionsSuccessStatus: 200
-  } */);
+  
 
   await app.listen(process.env.PORT);
 

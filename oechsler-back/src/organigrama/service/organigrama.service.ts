@@ -163,11 +163,11 @@ export class OrganigramaService {
     const leader = await this.employeeService.findOne(idLeader);
     const admin = await this.userService.findOne(idUser);
     let isAdmin = false;
-    admin.user.roles.find((role) => role.name === 'Admin')
+    admin.user.roles.find((role) => role.name == 'Admin' || role.name == 'RH')
       ? (isAdmin = true)
       : (isAdmin = false);
-
-    const isRh = false;
+    let isJefeTurno = false;
+    isJefeTurno = admin.user.roles.some( (role) => role.name === 'Jefe de Turno');
     /* user.roles.find((role) => {
       role.name === 'Admin' ? isAdmin = true : isAdmin = false;
       role.name === 'RH' ? isRh = true : isRh = false;
@@ -179,15 +179,28 @@ export class OrganigramaService {
         leader: true,
         employee: true,
       },
-      where: {
-        leader: {
-          id: idLeader,
+      where: [
+        {
+          leader: {
+            id: idLeader,
+          },
         },
-      },
+        {
+          employee: {
+            job: {
+              shift_leader: true,
+            },
+          },
+          
+        }
+      ],
+      
     });
 
     const idsEmployees = [];
     idsEmployees.push(idLeader);
+
+    //si es admin o RH se obtienen todos los empleados
     if (isAdmin) {
       employeesAdmin.emps.forEach((emp) => {
         idsEmployees.push(emp.id);

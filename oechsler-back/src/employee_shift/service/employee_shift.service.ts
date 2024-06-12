@@ -86,20 +86,23 @@ export class EmployeeShiftService {
             const weekDaysProfile = employee.emp.employeeProfile.work_days;
 
             const dayLetter = weekDays[index.getDay()];
-            let dayLetterProfile =
-              await this.employeeProfilesService.findWeekDay(
+            let dayLetterProfile = await this.employeeProfilesService.findWeekDay(
                 dayLetter,
                 employee.emp.employeeProfile.id,
-              );
+            );
 
             if (shift.shift.code == 'TI') {
               dayLetterProfile = true;
             }
+            //si el turno es tercero y el dia es sabado
+            if(shift.shift.code == 'T3' && dayLetter == 'S'){
+              dayLetterProfile = false;
+            }
+
             //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
             if (dayLetterProfile) {
               //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
-              const employeeShiftExist =
-                await this.employeeShiftRepository.findOne({
+              const employeeShiftExist = await this.employeeShiftRepository.findOne({
                   relations: {
                     employee: true,
                     shift: true,
@@ -458,6 +461,7 @@ export class EmployeeShiftService {
     const idsDept = depts.depts.map((dept: any) => {
       return dept.id;
     });
+
     const employeesTest = await this.employeeShiftRepository.find({
       relations: {
         employee: {

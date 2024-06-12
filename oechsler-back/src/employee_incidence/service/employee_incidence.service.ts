@@ -68,10 +68,7 @@ export class EmployeeIncidenceService {
     private calendarService: CalendarService,
   ) {}
 
-  async create(
-    createEmployeeIncidenceDto: CreateEmployeeIncidenceDto,
-    user: any,
-  ) {
+  async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
     const idsEmployees: any = createEmployeeIncidenceDto.id_employee;
     const IncidenceCatologue = await this.incidenceCatologueService.findOne(
       createEmployeeIncidenceDto.id_incidence_catologue,
@@ -227,7 +224,7 @@ export class EmployeeIncidenceService {
 
         subject = `${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
       }
-      to.push('f.gil@oechsler.mx');
+      
 
       let mailData: MailData = {
         employee: `${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname}`,
@@ -386,6 +383,7 @@ export class EmployeeIncidenceService {
     const to = format(new Date(data.end), 'yyyy-MM-dd')
     const tipo = '';
     
+    
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -405,7 +403,7 @@ export class EmployeeIncidenceService {
         status: data.status ? In(data.status) : Not(IsNull()),
       },
     });
-
+    
     let i = 0;
     const newIncidences = [];
     
@@ -413,7 +411,7 @@ export class EmployeeIncidenceService {
     if (incidences) {
       incidences.forEach((incidence) => {
         let textColor = '#fff';
-
+  
         if (
           incidence.incidenceCatologue.color == '#faf20f' ||
           incidence.incidenceCatologue.color == '#ffdeec'
@@ -439,7 +437,7 @@ export class EmployeeIncidenceService {
             backgroundColor: incidence.incidenceCatologue.color,
             unique_day: incidence.incidenceCatologue.unique_day,
             textColor: textColor,
-            status: incidence.status,
+            status: incidence.status
           });
         });
       });
@@ -1011,12 +1009,12 @@ export class EmployeeIncidenceService {
         });
         let day = new Date();
         // Generar archivo .ics y guardar en la ruta especificada
-        const icsFilePath = 'documents/calendar/empleados';
+        /* const icsFilePath = 'documents/calendar/empleados';
         const icsFileName = `${employeeIncidence.employee.employee_number}_${employeeIncidence.id}_${day.getFullYear()}${day.getMonth()}${day.getDate()}${day.getHours()}${day.getMinutes()}${day.getSeconds()}.ics`;
         const icsFileContent = calendar.toString();
   
         // Guardar archivo .ics
-        fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent);
+        fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
   
         // Continuar con el resto del código...
   
@@ -1041,8 +1039,9 @@ export class EmployeeIncidenceService {
           dia: ``,
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
-  
-        const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
+
+        //codigo para cancelar incidencia en outlook
+        /* const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
         const jcalData = leerCal.parseICS(icsData);
         const c = ical();
         
@@ -1050,7 +1049,7 @@ export class EmployeeIncidenceService {
         
         vcalendar.status = 'CANCELLED';
         
-        jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar;
+        jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar; */
         
 
         //se envia correo
@@ -1079,6 +1078,7 @@ export class EmployeeIncidenceService {
 
   //report horario flexible
   async reportFlexTime(data: any, userLogin: any) {
+    
     const from = format(new Date(data.start_date), 'yyyy-MM-dd')
     const to = format(new Date(data.end_date), 'yyyy-MM-dd')
     let isAdmin = false;
@@ -1143,12 +1143,9 @@ export class EmployeeIncidenceService {
       let totalHrsRequeridas = 0;
       let totalHrsTrabajadas = 0;
       let totalMinutisTrabados:number = 0;
+      
 
-      for (
-        let x = new Date(from);
-        x <= new Date(to);
-        x = new Date(x.setDate(x.getDate() + 1))
-      ) {
+      for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
         let dayLetter;
         const weekDaysProfile = newArray[i].employeeProfile.work_days;
         switch (x.getDay()) {
@@ -1180,13 +1177,14 @@ export class EmployeeIncidenceService {
           : totalHrsRequeridas + 0;
       }
 
-      for (
-        let dia = new Date(from);
-        dia <= new Date(to);
-        dia = new Date(dia.setDate(dia.getDate() + 1))
-      ) {
+      //se recorren los dias 
+      for (let dia = new Date(from); dia <= new Date(to); dia = new Date(dia.setDate(dia.getDate() + 1))) {
         //se realiza la busqueda de incidencias de tiempo compensatorio por empleado y por rango de fechas
         //y que esten autorizadas
+        let totalHrsDay = 0;
+        let totalMinDay = 0;
+        let sumaHrsIncidencias = 0;
+        //se buscan las incidencias por dia, con status Autorizada
         const incidencias = await this.employeeIncidenceRepository.find({
           relations: {
             employee: true,
@@ -1209,11 +1207,11 @@ export class EmployeeIncidenceService {
             type: 'ASC',
           },
         });
-        let sumaHrsIncidencias = 0;
+        
 
         //se realiza la suma o resta de horas de las incidencias
         incidencias.some(async (incidence) => {
-          const currentIncidence = await this.employeeIncidenceRepository.findOne({
+          const currentIncidence = await this.employeeIncidenceRepository.find({
             relations: {
               employee: true,
               incidenceCatologue: true,
@@ -1223,45 +1221,47 @@ export class EmployeeIncidenceService {
               id: incidence.id
             }
           });
+          let horasEntreTotalDiasIncidencia = 0;
+          horasEntreTotalDiasIncidencia = Number(currentIncidence[0].total_hour) / currentIncidence[0].dateEmployeeIncidence.length;
+
           //se obtiene las horas y minutos de la incidencia
+          let horaMinIncidencia = moment(horasEntreTotalDiasIncidencia.toString(),"LT");
+          //se obtiene la diferencia en milisegundos
+          let hrs = horaMinIncidencia.hours();
+          let mins = horaMinIncidencia.minutes();
+          let modMin = 0;
+          let divMin = 0;
           
-
-
-
-          
-          let horaMinIncidencia = Number(currentIncidence.total_hour);
-          let hrs = Math.floor(horaMinIncidencia / 60);
-          let mins = horaMinIncidencia % 60;
-          //console.log(`Horas: ${hrs}, Minutos: ${mins}`);
           totalMinutisTrabados += Number(mins) % 60;
+          totalMinDay += Number(mins) % 60;
 
           if (totalMinutisTrabados >= 60) {
             modMin = totalMinutisTrabados % 60;
             divMin = totalMinutisTrabados / 60;
             totalHrsTrabajadas += Math.floor(divMin);
             totalMinutisTrabados = modMin;
+            totalHrsDay += Math.floor(divMin);
+            totalMinDay += modMin;
+          }
+          //si la incidencia es tiempo compensatorio
+          if(incidence.incidenceCatologue.code_band == 'TxT'){
+            if(incidence.type == 'Compensatorio'){
+              sumaHrsIncidencias += Number(hrs);
+            }
+          }else{
+            if (incidence.incidenceCatologue.affected_type == 'Sumar horas') {
+              sumaHrsIncidencias += Number(hrs);
+            }
+            if (incidence.incidenceCatologue.affected_type == 'Restar horas') {
+              sumaHrsIncidencias -= Number(hrs);
+            }
           }
 
-          if (incidence.incidenceCatologue.affected_type == 'Sumar horas') {
-            sumaHrsIncidencias += Number(hrs / currentIncidence.dateEmployeeIncidence.length);
-          }
-          if (incidence.incidenceCatologue.affected_type == 'Restar horas') {
-            sumaHrsIncidencias -= Number(hrs / currentIncidence.dateEmployeeIncidence.length);
-          }
+          
         });
 
         //se verifica si el dia seleccionado es festivo
         const dayCalendar = await this.calendarService.findByDate(dia as any);
-
-        //se obtiene el turno del dia seleccionado
-        const shift = await this.employeeShiftService.findMore(
-          {
-            start: format(dia, 'yyyy-MM-dd'),
-            end: format(dia, 'yyyy-MM-dd'),
-          },
-          [newArray[i].id],
-        );
-
         const objIncidencia = [];
 
         if (dayCalendar) {
@@ -1278,6 +1278,15 @@ export class EmployeeIncidenceService {
           }
         }
 
+        //se obtiene el turno del dia seleccionado
+        const shift = await this.employeeShiftService.findMore(
+          {
+            start: format(dia, 'yyyy-MM-dd'),
+            end: format(dia, 'yyyy-MM-dd'),
+          },
+          [newArray[i].id],
+        );
+
         const hrEntrada = '00:00:00';
         const hrSalida = '23:59:59';
         const diaAnterior = dia;
@@ -1292,10 +1301,11 @@ export class EmployeeIncidenceService {
         );
         let firstHr;
         let secondHr;
-        let diffHr;
-        let diffMin;
-        let modMin = 0;
-        let divMin = 0;
+        let diffHr = 0;
+        let diffMin = 0;
+        let modMinUno = 0;
+        let divMinDos = 0;
+
 
         if (registrosChecador.length > 0) {
           firstHr = moment(new Date(registrosChecador[0]?.date));
@@ -1309,47 +1319,54 @@ export class EmployeeIncidenceService {
               : moment(new Date(registrosChecador[0]?.date));
 
           //se obtiene la diferencia en milisegundos
+          
           diffHr = secondHr.diff(firstHr, 'hours');
           diffMin = secondHr.diff(firstHr, 'minutes');
           totalMinutisTrabados += Number(diffMin) % 60;
-
-          if (totalMinutisTrabados >= 60) {
-            modMin = totalMinutisTrabados % 60;
-            divMin = totalMinutisTrabados / 60;
-            totalHrsTrabajadas += Math.floor(divMin);
-            totalMinutisTrabados = modMin;
-          }
+          totalMinDay += Number(diffMin) % 60;
+          
+          /* if (totalMinutisTrabados > 59) {
+            
+            modMinUno = totalMinutisTrabados % 60;
+            divMinDos = totalMinutisTrabados / 60;
+            totalHrsTrabajadas += Math.floor(divMinDos);
+            totalMinutisTrabados += modMinUno;
+            //totalHrsDay += Math.floor(divMinDos);
+            //totalMinDay += modMinUno;
+          } */
         }
+
+        
 
         incidencias.forEach((incidence) => {
           objIncidencia.push({
             code: incidence.incidenceCatologue.code,
           });
         });
+
+        
+        totalHrsDay += Number(diffHr) > 0 ? Number(diffHr) : 0;
+        totalHrsDay += sumaHrsIncidencias;
+        
+        totalHrsTrabajadas += totalHrsDay;
+        //totalMinutisTrabados += totalMinDay;
+
+
+        let test = Math.round((totalMinDay % 1)*100)/100;
+        //datos por dia
         eventDays.push({
           date: format(dia, 'yyyy-MM-dd'),
           incidencia: objIncidencia,
           employeeShift: shift.events[0]?.nameShift,
-          entrada:
-            registrosChecador.length >= 1
-              ? format(new Date(firstHr), 'HH:mm:ss')
-              : '',
-          salida:
-            registrosChecador.length >= 2
-              ? format(new Date(secondHr), 'HH:mm:ss')
-              : '',
+          entrada: registrosChecador.length >= 1 ? format(new Date(firstHr), 'HH:mm:ss') : '',
+          salida: registrosChecador.length >= 2 ? format(new Date(secondHr), 'HH:mm:ss') : '',
+          dayHour: totalHrsDay + '.' + moment().minutes(totalMinDay).format('mm') ,
         });
-
         
-
-        totalHrsTrabajadas += Number(diffHr) > 0 ? Number(diffHr) : 0;
-        totalHrsTrabajadas += sumaHrsIncidencias;
-        if(newArray[i].employee_number == 2 && format(dia, 'yyyy-MM-dd') == '2024-05-28'){
-          console.log(newArray[i].employee_number)
-          console.log(totalHrsTrabajadas)
-        }
       }
 
+      var quo = Math.floor(totalMinutisTrabados / 60);
+      totalHrsTrabajadas += quo;
       registros.push({
         idEmpleado: newArray[i].id,
         numeroNomina: newArray[i].employee_number,
@@ -1362,12 +1379,10 @@ export class EmployeeIncidenceService {
         perfile: newArray[i].employeeProfile.name,
         date: eventDays,
         horas_objetivo: totalHrsRequeridas.toFixed(2),
-        horasTrabajadas: totalHrsTrabajadas + '.' + totalMinutisTrabados, //total hrs trabajadas
+        horasTrabajadas: totalHrsTrabajadas + '.' + moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
+        colorText: totalHrsTrabajadas >= totalHrsRequeridas ? '#74ad74' : '#ff0000',
       });
 
-      if(newArray[i].employee_number == 2){
-        console.log(registros)
-      }
 
       //registros.concat(eventDays);
     }
