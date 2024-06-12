@@ -383,6 +383,7 @@ export class EmployeeIncidenceService {
     const to = format(new Date(data.end), 'yyyy-MM-dd')
     const tipo = '';
     
+    
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -402,7 +403,7 @@ export class EmployeeIncidenceService {
         status: data.status ? In(data.status) : Not(IsNull()),
       },
     });
-
+    
     let i = 0;
     const newIncidences = [];
     
@@ -410,7 +411,7 @@ export class EmployeeIncidenceService {
     if (incidences) {
       incidences.forEach((incidence) => {
         let textColor = '#fff';
-
+  
         if (
           incidence.incidenceCatologue.color == '#faf20f' ||
           incidence.incidenceCatologue.color == '#ffdeec'
@@ -436,7 +437,7 @@ export class EmployeeIncidenceService {
             backgroundColor: incidence.incidenceCatologue.color,
             unique_day: incidence.incidenceCatologue.unique_day,
             textColor: textColor,
-            status: incidence.status,
+            status: incidence.status
           });
         });
       });
