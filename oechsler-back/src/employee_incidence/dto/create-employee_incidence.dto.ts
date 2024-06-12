@@ -93,22 +93,22 @@ export class ReportEmployeeIncidenceDto {
   })
   access?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @ApiProperty({ description: 'Fecha de inicio del reporte' })
   start_date: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @ApiProperty({ description: 'Fecha de fin del reporte' })
   end_date: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @ApiProperty({ description: 'Tipo de Jerarquia' })
   type: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @ApiProperty({ description: 'Status de las incidencias' })
   status: string;

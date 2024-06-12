@@ -249,15 +249,16 @@ export class ChecadorService {
 
         let calculoHrsExtra = 0;
 
-        //se obtienen las incidencias del dia
+        
         const incidencias =
           await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
             start: format(index, 'yyyy-MM-dd 00:00:00') as any,
             end: format(index, 'yyyy-MM-dd 23:59:00') as any,
-            ids: `${iterator.id}`,
+            ids: [iterator.id],
           });
 
         let incidenciaVac = false;
+        let incidenciaPCS = false;
         const incidenciaPermiso = false;
         let incidenciaTiemExtra = false;
         let incidenciaFalta = false;
@@ -266,22 +267,35 @@ export class ChecadorService {
         const incidenceExtra = [];
         const mediaHoraExtra = 0.06;
         let sumaMediaHrExtra = 0;
-        let hrsExtraIncidencias: any;
+        let hrsExtraIncidencias = 0;
 
         const incidenceHrExtra = await this.incidenceCatalogueService.findName(
           'Tiempo extra',
         );
-        const faltaInjustificada =
-          await this.incidenceCatalogueService.findName('Falta injustificada');
+        const faltaInjustificada = await this.incidenceCatalogueService.findName('Falta injustificada');
+          //se obtienen las incidencias del dia
+
+
         for (let index = 0; index < incidencias.length; index++) {
-          if (incidencias[index].code == 'Vac') {
+          const findIncidence = await this.employeeIncidenceService.findOne(incidencias[index].incidenceId);
+          if (incidencias[index].codeBand == 'VAC') {
             incidenciaVac = true;
           }
           //validar que exista tiempo extra
-          if (incidencias[index].code == 'TE') {
+          if (incidencias[index].codeBand == 'HE') {
             incidenciaTiemExtra = true;
-            hrsExtraIncidencias = incidencias[index].total_hour;
+            hrsExtraIncidencias = Number(incidencias[index].total_hour);
           }
+
+          //sumar horas de incidencia PCS
+          incidencias.some((incidencia) => {
+            //Permiso con goce de sueldo
+            if (incidencia.codeBand == 'PCS') {
+              totalHrsTrabajadas += (Number(incidencia.total_hour) / Number(findIncidence.dateEmployeeIncidence.length));
+              
+            }
+          });
+
         }
 
         //se verifica si el dia seleccionado es festivo
@@ -300,21 +314,13 @@ export class ChecadorService {
         }
 
         //falta injustificada
-        if (
-          registrosChecador.length == 0 &&
-          incidencias.length == 0 &&
-          !dayCalendar
-        ) {
+        if (registrosChecador.length == 0 && incidencias.length == 0 && !dayCalendar) {
           incidenciaFalta = true;
           incidenceExtra.push(`1` + faltaInjustificada.code_band);
         }
 
         //tiempo extra para el turno 3
-        if (
-          diffDate >= diffTimeShift &&
-          employeeShif.events[0]?.nameShift == 'T3' &&
-          incidencias.length <= 0
-        ) {
+        if (diffDate >= diffTimeShift && employeeShif.events[0]?.nameShift == 'T3' && incidencias.length <= 0) {
           incidenceExtra.push(
             `${mediaHoraExtra}` + incidenceHrExtra.code_band + '2',
           );
@@ -395,6 +401,7 @@ export class ChecadorService {
         horasExtra: moment.utc(totalHrsExtra * 60 * 60 * 1000).format('H.mm'),
         //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
       });
+      
 
       registros.concat(eventDays);
     }

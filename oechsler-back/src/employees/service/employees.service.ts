@@ -567,7 +567,7 @@ export class EmployeesService {
   }
 
   //Buscar por array de ids de empleados
-  async findMore(ids: any) {
+  async findMore(ids: any[]) {
     const emps = await this.employeeRepository.find({
       where: {
         id: In(ids),
