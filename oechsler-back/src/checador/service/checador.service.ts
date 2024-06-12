@@ -267,7 +267,7 @@ export class ChecadorService {
         const incidenceExtra = [];
         const mediaHoraExtra = 0.06;
         let sumaMediaHrExtra = 0;
-        let hrsExtraIncidencias: any;
+        let hrsExtraIncidencias = 0;
 
         const incidenceHrExtra = await this.incidenceCatalogueService.findName(
           'Tiempo extra',
@@ -284,7 +284,7 @@ export class ChecadorService {
           //validar que exista tiempo extra
           if (incidencias[index].codeBand == 'HE') {
             incidenciaTiemExtra = true;
-            hrsExtraIncidencias = incidencias[index].total_hour;
+            hrsExtraIncidencias = Number(incidencias[index].total_hour);
           }
 
           //sumar horas de incidencia PCS
@@ -401,6 +401,7 @@ export class ChecadorService {
         horasExtra: moment.utc(totalHrsExtra * 60 * 60 * 1000).format('H.mm'),
         //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
       });
+      
 
       registros.concat(eventDays);
     }
