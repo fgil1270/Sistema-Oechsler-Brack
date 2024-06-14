@@ -145,7 +145,9 @@ export class ChecadorService {
     for (const iterator of employees.emps) {
       const eventDays = [];
       let totalHrsRequeridas = 0;
+      let totalMinRequeridos = 0;
       let totalHrsTrabajadas = 0;
+      let totalMinTrabajados = 0;
       let totalHrsTrabajadasyExtra = 0;
       let total;
       let totalHrsExtra = 0;
@@ -208,9 +210,11 @@ export class ChecadorService {
         }
 
         //se obtiene la hora de inicio y fin del turno
-
         const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
-        totalHrsRequeridas += diffTimeShift >= 0 ? diffTimeShift : 0;
+        const hourShift = endTimeShift.diff(startTimeShift, 'hours');
+        const minShift = endTimeShift.diff(startTimeShift, 'minutes');
+        totalHrsRequeridas += hourShift;
+        totalMinRequeridos += Number(minShift) % 60;
 
         //se obtienen los registros del dia
         const registrosChecador = await this.checadorRepository.find({
@@ -242,12 +246,23 @@ export class ChecadorService {
         //se obtiene la diferencia de horas trabajadas
         //de la entra y salida del empleado
         const firstDate = moment(new Date(registrosChecador[0]?.date));
-        const secondDate = moment(
-          new Date(registrosChecador[registrosChecador.length - 1]?.date),
-        );
+        const secondDate = moment(new Date(registrosChecador[registrosChecador.length - 1]?.date));
         let diffDate = secondDate.diff(firstDate, 'hours', true);
 
+        let diffDatehour = secondDate.diff(firstDate, 'hours');
+        let diffDatemin = secondDate.diff(firstDate, 'minutes');
+        //se obtiene la diferencia en milisegundos
+        let horasDia = Number(diffDatehour);
+        let minsDia = Number(diffDatemin) % 60;
+        let modMin = 0;
+        let divMin = 0;
+        if(iterator.id == 654 && format(index, 'yyyy-MM-dd') == '2024-06-08'){
+          console.log("horas", horasDia)
+          console.log("min", minsDia)
+        }
+
         let calculoHrsExtra = 0;
+        let calculoMinExtra = 0;
 
         
         const incidencias =
@@ -255,6 +270,7 @@ export class ChecadorService {
             start: format(index, 'yyyy-MM-dd 00:00:00') as any,
             end: format(index, 'yyyy-MM-dd 23:59:00') as any,
             ids: [iterator.id],
+            status: ['Autorizada']
           });
 
         let incidenciaVac = false;
@@ -310,7 +326,9 @@ export class ChecadorService {
 
         //si existe incidencia de vacaciones se toma como hrs trabajadas
         if (incidenciaVac) {
-          diffDate = diffTimeShift;
+          totalHrsTrabajadas += hourShift;
+          totalMinTrabajados += Number(minShift) % 60;
+          
         }
 
         //falta injustificada
@@ -329,8 +347,17 @@ export class ChecadorService {
         }
 
         //se calcula las horas trabajadas y hrs extra
-        calculoHrsExtra +=
-          diffDate - diffTimeShift <= 0 ? 0 : diffDate - diffTimeShift;
+        calculoHrsExtra += diffDate - diffTimeShift <= 0 ? 0 : diffDate - diffTimeShift;
+        let newHrExtra= 0;
+        calculoMinExtra += minsDia - (Number(minShift) % 60);
+
+        if(iterator.id == 564 && format(index, 'yyyy-MM-dd') == '2024-06-08'){
+          console.log("horas turno", diffTimeShift)
+          console.log("horas realizadas por dia",diffDate)
+          console.log("calculo de horas extra", calculoHrsExtra)
+          console.log("horas Dia", horasDia)
+          console.log("min Dia", minsDia)
+        }
 
         //se valida si calculo de horas extra es mayor a 0 y si existe incidencia de tiempo extra
         if (calculoHrsExtra >= 0 && incidenciaTiemExtra) {
@@ -344,8 +371,10 @@ export class ChecadorService {
           if (calculoHrsExtra > 3) {
             hrExtraTripe = calculoHrsExtra - 3;
             hrExtraDoble = 3;
+            totalHrsExtra += hrExtraTripe + hrExtraDoble;
           } else {
             hrExtraDoble = calculoHrsExtra;
+            totalHrsExtra += hrExtraDoble;
           }
 
           if (hrExtraTripe > 0) {
@@ -361,7 +390,7 @@ export class ChecadorService {
             );
           } else {
             incidenceExtra.push(
-              `${moment.utc(hrExtraDoble * 60 * 60 * 1000).format('H.mm')}` +
+              `${hrExtraDoble}` +
                 incidenceHrExtra.code_band +
                 '2',
             );
@@ -395,10 +424,10 @@ export class ChecadorService {
         tipo_nomina: iterator.payRoll.name,
         perfile: iterator.employeeProfile.name,
         date: eventDays,
-        horasEsperadas: totalHrsRequeridas.toFixed(2),
+        horasEsperadas: totalHrsRequeridas + '.' +moment().minutes(totalMinRequeridos).format('mm'),
         horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas
         horasTrabajadasyExtra: totalHrsTrabajadasyExtra.toFixed(2),
-        horasExtra: moment.utc(totalHrsExtra * 60 * 60 * 1000).format('H.mm'),
+        horasExtra: totalHrsExtra,
         //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
       });
       
