@@ -27,7 +27,7 @@ export class Shift {
   end_time: Date;
 
   @Column({ type: 'set', enum: ['L', 'M', 'X', 'J', 'V', 'S', 'D'] })
-  day: string;
+  day: string[];
 
   @Column({ type: 'varchar', length: 255 })
   color: string;

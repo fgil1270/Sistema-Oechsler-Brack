@@ -28,6 +28,7 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { DepartmentsService } from '../../departments/service/departments.service';
 import { EmployeeProfilesService } from '../../employee-profiles/service/employee-profiles.service';
 import { read } from 'xlsx';
+import { da } from 'date-fns/locale';
 
 @Injectable()
 export class EmployeeShiftService {
@@ -58,10 +59,11 @@ export class EmployeeShiftService {
         'yyyy-MM-dd 23:59:59',
       );
 
-      //se realiza forEach para recorrer los empleados seleccionados
+      //se realiza for para recorrer los empleados seleccionados
       for (let i = 0; i < createEmployeeShiftDto.employeeId.length; i++) {
         const element = createEmployeeShiftDto.employeeId[i];
 
+        //se busca informacion del empleado
         const employee = await this.employeesService.findOne(element);
 
         let contSemana = 0;
@@ -86,21 +88,27 @@ export class EmployeeShiftService {
             const weekDaysProfile = employee.emp.employeeProfile.work_days;
 
             const dayLetter = weekDays[index.getDay()];
+            //se valida que el dia seleccionado exista en el perfil del empleado
             let dayLetterProfile = await this.employeeProfilesService.findWeekDay(
                 dayLetter,
                 employee.emp.employeeProfile.id,
             );
-
-            if (shift.shift.code == 'TI') {
+            let dayLetterShift = false;
+            let dayShift: any[] =  shift.shift.day;
+            dayLetterShift = dayShift.includes(dayLetter);
+            
+            
+            /* if (shift.shift.code == 'TI') {
               dayLetterProfile = true;
             }
             //si el turno es tercero y el dia es sabado
             if(shift.shift.code == 'T3' && dayLetter == 'S'){
               dayLetterProfile = false;
-            }
+            } */
 
             //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
-            if (dayLetterProfile) {
+            //y el dia seleccionado existe en el turno
+            if (dayLetterProfile && dayLetterShift) {
               //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                   relations: {
@@ -130,6 +138,53 @@ export class EmployeeShiftService {
                 employeeShiftExist.shift = shift.shift;
 
                 await this.employeeShiftRepository.save(employeeShiftExist);
+              }
+            }else{
+              //revisa si el dia tiene un turno asignado
+              //y si tiene incidencia
+              //si no tiene incidencia y tiene turno, elimina el turno
+
+              const employeeShiftExist = await this.employeeShiftRepository.findOne({
+                relations: {
+                  employee: true,
+                  shift: true,
+                  pattern: true,
+                },
+                where: {
+                  employee: {
+                    id: employee.emp.id,
+                  },
+                  start_date: format(index, 'yyyy-MM-dd') as any,
+                },
+              });
+
+              if (employeeShiftExist) {
+                const employeeShiftIncidence = await this.employeeShiftRepository.findOne({
+                  relations: {
+                    employee: {
+                      employeeIncidence: true,
+                    },
+                    shift: true,
+                    pattern: true,
+                    
+                  },
+                  where: {
+                    employee: {
+                      id: employee.emp.id,
+                      employeeIncidence:{
+                        dateEmployeeIncidence: {
+                          date: format(index, 'yyyy-MM-dd') as any,
+                        }
+                      }
+                    },
+                    start_date: format(index, 'yyyy-MM-dd') as any,
+                    
+                  },
+                });
+
+                if (!employeeShiftIncidence) {
+                  await this.employeeShiftRepository.remove(employeeShiftExist);
+                }
               }
             }
           } else if (createEmployeeShiftDto.patternId != 0) {
@@ -390,7 +445,7 @@ export class EmployeeShiftService {
         id: employee.id,
         employee_number: employee.employee_number,
         title:
-          '#' +
+          '#' + 
           employee.employee_number +
           ' ' +
           employee.name +

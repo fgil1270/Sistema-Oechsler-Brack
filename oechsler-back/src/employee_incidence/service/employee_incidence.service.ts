@@ -108,7 +108,7 @@ export class EmployeeIncidenceService {
       }
 
       for (
-        let index = new Date(createEmployeeIncidenceDto.start_date);
+        let index = new Date(createEmployeeIncidenceDto.start_date + ' 00:00:00');
         index <= new Date(createEmployeeIncidenceDto.end_date);
         index = new Date(index.setDate(index.getDate() + 1))
       ) {
@@ -389,6 +389,7 @@ export class EmployeeIncidenceService {
         employee: true,
         incidenceCatologue: true,
         dateEmployeeIncidence: true,
+        leader: true
       },
       where: {
         employee: {
@@ -437,7 +438,9 @@ export class EmployeeIncidenceService {
             backgroundColor: incidence.incidenceCatologue.color,
             unique_day: incidence.incidenceCatologue.unique_day,
             textColor: textColor,
-            status: incidence.status
+            status: incidence.status,
+            approve: incidence.leader? incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname : '',
+            approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0
           });
         });
       });
@@ -591,7 +594,7 @@ export class EmployeeIncidenceService {
   async findIncidencesByStatus(data: ReportEmployeeIncidenceDto, user: any) {
     let whereQuery: any;
     const idsEmployees: any = [];
-
+    
     //se obtienen los empleados por organigrama
     const organigrama = await this.organigramaService.findJerarquia(
       {
@@ -600,9 +603,10 @@ export class EmployeeIncidenceService {
       user
     );
 
-
+    //console.log(organigrama)
     for (let index = 0; index < organigrama.length; index++) {
       const element = organigrama[index];
+      
       idsEmployees.push(element.id);
     }
 
@@ -1126,7 +1130,7 @@ export class EmployeeIncidenceService {
     }
 
     //se filtran los empleados por perfil MIXTO
-    const newArray = employees.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
+    const newArray = employees; //.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
     //generacion de dias seleccionados
 
     for (

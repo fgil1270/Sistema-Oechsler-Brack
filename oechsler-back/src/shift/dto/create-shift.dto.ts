@@ -25,7 +25,7 @@ export class CreateShiftDto {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({ description: 'Días de la semana' })
-  day: string;
+  day: string[];
 
   @IsNotEmpty()
   @IsString()
