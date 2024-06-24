@@ -535,7 +535,7 @@ export class TimeCorrectionService {
     };
   }
 
-  //agregar checadas
+  //Buscar checadas
   async findByEmployee(data: any, user: any) {
     const tipoNomina = data.tipoEmpleado;
 

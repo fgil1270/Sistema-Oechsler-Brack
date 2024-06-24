@@ -439,8 +439,8 @@ export class EmployeeIncidenceService {
             unique_day: incidence.incidenceCatologue.unique_day,
             textColor: textColor,
             status: incidence.status,
-            approve: incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname,
-            approveEmployeeNumber: incidence.leader.employee_number
+            approve: incidence.leader? incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname : '',
+            approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0
           });
         });
       });

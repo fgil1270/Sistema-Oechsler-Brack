@@ -295,7 +295,7 @@ export class ChecadorService {
             incidenciaVac = true;
           }
           //validar que exista tiempo extra
-          if (incidencias[index].codeBand == 'HE') {
+          if (incidencias[index].codeBand == 'HE' || incidencias[index].codeBand == 'HET') {
             incidenciaTiemExtra = true;
             hrsExtraIncidencias = Number(incidencias[index].total_hour);
           }

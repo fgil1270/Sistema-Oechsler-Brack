@@ -739,6 +739,11 @@ export class EmployeesService {
         relations: {
           logAdjustmentVacationEmployee: true,
         },
+        order: {
+          logAdjustmentVacationEmployee: {
+            created_at: "DESC"
+          }
+        }
       });
       //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
 
@@ -766,7 +771,7 @@ export class EmployeesService {
             incidenceCatologue: {
               code_band: In(['VAC', 'VACA']),
             },
-            status: 'Autorizada',
+            status: In(['Autorizada', 'Pendiente']),
           },
         },
         relations: {
@@ -777,6 +782,7 @@ export class EmployeesService {
         },
       });
 
+      //se obtinene las incidencias de vacacion medio dia
       const incidenciaVacacionesMedioDia = await this.employeeRepository.count({
         where: {
           id: emp.id,
@@ -784,7 +790,7 @@ export class EmployeesService {
             incidenceCatologue: {
               code: In(['VacM']),
             },
-            status: 'Autorizada',
+            status: In(['Autorizada', 'Pendiente']),
           },
         },
         relations: {
@@ -795,13 +801,16 @@ export class EmployeesService {
         },
       });
 
-      if (incidenciaVacacionesMedioDia > 0) {
-        totalDiasVacacionesMedioDia = incidenciaVacacionesMedioDia * 0.5;
-      }
+      
       
       //si no existe ajuste
       //se realiza el calculo con las incidencias
       if (!adjustmentVacation) {
+        //si existen vacaciones medio dia, se suman
+        if (incidenciaVacacionesMedioDia > 0) {
+          totalDiasVacacionesMedioDia = incidenciaVacacionesMedioDia * 0.5;
+        }
+
         //se suman los dias de vacaciones por incidencia
         incidenciaVacaciones?.employeeIncidence.forEach((element) => {
           element.dateEmployeeIncidence.forEach((element) => {
@@ -841,7 +850,7 @@ export class EmployeesService {
                   ) as any,
                 ),
               },
-              status: 'Autorizada',
+              status: In(['Autorizada', 'Pendiente']),
               incidenceCatologue: {
                 code_band: In(['VAC', 'VACA'])
               },
@@ -873,13 +882,14 @@ export class EmployeesService {
                   ) as any,
                 ),
               },
-              status: 'Autorizada',
+              status: In(['Autorizada', 'Pendiente']),
               incidenceCatologue: {
-                code: In(['VacM']),
+                code_band: In(['VacM']),
               },
             },
           },
         });
+
 
         if (newIncidenceNormales) {
           for (
@@ -898,32 +908,23 @@ export class EmployeesService {
             totalDiasIncidencia += Number(element.dateEmployeeIncidence.length) * Number(0.5);
           } 
         } 
-        totalDiasIncidencia += Number(totalDiasVacacionesMedioDia);
         
-        dayUsedAllYears = Number(
-            adjustmentVacation.logAdjustmentVacationEmployee[
-              adjustmentVacation.logAdjustmentVacationEmployee.length - 1
-            ].new_value,
-          ) + parseFloat(totalDiasIncidencia.toFixed(2));
+        
+        dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length - 1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
       }
 
       row['id'] = emp.id;
       row['perfil'] = emp.employeeProfile.name;
       row['num_employee'] = emp.employee_number;
-      row['nombre'] =
-        emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
+      row['nombre'] = emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
       row['ingreso'] = emp.date_employment;
       row['anos_cumplidos'] = anoCumplidos.toFixed(2); //años cumplidos
       row['anos_fin_ano'] = anoCumplidosFinAno.toFixed(2); //años cumplidos hasta fin de año
       row['dias_antiguedad_fin_ano'] = sumaDiasAntiguedadFin.toFixed(2); //dias proporcionales por antiguedad hasta fin de año
       row['dias_antiguedad'] = sumaDiasAntiguedad.toFixed(2); //dias proporcionales por antiguedad
       row['dias_utilizados_all_years'] = dayUsedAllYears.toFixed(2); //dias utilizados(todos los años)
-      row['dias_disponibles_dia_hoy'] = (
-        sumaDiasAntiguedad - dayUsedAllYears
-      ).toFixed(2); //dias disponibles al dia de hoy
-      row['dias_disponibles_fin_ano'] = (
-        sumaDiasAntiguedadFin - dayUsedAllYears
-      ).toFixed(2); //dias disponibles hasta fin de año
+      row['dias_disponibles_dia_hoy'] = (sumaDiasAntiguedad - dayUsedAllYears).toFixed(2); //dias disponibles al dia de hoy
+      row['dias_disponibles_fin_ano'] = (sumaDiasAntiguedadFin - dayUsedAllYears).toFixed(2); //dias disponibles hasta fin de año
       report.push(row);
     }
 
@@ -1014,7 +1015,7 @@ export class EmployeesService {
           id: emp.id,
           employeeIncidence: {
             incidenceCatologue: {
-              code: In(['Vac', 'VacM', 'VAC']),
+              code_band: In(['Vac', 'VACA']),
             },
             status: In(['Autorizada', 'Pendiente']),
           },
@@ -1027,14 +1028,15 @@ export class EmployeesService {
         },
       });
 
+      //se obtinene las incidencias de vacacion medio dia
       const incidenciaVacacionesMedioDia = await this.employeeRepository.count({
         where: {
           id: emp.id,
           employeeIncidence: {
             incidenceCatologue: {
-              code: In(['VacM']),
+              code_band: In(['VacM']),
             },
-            status: 'Autorizada',
+            status: In(['Autorizada', 'Pendiente']),
           },
         },
         relations: {
@@ -1052,12 +1054,20 @@ export class EmployeesService {
       //si no existe ajuste
       //se realiza el calculo con las incidencias
       if (!adjustmentVacation) {
-        dayUsedAllYears = incidenciaVacaciones
-          ? Number(
-              incidenciaVacaciones.employeeIncidence[0].dateEmployeeIncidence
-                .length,
-            ) + Number(totalDiasVacacionesMedioDia)
-          : 0; //total de vacaciones
+        //si existen vacaciones medio dia, se suman
+        if (incidenciaVacacionesMedioDia > 0) {
+          totalDiasVacacionesMedioDia = incidenciaVacacionesMedioDia * 0.5;
+        }
+
+        //se suman los dias de vacaciones por incidencia
+        incidenciaVacaciones?.employeeIncidence.forEach((element) => {
+          element.dateEmployeeIncidence.forEach((element) => {
+            dayUsedAllYears++;
+          });
+        });
+        //se suman las vacaciones de medio dia
+        dayUsedAllYears += Number(totalDiasVacacionesMedioDia); //total de vacaciones
+
       } else {
         //si existe ajuste toma el valor del ajuste
         //y toma las incidencias posteriores al dia de ajuste
@@ -1088,9 +1098,9 @@ export class EmployeesService {
                   ) as any,
                 ),
               },
-              status: 'Autorizada',
+              status: In(['Autorizada', 'Pendiente']),
               incidenceCatologue: {
-                code: In(['Vac', 'VAC']),
+                code_band: In(['Vac', 'VACA']),
               },
             },
           },
@@ -1120,9 +1130,9 @@ export class EmployeesService {
                   ) as any,
                 ),
               },
-              status: 'Autorizada',
+              status: In(['Autorizada', 'Pendiente']),
               incidenceCatologue: {
-                code: In(['VacM']),
+                code_band: In(['VacM']),
               },
             },
           },
@@ -1138,8 +1148,7 @@ export class EmployeesService {
         if (newIncidenceVacMedioDia) {
           for (let index = 0; index < newIncidenceVacMedioDia.employeeIncidence.length; index++) {
             const element = newIncidenceVacMedioDia.employeeIncidence[index];
-            totalDiasIncidencia +=
-              Number(element.dateEmployeeIncidence.length) * Number(0.5);
+            totalDiasIncidencia += Number(element.dateEmployeeIncidence.length) * Number(0.5);
           }
         }
 
@@ -1149,8 +1158,7 @@ export class EmployeesService {
       row['id'] = emp.id;
       row['perfil'] = emp.employeeProfile.name;
       row['num_employee'] = emp.employee_number;
-      row['nombre'] =
-        emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
+      row['nombre'] = emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
       row['ingreso'] = emp.date_employment;
       row['anos_cumplidos'] = anoCumplidos.toFixed(2); //años cumplidos
       row['anos_fin_ano'] = anoCumplidosFinAno.toFixed(2); //años cumplidos hasta fin de año
