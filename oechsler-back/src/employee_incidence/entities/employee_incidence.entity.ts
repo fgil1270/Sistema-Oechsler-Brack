@@ -80,4 +80,7 @@ export class EmployeeIncidence {
   @ManyToOne(() => Employee, (post) => post.employeeIncidenceCreate)
   @JoinColumn()
   createdBy: Employee;
+
+  @Column({ type: 'int', nullable: true })
+  shift: Number;
 }

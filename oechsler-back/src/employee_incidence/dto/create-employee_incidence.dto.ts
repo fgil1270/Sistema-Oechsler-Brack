@@ -78,6 +78,11 @@ export class CreateEmployeeIncidenceDto {
   @IsString()
   @ApiProperty({ description: 'Tipo de Incidencia (Compensatorio, Repago)' })
   type?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({ description: 'Numero del turno(horario) en el que se ejecutara la incidencia ' })
+  shift?: number;
 }
 
 export class UpdateEmployeeIncidenceDto extends PartialType(

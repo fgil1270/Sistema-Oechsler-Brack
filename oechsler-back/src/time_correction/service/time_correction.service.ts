@@ -196,13 +196,12 @@ export class TimeCorrectionService {
 
         //se obtienen las incidencias del dia
         //si existe alguna de las siguientes no mostrara en el reporte
-        //'Vac', 'PCG', 'PSS', 'S', 'PCGS', 'Inc', 'VacM'
         const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
           start: format(index, 'yyyy-MM-dd 00:00:00') as any,
           end: format(index, 'yyyy-MM-dd 23:59:00') as any,
           status: ['Autorizada'],
           ids: [`${iterator.id}`],
-          code: ['Vac', 'PCG', 'PSS', 'S', 'PCGS', 'Inc', 'VacM'],
+          code: ['VAC', 'PCS', 'PSS', 'CAST', 'PCGS', 'INC', 'VacM'],
         });
 
         if (employeeShif.events.length == 0) {
@@ -535,7 +534,7 @@ export class TimeCorrectionService {
     };
   }
 
-  //agregar checadas
+  //Buscar checadas
   async findByEmployee(data: any, user: any) {
     const tipoNomina = data.tipoEmpleado;
 

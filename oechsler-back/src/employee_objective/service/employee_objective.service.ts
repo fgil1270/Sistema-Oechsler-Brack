@@ -1399,7 +1399,7 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 650) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();

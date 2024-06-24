@@ -176,7 +176,7 @@ export class RequestCourseService {
         gm: true,
         requestCourseAssignment: true,
       },
-      where: query as FindOptionsWhere<RequestCourse>,
+      where: query as unknown as FindOptionsWhere<RequestCourse>,
     });
 
     requestCourse.filter((item) => {

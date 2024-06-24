@@ -273,6 +273,9 @@ export class OrganigramaService {
         },
         where: {
           leader: In([user.idEmployee]),
+          employee: {
+            deleted_at: IsNull(),
+          }
         },
         order: {
           employee: {
@@ -287,7 +290,7 @@ export class OrganigramaService {
           employee: {
             department: true,
             job: true,
-            payRoll: true,
+            payRoll: true, 
             vacationProfile: true,
             employeeProfile: true,
           },
@@ -295,6 +298,7 @@ export class OrganigramaService {
         },
         where: {
           employee: {
+            deleted_at: IsNull(),
             job: {
               shift_leader : true
             }
@@ -307,7 +311,7 @@ export class OrganigramaService {
           },
         },
       });
-
+      
       levelOne.forEach((element) => {
         employees.push(element.employee);
       });
@@ -328,10 +332,10 @@ export class OrganigramaService {
 
       if (data.type == 'Normal') {
         const userLogin = await this.employeeService.findOne(user.idEmployee);
-
+        
         //levelOne.employee.push(...userLogin);
         employees.push(userLogin.emp);
-
+        
         return employees;
       }
 
@@ -354,6 +358,9 @@ export class OrganigramaService {
         },
         where: {
           leader: In(idsEmployees),
+          employee: {
+            deleted_at: IsNull(),
+          },
         },
       });
 

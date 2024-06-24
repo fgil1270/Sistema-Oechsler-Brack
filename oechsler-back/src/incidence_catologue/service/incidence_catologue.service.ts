@@ -65,6 +65,20 @@ export class IncidenceCatologueService {
     return incidenceCatologue;
   }
 
+  async findByCodeBand(name: string) {
+    const incidenceCatologue = await this.incidenceCatologueRepository.findOne({
+      where: {
+        code_band: name,
+      },
+    });
+
+    if (!incidenceCatologue) {
+      throw new NotFoundException(`IncidenceCatologue #${name} not found`);
+    }
+
+    return incidenceCatologue;
+  }
+
   async update(
     id: number,
     updateIncidenceCatologueDto: UpdateIncidenceCatologueDto,
