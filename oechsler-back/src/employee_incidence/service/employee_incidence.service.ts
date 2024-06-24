@@ -399,7 +399,7 @@ export class EmployeeIncidenceService {
           date: Between(from as any, to as any),
         },
         incidenceCatologue: {
-          code: data.code ? In(data.code) : Not(IsNull()),
+          code_band: data.code ? In(data.code) : Not(IsNull()),
         },
         status: data.status ? In(data.status) : Not(IsNull()),
       },
@@ -440,7 +440,8 @@ export class EmployeeIncidenceService {
             textColor: textColor,
             status: incidence.status,
             approve: incidence.leader? incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname : '',
-            approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0
+            approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0,
+            shift: incidence.shift
           });
         });
       });
