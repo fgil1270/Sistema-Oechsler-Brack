@@ -28,6 +28,7 @@ import { EmployeeShiftService } from '../../employee_shift/service/employee_shif
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
+import { hr, is } from 'date-fns/locale';
 
 @Injectable()
 export class ChecadorService {
@@ -174,10 +175,19 @@ export class ChecadorService {
         if (employeeShif.events.length == 0) {
           continue;
         }
-        
-        let hrEntrada = '00:00:00';
-        let hrSalida = '23:59:00';
-        const diaSiguente = new Date(index);
+
+        //se obtienen las incidencias del dia
+        //y que no sean de tiempo extra
+        const incidenciasNormales =
+          await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
+            start: format(index, 'yyyy-MM-dd 00:00:00') as any,
+            end: format(index, 'yyyy-MM-dd 23:59:00') as any,
+            ids: [iterator.id],
+            code: ['VAC', 'PCS', 'PSS', 'HDS', 'CAST', 'FINJ', 'INC', 'DFT', 'PRTC', 'DOM', 'VACA', 'HE', 'HET', 'TXT'],
+            status: ['Autorizada']
+        });
+
+
         const startTimeShift = moment(
           new Date(
             `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`,
@@ -191,23 +201,17 @@ export class ChecadorService {
           'HH:mm',
         );
 
-        if (
-          employeeShif.events[0]?.nameShift != '' &&
-          employeeShif.events[0]?.nameShift == 'T3'
-        ) {
-          hrEntrada = '20:00:00';
-          hrSalida = '08:59:00';
-          diaSiguente.setDate(diaSiguente.getDate() + 1);
-          //let nextDay = format(diaSiguente, 'yyyy-MM-dd');
-
-          //startTimeShift = moment(employeeShif.events[0]?.startTimeshift, 'HH:mm');
-          endTimeShift = moment(
-            new Date(
-              `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`,
-            ),
-            'HH:mm',
-          ).add(1, 'day');
-        }
+        let incidenciaVac = false;
+        let incidenciaPCS = false;
+        const incidenciaPermiso = false;
+        let incidenciaTiemExtra = false;
+        let incidenciaFalta = false;
+        let hrExtraDoble = 0;
+        let hrExtraTripe = 0;
+        const incidenceExtra = [];
+        const mediaHoraExtra = 0.06;
+        let sumaMediaHrExtra = 0;
+        let hrsExtraIncidencias = 0;
 
         //se obtiene la hora de inicio y fin del turno
         const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
@@ -215,6 +219,100 @@ export class ChecadorService {
         const minShift = endTimeShift.diff(startTimeShift, 'minutes');
         totalHrsRequeridas += hourShift;
         totalMinRequeridos += Number(minShift) % 60;
+
+        const incidenceHrExtra = await this.incidenceCatalogueService.findByCodeBand('HE');
+        const faltaInjustificada = await this.incidenceCatalogueService.findByCodeBand('FINJ');
+          
+
+        //se recorre el arreglo de incidencias
+        for (let index = 0; index < incidenciasNormales.length; index++) {
+          const findIncidence = await this.employeeIncidenceService.findOne(incidenciasNormales[index].incidenceId);
+          if (incidenciasNormales[index].codeBand == 'VAC' || incidenciasNormales[index].codeBand == 'VACA' || incidenciasNormales[index].codeBand == 'VacM') {
+            incidenciaVac = true;
+            totalHrsTrabajadas += hourShift;
+            totalMinTrabajados += Number(minShift) % 60;
+            
+          }
+          if(incidenciasNormales[index].codeBand != 'HE' && incidenciasNormales[index].codeBand != 'HET' && incidenciasNormales[index].codeBand != 'TxT'){
+            incidenceExtra.push(`1` + incidenciasNormales[index].codeBand);
+          }
+          //validar que exista tiempo extra
+          if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET') {
+            incidenciaTiemExtra = true;
+            hrsExtraIncidencias += Number(incidenciasNormales[index].total_hour);
+          }
+
+         
+          if (incidenciasNormales[index].codeBand == 'PCS') {
+              totalHrsTrabajadas += (Number(incidenciasNormales[index].total_hour) / Number(findIncidence.dateEmployeeIncidence.length));
+              
+          }
+          
+
+        }
+
+        //se verifica si el dia seleccionado es festivo
+        const dayCalendar = await this.calendarService.findByDate(index as any);
+
+        if (dayCalendar) {
+          if (dayCalendar.holiday) {
+            const horasPerfile = iterator.employeeProfile.work_shift_hrs;
+            totalHrsTrabajadas += horasPerfile;
+          }
+        }
+
+        //se obtienen las checadas del dia
+        let hrEntrada = '00:00:00';
+        let hrSalida = '23:59:00';
+        const diahoy = new Date(index);
+        const diaSiguente = new Date(index);
+
+
+        for (let index = 0; index < incidenciasNormales.length; index++) {
+          
+          if(incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET' || incidenciasNormales[index].codeBand == 'TxT'){
+            
+            //si es turno 1
+            if ( employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T1'){
+
+              
+              if(incidenciasNormales[index].shift == 2 ){
+                hrEntrada = '05:00:00';
+                hrSalida = '19:59:00';
+
+              }else if(incidenciasNormales[index].shift == 3){
+                hrEntrada = '18:00:00';
+                hrSalida = '06:59:00';
+                diahoy.setDate(diahoy.getDate() - 1);
+              }
+            }else if(employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T2'){
+              
+              if(incidenciasNormales[index].shift == 1 ){
+                hrEntrada = '05:00:00';
+                hrSalida = '19:59:00';
+
+              }else if(incidenciasNormales[index].shift == 3){
+                hrEntrada = '13:00:00';
+                hrSalida = '06:59:00';
+                diaSiguente.setDate(diahoy.getDate() - 1);
+              }
+            }else if(employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T3'){
+              
+              if(incidenciasNormales[index].shift == 1 ){
+                hrEntrada = '18:00:00';
+                hrSalida = '06:59:00';
+                diahoy.setDate(diahoy.getDate() - 1);
+              }else if(incidenciasNormales[index].shift == 2){
+                hrEntrada = '13:00:00';
+                hrSalida = '06:59:00';
+                diaSiguente.setDate(diaSiguente.getDate() + 1);
+              }
+            }
+          }
+
+          
+        }
+
 
         //se obtienen los registros del dia
         const registrosChecador = await this.checadorRepository.find({
@@ -226,7 +324,7 @@ export class ChecadorService {
               },
             },
             date: Between(
-              format(index, `yyyy-MM-dd ${hrEntrada}`) as any,
+              format(diahoy, `yyyy-MM-dd ${hrEntrada}`) as any,
               format(diaSiguente, `yyyy-MM-dd ${hrSalida}`) as any,
             ),
           },
@@ -242,6 +340,12 @@ export class ChecadorService {
             date: 'ASC',
           },
         });
+
+        //falta injustificada
+        if (registrosChecador.length == 0 && incidenciasNormales.length == 0 && !dayCalendar) {
+          incidenciaFalta = true;
+          incidenceExtra.push(`1` + faltaInjustificada.code_band);
+        }
 
         //se obtiene la diferencia de horas trabajadas
         //de la entra y salida del empleado
@@ -261,85 +365,13 @@ export class ChecadorService {
         let calculoHrsExtra = 0;
         let calculoMinExtra = 0;
 
-        
-        const incidencias =
-          await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
-            start: format(index, 'yyyy-MM-dd 00:00:00') as any,
-            end: format(index, 'yyyy-MM-dd 23:59:00') as any,
-            ids: [iterator.id],
-            status: ['Autorizada']
-          });
-        
-        let incidenciaVac = false;
-        let incidenciaPCS = false;
-        const incidenciaPermiso = false;
-        let incidenciaTiemExtra = false;
-        let incidenciaFalta = false;
-        let hrExtraDoble = 0;
-        let hrExtraTripe = 0;
-        const incidenceExtra = [];
-        const mediaHoraExtra = 0.06;
-        let sumaMediaHrExtra = 0;
-        let hrsExtraIncidencias = 0;
-
-        const incidenceHrExtra = await this.incidenceCatalogueService.findByCodeBand('HE');
-        const faltaInjustificada = await this.incidenceCatalogueService.findByCodeBand('FINJ');
-          //se obtienen las incidencias del dia
-
-
-        for (let index = 0; index < incidencias.length; index++) {
-          const findIncidence = await this.employeeIncidenceService.findOne(incidencias[index].incidenceId);
-          if (incidencias[index].codeBand == 'VAC') {
-            incidenciaVac = true;
-          }
-          //validar que exista tiempo extra
-          if (incidencias[index].codeBand == 'HE' || incidencias[index].codeBand == 'HET') {
-            incidenciaTiemExtra = true;
-            hrsExtraIncidencias = Number(incidencias[index].total_hour);
-          }
-
-          //sumar horas de incidencia PCS
-          incidencias.some((incidencia) => {
-            //Permiso con goce de sueldo
-            if (incidencia.codeBand == 'PCS') {
-              totalHrsTrabajadas += (Number(incidencia.total_hour) / Number(findIncidence.dateEmployeeIncidence.length));
-              
-            }
-          });
-
-        }
-
-        //se verifica si el dia seleccionado es festivo
-        const dayCalendar = await this.calendarService.findByDate(index as any);
-
-        if (dayCalendar) {
-          if (dayCalendar.holiday) {
-            const horasPerfile = iterator.employeeProfile.work_shift_hrs;
-            totalHrsTrabajadas += horasPerfile;
-          }
-        }
-
-        //si existe incidencia de vacaciones se toma como hrs trabajadas
-        if (incidenciaVac) {
-          totalHrsTrabajadas += hourShift;
-          totalMinTrabajados += Number(minShift) % 60;
-          
-        }
-
-        //falta injustificada
-        if (registrosChecador.length == 0 && incidencias.length == 0 && !dayCalendar) {
-          incidenciaFalta = true;
-          incidenceExtra.push(`1` + faltaInjustificada.code_band);
-        }
-
         //tiempo extra para el turno 3
-        if (diffDate >= diffTimeShift && employeeShif.events[0]?.nameShift == 'T3' && incidencias.length <= 0) {
-          incidenceExtra.push(
-            `${mediaHoraExtra}` + incidenceHrExtra.code_band + '2',
-          );
-          sumaMediaHrExtra += mediaHoraExtra;
+        if (diffDate >= diffTimeShift && employeeShif.events[0]?.nameShift == 'T3' && incidenciasNormales.length <= 0) {
+          incidenceExtra.push(`${mediaHoraExtra}` + incidenceHrExtra.code_band + '2');
+          sumaMediaHrExtra += Number(mediaHoraExtra);
           totalHrsExtra += sumaMediaHrExtra;
         }
+        
 
         //se calcula las horas trabajadas y hrs extra
         calculoHrsExtra += diffDate - diffTimeShift <= 0 ? 0 : diffDate - diffTimeShift;
@@ -365,22 +397,10 @@ export class ChecadorService {
           }
 
           if (hrExtraTripe > 0) {
-            incidenceExtra.push(
-              `${moment.utc(hrExtraDoble * 60 * 60 * 1000).format('H.mm')}` +
-                incidenceHrExtra.code_band +
-                '2',
-            );
-            incidenceExtra.push(
-              `${moment.utc(hrExtraTripe * 60 * 60 * 1000).format('H.mm')}` +
-                incidenceHrExtra.code_band +
-                '3',
-            );
+            incidenceExtra.push(`${moment.utc(hrExtraDoble * 60 * 60 * 1000).format('H.mm')}` + incidenceHrExtra.code_band + '2');
+            incidenceExtra.push(`${moment.utc(hrExtraTripe * 60 * 60 * 1000).format('H.mm')}` + incidenceHrExtra.code_band + '3');
           } else {
-            incidenceExtra.push(
-              `${moment(hrExtraDoble.toString(),"LT").hours()+'.'+moment(hrExtraDoble.toString(),"LT").minutes()}` +
-                incidenceHrExtra.code_band +
-                '2',
-            );
+            incidenceExtra.push(`${moment(hrExtraDoble.toString(),"LT").hours()+'.'+moment(hrExtraDoble.toString(),"LT").minutes()}` + incidenceHrExtra.code_band + '2');
           }
         }
 
@@ -389,7 +409,7 @@ export class ChecadorService {
 
         eventDays.push({
           date: format(index, 'yyyy-MM-dd'),
-          incidencia: { extra: incidenceExtra, incidencias: incidencias },
+          incidencia: { extra: incidenceExtra},
           employeeShift: employeeShif.events[0]?.nameShift,
         });
 
@@ -402,12 +422,7 @@ export class ChecadorService {
       registros.push({
         idEmpleado: iterator.id,
         numeroNomina: iterator.employee_number,
-        nombre:
-          iterator.name +
-          ' ' +
-          iterator.paternal_surname +
-          ' ' +
-          iterator.maternal_surname,
+        nombre: iterator.name + ' ' + iterator.paternal_surname + ' ' + iterator.maternal_surname,
         tipo_nomina: iterator.payRoll.name,
         perfile: iterator.employeeProfile.name,
         date: eventDays,
