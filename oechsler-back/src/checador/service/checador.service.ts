@@ -282,10 +282,8 @@ export class ChecadorService {
         let sumaMediaHrExtra = 0;
         let hrsExtraIncidencias = 0;
 
-        const incidenceHrExtra = await this.incidenceCatalogueService.findName(
-          'Tiempo extra',
-        );
-        const faltaInjustificada = await this.incidenceCatalogueService.findName('Falta injustificada');
+        const incidenceHrExtra = await this.incidenceCatalogueService.findByCodeBand('HE');
+        const faltaInjustificada = await this.incidenceCatalogueService.findByCodeBand('FINJ');
           //se obtienen las incidencias del dia
 
 
