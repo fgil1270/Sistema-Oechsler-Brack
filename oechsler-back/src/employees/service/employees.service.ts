@@ -741,9 +741,10 @@ export class EmployeesService {
         },
         order: {
           logAdjustmentVacationEmployee: {
-            created_at: "DESC"
+            created_at: "DESC",
           }
         }
+
       });
       //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
 
@@ -909,8 +910,7 @@ export class EmployeesService {
           } 
         } 
         
-        
-        dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length - 1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
+        dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[0].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
       }
 
       row['id'] = emp.id;
