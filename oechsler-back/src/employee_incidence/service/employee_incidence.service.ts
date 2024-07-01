@@ -26,6 +26,7 @@ import ical, {
   ICalEventBusyStatus,
   ICalEventStatus,
   ICalEvent,
+  ICalDateTimeValue
 } from 'ical-generator';
 import * as fs from 'fs';
 import * as leerCal from 'node-ical';
@@ -251,23 +252,14 @@ export class EmployeeIncidenceService {
       };
 
       const calendar = ical();
+      const diaInicio = new Date(moment(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd') + ' ' + employeeIncidenceCreate.start_hour).toDate());
+      const diaFin = new Date(moment(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd') + ' ' + employeeIncidenceCreate.end_hour).toDate());
       calendar.method(ICalCalendarMethod.REQUEST);
       calendar.timezone('America/Mexico_City');
       calendar.createEvent({
-        start: new Date(
-          format(
-            new Date(createEmployeeIncidenceDto.start_date),
-            'yyyy-MM-dd',
-          ) +
-            ' ' +
-            employeeIncidenceCreate.start_hour,
-        ),
-        end: new Date(
-          format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd') +
-            ' ' +
-            employeeIncidenceCreate.end_hour,
-        ),
-        allDay: true,
+        start: diaInicio,
+        end: diaFin,
+        //allDay: true,
         timezone: 'America/Mexico_City',
         summary: subject,
         description: 'It works ;)',
@@ -293,6 +285,7 @@ export class EmployeeIncidenceService {
           to,
         );
       } else {
+        
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmailAutorizaIncidence(
           subject,
@@ -1276,9 +1269,9 @@ export class EmployeeIncidenceService {
           hrSalida = '15:59:00';
         }else if(shift.events[0]?.nameShift == 'T2'){
           hrEntrada= '13:00:00';
-          hrSalida = '20:59:00';
+          hrSalida = '21:59:00';
         }else if(shift.events[0]?.nameShift == 'T3'){
-          hrEntrada= '18:00:00';
+          hrEntrada= '20:00:00';
           hrSalida = '06:59:00';
           diaSiguente = new Date(x.setDate(x.getDate() + 1));
         }else if(shift.events[0]?.nameShift == 'T4'){
@@ -1354,10 +1347,10 @@ export class EmployeeIncidenceService {
               
               if(incidencias[index].shift == 2 ){
                 hrEntrada = '05:00:00';
-                hrSalida = '19:59:00';
+                hrSalida = '21:59:00';
 
               }else if(incidencias[index].shift == 3){
-                hrEntrada = '18:00:00';
+                hrEntrada = '20:00:00';
                 hrSalida = '06:59:00';
                 diahoy.setDate(diahoy.getDate() - 1);
               }
@@ -1365,7 +1358,7 @@ export class EmployeeIncidenceService {
               
               if(incidencias[index].shift == 1 ){
                 hrEntrada = '05:00:00';
-                hrSalida = '19:59:00';
+                hrSalida = '21:59:00';
 
               }else if(incidencias[index].shift == 3){
                 hrEntrada = '13:00:00';
@@ -1375,7 +1368,7 @@ export class EmployeeIncidenceService {
             }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T3'){
               
               if(incidencias[index].shift == 1 ){
-                hrEntrada = '18:00:00';
+                hrEntrada = '20:00:00';
                 hrSalida = '06:59:00';
                 diahoy.setDate(diahoy.getDate() - 1);
               }else if(incidencias[index].shift == 2){

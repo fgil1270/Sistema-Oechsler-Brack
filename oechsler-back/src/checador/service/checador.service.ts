@@ -280,9 +280,9 @@ export class ChecadorService {
             hrSalida = '15:59:00';
           }else if(employeeShif.events[0]?.nameShift == 'T2'){
             hrEntrada= '13:00:00';
-            hrSalida = '20:59:00';
+            hrSalida = '21:59:00';
           }else if(employeeShif.events[0]?.nameShift == 'T3'){
-            hrEntrada= '18:00:00';
+            hrEntrada= '20:00:00';
             hrSalida = '06:59:00';
             diaSiguente.setDate(diaSiguente.getDate() + 1);
           }else if(employeeShif.events[0]?.nameShift == 'T4'){
