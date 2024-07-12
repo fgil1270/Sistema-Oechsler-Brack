@@ -260,11 +260,21 @@ export class OrganigramaService {
         return employees;
       }
 
+      const bc = await this.organigramaRepository.find({
+        relations: {
+          leader: true,
+          employee: true,
+        },
+        where: {
+          leader: In([user.idEmployee]),
+        },
+      });
+
       const levelOne = await this.organigramaRepository.find({
         relations: {
           employee: {
             department: true,
-            job: true,
+            job: true, 
             payRoll: true,
             vacationProfile: true,
             employeeProfile: true,
@@ -272,10 +282,11 @@ export class OrganigramaService {
           leader: true,
         },
         where: {
-          leader: In([user.idEmployee]),
           employee: {
             deleted_at: IsNull(),
-          }
+          },
+          leader: In([user.idEmployee]),
+          
         },
         order: {
           employee: {
@@ -298,7 +309,7 @@ export class OrganigramaService {
         },
         where: {
           employee: {
-            deleted_at: IsNull(),
+            deleted_at: Not(IsNull()),
             job: {
               shift_leader : true
             }
@@ -313,7 +324,10 @@ export class OrganigramaService {
       });
       
       levelOne.forEach((element) => {
-        employees.push(element.employee);
+        if(element.employee){
+          employees.push(element.employee);
+        }
+        
       });
       
       //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno

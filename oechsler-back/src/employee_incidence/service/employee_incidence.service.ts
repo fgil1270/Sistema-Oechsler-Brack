@@ -377,7 +377,6 @@ export class EmployeeIncidenceService {
     const to = format(new Date(data.end), 'yyyy-MM-dd')
     const tipo = '';
     
-    
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
@@ -598,7 +597,7 @@ export class EmployeeIncidenceService {
       user
     );
 
-    
+    //console.log(organigrama)
     for (let index = 0; index < organigrama.length; index++) {
       const element = organigrama[index];
       
@@ -928,7 +927,7 @@ export class EmployeeIncidenceService {
   }
 
   async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, user: any) {
-    console.log("entr")
+    
     try {
       const employeeIncidence = await this.employeeIncidenceRepository.findOne({
         where: {
@@ -982,13 +981,13 @@ export class EmployeeIncidenceService {
           dia: ``,
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
-        console.log(updateEmployeeIncidenceDto)
+        
         calendar.method(ICalCalendarMethod.REQUEST);
         calendar.timezone('America/Mexico_City');
         calendar.createEvent({
           start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
           end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour),
-          allDay: true,
+          //allDay: true,
           timezone: 'America/Mexico_City',
           summary: subject,
           description: 'It works ;)',
@@ -1007,7 +1006,7 @@ export class EmployeeIncidenceService {
             },
           ],
         });
-        console.log(updateEmployeeIncidenceDto)
+        
         let day = new Date();
         // Generar archivo .ics y guardar en la ruta especificada
         /* const icsFilePath = 'documents/calendar/empleados';
@@ -1018,7 +1017,7 @@ export class EmployeeIncidenceService {
         fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
   
         // Continuar con el resto del código...
-        console.log(updateEmployeeIncidenceDto)
+        
         //se envia correo
         const mail = await this.mailService.sendEmailAutorizaIncidence(
           subject,
@@ -1063,7 +1062,7 @@ export class EmployeeIncidenceService {
       }
       
       employeeIncidence.status = updateEmployeeIncidenceDto.status;
-      console.log(employeeIncidence)
+      
       return await this.employeeIncidenceRepository.save(employeeIncidence);
     } catch (error) {
       
@@ -1483,6 +1482,7 @@ export class EmployeeIncidenceService {
         horas_objetivo: totalHrsRequeridas + '.' +moment().minutes(totalMinRequeridos).format('mm'),
         horasTrabajadas: totalHrsTrabajadas + '.' + moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
         colorText: totalHrsTrabajadas >= totalHrsRequeridas ? '#74ad74' : '#ff0000',
+        tipo_nomina: newArray[i].payRoll
       });
 
 

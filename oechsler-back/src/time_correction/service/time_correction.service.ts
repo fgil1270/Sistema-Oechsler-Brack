@@ -536,7 +536,6 @@ export class TimeCorrectionService {
 
   //Buscar checadas
   async findByEmployee(data: any, user: any) {
-    const tipoNomina = data.tipoEmpleado;
 
     //const employees = await this.employeesService.findByNomina(tipoNomina);
     const employees = await this.employeesService.findMore(

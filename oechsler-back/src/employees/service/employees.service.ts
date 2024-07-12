@@ -5,7 +5,7 @@ import {
   forwardRef,
   Inject,
 } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like, MoreThanOrEqual } from 'typeorm';
+import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, Between } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { readFile, readFileSync, writeFile } from 'fs';
 import { read, utils } from 'xlsx';
@@ -21,6 +21,7 @@ import { VacationsProfileService } from '../../vacations-profile/service/vacatio
 import { EmployeeProfilesService } from '../../employee-profiles/service/employee-profiles.service';
 import { join } from 'path';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
+import { date } from 'joi';
 
 @Injectable()
 export class EmployeesService {
@@ -716,15 +717,11 @@ export class EmployeesService {
       const ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
       const diaConsulta = moment(new Date(data.startDate)); //dia de consulta del reporte
       const anoCumplidos = diaConsulta.diff(ingreso, 'years', true); // años cumplidos al dia del reporte
-      const finAno = moment(
-        new Date(new Date(data.startDate).getFullYear(), 11, 31),
-      ); //fin de año
+      const finAno = moment(new Date(new Date(data.startDate).getFullYear(), 11, 31)); //fin de año
       const anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
 
       //se obtiene el perfil del empleado
-      const vacationsAno = await this.vacationsProfileService.findOne(
-        emp.vacationProfile.id,
-      );
+      const vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
 
       let dayUsedAllYears = 0;
       //se obtiene el ajuste de vacaciones
@@ -932,7 +929,7 @@ export class EmployeesService {
   }
 
   //consultar vacaciones por empleado
-  async vacationByEmployee(id: number){
+  async vacationByEmployee(id: number, data:any){
 
     const emp = await this.employeeRepository.findOne({
       where: {
@@ -947,229 +944,277 @@ export class EmployeesService {
         employeeIncidence: true,
       },
     });
+    const dateStart = new Date(data.start);
+    const dateEnd = new Date(data.end);
     const report = [];
-          
-      const row = {};
-      const ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
-      const diaConsulta = moment(new Date(new Date().getFullYear(), 11, 31)); //dia de consulta del reporte
-      const anoCumplidos = diaConsulta.diff(ingreso, 'years', true); // años cumplidos al dia del reporte
-      const finAno = moment(new Date(new Date().getFullYear(), 11, 31)); //fin de año
-      const anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
+    const row = {};
+    const ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
+    const diaConsulta = moment(new Date(dateStart.getFullYear(), dateStart.getMonth(), dateStart.getDate())); //dia de consulta del reporte
+    const anoCumplidos = diaConsulta.diff(ingreso, 'years', true); // años cumplidos al dia del reporte
+    const finAno = moment(new Date(new Date().getFullYear(), 11, 31)); //fin de año
+    const anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
 
-      const vacationsAno = await this.vacationsProfileService.findOne(
-        emp.vacationProfile.id,
-      );
+    const vacationsAno = await this.vacationsProfileService.findOne(
+      emp.vacationProfile.id,
+    );
 
-      let dayUsedAllYears = 0;
-      const adjustmentVacation = await this.employeeRepository.findOne({
-        where: {
-          logAdjustmentVacationEmployee: {
-            employee: {
-              id: emp.id,
-            },
+    let dayUsedAllYears = 0;
+    const adjustmentVacation = await this.employeeRepository.findOne({
+      where: {
+        logAdjustmentVacationEmployee: {
+          employee: {
+            id: emp.id,
           },
         },
-        relations: {
-          logAdjustmentVacationEmployee: true,
-        },
-      });
-      //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
+      },
+      relations: {
+        logAdjustmentVacationEmployee: true,
+      },
+    });
+    //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
 
-      //se calculan los dias de vacaciones al dia de la consulta
-      const arrayAno = anoCumplidos.toFixed(2).split('.');
-      const objDiasByAno =
-        vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) => year.year === parseInt(arrayAno[0]),
-        );
-      const objDiasBysiguenteAno =
-        vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) =>
-            year.year ===
-            (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1),
-        );
-      const totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
-      const sumDiasSiguenteAno =
-        (parseInt(arrayAno[1]) / 100) * objDiasBysiguenteAno.day;
-      const sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
-      //se calculan los dias de vacaciones a fin de año
-      const arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
-      const objDiasByAnoFin =
-        vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) => year.year === parseInt(arrayFinAno[0]),
-        );
-      const objDiasBysiguenteAnoFin =
-        vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) =>
-            year.year ===
-            (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1),
-        );
-      const totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
-      const sumDiasSiguenteAnoFin =
-        (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
-      const sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
-      let totalDiasVacacionesMedioDia = 0;
+    //se calculan los dias de vacaciones al dia de la consulta
+    const arrayAno = anoCumplidos.toFixed(2).split('.');
+    const objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
+    const objDiasBysiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
+    const totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
+    const sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBysiguenteAno.day;
+    const sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
+    //se calculan los dias de vacaciones a fin de año
+    const arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
+    const objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayFinAno[0]));
+    const objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
+    const totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
+    const sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
+    const sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
+    let totalDiasVacacionesMedioDia = 0;
 
-      //se obtienen las incidencias de vacaciones
-      const incidenciaVacaciones = await this.employeeRepository.findOne({
-        where: {
-          id: emp.id,
-          employeeIncidence: {
-            incidenceCatologue: {
-              code_band: In(['Vac', 'VACA']),
-            },
-            status: In(['Autorizada', 'Pendiente']),
+    //se obtienen las incidencias de vacaciones
+    const incidenciaVacaciones = await this.employeeRepository.findOne({
+      where: {
+        id: emp.id,
+        employeeIncidence: {
+          incidenceCatologue: {
+            code_band: In(['Vac', 'VACA']),
           },
+          status: In(['Autorizada', 'Pendiente']),
         },
-        relations: {
-          employeeIncidence: {
-            incidenceCatologue: true,
-            dateEmployeeIncidence: true,
-          },
+      },
+      relations: {
+        employeeIncidence: {
+          incidenceCatologue: true,
+          dateEmployeeIncidence: true,
         },
-      });
+      },
+    });
 
-      //se obtinene las incidencias de vacacion medio dia
-      const incidenciaVacacionesMedioDia = await this.employeeRepository.count({
-        where: {
-          id: emp.id,
-          employeeIncidence: {
-            incidenceCatologue: {
-              code_band: In(['VacM']),
-            },
-            status: In(['Autorizada', 'Pendiente']),
+    //se obtinene las incidencias de vacacion medio dia
+    const incidenciaVacacionesMedioDia = await this.employeeRepository.count({
+      where: {
+        id: emp.id,
+        employeeIncidence: {
+          incidenceCatologue: {
+            code_band: In(['VacM']),
           },
+          status: In(['Autorizada', 'Pendiente']),
         },
-        relations: {
-          employeeIncidence: {
-            incidenceCatologue: true,
-            dateEmployeeIncidence: true,
-          },
+      },
+      relations: {
+        employeeIncidence: {
+          incidenceCatologue: true,
+          dateEmployeeIncidence: true,
         },
-      });
+      },
+    });
 
+    if (incidenciaVacacionesMedioDia > 0) {
+      totalDiasVacacionesMedioDia = incidenciaVacacionesMedioDia * 0.5;
+    }
+
+    //si no existe ajuste
+    //se realiza el calculo con las incidencias
+    if (!adjustmentVacation) {
+      //si existen vacaciones medio dia, se suman
       if (incidenciaVacacionesMedioDia > 0) {
         totalDiasVacacionesMedioDia = incidenciaVacacionesMedioDia * 0.5;
       }
 
-      //si no existe ajuste
-      //se realiza el calculo con las incidencias
-      if (!adjustmentVacation) {
-        //si existen vacaciones medio dia, se suman
-        if (incidenciaVacacionesMedioDia > 0) {
-          totalDiasVacacionesMedioDia = incidenciaVacacionesMedioDia * 0.5;
-        }
-
-        //se suman los dias de vacaciones por incidencia
-        incidenciaVacaciones?.employeeIncidence.forEach((element) => {
-          element.dateEmployeeIncidence.forEach((element) => {
-            dayUsedAllYears++;
-          });
+      //se suman los dias de vacaciones por incidencia
+      incidenciaVacaciones?.employeeIncidence.forEach((element) => {
+        element.dateEmployeeIncidence.forEach((element) => {
+          dayUsedAllYears++;
         });
-        //se suman las vacaciones de medio dia
-        dayUsedAllYears += Number(totalDiasVacacionesMedioDia); //total de vacaciones
+      });
+      //se suman las vacaciones de medio dia
+      dayUsedAllYears += Number(totalDiasVacacionesMedioDia); //total de vacaciones
 
-      } else {
-        //si existe ajuste toma el valor del ajuste
-        //y toma las incidencias posteriores al dia de ajuste
-        //y sumas las cantidades
+    } else {
+      //si existe ajuste toma el valor del ajuste
+      //y toma las incidencias posteriores al dia de ajuste
+      //y sumas las cantidades
 
-        let totalDiasIncidencia = 0;
-        //vacaciones normales y adelantadas
-        const newIncidenceNormales = await this.employeeRepository.findOne({
-          relations: {
-            employeeIncidence: {
-              dateEmployeeIncidence: true,
-              incidenceCatologue: true,
+      let totalDiasIncidencia = 0;
+      //vacaciones normales y adelantadas
+      const newIncidenceNormales = await this.employeeRepository.findOne({
+        relations: {
+          employeeIncidence: {
+            dateEmployeeIncidence: true,
+            incidenceCatologue: true,
+          },
+        },
+        where: {
+          id: emp.id,
+          employeeIncidence: {
+            dateEmployeeIncidence: {
+              date: MoreThanOrEqual(
+                format(
+                  new Date(
+                    adjustmentVacation.logAdjustmentVacationEmployee[
+                      adjustmentVacation.logAdjustmentVacationEmployee
+                        .length - 1
+                    ].created_at,
+                  ),
+                  'yyyy-MM-dd',
+                ) as any,
+              ),
+            },
+            status: In(['Autorizada', 'Pendiente']),
+            incidenceCatologue: {
+              code_band: In(['Vac', 'VACA']),
             },
           },
-          where: {
-            id: emp.id,
-            employeeIncidence: {
-              dateEmployeeIncidence: {
-                date: MoreThanOrEqual(
-                  format(
-                    new Date(
-                      adjustmentVacation.logAdjustmentVacationEmployee[
-                        adjustmentVacation.logAdjustmentVacationEmployee
-                          .length - 1
-                      ].created_at,
-                    ),
-                    'yyyy-MM-dd',
-                  ) as any,
-                ),
-              },
-              status: In(['Autorizada', 'Pendiente']),
-              incidenceCatologue: {
-                code_band: In(['Vac', 'VACA']),
-              },
-            },
-          },
-        });
+        },
+      });
 
-        //vacaciones medio dia
-        const newIncidenceVacMedioDia = await this.employeeRepository.findOne({
-          relations: {
-            employeeIncidence: {
-              dateEmployeeIncidence: true,
-              incidenceCatologue: true,
+      //vacaciones medio dia
+      const newIncidenceVacMedioDia = await this.employeeRepository.findOne({
+        relations: {
+          employeeIncidence: {
+            dateEmployeeIncidence: true,
+            incidenceCatologue: true,
+          },
+        },
+        where: {
+          id: emp.id,
+          employeeIncidence: {
+            dateEmployeeIncidence: {
+              date: MoreThanOrEqual(
+                format(
+                  new Date(
+                    adjustmentVacation.logAdjustmentVacationEmployee[
+                      adjustmentVacation.logAdjustmentVacationEmployee
+                        .length - 1
+                    ].created_at,
+                  ),
+                  'yyyy-MM-dd',
+                ) as any,
+              ),
+            },
+            status: In(['Autorizada', 'Pendiente']),
+            incidenceCatologue: {
+              code_band: In(['VacM']),
             },
           },
-          where: {
-            id: emp.id,
-            employeeIncidence: {
-              dateEmployeeIncidence: {
-                date: MoreThanOrEqual(
-                  format(
-                    new Date(
-                      adjustmentVacation.logAdjustmentVacationEmployee[
-                        adjustmentVacation.logAdjustmentVacationEmployee
-                          .length - 1
-                      ].created_at,
-                    ),
-                    'yyyy-MM-dd',
-                  ) as any,
-                ),
-              },
-              status: In(['Autorizada', 'Pendiente']),
-              incidenceCatologue: {
-                code_band: In(['VacM']),
-              },
-            },
-          },
-        });
+        },
+      });
 
-        if (newIncidenceNormales) {
-          for (let index = 0; index < newIncidenceNormales.employeeIncidence.length; index++) {
-            const element = newIncidenceNormales.employeeIncidence[index];
-            totalDiasIncidencia += element.dateEmployeeIncidence.length;
-          }
+      if (newIncidenceNormales) {
+        for (let index = 0; index < newIncidenceNormales.employeeIncidence.length; index++) {
+          const element = newIncidenceNormales.employeeIncidence[index];
+          totalDiasIncidencia += element.dateEmployeeIncidence.length;
         }
-
-        if (newIncidenceVacMedioDia) {
-          for (let index = 0; index < newIncidenceVacMedioDia.employeeIncidence.length; index++) {
-            const element = newIncidenceVacMedioDia.employeeIncidence[index];
-            totalDiasIncidencia += Number(element.dateEmployeeIncidence.length) * Number(0.5);
-          }
-        }
-
-        dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length - 1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
       }
 
-      row['id'] = emp.id;
-      row['perfil'] = emp.employeeProfile.name;
-      row['num_employee'] = emp.employee_number;
-      row['nombre'] = emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
-      row['ingreso'] = emp.date_employment;
-      row['anos_cumplidos'] = anoCumplidos.toFixed(2); //años cumplidos
-      row['anos_fin_ano'] = anoCumplidosFinAno.toFixed(2); //años cumplidos hasta fin de año
-      row['dias_antiguedad_fin_ano'] = sumaDiasAntiguedadFin.toFixed(2); //dias proporcionales por antiguedad hasta fin de año
-      row['dias_antiguedad'] = sumaDiasAntiguedad.toFixed(2); //dias proporcionales por antiguedad
-      row['dias_utilizados_all_years'] = dayUsedAllYears.toFixed(2); //dias utilizados(todos los años)
-      row['dias_disponibles_dia_hoy'] = (sumaDiasAntiguedad - dayUsedAllYears).toFixed(2); //dias disponibles al dia de hoy
-      row['dias_disponibles_fin_ano'] = (sumaDiasAntiguedadFin - dayUsedAllYears).toFixed(2); //dias disponibles hasta fin de año
-      report.push(row);
+      if (newIncidenceVacMedioDia) {
+        for (let index = 0; index < newIncidenceVacMedioDia.employeeIncidence.length; index++) {
+          const element = newIncidenceVacMedioDia.employeeIncidence[index];
+          totalDiasIncidencia += Number(element.dateEmployeeIncidence.length) * Number(0.5);
+        }
+      }
 
-      return report;
+      dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length - 1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
+    }
+
+    row['id'] = emp.id;
+    row['perfil'] = emp.employeeProfile.name;
+    row['num_employee'] = emp.employee_number;
+    row['nombre'] = emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
+    row['ingreso'] = emp.date_employment;
+    row['anos_cumplidos'] = Number(anoCumplidos.toFixed(2)); //años cumplidos
+    row['anos_fin_ano'] = Number(anoCumplidosFinAno.toFixed(2)); //años cumplidos hasta fin de año
+    row['dias_antiguedad_fin_ano'] = Number(sumaDiasAntiguedadFin.toFixed(2)); //dias proporcionales por antiguedad hasta fin de año
+    row['dias_antiguedad'] = Number(sumaDiasAntiguedad.toFixed(2)); //dias proporcionales por antiguedad
+    row['dias_utilizados_all_years'] = Number(dayUsedAllYears.toFixed(2)); //dias utilizados(todos los años)
+    row['dias_disponibles_dia_hoy'] = Number((sumaDiasAntiguedad - dayUsedAllYears).toFixed(2)); //dias disponibles al dia de hoy
+    row['dias_disponibles_fin_ano'] = Number((sumaDiasAntiguedadFin - dayUsedAllYears).toFixed(2)); //dias disponibles hasta fin de año
+    row['dias_sugeridos_apartar'] = 0; //dias sugeridos para apartar por la empresa
+    report.push(row);
+
+    return report;
+  }
+
+  //reporte status de vacaiones
+  async statusVacation(data: any, userLogin: any){
+    let response = {
+      data: [],
+      total: 0,
+      error: false,
+      message: ''
+    } 
+    const startDate = format(new Date(data.startDate), 'yyyy-MM-dd');
+    const endDate = format(new Date(data.endDate), 'yyyy-MM-dd');
+    let dataEmployee = [];
+      
+    try {
+      
+      const incidencias = await this.employeeRepository.find({
+        select: {
+          employee_number: true,
+          name: true,
+          paternal_surname: true,
+          maternal_surname: true,
+          employeeIncidence: {
+            status: true,
+            incidenceCatologue: {
+              code_band: true,
+              name: true,
+            },
+            dateEmployeeIncidence: {
+              date: true,
+            },
+          }
+        },
+        where: {
+          id: In(data.ids),
+          employeeIncidence: {
+            dateEmployeeIncidence: {
+              date: Between(startDate as any, endDate as any),
+            },
+            incidenceCatologue: {
+              code_band: In(['VAC', 'VACA', 'VacM']),
+            },
+            status: 'Autorizada'
+          },
+        },
+        relations: {
+          employeeIncidence: {
+            incidenceCatologue: true,
+            dateEmployeeIncidence: true,
+          },
+        },
+      });
+      
+      
+      response.total = incidencias.length;
+      response.data = incidencias;
+
+      return response;
+    } catch (error) {
+      response.error = true;
+      response.message = error.message;
+    }
+    
+
   }
 
     

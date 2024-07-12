@@ -16,19 +16,20 @@ import {
   Between,
   Double,
   Decimal128,
+  In
 } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { format } from 'date-fns';
 import * as moment from 'moment';
 
-import { CreateChecadaDto, UpdateChecadaDto } from '../dto/create-checada.dto';
+import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto } from '../dto/create-checada.dto';
 import { Checador } from '../entities/checador.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
-import { hr, is } from 'date-fns/locale';
+import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 
 @Injectable()
 export class ChecadorService {
@@ -41,9 +42,12 @@ export class ChecadorService {
     private employeeIncidenceService: EmployeeIncidenceService,
     private readonly incidenceCatalogueService: IncidenceCatologueService,
     private readonly calendarService: CalendarService,
+    private readonly organigramaService: OrganigramaService
   ) {}
 
-  async create(createChecadaDto: CreateChecadaDto) {
+  async create(createChecadaDto: CreateChecadaDto, user: any) {
+    const userLogin = await this.employeesService.findOne(user.idEmployee);
+    
     const date = format(new Date(createChecadaDto.startDate), 'yyyy-MM-dd');
 
     const employee = await this.employeesService.findOne(
@@ -51,6 +55,11 @@ export class ChecadorService {
     );
     if (!employee) {
       throw new NotFoundException(`Empleado no encontrado`);
+    }
+
+    if(userLogin.emp.id == employee.emp.id){
+      createChecadaDto.status = 'Pendiente';
+
     }
 
     const userCreate = await this.employeesService.findOne(
@@ -86,13 +95,7 @@ export class ChecadorService {
   async findAll(createChecadaDto: CreateChecadaDto) {}
 
   //buscar registros de entrada y salida por ids de empleado y rango de fechas
-  async findbyDate(
-    id: any,
-    start: any,
-    end: any,
-    hrEntrada: any,
-    hrSalida: any,
-  ) {
+  async findbyDate(id: any, start: any, end: any, hrEntrada: any, hrSalida: any) {
     const checador = await this.checadorRepository.find({
       where: {
         employee: {
@@ -122,10 +125,63 @@ export class ChecadorService {
     return checador;
   }
 
+  //buscar registros de entrada y salida y rango de fechas
+  async findbyDateOrganigrama(data: FindChecadaDto, user: any) {
+    //se obtienen los empleados por organigrama
+    const organigrama = await this.organigramaService.findJerarquia(
+      {
+        type: data.type,
+      },
+      user
+    );
+    let arrayIdsEmployee = [];
+    arrayIdsEmployee = organigrama.map((item) => item.id);
+
+    //se obtienen las checadas por rango de fechas y ids de empleados
+    const checador = await this.checadorRepository.find({
+      where: {
+        employee: {
+          id: In([arrayIdsEmployee]),
+          employeeShift: {
+            start_date: format(new Date(data.startDate), 'yyyy-MM-dd') as any,
+          },
+        },
+        date: Between(
+          format(new Date(data.startDate), `yyyy-MM-dd ${data.hrEntrada}`) as any,
+          format(new Date(data.endDate), `yyyy-MM-dd ${data.hrSalida}`) as any,
+        ),
+      },
+      relations: {
+        employee: {
+          employeeShift: {
+            shift: true,
+          },
+          employeeProfile: true,
+        },
+        createdBy: true
+      },
+      order: {
+        date: 'ASC',
+      },
+    });
+
+    return checador;
+  }
+
   //reporte Nomipaq
-  async reportNomipaq(data: any) {
+  async reportNomipaq(data: any, user: any) {
     const tipoNomina = data.tipoEmpleado;
+    const tipoJerarquia = data.tipoJerarquia;
     const employees = await this.employeesService.findByNomina(tipoNomina);
+    //se obtienen los empleados por organigrama
+    const organigrama = await this.organigramaService.findJerarquia(
+      {
+        type: tipoJerarquia,
+      },
+      user
+    );
+    //se filtran los empleados por tipo de nomina
+    const employeeNomina = tipoNomina == 'Todas'? organigrama : organigrama.filter((emp) => emp.payRoll.name == tipoNomina);
 
     const from = format(new Date(data.startDate), 'yyyy-MM-dd 00:00:00');
     const to = format(new Date(data.endDate), 'yyyy-MM-dd 23:59:59');
@@ -143,7 +199,7 @@ export class ChecadorService {
     }
 
     //se recorre el arreglo de empleados
-    for (const iterator of employees.emps) {
+    for (const iterator of employeeNomina) {
       const eventDays = [];
       let totalHrsRequeridas = 0;
       let totalMinRequeridos = 0;
@@ -237,7 +293,13 @@ export class ChecadorService {
               }else{  
                 isIncidenceIncapacidad = false;
               }
-              incidenceExtra.push(`1` + incidenciasNormales[index].codeBand);
+
+              //si es permiso con descuento de horas
+              if(incidenciasNormales[index].codeBand == 'HDS'){
+                incidenceExtra.push(`${moment.utc(incidenciasNormales[index].total_hour * 60 * 60 * 1000).format('H.mm')}` + incidenciasNormales[index].codeBand);
+              }else{
+                incidenceExtra.push(`1` + incidenciasNormales[index].codeBand);
+              }
             }
             //validar que exista tiempo extra
             if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET') {
