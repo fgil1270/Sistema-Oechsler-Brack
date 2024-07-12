@@ -38,19 +38,6 @@ export class EmployeesController {
     return this.employeesService.create(createEmployeeDto);
   }
 
-  @ApiOperation({ summary: 'Listar empleados' })
-  @Views('empleados')
-  @Get()
-  findAll() {
-    return this.employeesService.findAll();
-  }
-
-  @ApiOperation({ summary: 'Listar empleados para otras vistas' })
-  @Get('/empOtherViews')
-  findAllEmpotherViews(@CurrentUser() user: User) {
-    return this.employeesService.findAll();
-  }
-
   @ApiOperation({ summary: 'Cargar archivo de empleados' })
   @Post('/upload')
   //CODIGO PARA SUBIR ARCHIVOS
@@ -84,17 +71,32 @@ export class EmployeesController {
     }); */
   }
 
+  @ApiOperation({ summary: 'Buscar por array de empleados' })
+  @Post('/find')
+  findMore(@Body() ids: any[]) {
+    return this.employeesService.findMore(ids);
+  }
+
+  @ApiOperation({ summary: 'Listar empleados' })
+  @Views('empleados')
+  @Get()
+  findAll() {
+    return this.employeesService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Listar empleados para otras vistas' })
+  @Get('/empOtherViews')
+  findAllEmpotherViews(@CurrentUser() user: User) {
+    return this.employeesService.findAll();
+  }
+
   @ApiOperation({ summary: 'Buscar empleado' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.employeesService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Buscar por array de empleados' })
-  @Get('/find/:ids')
-  findMore(@Param('ids') ids: any) {
-    return this.employeesService.findMore(ids.split(','));
-  }
+  
 
   @ApiOperation({ summary: 'Buscar por array de numero de empleados' })
   @Get('/findByEmployeeNumber/:ids')
@@ -135,11 +137,18 @@ export class VacationsReportController {
     }
   }
 
-  @ApiOperation({ summary: 'Vacaciones por empleado' })
-  @Get(':id')
-  vacationByEmployee(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+  @ApiOperation({ summary: 'Vacaciones por empleado y rango de fechas' })
+  @Post(':id')
+  vacationByEmployee(@Param('id', ParseIntPipe) id: number, @Body() dataVacation:any,  @CurrentUser() user: any) {
    
-    return this.employeesService.vacationByEmployee(id);
+    return this.employeesService.vacationByEmployee(id, dataVacation);
     
+  }
+
+  @ApiOperation({ summary: 'Reporte status de vacaciones' })
+  @Views('status_vacaciones')
+  @Get('status/vacation')
+  statusVacation(@Query() data: any, @CurrentUser() user: any) {
+      return this.employeesService.statusVacation(data, user);
   }
 }

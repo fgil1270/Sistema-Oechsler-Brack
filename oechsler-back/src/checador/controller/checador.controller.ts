@@ -17,11 +17,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
-import { Views } from '../../auth/decorators/views.decorator';
-import { RoleGuard } from '../../auth/guards/role.guard';
 
 import { ChecadorService } from '../service/checador.service';
-import { CreateChecadaDto, UpdateChecadaDto } from '../dto/create-checada.dto';
+import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto } from '../dto/create-checada.dto';
+import { Views } from '../../auth/decorators/views.decorator';
+import { RoleGuard } from '../../auth/guards/role.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Reloj Checador')
@@ -31,14 +32,11 @@ export class ChecadorController {
 
   @ApiOperation({ summary: 'Crear registro de entrada o salida del empleado' })
   @Post()
-  create(@Body() createChecadaDto: CreateChecadaDto) {
-    return this.checadorService.create(createChecadaDto);
+  create(@Body() createChecadaDto: CreateChecadaDto, @CurrentUser() user: any){
+    return this.checadorService.create(createChecadaDto, user);
   }
 
-  @ApiOperation({
-    summary:
-      'buscar registros de entrada y salida por ids de empleado y rango de fechas',
-  })
+  @ApiOperation({ summary: 'buscar registros de entrada y salida por id de empleado y rango de fechas' })
   @Get()
   findbyDate(@Query() data: UpdateChecadaDto) {
     return this.checadorService.findbyDate(
@@ -48,6 +46,13 @@ export class ChecadorController {
       data.startTime,
       data.endTime,
     );
+  }
+
+  @ApiOperation({ summary: 'buscar registros de entrada y salida por array de ids de empleado y rango de fechas' })
+  @Views('autorizar_checada')
+  @Get('byIds')
+  findbyDateOrganigrama(@Query() data: FindChecadaDto, @CurrentUser() user: any) {
+    return this.checadorService.findbyDateOrganigrama(data, user);
   }
 
   @ApiOperation({ summary: 'Acceso a la vista de Nomipaq' })
@@ -62,8 +67,8 @@ export class ChecadorController {
   })
   @Views('nomipaq')
   @Get('nomipaq/report')
-  reportNomipaq(@Query() data: any) {
-    return this.checadorService.reportNomipaq(data);
+  reportNomipaq(@Query() data: any, @CurrentUser() user: any){
+    return this.checadorService.reportNomipaq(data, user);
   }
 
   @ApiOperation({ summary: 'Actualizar Checada' })

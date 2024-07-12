@@ -9,6 +9,7 @@ import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
 import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidence.module';
 import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catologue.module';
 import { CalendarModule } from '../calendar/calendar.module';
+import { OrganigramaModule } from '../organigrama/organigrama.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CalendarModule } from '../calendar/calendar.module';
     forwardRef(() => EmployeeIncidenceModule),
     IncidenceCatologueModule,
     CalendarModule,
+    OrganigramaModule,
   ],
   providers: [ChecadorService],
   controllers: [ChecadorController],

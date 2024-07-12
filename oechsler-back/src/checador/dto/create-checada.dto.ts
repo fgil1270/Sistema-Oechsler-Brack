@@ -43,3 +43,26 @@ export class CreateChecadaDto {
 }
 
 export class UpdateChecadaDto extends PartialType(CreateChecadaDto) {}
+
+export class FindChecadaDto {
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Fecha de inicio' })
+  startDate: string;
+
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Fecha de fin' })
+  endDate: string;
+
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Hora de inicio' })
+  hrEntrada: string;
+
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Hora de fin' })
+  hrSalida: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Tipo de organigrama' })
+  type: string;
+}

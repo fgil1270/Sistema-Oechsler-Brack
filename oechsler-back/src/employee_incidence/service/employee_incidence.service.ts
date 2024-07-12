@@ -26,6 +26,7 @@ import ical, {
   ICalEventBusyStatus,
   ICalEventStatus,
   ICalEvent,
+  ICalDateTimeValue
 } from 'ical-generator';
 import * as fs from 'fs';
 import * as leerCal from 'node-ical';
@@ -47,6 +48,7 @@ import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
+import { isIn } from 'class-validator';
 
 
 @Injectable()
@@ -250,23 +252,14 @@ export class EmployeeIncidenceService {
       };
 
       const calendar = ical();
+      const diaInicio = new Date(moment(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd') + ' ' + employeeIncidenceCreate.start_hour).toDate());
+      const diaFin = new Date(moment(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd') + ' ' + employeeIncidenceCreate.end_hour).toDate());
       calendar.method(ICalCalendarMethod.REQUEST);
       calendar.timezone('America/Mexico_City');
       calendar.createEvent({
-        start: new Date(
-          format(
-            new Date(createEmployeeIncidenceDto.start_date),
-            'yyyy-MM-dd',
-          ) +
-            ' ' +
-            employeeIncidenceCreate.start_hour,
-        ),
-        end: new Date(
-          format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd') +
-            ' ' +
-            employeeIncidenceCreate.end_hour,
-        ),
-        allDay: true,
+        start: diaInicio,
+        end: diaFin,
+        //allDay: true,
         timezone: 'America/Mexico_City',
         summary: subject,
         description: 'It works ;)',
@@ -292,6 +285,7 @@ export class EmployeeIncidenceService {
           to,
         );
       } else {
+        
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmailAutorizaIncidence(
           subject,
@@ -382,7 +376,6 @@ export class EmployeeIncidenceService {
     const from = format(new Date(data.start), 'yyyy-MM-dd')
     const to = format(new Date(data.end), 'yyyy-MM-dd')
     const tipo = '';
-    
     
     const incidences = await this.employeeIncidenceRepository.find({
       relations: {
@@ -950,6 +943,7 @@ export class EmployeeIncidenceService {
       const userAutoriza = await this.employeeService.findOne(user.idEmployee);
   
       if (!employeeIncidence) {
+        
         throw new NotFoundException('No se encontro la incidencia');
       }
       const to = [];
@@ -972,7 +966,7 @@ export class EmployeeIncidenceService {
       let mailData: MailData;
   
       const calendar = ical();
-  
+      
       if (updateEmployeeIncidenceDto.status == 'Autorizada') {
         employeeIncidence.date_aproved_leader = new Date();
         employeeIncidence.leader = userAutoriza.emp;
@@ -987,13 +981,13 @@ export class EmployeeIncidenceService {
           dia: ``,
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
-  
+        
         calendar.method(ICalCalendarMethod.REQUEST);
         calendar.timezone('America/Mexico_City');
         calendar.createEvent({
           start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
           end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour),
-          allDay: true,
+          //allDay: true,
           timezone: 'America/Mexico_City',
           summary: subject,
           description: 'It works ;)',
@@ -1012,6 +1006,7 @@ export class EmployeeIncidenceService {
             },
           ],
         });
+        
         let day = new Date();
         // Generar archivo .ics y guardar en la ruta especificada
         /* const icsFilePath = 'documents/calendar/empleados';
@@ -1022,7 +1017,7 @@ export class EmployeeIncidenceService {
         fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
   
         // Continuar con el resto del código...
-  
+        
         //se envia correo
         const mail = await this.mailService.sendEmailAutorizaIncidence(
           subject,
@@ -1067,6 +1062,7 @@ export class EmployeeIncidenceService {
       }
       
       employeeIncidence.status = updateEmployeeIncidenceDto.status;
+      
       return await this.employeeIncidenceRepository.save(employeeIncidence);
     } catch (error) {
       
@@ -1146,6 +1142,7 @@ export class EmployeeIncidenceService {
     for (let i = 0; i < newArray.length; i++) {
       const eventDays = [];
       let totalHrsRequeridas = 0;
+      let totalMinRequeridos = 0;
       let totalHrsTrabajadas = 0;
       let totalMinutisTrabados:number = 0;
       
@@ -1177,9 +1174,7 @@ export class EmployeeIncidenceService {
             break;
         }
 
-        totalHrsRequeridas = weekDaysProfile.includes(dayLetter)
-          ? totalHrsRequeridas + newArray[i].employeeProfile.work_shift_hrs
-          : totalHrsRequeridas + 0;
+        
       }
 
       //se recorren los dias 
@@ -1212,10 +1207,81 @@ export class EmployeeIncidenceService {
             type: 'ASC',
           },
         });
+
+
+        let isIncidenciaTiempoExtra = false;
+        //se verifica si la incidencia es tiempo extra
+        incidencias.some((incidence) => {
+          if(incidence.incidenceCatologue.code_band == 'TxT' || incidence.incidenceCatologue.code_band == 'HE' || incidence.incidenceCatologue.code_band == 'HET'){
+            isIncidenciaTiempoExtra = true;
+
+          }
+        });
+
+        //se obtiene el turno del dia seleccionado
+        const shift = await this.employeeShiftService.findMore(
+          {
+            start: format(dia, 'yyyy-MM-dd'),
+            end: format(dia, 'yyyy-MM-dd'),
+          },
+          [newArray[i].id],
+        );
+
+        //horario del turno
+        const iniciaTurno = new Date(`${shift.events[0]?.start} ${shift.events[0]?.startTimeshift}`);
+        const termianTurno = new Date(`${shift.events[0]?.start} ${shift.events[0]?.endTimeshift}`);
         
+        if(shift.events[0]?.nameShift == 'T3'){
+          termianTurno.setDate(termianTurno.getDate() + 1)
+        }
+        const startTimeShift = moment(iniciaTurno, 'HH:mm');
+        let endTimeShift = moment(termianTurno, 'HH:mm');
+
+        //se obtiene la hora de inicio y fin del turno
+        const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
+        const hourShift = endTimeShift.diff(startTimeShift, 'hours');
+        const minShift = endTimeShift.diff(startTimeShift, 'minutes');
+
+        
+        //si existe turno se suman las horas requeridas
+        if(shift.events.length >= 1){
+          totalHrsRequeridas += hourShift;
+          totalMinRequeridos += Number(minShift) % 60;
+        }
+
+
+        let hrEntrada = '00:00:00';
+        let hrSalida = '23:59:59';
+        const x = new Date(dia);
+        let diahoy = new Date(dia);
+        let diaSiguente = new Date(dia);
+        let firstHr;
+        let secondHr;
+        let diffHr = 0;
+        let diffMin = 0;
+        let modMinUno = 0;
+        let divMinDos = 0;
+
+        //si el turno es 3 se suma un dia
+        if(shift.events[0]?.nameShift == 'T1'){
+          hrEntrada= '05:00:00';
+          hrSalida = '15:59:00';
+        }else if(shift.events[0]?.nameShift == 'T2'){
+          hrEntrada= '13:00:00';
+          hrSalida = '21:59:00';
+        }else if(shift.events[0]?.nameShift == 'T3'){
+          hrEntrada= '20:00:00';
+          hrSalida = '06:59:00';
+          diaSiguente = new Date(x.setDate(x.getDate() + 1));
+        }else if(shift.events[0]?.nameShift == 'T4'){
+          hrEntrada= '05:00:00';
+          hrSalida = '15:59:00';
+        }
 
         //se realiza la suma o resta de horas de las incidencias
-        incidencias.some(async (incidence) => {
+        for (let index = 0; index < incidencias.length; index++) {
+          const incidence = incidencias[index];
+          
           const currentIncidence = await this.employeeIncidenceRepository.find({
             relations: {
               employee: true,
@@ -1229,6 +1295,7 @@ export class EmployeeIncidenceService {
           let horasEntreTotalDiasIncidencia = 0;
           horasEntreTotalDiasIncidencia = Number(currentIncidence[0].total_hour) / currentIncidence[0].dateEmployeeIncidence.length;
 
+          
           //se obtiene las horas y minutos de la incidencia
           let horaMinIncidencia = moment(horasEntreTotalDiasIncidencia.toString(),"LT");
           //se obtiene la diferencia en milisegundos
@@ -1263,7 +1330,58 @@ export class EmployeeIncidenceService {
           }
 
           
-        });
+          
+        }
+        //se suman las horas de las incidencias al total de horas por dia
+        totalHrsDay += Number(sumaHrsIncidencias);
+
+        //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
+        for (let index = 0; index < incidencias.length; index++) {
+          
+          if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
+            
+            //si es turno 1
+            if ( shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T1'){
+
+              
+              if(incidencias[index].shift == 2 ){
+                hrEntrada = '05:00:00';
+                hrSalida = '21:59:00';
+
+              }else if(incidencias[index].shift == 3){
+                hrEntrada = '20:00:00';
+                hrSalida = '06:59:00';
+                diahoy.setDate(diahoy.getDate() - 1);
+              }
+            }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T2'){
+              
+              if(incidencias[index].shift == 1 ){
+                hrEntrada = '05:00:00';
+                hrSalida = '21:59:00';
+
+              }else if(incidencias[index].shift == 3){
+                hrEntrada = '13:00:00';
+                hrSalida = '06:59:00';
+                diaSiguente.setDate(diahoy.getDate() - 1);
+              }
+            }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T3'){
+              
+              if(incidencias[index].shift == 1 ){
+                hrEntrada = '20:00:00';
+                hrSalida = '06:59:00';
+                diahoy.setDate(diahoy.getDate() - 1);
+              }else if(incidencias[index].shift == 2){
+                hrEntrada = '13:00:00';
+                hrSalida = '06:59:00';
+                diaSiguente.setDate(diaSiguente.getDate() + 1);
+              }
+            }
+          }
+
+          
+        }
+        
+        
 
         //se verifica si el dia seleccionado es festivo
         const dayCalendar = await this.calendarService.findByDate(dia as any);
@@ -1282,35 +1400,22 @@ export class EmployeeIncidenceService {
             );
           }
         }
+        incidencias.forEach((incidence) => {
+          objIncidencia.push({
+            code: incidence.incidenceCatologue.code,
+          });
+        });
 
-        //se obtiene el turno del dia seleccionado
-        const shift = await this.employeeShiftService.findMore(
-          {
-            start: format(dia, 'yyyy-MM-dd'),
-            end: format(dia, 'yyyy-MM-dd'),
-          },
-          [newArray[i].id],
-        );
 
-        const hrEntrada = '00:00:00';
-        const hrSalida = '23:59:59';
-        const diaAnterior = dia;
-        const diaSiguente = dia;
-
+        //se obtienen los registros del checador
         const registrosChecador = await this.checadorService.findbyDate(
           parseInt(newArray[i].id),
-          diaAnterior,
+          diahoy,
           diaSiguente,
           hrEntrada,
           hrSalida,
         );
-        let firstHr;
-        let secondHr;
-        let diffHr = 0;
-        let diffMin = 0;
-        let modMinUno = 0;
-        let divMinDos = 0;
-
+        
 
         if (registrosChecador.length > 0) {
           firstHr = moment(new Date(registrosChecador[0]?.date));
@@ -1329,31 +1434,27 @@ export class EmployeeIncidenceService {
           diffMin = secondHr.diff(firstHr, 'minutes');
           totalMinutisTrabados += Number(diffMin) % 60;
           totalMinDay += Number(diffMin) % 60;
+
           
-          /* if (totalMinutisTrabados > 59) {
-            
+
+          if (totalMinutisTrabados >= 60) {
             modMinUno = totalMinutisTrabados % 60;
             divMinDos = totalMinutisTrabados / 60;
             totalHrsTrabajadas += Math.floor(divMinDos);
-            totalMinutisTrabados += modMinUno;
-            //totalHrsDay += Math.floor(divMinDos);
-            //totalMinDay += modMinUno;
-          } */
+            totalMinutisTrabados = modMinUno;
+            totalHrsDay += Math.floor(totalMinDay / 60);
+            totalMinDay += totalMinDay % 60;
+          }
+
         }
 
-        
-
-        incidencias.forEach((incidence) => {
-          objIncidencia.push({
-            code: incidence.incidenceCatologue.code,
-          });
-        });
-
-        
+        //se suma el total de horas por dia al total de horas trabajadas
         totalHrsDay += Number(diffHr) > 0 ? Number(diffHr) : 0;
-        totalHrsDay += sumaHrsIncidencias;
-        
         totalHrsTrabajadas += totalHrsDay;
+
+       
+        
+        
         //totalMinutisTrabados += totalMinDay;
 
 
@@ -1375,17 +1476,13 @@ export class EmployeeIncidenceService {
       registros.push({
         idEmpleado: newArray[i].id,
         numeroNomina: newArray[i].employee_number,
-        nombre:
-          newArray[i].name +
-          ' ' +
-          newArray[i].paternal_surname +
-          ' ' +
-          newArray[i].maternal_surname,
+        nombre: newArray[i].name + ' ' + newArray[i].paternal_surname + ' ' + newArray[i].maternal_surname,
         perfile: newArray[i].employeeProfile.name,
         date: eventDays,
-        horas_objetivo: totalHrsRequeridas.toFixed(2),
+        horas_objetivo: totalHrsRequeridas + '.' +moment().minutes(totalMinRequeridos).format('mm'),
         horasTrabajadas: totalHrsTrabajadas + '.' + moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
         colorText: totalHrsTrabajadas >= totalHrsRequeridas ? '#74ad74' : '#ff0000',
+        tipo_nomina: newArray[i].payRoll
       });
 
 

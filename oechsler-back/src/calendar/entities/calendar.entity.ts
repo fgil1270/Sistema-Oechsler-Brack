@@ -31,6 +31,9 @@ export class Calendar {
   @Column({ type: 'text', default: null })
   description: string;
 
+  @Column({ type: 'boolean', default: false })
+  suggest: boolean;
+
   @CreateDateColumn()
   created_at: Date;
 
@@ -43,4 +46,6 @@ export class Calendar {
   @ManyToOne(() => Employee, (post) => post.calendar)
   @JoinColumn()
   created_by: Employee;
+
+  
 }
