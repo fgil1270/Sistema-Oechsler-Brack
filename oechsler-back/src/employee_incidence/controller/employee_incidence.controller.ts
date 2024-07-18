@@ -93,6 +93,7 @@ export class EmployeeIncidenceController {
       status: data.status ? [data.status] : null,
       code: data.code ? [data.code] : null,
     };
+
     return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(
       dataSerach,
     );

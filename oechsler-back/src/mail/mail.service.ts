@@ -94,12 +94,7 @@ export class MailService {
       });
   }
 
-  async sendEmailRechazaIncidence(
-    subject: string,
-    mailData: MailData,
-    to: string[],
-    
-  ) {
+  async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[]) {
     await this.mailerService
       .sendMail({
         to: to,

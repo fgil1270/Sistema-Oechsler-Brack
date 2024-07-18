@@ -437,7 +437,7 @@ export class EmployeeShiftService {
     const from = format(new Date(data.start), 'yyyy-MM-dd');
     const to = format(new Date(data.end), 'yyyy-MM-dd');
     //const employees = await this.employeesService.findByEmployeeNumber(ids.split(','));
-
+    
     const employees = await this.employeesService.findMore(ids);
 
     const resource = employees.emps.map((employee: any) => {

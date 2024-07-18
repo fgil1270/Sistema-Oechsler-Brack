@@ -27,7 +27,7 @@ export class CalendarService {
   constructor(
     @InjectRepository(Calendar)
     private calendarRepository: Repository<Calendar>,
-    private employeService: EmployeesService,
+    @Inject(forwardRef(() => EmployeesService)) private employeService: EmployeesService,
   ) {}
 
   async create(createCalendarDto: CreateCalendarDto, user: any) {

@@ -14,6 +14,7 @@ import { VacationsProfileModule } from '../vacations-profile/vacations-profile.m
 import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.module';
 import { UsersModule } from '../users/users.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
+import { CalendarModule } from '../calendar/calendar.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
     EmployeeProfilesModule,
     forwardRef(() => UsersModule),
     OrganigramaModule,
+    forwardRef(() => CalendarModule),
   ],
   controllers: [EmployeesController, VacationsReportController],
   providers: [EmployeesService],

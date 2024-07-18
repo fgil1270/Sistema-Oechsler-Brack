@@ -39,7 +39,7 @@ export class DocumentClasificationController {
   @Views('documentos-empleado')
   @Get()
   getDocuments() {
-    return true;
+    return this.documentClasificationService.findAll();
   }
 
   @ApiOperation({ summary: 'Obtiene el documento pdf de los objetivos' })
