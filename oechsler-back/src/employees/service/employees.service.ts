@@ -1011,7 +1011,7 @@ export class EmployeesService {
 
     //se obtinene el total de vacaciones pendientes
     let totalVacacionesPendientes = 0;
-    incidenciaVacaciones.employeeIncidence.forEach((element) => {
+    incidenciaVacaciones?.employeeIncidence.forEach((element) => {
       if (element.status === 'Pendiente') {
         totalVacacionesPendientes += element.dateEmployeeIncidence.length;
       }
