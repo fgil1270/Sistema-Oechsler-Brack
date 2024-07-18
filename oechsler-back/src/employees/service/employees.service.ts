@@ -21,7 +21,7 @@ import { VacationsProfileService } from '../../vacations-profile/service/vacatio
 import { EmployeeProfilesService } from '../../employee-profiles/service/employee-profiles.service';
 import { join } from 'path';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
-import { date } from 'joi';
+import { CalendarService } from '../../calendar/service/calendar.service';
 
 @Injectable()
 export class EmployeesService {
@@ -34,6 +34,7 @@ export class EmployeesService {
     private vacationsProfileService: VacationsProfileService,
     private employeeProfilesService: EmployeeProfilesService,
     private organigramaService: OrganigramaService,
+    @Inject(forwardRef(() => CalendarService)) private calendarService: CalendarService,
   ) {}
 
   async readExcel(file) {
@@ -971,8 +972,8 @@ export class EmployeesService {
         logAdjustmentVacationEmployee: true,
       },
     });
+    
     //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
-
     //se calculan los dias de vacaciones al dia de la consulta
     const arrayAno = anoCumplidos.toFixed(2).split('.');
     const objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
@@ -1006,6 +1007,39 @@ export class EmployeesService {
           dateEmployeeIncidence: true,
         },
       },
+    }); 
+
+    //se obtinene el total de vacaciones pendientes
+    let totalVacacionesPendientes = 0;
+    incidenciaVacaciones.employeeIncidence.forEach((element) => {
+      if (element.status === 'Pendiente') {
+        totalVacacionesPendientes += element.dateEmployeeIncidence.length;
+      }
+    });
+
+    const incienciasVacacionesMedioDiaPendientes = await this.employeeRepository.findOne({
+      where: {
+        id: emp.id,
+        employeeIncidence: {
+          incidenceCatologue: {
+            code_band: In(['VacM']),
+          },
+          status: In(['Pendiente']),
+        },
+      },
+      relations: {
+        employeeIncidence: {
+          incidenceCatologue: true,
+          dateEmployeeIncidence: true,
+        },
+      },
+    })
+
+    //se obtiene el total de vacaciones pendientes de medio dia
+    incienciasVacacionesMedioDiaPendientes?.employeeIncidence.forEach((element) => {
+      if (element.status === 'Pendiente') {
+        totalVacacionesPendientes += element.dateEmployeeIncidence.length * 0.5;
+      }
     });
 
     //se obtinene las incidencias de vacacion medio dia
@@ -1135,6 +1169,16 @@ export class EmployeesService {
       dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length - 1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
     }
 
+
+    ////// dias sugeridos por la empresa
+
+    const arrayDiasSugeridos = await this.calendarService.findRangeDate({
+      start: new Date(data.start),
+      end: finAno
+    });
+
+    const totalDiasSugeridos = arrayDiasSugeridos.filter((element) => element.suggest == true ).length;
+    
     row['id'] = emp.id;
     row['perfil'] = emp.employeeProfile.name;
     row['num_employee'] = emp.employee_number;
@@ -1147,7 +1191,8 @@ export class EmployeesService {
     row['dias_utilizados_all_years'] = Number(dayUsedAllYears.toFixed(2)); //dias utilizados(todos los años)
     row['dias_disponibles_dia_hoy'] = Number((sumaDiasAntiguedad - dayUsedAllYears).toFixed(2)); //dias disponibles al dia de hoy
     row['dias_disponibles_fin_ano'] = Number((sumaDiasAntiguedadFin - dayUsedAllYears).toFixed(2)); //dias disponibles hasta fin de año
-    row['dias_sugeridos_apartar'] = 0; //dias sugeridos para apartar por la empresa
+    row['dias_sugeridos_apartar'] = totalDiasSugeridos; //dias sugeridos para apartar por la empresa
+    row['dias_vacaciones_pendientes'] = totalVacacionesPendientes; //dias pendientes por autorizar
     report.push(row);
 
     return report;

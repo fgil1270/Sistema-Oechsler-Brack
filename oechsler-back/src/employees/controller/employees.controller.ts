@@ -147,8 +147,8 @@ export class VacationsReportController {
 
   @ApiOperation({ summary: 'Reporte status de vacaciones' })
   @Views('status_vacaciones')
-  @Get('status/vacation')
-  statusVacation(@Query() data: any, @CurrentUser() user: any) {
+  @Post('status/vacation')
+  statusVacation(@Body() data: any, @CurrentUser() user: any) {
       return this.employeesService.statusVacation(data, user);
   }
 }

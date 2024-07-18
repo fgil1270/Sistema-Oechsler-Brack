@@ -48,7 +48,6 @@ import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
-import { isIn } from 'class-validator';
 
 
 @Injectable()
@@ -61,8 +60,7 @@ export class EmployeeIncidenceService {
     private incidenceCatologueService: IncidenceCatologueService,
     private employeeService: EmployeesService,
     private employeeShiftService: EmployeeShiftService,
-    @Inject(forwardRef(() => ChecadorService))
-    private checadorService: ChecadorService,
+    @Inject(forwardRef(() => ChecadorService)) private checadorService: ChecadorService,
     private payRollService: PayrollsService,
     private organigramaService: OrganigramaService,
     private mailService: MailService,
@@ -176,6 +174,7 @@ export class EmployeeIncidenceService {
           status: isLeader ? 'Autorizada' : 'Pendiente',
           type: createEmployeeIncidenceDto.type,
           createdBy: createdBy.emp,
+          shift: createEmployeeIncidenceDto.shift ? createEmployeeIncidenceDto.shift : null
         });
       let to = [];
       let subject = '';
@@ -392,7 +391,7 @@ export class EmployeeIncidenceService {
           date: Between(from as any, to as any),
         },
         incidenceCatologue: {
-          code_band: data.code ? In(data.code) : Not(IsNull()),
+          code_band: data.code_band ? In(data.code_band) : Not(IsNull()),
         },
         status: data.status ? In(data.status) : Not(IsNull()),
       },
@@ -1451,9 +1450,6 @@ export class EmployeeIncidenceService {
         //se suma el total de horas por dia al total de horas trabajadas
         totalHrsDay += Number(diffHr) > 0 ? Number(diffHr) : 0;
         totalHrsTrabajadas += totalHrsDay;
-
-       
-        
         
         //totalMinutisTrabados += totalMinDay;
 
@@ -1467,6 +1463,7 @@ export class EmployeeIncidenceService {
           entrada: registrosChecador.length >= 1 ? format(new Date(firstHr), 'HH:mm:ss') : '',
           salida: registrosChecador.length >= 2 ? format(new Date(secondHr), 'HH:mm:ss') : '',
           dayHour: totalHrsDay + '.' + moment().minutes(totalMinDay).format('mm') ,
+          //dayHour: (Number(moment(secondHr).format('HH.mm')) - Number(moment(firstHr).format('HH.mm'))).toFixed(2),
         });
         
       }
