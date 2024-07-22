@@ -250,7 +250,7 @@ export class EmployeeIncidenceService {
       calendar.createEvent({
         start: diaInicio,
         end: diaFin,
-        //allDay: true,
+        allDay: true,
         timezone: 'America/Mexico_City',
         summary: subject,
         description: 'It works ;)',
@@ -977,7 +977,7 @@ export class EmployeeIncidenceService {
         calendar.createEvent({
           start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
           end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour),
-          //allDay: true,
+          allDay: true,
           timezone: 'America/Mexico_City',
           summary: subject,
           description: 'It works ;)',
@@ -1364,6 +1364,16 @@ export class EmployeeIncidenceService {
                 hrEntrada = '13:00:00';
                 hrSalida = '06:59:00';
                 diaSiguente.setDate(diaSiguente.getDate() + 1);
+              }
+            }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'TI'){
+              
+              if(incidencias[index].shift == 1 ){
+                hrEntrada = '05:00:00';
+                hrSalida = '14:59:00';
+                
+              }else if(incidencias[index].shift == 2){
+                hrEntrada = '13:00:00';
+                hrSalida = '21:59:00';
               }
             }
           }

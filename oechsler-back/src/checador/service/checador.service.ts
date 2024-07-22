@@ -518,7 +518,6 @@ export class ChecadorService {
           let formatTime = objetHorasMinIncidencia.format('HH:mm');
 
           
-
           //se valida si calculo de horas extra es mayor a 0 y si existe incidencia de tiempo extra
           if (calculoHrsExtra >= 0 && incidenciaTiemExtra) {
             //se valida si el calculo de horas extra es mayor a las horas extra de las incidencias
@@ -553,8 +552,11 @@ export class ChecadorService {
               //incidenceExtra.push(`${hrExtraDoble}` + incidenceHrExtra.code_band + '2');
               //incidenceExtra.push(`${moment.utc(hrExtraTripe * 60 * 60 * 1000).format('H.mm')}` + incidenceHrExtra.code_band + '3');
               //incidenceExtra.push(`${moment(hrExtraTripe.toString(),"LT").format('h.mm')}` + incidenceHrExtra.code_band + '3');
-              incidenceExtra.push(`${moment(hrExtraDoble.toString(),"LT").format('h.mm')}` + incidenceHrExtra.code_band + '2');
-              incidenceExtra.push(`${moment(hrExtraTripe.toString(),"LT").format('h.mm')}` + incidenceHrExtra.code_band + '3');
+              //incidenceExtra.push(`${moment(hrExtraDoble.toString(),"LT").format('h.mm')}` + incidenceHrExtra.code_band + '2');
+              //incidenceExtra.push(`${moment(hrExtraTripe.toString(),"LT").format('h.mm')}` + incidenceHrExtra.code_band + '3');
+              incidenceExtra.push(`${hrExtraDoble.toFixed(2)}` + incidenceHrExtra.code_band + '2');
+              incidenceExtra.push(`${hrExtraTripe.toFixed(2)}` + incidenceHrExtra.code_band + '3');
+
             } else {
               
               incidenceExtra.push(`${hrExtraDoble}` + incidenceHrExtra.code_band + '2');
@@ -594,7 +596,7 @@ export class ChecadorService {
         horasEsperadas: totalHrsRequeridas + '.' + moment().minutes(totalMinRequeridos).format('mm'),
         horasTrabajadas: totalHrsTrabajadas + '.' + totalMinTrabajados, //total hrs trabajadas
         horasTrabajadasyExtra: totalHrsTrabajadasyExtra.toFixed(2),
-        horasExtra: totalHrsExtra ,
+        horasExtra: totalHrsExtra.toFixed(2) ,
         //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
       });
       
