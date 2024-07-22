@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CalendarController } from './controller/calendar.controller';
@@ -7,7 +7,10 @@ import { CalendarService } from './service/calendar.service';
 import { EmployeesModule } from '../employees/employees.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Calendar]), EmployeesModule],
+  imports: [
+    TypeOrmModule.forFeature([Calendar]), 
+    forwardRef(() => EmployeesModule),
+  ],
   providers: [CalendarService],
   controllers: [CalendarController],
   exports: [CalendarService],

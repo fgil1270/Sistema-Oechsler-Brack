@@ -95,7 +95,7 @@ export class EmployeeShiftService {
             );
             let dayLetterShift = false;
             let dayShift: any[] =  shift.shift.day;
-            dayLetterShift = dayShift.includes(dayLetter);
+            dayLetterShift = dayShift.includes(dayLetter); //dia del turno
             
             
             /* if (shift.shift.code == 'TI') {
@@ -108,7 +108,7 @@ export class EmployeeShiftService {
 
             //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
             //y el dia seleccionado existe en el turno
-            if (dayLetterProfile && dayLetterShift) {
+            if (dayLetterShift) {
               //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                   relations: {
@@ -139,11 +139,8 @@ export class EmployeeShiftService {
 
                 await this.employeeShiftRepository.save(employeeShiftExist);
               }
-            }else{
-              //revisa si el dia tiene un turno asignado
-              //y si tiene incidencia
-              //si no tiene incidencia y tiene turno, elimina el turno
-
+            }else if(shift.shift.code == 'TI'){
+              //si no existe se crea como turno incidencia
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                 relations: {
                   employee: true,
@@ -158,33 +155,20 @@ export class EmployeeShiftService {
                 },
               });
 
-              if (employeeShiftExist) {
-                const employeeShiftIncidence = await this.employeeShiftRepository.findOne({
-                  relations: {
-                    employee: {
-                      employeeIncidence: true,
-                    },
-                    shift: true,
-                    pattern: true,
-                    
-                  },
-                  where: {
-                    employee: {
-                      id: employee.emp.id,
-                      employeeIncidence:{
-                        dateEmployeeIncidence: {
-                          date: format(index, 'yyyy-MM-dd') as any,
-                        }
-                      }
-                    },
-                    start_date: format(index, 'yyyy-MM-dd') as any,
-                    
-                  },
+              if (!employeeShiftExist) {
+                const employeeShift = this.employeeShiftRepository.create({
+                  employee: employee.emp,
+                  shift: shift.shift,
+                  start_date: format(index, 'yyyy-MM-dd') as any,
+                  end_date: format(index, 'yyyy-MM-dd') as any,
+                  pattern: null,
                 });
 
-                if (!employeeShiftIncidence) {
-                  await this.employeeShiftRepository.remove(employeeShiftExist);
-                }
+                await this.employeeShiftRepository.save(employeeShift);
+              } else {
+                employeeShiftExist.shift = shift.shift;
+
+                await this.employeeShiftRepository.save(employeeShiftExist);
               }
             }
           } else if (createEmployeeShiftDto.patternId != 0) {

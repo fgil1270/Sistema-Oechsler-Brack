@@ -48,7 +48,6 @@ import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
-import { isIn } from 'class-validator';
 
 
 @Injectable()
@@ -61,8 +60,7 @@ export class EmployeeIncidenceService {
     private incidenceCatologueService: IncidenceCatologueService,
     private employeeService: EmployeesService,
     private employeeShiftService: EmployeeShiftService,
-    @Inject(forwardRef(() => ChecadorService))
-    private checadorService: ChecadorService,
+    @Inject(forwardRef(() => ChecadorService)) private checadorService: ChecadorService,
     private payRollService: PayrollsService,
     private organigramaService: OrganigramaService,
     private mailService: MailService,
@@ -85,11 +83,6 @@ export class EmployeeIncidenceService {
     const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
     let totalDays = 0;
 
-    /* if(IncidenceCatologue.require_shift){
-        for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
-          await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
-        }
-      } */
 
     for (let j = 0; j < employee.emps.length; j++) {
       const element = employee.emps[j];
@@ -155,10 +148,7 @@ export class EmployeeIncidenceService {
               totalDays++;
             }
 
-            /* const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
-                index,
-                [employee.emps[j].id]
-              ); */
+            
           }
         }
       }
@@ -176,6 +166,7 @@ export class EmployeeIncidenceService {
           status: isLeader ? 'Autorizada' : 'Pendiente',
           type: createEmployeeIncidenceDto.type,
           createdBy: createdBy.emp,
+          shift: createEmployeeIncidenceDto.shift ? createEmployeeIncidenceDto.shift : null
         });
       let to = [];
       let subject = '';
@@ -259,7 +250,7 @@ export class EmployeeIncidenceService {
       calendar.createEvent({
         start: diaInicio,
         end: diaFin,
-        //allDay: true,
+        allDay: true,
         timezone: 'America/Mexico_City',
         summary: subject,
         description: 'It works ;)',
@@ -392,7 +383,7 @@ export class EmployeeIncidenceService {
           date: Between(from as any, to as any),
         },
         incidenceCatologue: {
-          code_band: data.code ? In(data.code) : Not(IsNull()),
+          code_band: data.code_band ? In(data.code_band) : Not(IsNull()),
         },
         status: data.status ? In(data.status) : Not(IsNull()),
       },
@@ -510,11 +501,10 @@ export class EmployeeIncidenceService {
       },
     });
 
-    const employeeShift =
-      await this.employeeShiftService.findEmployeeShiftsByDate(
-        startDate,
-        data.ids.split(','),
-      );
+    const employeeShift = await this.employeeShiftService.findEmployeeShiftsByDate(
+      startDate,
+      data.ids.split(','),
+    );
 
     //se genera arreglo de ids de incidencias
     const idsIncidence = incidences.map((incidence) => incidence.id);
@@ -987,7 +977,7 @@ export class EmployeeIncidenceService {
         calendar.createEvent({
           start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
           end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour),
-          //allDay: true,
+          allDay: true,
           timezone: 'America/Mexico_City',
           summary: subject,
           description: 'It works ;)',
@@ -1375,6 +1365,16 @@ export class EmployeeIncidenceService {
                 hrSalida = '06:59:00';
                 diaSiguente.setDate(diaSiguente.getDate() + 1);
               }
+            }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'TI'){
+              
+              if(incidencias[index].shift == 1 ){
+                hrEntrada = '05:00:00';
+                hrSalida = '14:59:00';
+                
+              }else if(incidencias[index].shift == 2){
+                hrEntrada = '13:00:00';
+                hrSalida = '21:59:00';
+              }
             }
           }
 
@@ -1451,9 +1451,6 @@ export class EmployeeIncidenceService {
         //se suma el total de horas por dia al total de horas trabajadas
         totalHrsDay += Number(diffHr) > 0 ? Number(diffHr) : 0;
         totalHrsTrabajadas += totalHrsDay;
-
-       
-        
         
         //totalMinutisTrabados += totalMinDay;
 
@@ -1467,6 +1464,7 @@ export class EmployeeIncidenceService {
           entrada: registrosChecador.length >= 1 ? format(new Date(firstHr), 'HH:mm:ss') : '',
           salida: registrosChecador.length >= 2 ? format(new Date(secondHr), 'HH:mm:ss') : '',
           dayHour: totalHrsDay + '.' + moment().minutes(totalMinDay).format('mm') ,
+          //dayHour: (Number(moment(secondHr).format('HH.mm')) - Number(moment(firstHr).format('HH.mm'))).toFixed(2),
         });
         
       }
