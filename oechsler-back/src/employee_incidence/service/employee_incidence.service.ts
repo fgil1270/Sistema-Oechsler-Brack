@@ -83,11 +83,6 @@ export class EmployeeIncidenceService {
     const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
     let totalDays = 0;
 
-    /* if(IncidenceCatologue.require_shift){
-        for (let index = new Date(createEmployeeIncidenceDto.start_date) ; index <= new Date(createEmployeeIncidenceDto.end_date); index= new Date(index.setDate(index.getDate() + 1))) {
-          await this.employeeShiftService.findEmployeeShiftsByDate(index, idsEmployees.split(','));
-        }
-      } */
 
     for (let j = 0; j < employee.emps.length; j++) {
       const element = employee.emps[j];
@@ -153,10 +148,7 @@ export class EmployeeIncidenceService {
               totalDays++;
             }
 
-            /* const employeeShiftExist = await this.employeeShiftService.findEmployeeShiftsByDate(
-                index,
-                [employee.emps[j].id]
-              ); */
+            
           }
         }
       }
@@ -509,11 +501,10 @@ export class EmployeeIncidenceService {
       },
     });
 
-    const employeeShift =
-      await this.employeeShiftService.findEmployeeShiftsByDate(
-        startDate,
-        data.ids.split(','),
-      );
+    const employeeShift = await this.employeeShiftService.findEmployeeShiftsByDate(
+      startDate,
+      data.ids.split(','),
+    );
 
     //se genera arreglo de ids de incidencias
     const idsIncidence = incidences.map((incidence) => incidence.id);
