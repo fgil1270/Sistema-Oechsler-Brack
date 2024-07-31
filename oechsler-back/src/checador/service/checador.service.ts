@@ -137,6 +137,7 @@ export class ChecadorService {
     let arrayIdsEmployee = [];
     arrayIdsEmployee = organigrama.map((item) => item.id);
 
+
     //se obtienen las checadas por rango de fechas y ids de empleados
     const checador = await this.checadorRepository.find({
       where: {
@@ -150,6 +151,8 @@ export class ChecadorService {
           format(new Date(data.startDate), `yyyy-MM-dd ${data.hrEntrada}`) as any,
           format(new Date(data.endDate), `yyyy-MM-dd ${data.hrSalida}`) as any,
         ),
+        numRegistroChecador: data.numRegistroChecador.valueOf(),
+        status: In(data.status) // Convert to number
       },
       relations: {
         employee: {
@@ -177,9 +180,11 @@ export class ChecadorService {
     const organigrama = await this.organigramaService.findJerarquia(
       {
         type: tipoJerarquia,
+        needUser: true
       },
-      user
+      user,
     );
+
     //se filtran los empleados por tipo de nomina
     const employeeNomina = tipoNomina == 'Todas'? organigrama : organigrama.filter((emp) => emp.payRoll.name == tipoNomina);
 
@@ -506,7 +511,8 @@ export class ChecadorService {
 
           horasRealesTurno = horasDia - horasExtraDia;
           minutosRealesTurno = minsDia - minutosExtraDia;
-          
+
+                    
           calculoHrsExtra += horasExtraDia;
           
           //calculoMinExtra += minsDia - (Number(minShift) % 60);

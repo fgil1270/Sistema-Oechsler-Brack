@@ -39,7 +39,7 @@ export class EmployeesController {
   }
 
   @ApiOperation({ summary: 'Cargar archivo de empleados' })
-  @Post('/upload')
+  @Post('/upload/asd')
   //CODIGO PARA SUBIR ARCHIVOS
   @UseInterceptors(
     FileInterceptor('file', {

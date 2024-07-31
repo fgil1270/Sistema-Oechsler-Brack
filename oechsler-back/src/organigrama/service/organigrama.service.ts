@@ -16,6 +16,7 @@ import {
 import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { UsersService } from '../../users/service/users.service';
+import { da } from 'date-fns/locale';
 
 @Injectable()
 export class OrganigramaService {
@@ -309,7 +310,7 @@ export class OrganigramaService {
         },
         where: {
           employee: {
-            deleted_at: Not(IsNull()),
+            deleted_at: IsNull(),
             job: {
               shift_leader : true
             }
@@ -334,6 +335,7 @@ export class OrganigramaService {
       if(isJefeTurno){
         let test: any[] = [];
         let test2: any[] = [];
+        
         visibleJefeTurno.forEach((element) => {
           test.push(element.employee);
         });
@@ -348,7 +350,11 @@ export class OrganigramaService {
         const userLogin = await this.employeeService.findOne(user.idEmployee);
         
         //levelOne.employee.push(...userLogin);
-        employees.push(userLogin.emp);
+        //si necesita los datos del usuario logueado
+        if(data.needUser){
+          employees.push(userLogin.emp);
+        }
+        
         
         return employees;
       }

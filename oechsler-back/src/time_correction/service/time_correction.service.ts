@@ -756,6 +756,8 @@ export class TimeCorrectionService {
           }
         }
 
+
+        //se obtienen las checadas del turno
         const registrosChecadorNuevo = await this.checadorService.findbyDate(
           iterator.id,
           diaAnterior,
@@ -764,6 +766,14 @@ export class TimeCorrectionService {
           hrSalida,
         );
 
+        //se obtiene todas las checadas del dia
+        const registrosToday = await this.checadorService.findbyDate(
+          iterator.id,
+          new Date(index),
+          new Date(index),
+          '00:00:00',
+          '23:59:59',
+        );
         //se verifica si el dia anterior para el turno 1 es el mismo turno
         //se toman los horarios de entra del segundo Turno pero si son distintos
         //se toma el horario del primer turno
@@ -826,15 +836,6 @@ export class TimeCorrectionService {
         const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
         totalHrsRequeridas += diffTimeShift >= 0 ? diffTimeShift : 0;
 
-        //se obtienen los registros del dia
-        const registrosChecador = await this.checadorService.findbyDate(
-          iterator.id,
-          diaAnterior,
-          diaSiguente,
-          hrEntrada,
-          hrSalida,
-        );
-
         const firstDate = moment(new Date(registrosChecadorNuevo[0]?.date));
         const secondDate = moment(
           new Date(
@@ -870,7 +871,7 @@ export class TimeCorrectionService {
             diffDate >= 0 ? moment(diffDate, 'HH:mm').format('HH:mm') : 0,
           suma_hrs: diffTimeShift + 2,
           comments: '',
-          checadas: registrosChecadorNuevo,
+          checadas: turnoActual != 'T3' ? registrosToday : registrosChecadorNuevo,
 
           /* horasEsperadas: totalHrsRequeridas.toFixed(2),
                     horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas

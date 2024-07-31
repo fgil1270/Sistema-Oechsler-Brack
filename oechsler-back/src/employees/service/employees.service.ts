@@ -707,6 +707,7 @@ export class EmployeesService {
         type: data.type,
         startDate: '',
         endDate: '',
+        needUser: true
       },
       user,
     );

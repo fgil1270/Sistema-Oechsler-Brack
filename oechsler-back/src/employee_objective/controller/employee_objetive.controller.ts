@@ -218,3 +218,29 @@ export class EmployeeObjetiveController {
     return this.employeeObjetiveService.deleteDetail(currData, user);
   }
 }
+
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Evaluacion de objetivos medio año')
+@Controller('employee-objective/medio-anio')
+export class EmployeeObjetiveMedioAnoController {
+  constructor(private employeeObjetiveService: EmployeeObjetiveService) {}
+  status = {
+    code: 200,
+    message: 'OK',
+    error: false,
+    data: {},
+    status: 'success',
+  };
+
+  @ApiOperation({ summary: 'Acceso a la vista evaluación medio año'})
+  @Get()
+  findAll(@Query() currData: any, @CurrentUser() user: any) {
+    if (currData.action == 'acceso') {
+      return this.status;
+    } else {
+      return this.employeeObjetiveService.findAll(currData, user);
+    }
+  }
+
+  
+}

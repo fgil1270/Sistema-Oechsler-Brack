@@ -26,7 +26,8 @@ import ical, {
   ICalEventBusyStatus,
   ICalEventStatus,
   ICalEvent,
-  ICalDateTimeValue
+  ICalDateTimeValue,
+  ICalEventRepeatingFreq
 } from 'ical-generator';
 import * as fs from 'fs';
 import * as leerCal from 'node-ical';
@@ -243,14 +244,19 @@ export class EmployeeIncidenceService {
       };
 
       const calendar = ical();
-      const diaInicio = new Date(moment(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd') + ' ' + employeeIncidenceCreate.start_hour).toDate());
-      const diaFin = new Date(moment(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd') + ' ' + employeeIncidenceCreate.end_hour).toDate());
+      const diaInicio = moment(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd'));
+      const diaFin = moment(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd'));
+      let dias = diaFin.diff(diaInicio, 'days');
       calendar.method(ICalCalendarMethod.REQUEST);
       calendar.timezone('America/Mexico_City');
       calendar.createEvent({
         start: diaInicio,
-        end: diaFin,
+        end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
         allDay: true,
+        repeating: ({
+          freq: ICalEventRepeatingFreq.WEEKLY,
+          count: 3
+        }),
         timezone: 'America/Mexico_City',
         summary: subject,
         description: 'It works ;)',
@@ -578,7 +584,6 @@ export class EmployeeIncidenceService {
   async findIncidencesByStatus(data: ReportEmployeeIncidenceDto, user: any) {
     let whereQuery: any;
     const idsEmployees: any = [];
-    
     //se obtienen los empleados por organigrama
     const organigrama = await this.organigramaService.findJerarquia(
       {
@@ -586,8 +591,7 @@ export class EmployeeIncidenceService {
       },
       user
     );
-
-    //console.log(organigrama)
+    
     for (let index = 0; index < organigrama.length; index++) {
       const element = organigrama[index];
       
@@ -623,7 +627,6 @@ export class EmployeeIncidenceService {
         ...whereQuery,
       },
     });
-
     const total = incidences.length;
 
     if (!incidences) {
@@ -974,9 +977,12 @@ export class EmployeeIncidenceService {
         
         calendar.method(ICalCalendarMethod.REQUEST);
         calendar.timezone('America/Mexico_City');
+        const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour), 'yyyy-MM-dd'));
+        const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour), 'yyyy-MM-dd'));
+        let dias = diaFin.diff(diaInicio, 'days');
         calendar.createEvent({
-          start: new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour),
-          end: new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour),
+          start: diaInicio,
+          end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
           allDay: true,
           timezone: 'America/Mexico_City',
           summary: subject,
@@ -1108,6 +1114,7 @@ export class EmployeeIncidenceService {
           type: data.type,
           startDate: '',
           endDate: '',
+          needUser: true
         },
         userLogin,
       );
@@ -1282,20 +1289,23 @@ export class EmployeeIncidenceService {
               id: incidence.id
             }
           });
-          let horasEntreTotalDiasIncidencia = 0;
-          horasEntreTotalDiasIncidencia = Number(currentIncidence[0].total_hour) / currentIncidence[0].dateEmployeeIncidence.length;
+          let horasIncidencia = 0;
+          let minsIncidencia = 0;
+          horasIncidencia = Number(moment((parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)), 'HH.m').hours());
+          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1], 'mm').minutes());
 
           
           //se obtiene las horas y minutos de la incidencia
-          let horaMinIncidencia = moment(horasEntreTotalDiasIncidencia.toString(),"LT");
+          let horaMinIncidencia = moment(horasIncidencia, 'HH.mm');
           //se obtiene la diferencia en milisegundos
-          let hrs = horaMinIncidencia.hours();
-          let mins = horaMinIncidencia.minutes();
+          let hrs = horasIncidencia; //horaMinIncidencia.hours();
+          let mins = minsIncidencia; //horaMinIncidencia.minutes();
           let modMin = 0;
           let divMin = 0;
           
-          totalMinutisTrabados += Number(mins) % 60;
-          totalMinDay += Number(mins) % 60;
+          totalMinutisTrabados += Number(mins) ;
+          totalMinDay += Number(mins) ;
+
 
           if (totalMinutisTrabados >= 60) {
             modMin = totalMinutisTrabados % 60;
@@ -1432,18 +1442,19 @@ export class EmployeeIncidenceService {
           
           diffHr = secondHr.diff(firstHr, 'hours');
           diffMin = secondHr.diff(firstHr, 'minutes');
-          totalMinutisTrabados += Number(diffMin) % 60;
+          
           totalMinDay += Number(diffMin) % 60;
+          totalMinutisTrabados += totalMinDay;
 
           
-
+          //si el total de minutos trabajados es mayor a 60 se suman las horas
           if (totalMinutisTrabados >= 60) {
             modMinUno = totalMinutisTrabados % 60;
             divMinDos = totalMinutisTrabados / 60;
+
             totalHrsTrabajadas += Math.floor(divMinDos);
             totalMinutisTrabados = modMinUno;
-            totalHrsDay += Math.floor(totalMinDay / 60);
-            totalMinDay += totalMinDay % 60;
+
           }
 
         }
@@ -1452,9 +1463,7 @@ export class EmployeeIncidenceService {
         totalHrsDay += Number(diffHr) > 0 ? Number(diffHr) : 0;
         totalHrsTrabajadas += totalHrsDay;
         
-        //totalMinutisTrabados += totalMinDay;
-
-
+        
         let test = Math.round((totalMinDay % 1)*100)/100;
         //datos por dia
         eventDays.push({

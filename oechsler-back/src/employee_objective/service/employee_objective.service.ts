@@ -42,7 +42,6 @@ import { PercentageDefinitionService } from '../../evaluation_annual/percentage_
 import { MailService } from '../../mail/mail.service';
 import { save } from 'pdfkit';
 import { RequestCourseService } from '../../request_course/service/request_course.service';
-import { id } from 'date-fns/locale';
 
 @Injectable()
 export class EmployeeObjetiveService {
@@ -1070,9 +1069,7 @@ export class EmployeeObjetiveService {
           },
         });
 
-      const isDefine = definitionObjectiveAnnual
-        ? definitionObjectiveAnnual.status
-        : 'No definido';
+      const isDefine = definitionObjectiveAnnual ? definitionObjectiveAnnual.status : 'No definido';
 
       dataEmployee.push({
         employee: element,
