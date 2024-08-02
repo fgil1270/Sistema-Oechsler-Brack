@@ -1291,8 +1291,10 @@ export class EmployeeIncidenceService {
           });
           let horasIncidencia = 0;
           let minsIncidencia = 0;
+
           horasIncidencia = Number(moment((parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)), 'HH.m').hours());
-          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1], 'mm').minutes());
+          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] ? 
+            String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] : 0, 'mm').minutes());
 
           
           //se obtiene las horas y minutos de la incidencia
@@ -1312,8 +1314,8 @@ export class EmployeeIncidenceService {
             divMin = totalMinutisTrabados / 60;
             totalHrsTrabajadas += Math.floor(divMin);
             totalMinutisTrabados = modMin;
-            totalHrsDay += Math.floor(divMin);
-            totalMinDay += modMin;
+            /* totalHrsDay += Math.floor(divMin);
+            totalMinDay += modMin; */
           }
           //si la incidencia es tiempo compensatorio
           if(incidence.incidenceCatologue.code_band == 'TxT'){
@@ -1327,13 +1329,15 @@ export class EmployeeIncidenceService {
             if (incidence.incidenceCatologue.affected_type == 'Restar horas') {
               sumaHrsIncidencias -= Number(hrs);
             }
+
+
           }
 
-          
+          //se suman las horas de las incidencias al total de horas por dia
+          totalHrsDay += Number(sumaHrsIncidencias);
           
         }
-        //se suman las horas de las incidencias al total de horas por dia
-        totalHrsDay += Number(sumaHrsIncidencias);
+        
 
         //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
         for (let index = 0; index < incidencias.length; index++) {
@@ -1462,7 +1466,7 @@ export class EmployeeIncidenceService {
         //se suma el total de horas por dia al total de horas trabajadas
         totalHrsDay += Number(diffHr) > 0 ? Number(diffHr) : 0;
         totalHrsTrabajadas += totalHrsDay;
-        
+
         
         let test = Math.round((totalMinDay % 1)*100)/100;
         //datos por dia

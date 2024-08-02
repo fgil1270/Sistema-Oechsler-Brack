@@ -573,6 +573,7 @@ export class ChecadorService {
           //se realiza la suma de las horas trabajadas
           totalHrsTrabajadas += diffDate >= 0 ? Number(horasRealesTurno) : 0;
           totalMinTrabajados += diffDate >= 0 ? Number(minutosRealesTurno) : 0;
+
         }
 
         
@@ -582,16 +583,17 @@ export class ChecadorService {
           incidencia: { extra: incidenceExtra},
           employeeShift: employeeShif.events.length > 0? employeeShif.events[0].nameShift: (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 0 && Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 6) ? 'S/N' : '',
         });
-
+        
+        
         //i++;
       }
       
-
+      totalHrsRequeridas += Math.floor(totalMinRequeridos / 60);
       totalHrsTrabajadas = totalHrsTrabajadas;
       totalMinTrabajados = totalMinTrabajados;
       totalHrsTrabajadasyExtra = totalHrsTrabajadas + totalHrsExtra;
 
-
+      
       registros.push({
         idEmpleado: iterator.id,
         numeroNomina: iterator.employee_number,
@@ -600,7 +602,7 @@ export class ChecadorService {
         perfile: iterator.employeeProfile.name,
         date: eventDays,
         horasEsperadas: totalHrsRequeridas + '.' + moment().minutes(totalMinRequeridos).format('mm'),
-        horasTrabajadas: totalHrsTrabajadas + '.' + totalMinTrabajados, //total hrs trabajadas
+        horasTrabajadas: totalHrsTrabajadas + '.' + moment().minutes(totalMinTrabajados).format('mm'), //total hrs trabajadas
         horasTrabajadasyExtra: totalHrsTrabajadasyExtra.toFixed(2),
         horasExtra: totalHrsExtra.toFixed(2) ,
         //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')

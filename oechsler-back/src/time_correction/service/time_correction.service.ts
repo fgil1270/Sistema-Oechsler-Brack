@@ -203,12 +203,13 @@ export class TimeCorrectionService {
           ids: [`${iterator.id}`],
           code: ['VAC', 'PCS', 'PSS', 'CAST', 'PCGS', 'INC', 'VacM'],
         });
-
+        
         if (employeeShif.events.length == 0) {
           continue;
         }
 
         if (incidencias.length > 0) {
+          
           continue;
         }
 
@@ -368,6 +369,8 @@ export class TimeCorrectionService {
           hrEntrada,
           hrSalida,
         );
+        
+        
 
         //se verifica si el dia anterior para el turno 1 es el mismo turno
         //se toman los horarios de entra del segundo Turno pero si son distintos
@@ -434,11 +437,7 @@ export class TimeCorrectionService {
         //const registrosChecador = await this.checadorService.findbyDate(iterator.id, diaAnterior, diaSiguente, hrEntrada, hrSalida);
 
         const firstDate = moment(new Date(registrosChecadorNuevo[0]?.date));
-        const secondDate = moment(
-          new Date(
-            registrosChecadorNuevo[registrosChecadorNuevo.length - 1]?.date,
-          ),
-        );
+        const secondDate = moment(new Date(registrosChecadorNuevo[registrosChecadorNuevo.length - 1]?.date));
         let diffDate = secondDate.diff(firstDate, 'hours', true);
         let calculoHrsExtra = 0;
         const incidenciaVac = false;
@@ -451,8 +450,9 @@ export class TimeCorrectionService {
         date.setMinutes(minutes); 
 
 
-        //si el total de horas registradas en menor al total de horas por dia -3
+        //si el total de horas registradas es menor al total de horas por dia -3
         //o el total de horas registradas es mayor al total de horas por dia +3
+        //muestra los datos
         if (diffDate >= diffTimeShift - 3 && diffDate <= diffTimeShift + 3) {
           continue;
         }
@@ -463,12 +463,7 @@ export class TimeCorrectionService {
           id: i,
           id_empleado: iterator.id,
           employee_number: iterator.employee_number,
-          nombre:
-            iterator.name +
-            ' ' +
-            iterator.paternal_surname +
-            ' ' +
-            iterator.maternal_surname,
+          nombre: iterator.name + ' ' + iterator.paternal_surname + ' ' + iterator.maternal_surname,
           date: format(index, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }),
           turno: employeeShif.events[0]?.nameShift,
           hora_inicio: startTimeShift.format('HH:mm'),
