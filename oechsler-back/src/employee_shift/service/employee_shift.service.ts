@@ -28,7 +28,6 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { DepartmentsService } from '../../departments/service/departments.service';
 import { EmployeeProfilesService } from '../../employee-profiles/service/employee-profiles.service';
 import { read } from 'xlsx';
-import { da } from 'date-fns/locale';
 
 @Injectable()
 export class EmployeeShiftService {

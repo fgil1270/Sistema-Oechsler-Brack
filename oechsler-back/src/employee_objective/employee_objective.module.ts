@@ -23,7 +23,7 @@ import { MailModule } from '../mail/mail.module';
 import { RequestCourseModule } from '../request_course/request_course.module';
 import { SupplierModule } from '../supplier/supplier.module';
 
-@Module({
+@Module({ 
   imports: [
     TypeOrmModule.forFeature([
       DefinitionObjectiveAnnual,
