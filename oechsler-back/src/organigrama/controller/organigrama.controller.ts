@@ -55,9 +55,9 @@ export class OrganigramaController {
   }
 
   @ApiOperation({ summary: 'Buscar gerarquia organigrama' })
-  @Get('/leaders/gerarquia/organigrama')
+  @Post('/leaders/gerarquia/organigrama')
   findGerarquia(
-    @Query() gerarquia: OrganigramaGerarquia,
+    @Body() gerarquia: OrganigramaGerarquia,
     @CurrentUser() user: any,
   ) {
     return this.organigramaService.findJerarquia(gerarquia, user);

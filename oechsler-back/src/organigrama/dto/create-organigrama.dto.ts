@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsBoolean, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsString, IsBoolean, IsNumber, IsOptional } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateOrganigramaDto {
@@ -26,11 +26,18 @@ export class OrganigramaGerarquia {
   @ApiProperty({ description: 'Tipo de organigrama' })
   type: string;
 
+  @IsOptional()
   @IsString()
   @ApiProperty({ description: 'Fecha de Inicio' })
   startDate?: string;
 
+  @IsOptional()
   @IsString()
   @ApiProperty({ description: 'Fecha Final' })
   endDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Necesita datos del usuario que esta logueado' })
+  needUser?: boolean;
 }
