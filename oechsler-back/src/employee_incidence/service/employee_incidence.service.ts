@@ -50,6 +50,7 @@ import { EmployeeProfile } from '../../employee-profiles/entities/employee-profi
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { save } from 'pdfkit';
+import { is } from 'date-fns/locale';
 
 
 @Injectable()
@@ -667,27 +668,21 @@ export class EmployeeIncidenceService {
       };
     }
 
-    const incidences = await this.employeeIncidenceRepository.find({
-      relations: {
-        employee: true,
-        incidenceCatologue: true,
-        dateEmployeeIncidence: true,
-        leader: true,
-        createdBy: true,
-      },
-      where: {
-        employee: {
-          id: In(idsEmployees),
-        },
-        dateEmployeeIncidence: {
-          date: Between(
-            format(new Date(data.start_date), 'yyyy-MM-dd'),
-            format(new Date(data.end_date), 'yyyy-MM-dd'),
-          ),
-        },
-        ...whereQuery,
-      },
-    });
+    const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
+    .innerJoinAndSelect('employee_incidence.employee', 'employee')
+    .innerJoinAndSelect('employee_incidence.incidenceCatologue', 'incidenceCatologue')
+    .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+    .leftJoinAndSelect('employee_incidence.leader', 'leader')
+    .leftJoinAndSelect('employee_incidence.createdBy', 'createdBy')
+    .where('employee_incidence.employeeId IN (:ids)', { ids: idsEmployees })
+    .andWhere('employee_incidence.status IN (:status)', { status: data.status == 'Todas'? ['Autorizada', 'Pendiente', 'Rechazada'] : [data.status] })
+    .andWhere('incidenceCatologue.deleted_at IS NULL')
+    .andWhere('dateEmployeeIncidence.date BETWEEN :start AND :end', {
+      start: format(new Date(data.start_date), 'yyyy-MM-dd'),
+      end: format(new Date(data.end_date), 'yyyy-MM-dd'),
+    })
+    .getMany();
+   
     const total = incidences.length;
 
     if (!incidences) {
@@ -2069,7 +2064,7 @@ export class EmployeeIncidenceService {
                 hrEntrada = '03:00:00'; //dia Actual
                 hrSalida = '22:00:00'; //dia siguiente
                 diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
+                diaSiguente = new Date(dia);
                 break;
               case 'T3':
                 hrEntrada = '13:00:00'; //dia actual
@@ -2236,60 +2231,79 @@ export class EmployeeIncidenceService {
         //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
         //y asignar las horas de entrada y salida
         for (let index = 0; index < incidencias.length; index++) {
-          
+          //si es tiempo extra, tiempo extra por hora o tiempo compensatorio
           if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
             
-            //si es turno 1
-            if ( shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T1'){
+            //si es tiempo extra, tiempo extra por hora
+            if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET'){
+              if ( shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T1'){
 
               
-              if(incidencias[index].shift == 2 ){
-                hrEntrada = '05:00:00';
-                hrSalida = '21:59:00';
-
-              }else if(incidencias[index].shift == 3){
-                hrEntrada = '20:00:00';
-                hrSalida = '06:59:00';
-                diahoy.setDate(diahoy.getDate() - 1);
-              }
-            }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T2'){
-              
-              if(incidencias[index].shift == 1 ){
-                hrEntrada = '05:00:00';
-                hrSalida = '21:59:00';
-
-              }else if(incidencias[index].shift == 3){
-                hrEntrada = '13:00:00';
-                hrSalida = '06:59:00';
-                diaSiguente.setDate(diahoy.getDate() - 1);
-              }
-            }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T3'){
-              
-              if(incidencias[index].shift == 1 ){
-                hrEntrada = '20:00:00';
-                hrSalida = '06:59:00';
-                diahoy.setDate(diahoy.getDate() - 1);
-              }else if(incidencias[index].shift == 2){
-                hrEntrada = '13:00:00';
-                hrSalida = '06:59:00';
-                diaSiguente.setDate(diaSiguente.getDate() + 1);
-              }
-            }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'TI'){
-              
-              if(incidencias[index].shift == 1 ){
-                hrEntrada = '05:00:00';
-                hrSalida = '14:59:00';
+                if(incidencias[index].shift == 2 ){
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+  
+                }else if(incidencias[index].shift == 3){
+                  hrEntrada = '20:00:00';
+                  hrSalida = '06:59:00';
+                  diahoy.setDate(diahoy.getDate() - 1);
+                }
+              }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T2'){
                 
-              }else if(incidencias[index].shift == 2){
-                hrEntrada = '13:00:00';
-                hrSalida = '21:59:00';
+                if(incidencias[index].shift == 1 ){
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+  
+                }else if(incidencias[index].shift == 3){
+                  hrEntrada = '13:00:00';
+                  hrSalida = '06:59:00';
+                  diaSiguente.setDate(diahoy.getDate() - 1);
+                }
+              }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T3'){
+                
+                if(incidencias[index].shift == 1 ){
+                  hrEntrada = '20:00:00';
+                  hrSalida = '06:59:00';
+                  diahoy.setDate(diahoy.getDate() - 1);
+                }else if(incidencias[index].shift == 2){
+                  hrEntrada = '13:00:00';
+                  hrSalida = '06:59:00';
+                  diaSiguente.setDate(diaSiguente.getDate() + 1);
+                }
+              }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'TI'){
+                
+                if(incidencias[index].shift == 1 ){
+                  hrEntrada = '05:00:00';
+                  hrSalida = '14:59:00';
+                  
+                }else if(incidencias[index].shift == 2){
+                  hrEntrada = '13:00:00';
+                  hrSalida = '21:59:00';
+                }
+              }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'MIX'){
+                
+                if(incidencias[index].shift == 1 ){
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+                  
+                }else if(incidencias[index].shift == 2){
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+                }else if(incidencias[index].shift == 3){
+                  hrEntrada = '13:00:00';
+                  hrSalida = '06:59:00';
+                  diaSiguente.setDate(diaSiguente.getDate() + 1);
+                }
               }
+              //si es tiempo compensatorio
             }
+            
           }
 
           
-        }
-        
+
+          
+        }    
         
 
         //se verifica si el dia seleccionado es festivo
@@ -2385,6 +2399,7 @@ export class EmployeeIncidenceService {
 
         
       }
+
 
       var quo = Math.floor(totalMinutisTrabados / 60);
       totalHrsTrabajadas += quo;
