@@ -91,7 +91,7 @@ export class EmployeeIncidenceController {
       start: data.start,
       end: data.end,
       status: data.status ? data.status : null,
-      code: data.code ? data.code : null,
+      code_band: data.code_band ? data.code_band : null,
     };
 
     return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(

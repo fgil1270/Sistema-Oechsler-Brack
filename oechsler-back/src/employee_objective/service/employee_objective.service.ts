@@ -1036,21 +1036,21 @@ export class EmployeeObjetiveService {
     const percentage = await this.percentageDefinitionService.findOne(
       currdata.idYear,
     );
+    
     //se obtienen los empleados por jerarquia
     const employee = await this.organigramaService.findJerarquia(
       {
         type: 'Normal',
         startDate: '',
         endDate: '',
+        needUser: currdata.needUser ? currdata.needUser : null
       },
       user,
     );
 
     for (let index = 0; index < employee.length; index++) {
       const element = employee[index];
-      if(currdata.consulta != 'consulta' && user.idEmployee == element.id){
-        continue;
-      }
+      
       
       //se busca si el empleado tiene objetivos asignados para el año seleccionado
       const definitionObjectiveAnnual =
