@@ -493,7 +493,8 @@ export class EmployeeIncidenceService {
             status: incidence.status,
             approve: incidence.leader? incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname : '',
             approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0,
-            shift: incidence.shift
+            shift: incidence.shift,
+            type: incidence.type
           });
         });
       });

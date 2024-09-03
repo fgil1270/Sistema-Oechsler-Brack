@@ -234,6 +234,9 @@ export class ChecadorService {
         const mediaHoraExtra = 0.06;
         let sumaMediaHrExtra = 0;
         let hrsExtraIncidencias = '';
+        let isTxtCompensatorio = false;
+        let horasRealesTurno = 0;
+        let minutosRealesTurno = 0;
 
         const employeeShif = await this.employeeShiftService.findMore(
           dataDate,
@@ -588,7 +591,12 @@ export class ChecadorService {
           for (let index = 0; index < incidenciasNormales.length; index++) {
             
             if(incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET' || incidenciasNormales[index].codeBand == 'TxT'){
-              
+              if(incidenciasNormales[index].type == 'Compensatorio'){
+                isTxtCompensatorio = true;
+                totalHrsTrabajadas += hourShift;
+                totalMinTrabajados += Number(minShift) % 60;
+                
+              }
               //si es turno 1
               if ( employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T1'){
 
@@ -686,7 +694,7 @@ export class ChecadorService {
           //si no existen incidencias
           //si el dia no es festivo
           //si existe turno
-          if (registrosChecador.length == 0 && incidenciasNormales.length == 0 && !dayCalendar && employeeShif.events.length >0) {
+          if (registrosChecador.length == 0 && incidenciasNormales.length == 0 && !dayCalendar && employeeShif.events.length >0 && !isTxtCompensatorio) {
             incidenciaFalta = true;
             isIncidenceIncapacidad = false;
             incidenceExtra.push(`1` + faltaInjustificada.code_band);
@@ -711,8 +719,7 @@ export class ChecadorService {
           let calculoMinExtra = 0;
           let horasExtraDia = 0;
           let minutosExtraDia = 0;
-          let horasRealesTurno = 0;
-          let minutosRealesTurno = 0;
+          
 
           //tiempo extra para el turno 3
           //diffDate >= diffTimeShift 
@@ -726,10 +733,8 @@ export class ChecadorService {
           horasExtraDia = (horasDia - hourShift) <= 0 ? 0 : (horasDia - hourShift); //horas extra por dia
           minutosExtraDia = (minsDia - minShift) <= 0 ? 0 : (minsDia - minShift); //mins extra por dia
 
-          
-
-          horasRealesTurno = horasDia - horasExtraDia;
-          minutosRealesTurno = minsDia - minutosExtraDia;
+          horasRealesTurno += horasDia - horasExtraDia;
+          minutosRealesTurno += minsDia - minutosExtraDia;
 
                     
           calculoHrsExtra += horasExtraDia;
