@@ -30,7 +30,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'notificationes@oechsler.mx',
+        from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'crear_incidencia', // `.hbs` extension is appended automatically
         context: mailData,
@@ -98,7 +98,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: process.env.MAIL_USERNAME,
+        from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
         context: mailData,

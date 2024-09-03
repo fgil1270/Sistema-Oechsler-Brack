@@ -5,8 +5,8 @@ import {
   forwardRef,
   Inject,
 } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like, Admin } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In, Not, IsNull, Like, DataSource } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 
 import {
   CreateOrganigramaDto,
@@ -16,6 +16,7 @@ import {
 import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { UsersService } from '../../users/service/users.service';
+import { da } from 'date-fns/locale';
 
 @Injectable()
 export class OrganigramaService {
@@ -25,6 +26,7 @@ export class OrganigramaService {
     @Inject(forwardRef(() => EmployeesService))
     private employeeService: EmployeesService,
     @Inject(forwardRef(() => UsersService)) private userService: UsersService,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
   async create(createOrganigramaDto: CreateOrganigramaDto) {
@@ -79,7 +81,7 @@ export class OrganigramaService {
       (role) => role.name === 'Jefe de Turno',
     );
     const total = await this.organigramaRepository.count();
-    const orgs = await this.organigramaRepository.find({
+    /* const orgs = await this.organigramaRepository.find({
       relations: {
         leader: {
           department: true,
@@ -90,7 +92,24 @@ export class OrganigramaService {
           job: true,
         },
       },
-    });
+      where: {
+        employee: {
+          deleted_at: IsNull(),
+        },
+      },
+    }); */
+
+    const listOrg = await this.dataSource.manager.createQueryBuilder('organigrama', 'org')
+      .leftJoinAndSelect('org.employee', 'employee')
+      .leftJoinAndSelect('org.leader', 'leader')
+      .innerJoinAndSelect('employee.department', 'department')
+      .innerJoinAndSelect('employee.job', 'job')
+      .innerJoinAndSelect('employee.payRoll', 'payRoll')
+      .innerJoinAndSelect('leader.department', 'departmentLeader')
+      .innerJoinAndSelect('leader.job', 'jobLeader')
+      .where('employee.deleted_at IS NULL')
+      .getMany();
+
     const query = `
             SELECT * FROM employee AS e
             INNER JOIN job AS j ON e.jobId = j.id
@@ -99,12 +118,12 @@ export class OrganigramaService {
             `;
     const visibleJefeTurno = await this.organigramaRepository.query(query);
 
-    if (!orgs) {
+    if (!listOrg) {
       throw new NotFoundException(`Organigrama not found`);
     }
     return {
-      total: orgs.length,
-      orgs: orgs,
+      total: listOrg.length,
+      orgs: listOrg,
     };
   }
 
@@ -309,7 +328,7 @@ export class OrganigramaService {
         },
         where: {
           employee: {
-            deleted_at: Not(IsNull()),
+            deleted_at: IsNull(),
             job: {
               shift_leader : true
             }
@@ -334,6 +353,7 @@ export class OrganigramaService {
       if(isJefeTurno){
         let test: any[] = [];
         let test2: any[] = [];
+        
         visibleJefeTurno.forEach((element) => {
           test.push(element.employee);
         });
@@ -348,7 +368,11 @@ export class OrganigramaService {
         const userLogin = await this.employeeService.findOne(user.idEmployee);
         
         //levelOne.employee.push(...userLogin);
-        employees.push(userLogin.emp);
+        //si necesita los datos del usuario logueado
+        
+        if(data.needUser){
+          employees.push(userLogin.emp);
+        }
         
         return employees;
       }

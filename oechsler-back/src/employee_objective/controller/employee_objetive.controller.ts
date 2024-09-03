@@ -25,6 +25,7 @@ import {
   UpdateDncCourseDto,
   UpdateDncCourseManualDto,
   UpdateEmployeeObjectiveDtoPartial,
+  UpdateDefinitionObjectiveAnnualDto
 } from '../dto/create_employee_objective.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
@@ -217,4 +218,83 @@ export class EmployeeObjetiveController {
   async deleteDetail(@Query() currData: any, @CurrentUser() user: any) {
     return this.employeeObjetiveService.deleteDetail(currData, user);
   }
+}
+
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Evaluacion de objetivos medio año')
+@Controller('employee-objective/medio-anio')
+export class EmployeeObjetiveMedioAnoController {
+  constructor(private employeeObjetiveService: EmployeeObjetiveService) {}
+  status = {
+    code: 200,
+    message: 'OK',
+    error: false,
+    data: {},
+    status: 'success',
+  };
+
+  @ApiOperation({ summary: 'Acceso a la vista evaluación medio año'})
+  @Get()
+  findAll(@Query() currData: any, @CurrentUser() user: any) {
+    if (currData.action == 'acceso') {
+      return this.status;
+    } else {
+      return this.employeeObjetiveService.findAll(currData, user);
+    }
+  }
+
+  @ApiOperation({ summary: 'Evaluacion medio año empleado' })
+  @Put(':id')
+  async updateObjective(@Param('id', ParseIntPipe) id: number, @Body() currData: any, @CurrentUser() user: any) {
+    
+    switch (currData.action) {
+      case 'updateEvaluationEmployee':
+        const dataDefinition: UpdateDefinitionObjectiveAnnualDto = currData.evaluacionEmployee;
+        const result1 =
+          await this.employeeObjetiveService.evaluationEmployee(
+            id,
+            dataDefinition,
+            user,
+          );
+        this.status.code = result1.code;
+        this.status.error = result1.error;
+        this.status.status = result1.status;
+        this.status.message = result1.message;
+        this.status.data = result1.data;
+        break;
+      case 'updateEvaluationLeader':
+        const dataObjecyive: UpdateObjectiveDTO = currData.employeeObjective;
+        const result2 = await this.employeeObjetiveService.updateObjective(
+          dataObjecyive.id,
+          dataObjecyive,
+          user,
+        );
+
+        this.status.code = result2.code;
+        this.status.error = result2.error;
+        this.status.status = result2.status;
+        this.status.message = result2.message;
+        this.status.data = result2.data;
+        break;
+      case 'EditEvaluationCommentLeader':
+        const dataDnc: UpdateDncCourseDto = currData.dncCourse;
+        const result3 = await this.employeeObjetiveService.updateDnc(
+          dataDnc.id,
+          dataDnc,
+          user,
+        );
+
+        this.status.code = result3.code;
+        this.status.error = result3.error;
+        this.status.status = result3.status;
+        this.status.message = result3.message;
+        this.status.data = result3.data;
+        break;
+      default:
+        break;
+    }
+    return this.status;
+  }
+
+  
 }

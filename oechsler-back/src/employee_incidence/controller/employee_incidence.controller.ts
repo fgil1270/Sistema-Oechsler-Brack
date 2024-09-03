@@ -90,8 +90,8 @@ export class EmployeeIncidenceController {
       ids: data.employees,
       start: data.start,
       end: data.end,
-      status: data.status ? [data.status] : null,
-      code: data.code ? [data.code] : null,
+      status: data.status ? data.status : null,
+      code_band: data.code_band ? data.code_band : null,
     };
 
     return this.employeeIncidenceService.findAllIncidencesByIdsEmployee(
@@ -188,7 +188,7 @@ export class ReportFlexTimeController {
     if (report.access == 'true') {
       return true;
     } else {
-      return this.employeeIncidenceService.reportFlexTime(report, user);
+      return this.employeeIncidenceService.reportFlexTimeV2(report, user);
     }
   }
 }

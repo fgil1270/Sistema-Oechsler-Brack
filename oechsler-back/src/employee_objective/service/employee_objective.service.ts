@@ -42,7 +42,6 @@ import { PercentageDefinitionService } from '../../evaluation_annual/percentage_
 import { MailService } from '../../mail/mail.service';
 import { save } from 'pdfkit';
 import { RequestCourseService } from '../../request_course/service/request_course.service';
-import { id } from 'date-fns/locale';
 
 @Injectable()
 export class EmployeeObjetiveService {
@@ -1037,21 +1036,21 @@ export class EmployeeObjetiveService {
     const percentage = await this.percentageDefinitionService.findOne(
       currdata.idYear,
     );
+    
     //se obtienen los empleados por jerarquia
     const employee = await this.organigramaService.findJerarquia(
       {
         type: 'Normal',
         startDate: '',
         endDate: '',
+        needUser: currdata.needUser ? currdata.needUser : null
       },
       user,
     );
 
     for (let index = 0; index < employee.length; index++) {
       const element = employee[index];
-      if(currdata.consulta != 'consulta' && user.idEmployee == element.id){
-        continue;
-      }
+      
       
       //se busca si el empleado tiene objetivos asignados para el año seleccionado
       const definitionObjectiveAnnual =
@@ -1070,9 +1069,7 @@ export class EmployeeObjetiveService {
           },
         });
 
-      const isDefine = definitionObjectiveAnnual
-        ? definitionObjectiveAnnual.status
-        : 'No definido';
+      const isDefine = definitionObjectiveAnnual ? definitionObjectiveAnnual.status : 'No definido';
 
       dataEmployee.push({
         employee: element,
@@ -1781,5 +1778,69 @@ export class EmployeeObjetiveService {
       status.status = 'error';
       return status;
     }
+  }
+
+  async evaluationEmployee(id: number, currData: any, user: any) {
+    let status = {
+      code: 200,
+      message: 'OK',
+      error: false,
+      data: {},
+      status: 'success',
+    };
+    try {
+      const definitionObjectiveAnnual = await this.definitionObjectiveAnnual.findOne({
+        relations: {
+          employee: true,
+          evaluatedBy: true,
+          percentageDefinition: true,
+          objective: true,
+          dncCourse: true,
+          dncCourseManual: true,
+          competenceEvaluation: true,
+        },
+        where: {
+          id: id,
+        },
+      });
+  
+      if(!definitionObjectiveAnnual){
+        status.code = 200;
+        status.message = 'No se encontro la definicion de objetivos';
+        status.error = true;
+        return status;
+      }
+  
+      definitionObjectiveAnnual.status = 'Pendiente evaluador medio año';
+      definitionObjectiveAnnual.half_year_employee_range = currData.half_year_employee_range;
+      definitionObjectiveAnnual.half_year_employee_value = currData.half_year_employee_value;
+      definitionObjectiveAnnual.half_year_employee_comment = currData.half_year_employee_comment;
+  
+      await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
+  
+      
+      status.message = 'Objetivos de empleado evaluados correctamente';
+      return status;
+    } catch (error) {
+      status.error = true;
+      status.message = error;
+      status.code = 400;
+  
+      return status;
+    }
+
+    
+  }
+
+  async evaluationLeader(currData: any, user: any) {
+    let status = {
+      code: 200,
+      message: 'OK',
+      error: false,
+      data: {},
+      status: 'success',
+    };
+
+    return status;
   }
 }

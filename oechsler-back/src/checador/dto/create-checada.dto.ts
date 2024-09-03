@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateChecadaDto {
@@ -65,4 +65,13 @@ export class FindChecadaDto {
   @IsString()
   @ApiProperty({ description: 'Tipo de organigrama' })
   type: string;
+
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({ description: 'Numero de registro del checador, 0 es checada manual, 1 checada home office, distinto es numero registro del checador' })
+  numRegistroChecador: Number;
+
+  @IsArray()
+  @ApiProperty({ description: 'Estatus de la hora' })
+  status: any[];
 }

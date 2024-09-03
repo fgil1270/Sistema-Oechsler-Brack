@@ -48,10 +48,17 @@ export class ChecadorController {
     );
   }
 
-  @ApiOperation({ summary: 'buscar registros de entrada y salida por array de ids de empleado y rango de fechas' })
+  @ApiOperation({ summary: 'Acceso a la vista de Autorizar Checada' })
   @Views('autorizar_checada')
   @Get('byIds')
-  findbyDateOrganigrama(@Query() data: FindChecadaDto, @CurrentUser() user: any) {
+  accesViewAutorizedChecadas() {
+    return true;
+  }
+
+  @ApiOperation({ summary: 'buscar registros de entrada y salida por array de ids de empleado y rango de fechas' })
+  //@Views('autorizar_checada')
+  @Post('byIds')
+  findbyDateOrganigrama(@Body() data: FindChecadaDto, @CurrentUser() user: any) {
     return this.checadorService.findbyDateOrganigrama(data, user);
   }
 

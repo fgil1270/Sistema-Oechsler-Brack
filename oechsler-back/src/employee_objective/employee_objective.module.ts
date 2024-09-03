@@ -4,7 +4,7 @@ https://docs.nestjs.com/modules
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { EmployeeObjetiveController } from './controller/employee_objetive.controller';
+import { EmployeeObjetiveController, EmployeeObjetiveMedioAnoController } from './controller/employee_objetive.controller';
 import { EmployeeObjetiveService } from './service/employee_objective.service';
 import { DefinitionObjectiveAnnual } from './entities/definition_objective_annual.entity';
 import { EmployeeObjective } from './entities/objective.entity';
@@ -23,7 +23,7 @@ import { MailModule } from '../mail/mail.module';
 import { RequestCourseModule } from '../request_course/request_course.module';
 import { SupplierModule } from '../supplier/supplier.module';
 
-@Module({
+@Module({ 
   imports: [
     TypeOrmModule.forFeature([
       DefinitionObjectiveAnnual,
@@ -44,7 +44,7 @@ import { SupplierModule } from '../supplier/supplier.module';
     RequestCourseModule,
     SupplierModule,
   ],
-  controllers: [EmployeeObjetiveController],
+  controllers: [EmployeeObjetiveController, EmployeeObjetiveMedioAnoController],
   providers: [EmployeeObjetiveService],
   exports: [EmployeeObjetiveService],
 })

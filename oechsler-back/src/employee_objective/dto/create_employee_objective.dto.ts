@@ -9,6 +9,52 @@ import {
 } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
+export class DefinitionObjectiveAnnualDto {
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({ description: 'Id del empleado' })
+  idEmployee: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({ description: 'Id del leader' })
+  idLeader: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty({ description: 'Id del porcentaje' })
+  idPercentageDefinition: number;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Estado de la asignacion de objetivos, No definido, Pendiente Evaluado medio año, Pendiente evaluador medio año,' +
+    'Pendiente evaluado Fin de año, Pendiente evaluador fin de año, Finalizado' })
+  status: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Comentario de edicion' })
+  comment_edit?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Rango de calificacion medio año empleado' })
+  half_year_employee_range?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({ description: 'Calificacion medio año empleado' })
+  half_year_employee_value?: number;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Comentario medio año empleado' })
+  half_year_employee_comment?: string;
+
+}
+
+export class UpdateDefinitionObjectiveAnnualDto extends PartialType(DefinitionObjectiveAnnualDto) {}
+
 export class EmployeeObjectiveDto {
   @IsNotEmpty()
   @IsString()
@@ -140,9 +186,7 @@ export class CompetenceEvaluationDto {
   idCompetence: number;
 }
 
-export class UpdateCompetenceEvaluationDto extends PartialType(
-  CompetenceEvaluationDto,
-) {}
+export class UpdateCompetenceEvaluationDto extends PartialType(CompetenceEvaluationDto) {}
 
 export class CreateEmployeeObjectiveDto {
   @IsOptional()
@@ -179,9 +223,7 @@ export class CreateEmployeeObjectiveDto {
   competenceEvaluation: CompetenceEvaluationDto[];
 }
 
-export class UpdateEmployeeObjectiveDto extends PartialType(
-  CreateEmployeeObjectiveDto,
-) {}
+export class UpdateEmployeeObjectiveDto extends PartialType(CreateEmployeeObjectiveDto) {}
 
 export class CreateEmployeeObjectiveDtoParcial {
   @IsOptional()
@@ -217,11 +259,11 @@ export class CreateEmployeeObjectiveDtoParcial {
   competenceEvaluation: CompetenceEvaluationDto;
 }
 
-export class UpdateEmployeeObjectiveDtoPartial extends PartialType(
-  CreateEmployeeObjectiveDtoParcial,
-) {
+export class UpdateEmployeeObjectiveDtoPartial extends PartialType(CreateEmployeeObjectiveDtoParcial) {
   @IsOptional()
   @IsNumber()
   @ApiProperty({ description: 'Id de la asignacion de objetivos anual' })
   id: number;
 }
+
+

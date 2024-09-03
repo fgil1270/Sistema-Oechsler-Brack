@@ -1,3 +1,4 @@
+import { WebsocketModule } from './websockets/websocket.module';
 import { MailModule } from './mail/mail.module';
 import { Module } from '@nestjs/common';
 import * as Joi from 'joi';
@@ -42,6 +43,7 @@ import { SupplierModule } from './supplier/supplier.module';
 
 @Module({
   imports: [
+    WebsocketModule,
     MailModule,
     ConfigModule.forRoot({
       envFilePath: enviroments[process.env.NODE_ENV] || '.env',
@@ -100,4 +102,4 @@ import { SupplierModule } from './supplier/supplier.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
