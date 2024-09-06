@@ -96,6 +96,7 @@ export class ChecadorService {
 
   //buscar registros de entrada y salida por ids de empleado y rango de fechas
   async findbyDate(id: any, start: any, end: any, hrEntrada: any, hrSalida: any) {
+
     const checador = await this.checadorRepository.find({
       where: {
         employee: {
@@ -234,6 +235,9 @@ export class ChecadorService {
         const mediaHoraExtra = 0.06;
         let sumaMediaHrExtra = 0;
         let hrsExtraIncidencias = '';
+        let isTxtCompensatorio = false;
+        let horasRealesTurno = 0;
+        let minutosRealesTurno = 0;
 
         const employeeShif = await this.employeeShiftService.findMore(
           dataDate,
@@ -245,9 +249,9 @@ export class ChecadorService {
         //si en la fecha el empleado no tiene turno se continua con el siguiente dia
         if (employeeShif.events.length == 0) {
           //si es incapacidad tambien se ponen los dias sin turno
-          if(isIncidenceIncapacidad){
+          /* if(isIncidenceIncapacidad){
             incidenceExtra.push(`1` + incidenceIncapacidad.code_band);
-          }
+          } */
           
         }else{
           //se obtienen las incidencias del dia
@@ -313,6 +317,7 @@ export class ChecadorService {
                 incidenceExtra.push(`1` + incidenciasNormales[index].codeBand);
               }
             }
+            
             //validar que exista tiempo extra
             if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET') {
               incidenciaTiemExtra = true;
@@ -327,7 +332,6 @@ export class ChecadorService {
             
 
           }
-
 
 
           //se verifica si el dia seleccionado es festivo
@@ -411,6 +415,18 @@ export class ChecadorService {
                   diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
                   diaSiguente = new Date(index);
                   break;
+                case 'T12-1':
+                  hrEntrada = '03:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'T12-2':
+                  hrEntrada = '12:00:00'; //dia anterior
+                  hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
               }
             } else {
               switch (turnoActual) {
@@ -449,6 +465,18 @@ export class ChecadorService {
                   hrSalida = '15:00:00'; //dia actual
                   diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
                   diaSiguente = new Date(index);
+                  break;
+                case 'T12-1':
+                  hrEntrada = '03:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'T12-2':
+                  hrEntrada = '12:00:00'; //dia anterior
+                  hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                   break;
               }
             }
@@ -491,6 +519,18 @@ export class ChecadorService {
                   diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
                   diaSiguente = new Date(index);
                   break;
+                case 'T12-1':
+                  hrEntrada = '03:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'T12-2':
+                  hrEntrada = '12:00:00'; //dia anterior
+                  hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
               }
             } else {
               switch (turnoActual) {
@@ -530,32 +570,34 @@ export class ChecadorService {
                   diaAnterior = new Date(index);
                   diaSiguente = new Date(index);
                   break;
+                case 'T12-1':
+                  hrEntrada = '03:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'T12-2':
+                  hrEntrada = '12:00:00'; //dia anterior
+                  hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
               }
             }
           }
           
 
-          //si el turno es 3 se suma un dia
-          /* if(employeeShif.events[0]?.nameShift == 'T1'){
-            hrEntrada= '05:00:00';
-            hrSalida = '15:59:00';
-          }else if(employeeShif.events[0]?.nameShift == 'T2'){
-            hrEntrada= '13:00:00';
-            hrSalida = '21:59:00';
-          }else if(employeeShif.events[0]?.nameShift == 'T3'){
-            hrEntrada= '20:00:00';
-            hrSalida = '06:59:00';
-            diaSiguente.setDate(diaSiguente.getDate() + 1);
-          }else if(employeeShif.events[0]?.nameShift == 'T4'){
-            hrEntrada= '05:00:00';
-            hrSalida = '15:59:00';
-          } */
 
           //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
           for (let index = 0; index < incidenciasNormales.length; index++) {
             
             if(incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET' || incidenciasNormales[index].codeBand == 'TxT'){
-              
+              if(incidenciasNormales[index].type == 'Compensatorio'){
+                isTxtCompensatorio = true;
+                totalHrsTrabajadas += hourShift;
+                totalMinTrabajados += Number(minShift) % 60;
+                
+              }
               //si es turno 1
               if ( employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T1'){
 
@@ -653,7 +695,7 @@ export class ChecadorService {
           //si no existen incidencias
           //si el dia no es festivo
           //si existe turno
-          if (registrosChecador.length == 0 && incidenciasNormales.length == 0 && !dayCalendar && employeeShif.events.length >0) {
+          if (registrosChecador.length == 0 && incidenciasNormales.length == 0 && !dayCalendar && employeeShif.events.length >0 && !isTxtCompensatorio) {
             incidenciaFalta = true;
             isIncidenceIncapacidad = false;
             incidenceExtra.push(`1` + faltaInjustificada.code_band);
@@ -678,8 +720,7 @@ export class ChecadorService {
           let calculoMinExtra = 0;
           let horasExtraDia = 0;
           let minutosExtraDia = 0;
-          let horasRealesTurno = 0;
-          let minutosRealesTurno = 0;
+          
 
           //tiempo extra para el turno 3
           //diffDate >= diffTimeShift 
@@ -693,10 +734,8 @@ export class ChecadorService {
           horasExtraDia = (horasDia - hourShift) <= 0 ? 0 : (horasDia - hourShift); //horas extra por dia
           minutosExtraDia = (minsDia - minShift) <= 0 ? 0 : (minsDia - minShift); //mins extra por dia
 
-          
-
-          horasRealesTurno = horasDia - horasExtraDia;
-          minutosRealesTurno = minsDia - minutosExtraDia;
+          horasRealesTurno += horasDia - horasExtraDia;
+          minutosRealesTurno += minsDia - minutosExtraDia;
 
                     
           calculoHrsExtra += horasExtraDia;

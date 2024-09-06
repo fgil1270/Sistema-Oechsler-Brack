@@ -34,6 +34,7 @@ import { EmployeeObjective } from '../entities/objective.entity';
 import { DncCourse } from '../entities/dnc_course.entity';
 import { DncCourseManual } from '../entities/dnc_manual.entity';
 import { CompetenceEvaluation } from '../entities/competence_evaluation.entity';
+import { EmployeeObjectiveEvaluation } from '../entities/objetive_evaluation.entity';
 import { CompetenceService } from '../../competence/service/competence.service';
 import { CourseService } from '../../course/service/course.service';
 import { EmployeesService } from '../../employees/service/employees.service';
@@ -46,15 +47,12 @@ import { RequestCourseService } from '../../request_course/service/request_cours
 @Injectable()
 export class EmployeeObjetiveService {
   constructor(
-    @InjectRepository(DefinitionObjectiveAnnual)
-    private definitionObjectiveAnnual: Repository<DefinitionObjectiveAnnual>,
-    @InjectRepository(EmployeeObjective)
-    private employeeObjective: Repository<EmployeeObjective>,
+    @InjectRepository(DefinitionObjectiveAnnual) private definitionObjectiveAnnual: Repository<DefinitionObjectiveAnnual>,
+    @InjectRepository(EmployeeObjective) private employeeObjective: Repository<EmployeeObjective>,
     @InjectRepository(DncCourse) private dncCourse: Repository<DncCourse>,
-    @InjectRepository(DncCourseManual)
-    private dncCourseManual: Repository<DncCourseManual>,
-    @InjectRepository(CompetenceEvaluation)
-    private competenceEvaluation: Repository<CompetenceEvaluation>,
+    @InjectRepository(DncCourseManual) private dncCourseManual: Repository<DncCourseManual>,
+    @InjectRepository(CompetenceEvaluation) private competenceEvaluation: Repository<CompetenceEvaluation>,
+    @InjectRepository(EmployeeObjectiveEvaluation) private employeeObjectiveEvaluation: Repository<EmployeeObjectiveEvaluation>,
     private organigramaService: OrganigramaService,
     private percentageDefinitionService: PercentageDefinitionService,
     private employeeService: EmployeesService,
@@ -1036,21 +1034,21 @@ export class EmployeeObjetiveService {
     const percentage = await this.percentageDefinitionService.findOne(
       currdata.idYear,
     );
+    
     //se obtienen los empleados por jerarquia
     const employee = await this.organigramaService.findJerarquia(
       {
         type: 'Normal',
         startDate: '',
         endDate: '',
+        needUser: currdata.needUser ? currdata.needUser : null
       },
       user,
     );
 
     for (let index = 0; index < employee.length; index++) {
       const element = employee[index];
-      if(currdata.consulta != 'consulta' && user.idEmployee == element.id){
-        continue;
-      }
+      
       
       //se busca si el empleado tiene objetivos asignados para el año seleccionado
       const definitionObjectiveAnnual =
@@ -1099,7 +1097,9 @@ export class EmployeeObjetiveService {
             employee: true,
             evaluatedBy: true,
             percentageDefinition: true,
-            objective: true,
+            objective: {
+              objectiveEvaluation: true,
+            },
             dncCourse: {
               course: {
                 competence: true,
@@ -1778,5 +1778,156 @@ export class EmployeeObjetiveService {
       status.status = 'error';
       return status;
     }
+  }
+
+  async evaluationEmployee(id: number, currData: any, user: any) {
+    let status = {
+      code: 200,
+      message: 'OK',
+      error: false,
+      data: {},
+      status: 'success',
+    };
+    try {
+      const definitionObjectiveAnnual = await this.definitionObjectiveAnnual.findOne({
+        relations: {
+          employee: true,
+          evaluatedBy: true,
+          percentageDefinition: true,
+          objective: true,
+          dncCourse: true,
+          dncCourseManual: true,
+          competenceEvaluation: true,
+        },
+        where: {
+          id: id,
+        },
+      });
+  
+      if(!definitionObjectiveAnnual){
+        status.code = 200;
+        status.message = 'No se encontro la definicion de objetivos';
+        status.error = true;
+        return status;
+      }
+  
+      definitionObjectiveAnnual.status = 'Pendiente evaluador medio año';
+      definitionObjectiveAnnual.half_year_employee_range = currData.half_year_employee_range;
+      definitionObjectiveAnnual.half_year_employee_value = currData.half_year_employee_value;
+      definitionObjectiveAnnual.half_year_employee_comment = currData.half_year_employee_comment;
+  
+      await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
+  
+      
+      status.message = 'Objetivos de empleado evaluados correctamente';
+      return status;
+    } catch (error) {
+      status.error = true;
+      status.message = error;
+      status.code = 400;
+  
+      return status;
+    }
+
+    
+  }
+
+  async evaluationLeader(id: number, currData: any, user: any) {
+    let status = {
+      code: 200,
+      message: 'OK',
+      error: false,
+      data: {},
+      status: 'success',
+    };
+
+    try {
+      const definitionObjectiveAnnual = await this.definitionObjectiveAnnual.findOne({
+        relations: {
+          employee: true,
+          evaluatedBy: true,
+          percentageDefinition: true,
+          objective: true,
+          dncCourse: true,
+          dncCourseManual: true,
+          competenceEvaluation: true,
+        }, 
+        where: {
+          id: id,
+        },
+      });
+      
+      if(!definitionObjectiveAnnual){
+        status.code = 200;
+        status.message = 'No se encontro la definicion de objetivos';
+        status.error = true;
+        return status;
+      }
+  
+      definitionObjectiveAnnual.status = 'Pendiente evaluado fin de año';
+      definitionObjectiveAnnual.half_year_leader_range = currData.half_year_leader_range;
+      definitionObjectiveAnnual.half_year_leader_value = currData.half_year_leader_value;
+      definitionObjectiveAnnual.half_year_leader_comment = currData.half_year_leader_comment;
+
+      await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
+
+      for (let index = 0; index < currData.dataObjective.length; index++) {
+        const element = currData.dataObjective[index];
+
+        //se busca el objetivo
+        const objective = await this.employeeObjective.findOne({
+          where: {
+            id: element.id,
+          }
+        });
+
+        //se busca si el objetivo ya fue evaluado
+        const objectiveEvaluation = await this.employeeObjectiveEvaluation.findOne({
+          relations: {
+            objective: true,
+          },
+          where: {
+            objective: {
+              id: objective.id,
+            },
+          } 
+        })
+
+
+        if(!objectiveEvaluation){
+          //se crea la evaluacion
+          const evaluation = this.employeeObjectiveEvaluation.create({
+            value_half_year: Number(element.value),
+            comment_half_year: element.comment,
+            objective: objective
+          })
+
+          await this.employeeObjectiveEvaluation.save(evaluation);
+        }
+
+        //se actualiza la evaluacion
+        objectiveEvaluation.value_half_year = Number(element.value);
+        objectiveEvaluation.comment_half_year = element.comment;
+
+        await this.employeeObjectiveEvaluation.save(objectiveEvaluation);
+
+        
+        
+      }
+      
+      status.message = 'Objetivos de empleado evaluados correctamente';
+      return status;
+      
+    } catch (error) {
+      console.log(error)
+      status.error = true;
+      status.message = error.message;
+      status.code = 400;
+      status.status = 'error';
+  
+      return status;
+    }
+
+    return status;
   }
 }

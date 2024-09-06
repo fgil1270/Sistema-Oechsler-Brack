@@ -68,4 +68,41 @@ export class DefinitionObjectiveAnnual {
 
   @Column({ type: 'text', nullable: true })
   comment_edit: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  half_year_employee_range: string;
+
+  @Column({ type: 'int', nullable: true })
+  half_year_employee_value: number;
+
+  @Column({ type: 'text', nullable: true })
+  half_year_employee_comment: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  end_year_employee_range: string;
+
+  @Column({ type: 'int', nullable: true })
+  end_year_employee_value: number;
+
+  @Column({ type: 'text', nullable: true })
+  end_year_employee_comment: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  half_year_leader_range: string;
+
+  @Column({ type: 'int', nullable: true })
+  half_year_leader_value: number;
+
+  @Column({ type: 'text', nullable: true })
+  half_year_leader_comment: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  end_year_leader_range: string;
+
+  @Column({ type: 'int', nullable: true })
+  end_year_leader_value: number;
+
+  @Column({ type: 'text', nullable: true })
+  end_year_leader_comment: string;
+
 }
