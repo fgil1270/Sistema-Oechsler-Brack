@@ -435,6 +435,13 @@ export class EmployeeShiftService {
             if (index.getDay() == 5 && shift.shift.name == 'Mixto') {
               contPeriodicidad++;
             }
+            if (index.getDay() == 4 && shift.shift.name == '12x12-1') {
+              contPeriodicidad++;
+            }
+            if (index.getDay() == 4 && shift.shift.name == '12x12-2') {
+              contPeriodicidad++;
+            }
+            
           }
         }
       }

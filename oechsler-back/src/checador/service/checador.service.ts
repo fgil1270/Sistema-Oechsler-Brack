@@ -96,6 +96,7 @@ export class ChecadorService {
 
   //buscar registros de entrada y salida por ids de empleado y rango de fechas
   async findbyDate(id: any, start: any, end: any, hrEntrada: any, hrSalida: any) {
+
     const checador = await this.checadorRepository.find({
       where: {
         employee: {

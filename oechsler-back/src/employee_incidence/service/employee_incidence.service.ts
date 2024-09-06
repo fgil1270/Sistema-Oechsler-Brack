@@ -1802,7 +1802,7 @@ export class EmployeeIncidenceService {
         isLeader = true;
       }
     });
-
+ 
     if (isAdmin) {
       conditions = {};
       employees = await this.employeeService.findAll();
@@ -1831,8 +1831,9 @@ export class EmployeeIncidenceService {
     }
 
     //se filtran los empleados por perfil MIXTO
-    const newArray = employees; //.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
+    const newArray = data.type_nomina == 'Todos' ? employees : employees.filter((e) => e.payRoll.name == data.type_nomina) //.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
     //generacion de dias seleccionados
+    //console.log(newArray)
 
     for (
       let x = new Date(from);
@@ -1951,8 +1952,9 @@ export class EmployeeIncidenceService {
         //horario del turno
         const iniciaTurno = new Date(`${shift.events[0]?.start} ${shift.events[0]?.startTimeshift}`);
         const termianTurno = new Date(`${shift.events[0]?.start} ${shift.events[0]?.endTimeshift}`);
+
         
-        if(shift.events[0]?.nameShift == 'T3'){
+        if(shift.events[0]?.nameShift == 'T3' || shift.events[0]?.nameShift == 'T12-2'){
           termianTurno.setDate(termianTurno.getDate() + 1)
         }
         const startTimeShift = moment(iniciaTurno, 'HH:mm');
@@ -1971,6 +1973,8 @@ export class EmployeeIncidenceService {
             totalHrsRequeridas += hourShift;
             totalMinRequeridos += Number(minShift) % 60;
           }
+
+          
         }
 
 

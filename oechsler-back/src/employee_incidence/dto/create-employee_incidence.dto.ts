@@ -117,4 +117,9 @@ export class ReportEmployeeIncidenceDto {
   @IsString()
   @ApiProperty({ description: 'Status de las incidencias' })
   status: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Tipo de nomina' })
+  type_nomina: string;
 }
