@@ -25,7 +25,8 @@ import {
   UpdateDncCourseDto,
   UpdateDncCourseManualDto,
   UpdateEmployeeObjectiveDtoPartial,
-  UpdateDefinitionObjectiveAnnualDto
+  UpdateDefinitionObjectiveAnnualDto,
+  UpdateDefinitionObjectiveAnnualLeaderMidYearDto
 } from '../dto/create_employee_objective.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
@@ -263,10 +264,10 @@ export class EmployeeObjetiveMedioAnoController {
         this.status.data = result1.data;
         break;
       case 'updateEvaluationLeader':
-        const dataObjecyive: UpdateObjectiveDTO = currData.employeeObjective;
-        const result2 = await this.employeeObjetiveService.updateObjective(
-          dataObjecyive.id,
-          dataObjecyive,
+        const dataObjective: UpdateDefinitionObjectiveAnnualLeaderMidYearDto = currData.evaluacionEmployee;
+        const result2 = await this.employeeObjetiveService.evaluationLeader(
+          id,
+          dataObjective,
           user,
         );
 
