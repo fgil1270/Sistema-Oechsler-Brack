@@ -22,10 +22,10 @@ export class EmployeeObjectiveEvaluation {
   @Column({ type: 'text' })
   comment_half_year: string;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   value_end_year: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   comment_end_year: string;
 
   @CreateDateColumn()

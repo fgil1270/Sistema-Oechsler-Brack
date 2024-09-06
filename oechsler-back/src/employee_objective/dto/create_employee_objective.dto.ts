@@ -55,6 +55,12 @@ export class DefinitionObjectiveAnnualDto {
 
 export class UpdateDefinitionObjectiveAnnualDto extends PartialType(DefinitionObjectiveAnnualDto) {}
 
+export class UpdateDefinitionObjectiveAnnualLeaderMidYearDto extends PartialType(DefinitionObjectiveAnnualDto) {
+  @IsArray()
+  @ApiProperty({ description: 'Objetivo de empleado' })
+  dataObjective: any[];
+}
+
 export class EmployeeObjectiveDto {
   @IsNotEmpty()
   @IsString()
