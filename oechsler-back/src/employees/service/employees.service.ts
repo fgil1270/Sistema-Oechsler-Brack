@@ -26,8 +26,7 @@ import { CalendarService } from '../../calendar/service/calendar.service';
 @Injectable()
 export class EmployeesService {
   constructor(
-    @InjectRepository(Employee)
-    private employeeRepository: Repository<Employee>,
+    @InjectRepository(Employee) private employeeRepository: Repository<Employee>,
     private jobsService: JobsService,
     private departmentsService: DepartmentsService,
     private payrollsService: PayrollsService,

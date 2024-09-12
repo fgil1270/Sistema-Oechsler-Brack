@@ -39,6 +39,7 @@ import { DocumentClasificationModule } from './document_clasification/document_c
 import { DocumentEmployeeModule } from './document_employee/document_employee.module';
 import { RequestCourseModule } from './request_course/request_course.module';
 import { SupplierModule } from './supplier/supplier.module';
+import { EnabledCreateIncidenceModule } from './enabled_create_incidence/enabled_create_incidence.module';
 
 
 @Module({
@@ -98,6 +99,7 @@ import { SupplierModule } from './supplier/supplier.module';
     DocumentClasificationModule,
     RequestCourseModule,
     SupplierModule,
+    EnabledCreateIncidenceModule
   ],
   controllers: [AppController],
   providers: [AppService],
