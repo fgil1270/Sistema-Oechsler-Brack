@@ -19,6 +19,7 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
 import { CalendarModule } from '../calendar/calendar.module';
+import { EnabledCreateIncidenceModule } from 'src/enabled_create_incidence/enabled_create_incidence.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { CalendarModule } from '../calendar/calendar.module';
     MailModule,
     UsersModule,
     CalendarModule,
+    EnabledCreateIncidenceModule,
   ],
   controllers: [
     EmployeeIncidenceController,

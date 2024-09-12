@@ -49,6 +49,7 @@ import { MailData, MailService } from '../../mail/mail.service';
 import { EmployeeProfile } from '../../employee-profiles/entities/employee-profile.entity';
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
+import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
 import { save } from 'pdfkit';
 import { is } from 'date-fns/locale';
 
@@ -69,6 +70,7 @@ export class EmployeeIncidenceService {
     private mailService: MailService,
     private userService: UsersService,
     private calendarService: CalendarService,
+    private enabledCreateIncidenceService: EnabledCreateIncidenceService,
   ) {}
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
@@ -116,11 +118,27 @@ export class EmployeeIncidenceService {
         const dayLetter = weekDays[index.getDay()];
         let dayLetterProfile = false;
 
-        for (let index = 0; index < weekDaysProfile.length; index++) {
-          const letraPerfil = weekDaysProfile[index];
+        for (let h = 0; h < weekDaysProfile.length; h++) {
+          const letraPerfil = weekDaysProfile[h];
 
           if (letraPerfil == dayLetter) {
             dayLetterProfile = true;
+          }
+        }
+
+        //valida si esta habilitado para crear incidencia
+        const enabledCreateIncidence = await this.enabledCreateIncidenceService.findAll();
+        if (enabledCreateIncidence.length > 0) {
+          if (enabledCreateIncidence[0].enabled) {
+            if (format(index, 'yyyy-MM-dd') < format(new Date(enabledCreateIncidence[0].date), 'yyyy-MM-dd')) {
+              throw new NotFoundException(
+                `No esta habilitado para crear incidencia en la fecha ${format(
+                  index,
+                  'yyyy-MM-dd',
+                )}`,
+              );
+            }
+            
           }
         }
 
@@ -194,6 +212,7 @@ export class EmployeeIncidenceService {
 
                 createEmployeeIncidenceDto.total_hour = createEmployeeIncidenceDto.total_hour + Number(hourShift +'.'+(minShift % 60))
                 
+                //crea turno incidencia
                 const createShift = await this.employeeShiftService.create({
                   employeeId: [employee.emps[j].id],
                   shiftId: 5,
@@ -335,6 +354,8 @@ export class EmployeeIncidenceService {
             : [],
       });
 
+      //si el usuario crea incidencia para el mismo
+      //envia correo de creacion de incidencia
       if (employeeIncidenceCreate.employee.id == user.idEmployee) {
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmailCreateIncidence(
@@ -344,7 +365,7 @@ export class EmployeeIncidenceService {
         );
       } else {
         
-        //ENVIO DE CORREO
+        //ENVIO DE CORREO de autorizacion
         const mail = await this.mailService.sendEmailAutorizaIncidence(
           subject,
           mailData,
@@ -396,7 +417,7 @@ export class EmployeeIncidenceService {
             ifCreate = true;
           }
         }
-        //si el dia tiene turno crea la incidencia en el dia
+        //si el dia tiene turno crea el dia de la incidencia
         if (ifCreate) {
           const dateEmployeeIncidence =
             await this.dateEmployeeIncidenceRepository.create({
@@ -1833,7 +1854,7 @@ export class EmployeeIncidenceService {
     //se filtran los empleados por perfil MIXTO
     const newArray = data.type_nomina == 'Todos' ? employees : employees.filter((e) => e.payRoll.name == data.type_nomina) //.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
     //generacion de dias seleccionados
-    //console.log(newArray)
+    
 
     for (
       let x = new Date(from);
