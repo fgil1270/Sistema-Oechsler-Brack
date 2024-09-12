@@ -1919,7 +1919,6 @@ export class EmployeeObjetiveService {
       return status;
       
     } catch (error) {
-      console.log(error)
       status.error = true;
       status.message = error.message;
       status.code = 400;

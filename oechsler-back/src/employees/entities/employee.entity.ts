@@ -25,6 +25,7 @@ import { Calendar } from '../../calendar/entities/calendar.entity';
 import { DefinitionObjectiveAnnual } from '../../employee_objective/entities/definition_objective_annual.entity';
 import { DocumentEmployee } from 'src/document_employee/entities/document_employee.entity';
 import { RequestCourse } from '../../request_course/entities/request_course.entity';
+import { EnabledCreateIncidence } from 'src/enabled_create_incidence/entities/enabled-create-incidence.entity';
 
 @Entity()
 export class Employee {
@@ -218,4 +219,7 @@ export class Employee {
 
   @OneToMany(() => RequestCourse, (post) => post.requestBy)
   requestEmployeeBy: RequestCourse[];
+
+  @OneToMany(() => EnabledCreateIncidence, (post) => post.employee)
+  enabledCreateIncidence: EnabledCreateIncidence[];
 }
