@@ -7,6 +7,8 @@ import { DocumentClasificationService } from './service/document_clasification.s
 import { DocumentModule } from '../document/document.module';
 import { DocumentEmployeeModule } from '../document_employee/document_employee.module';
 import { EmployeesModule } from '../employees/employees.module';
+import { JobsModule } from '../jobs/jobs.module';
+import { JobDocumentModule } from '../job_document/job_document.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { EmployeesModule } from '../employees/employees.module';
     forwardRef(() => DocumentModule),
     DocumentEmployeeModule,
     EmployeesModule,
+    JobsModule,
+    JobDocumentModule,
   ],
   providers: [DocumentClasificationService],
   controllers: [DocumentClasificationController],

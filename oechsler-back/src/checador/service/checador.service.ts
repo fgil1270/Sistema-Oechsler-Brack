@@ -339,8 +339,8 @@ export class ChecadorService {
 
           if (dayCalendar) {
             if (dayCalendar.holiday) {
-              const horasPerfile = iterator.employeeProfile.work_shift_hrs;
-              totalHrsTrabajadas += horasPerfile;
+              
+              totalHrsTrabajadas += hourShift;
             }
           }
 

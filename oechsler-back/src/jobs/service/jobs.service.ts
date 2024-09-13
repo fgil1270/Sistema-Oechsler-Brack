@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { join } from 'path';
 
 import { CreateJobDto } from '../dto/create-job.dto';
 import { Job } from '../entities/job.entity';
@@ -53,6 +54,9 @@ export class JobsService {
 
   async findOne(id: number) {
     const job = await this.jobRepository.findOne({
+      relations: {
+        jobDocument: true,
+      },
       where: {
         id: id,
       },
@@ -75,6 +79,30 @@ export class JobsService {
       //throw new NotFoundException(`Job #${name} not found`);
     }
     return { job };
+  }
+
+  async findFilesByJob(id: number) {
+    const job = await this.jobRepository.findOne({
+      relations: {
+        jobDocument: true,
+      },
+      where: {
+        id: id,
+      },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Job #${id} not found`);
+    }
+    
+    return { 
+      path: join(
+        __dirname,
+        `../../../${job.jobDocument[0].route}`,
+        job.jobDocument[0].name,
+      ),
+      fileName: job.jobDocument[0].name,
+    };
   }
 
   async getCompetencies(id: number) {

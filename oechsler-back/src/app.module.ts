@@ -40,10 +40,12 @@ import { DocumentEmployeeModule } from './document_employee/document_employee.mo
 import { RequestCourseModule } from './request_course/request_course.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { EnabledCreateIncidenceModule } from './enabled_create_incidence/enabled_create_incidence.module';
+import { JobDocumentModule } from './job_document/job_document.module';
 
 
 @Module({
   imports: [
+    JobDocumentModule,
     WebsocketModule,
     MailModule,
     ConfigModule.forRoot({
@@ -101,7 +103,9 @@ import { EnabledCreateIncidenceModule } from './enabled_create_incidence/enabled
     SupplierModule,
     EnabledCreateIncidenceModule
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [
+    AppController],
+  providers: [
+    AppService],
 })
 export class AppModule { }

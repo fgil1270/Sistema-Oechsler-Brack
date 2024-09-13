@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { Competence } from '../../competence/entities/competence.entity';
+import { JobDocument } from '../../job_document/entities/job-document.entity';
 
 @Entity()
 export class Job {
@@ -52,4 +53,7 @@ export class Job {
     },
   })
   competence: Competence[];
+
+  @OneToMany(() => JobDocument, (post) => post.job)
+  jobDocument: JobDocument[];
 }
