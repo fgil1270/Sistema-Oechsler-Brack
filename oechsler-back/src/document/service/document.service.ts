@@ -36,8 +36,14 @@ export class DocumentService {
 
   async create(data: DocumentDto) {
     const document = await this.documentRepository.findOne({
+      relations: {
+        documentClasification: true
+      },
       where: {
         name: data.name,
+        documentClasification: {
+          id : data.documentClasificationId
+        }
       },
     });
 
@@ -58,6 +64,22 @@ export class DocumentService {
 
   async findByName(name: string) {
     const document = await this.documentRepository.findOne({ where: { name } });
+    return document;
+  }
+
+  //buscar documento por nombre y clasificacion
+  async findByNameAndClasification(name: string, clasificationId: number) {
+    const document = await this.documentRepository.findOne({ 
+      relations: {
+        documentClasification: true
+      },
+      where: { 
+        name: name,
+        documentClasification: {
+          id: clasificationId
+        }
+      } 
+    });
     return document;
   }
 

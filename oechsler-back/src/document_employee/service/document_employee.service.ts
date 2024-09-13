@@ -28,7 +28,9 @@ export class DocumentEmployeeService {
     const file = await this.documentEmployeeRepository.findOne({
       relations: {
         employee: true,
-        document: true,
+        document: {
+          documentClasification: true
+        },
       },
       where: {
         name: data.name,
@@ -36,7 +38,7 @@ export class DocumentEmployeeService {
           id: data.employeeId,
         },
         document: {
-          id: data.documentId,
+          id: data.documentId
         },
       },
     });
@@ -77,11 +79,14 @@ export class DocumentEmployeeService {
     employeeId: number,
     name: string,
     documentId: number,
+    documentClasificationId
   ) {
     const file = await this.documentEmployeeRepository.findOne({
       relations: {
         employee: true,
-        document: true,
+        document: {
+          documentClasification: true
+        },
       },
       where: {
         name: name,
@@ -90,6 +95,9 @@ export class DocumentEmployeeService {
         },
         document: {
           id: documentId,
+          documentClasification: {
+            id: documentClasificationId
+          }
         },
       },
     });

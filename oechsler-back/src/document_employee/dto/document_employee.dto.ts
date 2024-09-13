@@ -23,6 +23,4 @@ export class CreateDocumentEmployeeDto {
   route: string;
 }
 
-export class UpdateDocumentEmployeeDto extends PartialType(
-  CreateDocumentEmployeeDto,
-) {}
+export class UpdateDocumentEmployeeDto extends PartialType(CreateDocumentEmployeeDto) {}

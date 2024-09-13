@@ -42,9 +42,9 @@ export class DocumentClasificationController {
     return this.documentClasificationService.findAll();
   }
 
-  @ApiOperation({ summary: 'Obtiene el documento pdf de los objetivos' })
+  @ApiOperation({ summary: 'Obtiene el documento pdf de la clasificacion de archivos' })
   @Get('file/:id')
-  async downloadFile(@Res() res: Response, @Param('id') id: number) {
+  async downloadFile(@Res() res: Response, @Param('id') id: number, @Query() query: any) {
     /* res.writeHead(200, {
           'Content-Type': 'application/pdf',
           'Content-Disposition': 'attachment; filename=objetivos.pdf',
@@ -52,7 +52,7 @@ export class DocumentClasificationController {
       }); */
 
     try {
-      const filePath = await this.documentClasificationService.getFilePath(id);
+      const filePath = await this.documentClasificationService.getFilePath(id, query.type);
       /* res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=${filePath.fileName}`); */
       res.set(
