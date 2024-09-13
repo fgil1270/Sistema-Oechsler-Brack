@@ -130,7 +130,7 @@ export class EmployeeIncidenceService {
         const enabledCreateIncidence = await this.enabledCreateIncidenceService.findAll();
         if (enabledCreateIncidence.length > 0) {
           if (enabledCreateIncidence[0].enabled) {
-            if (format(index, 'yyyy-MM-dd') < format(new Date(enabledCreateIncidence[0].date), 'yyyy-MM-dd')) {
+            if (format(index, 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence[0].date), 'yyyy-MM-dd')) {
               throw new NotFoundException(
                 `No esta habilitado para crear incidencia en la fecha ${format(
                   index,
@@ -1986,16 +1986,26 @@ export class EmployeeIncidenceService {
         const hourShift = endTimeShift.diff(startTimeShift, 'hours');
         const minShift = endTimeShift.diff(startTimeShift, 'minutes');
 
-        
         //si existe turno se suman las horas requeridas
         if(shift.events.length >= 1){
           //si el turno es diferente a TI se suman las horas
           if(shift.events[0]?.nameShift != 'TI'){
+
+            
             totalHrsRequeridas += hourShift;
             totalMinRequeridos += Number(minShift) % 60;
           }
 
           
+        }
+
+        //si el total de minutos requeridos es mayor a 60 se suman las horas
+        //a horas requeridas
+        if (totalMinRequeridos >= 60) {
+
+          totalMinRequeridos = totalMinRequeridos - 60;
+          totalHrsRequeridas += 1
+
         }
 
 
@@ -2410,9 +2420,7 @@ export class EmployeeIncidenceService {
             objIncidencia.push({
               code: holiday.code,
             });
-            sumaHrsIncidencias += Number(
-              newArray[i].employeeProfile.work_shift_hrs,
-            );
+            sumaHrsIncidencias += hourShift;
           }
         }
         incidencias.forEach((incidence) => {
@@ -2495,6 +2503,7 @@ export class EmployeeIncidenceService {
 
       var quo = Math.floor(totalMinutisTrabados / 60);
       totalHrsTrabajadas += quo;
+
       registros.push({
         idEmpleado: newArray[i].id,
         numeroNomina: newArray[i].employee_number,
