@@ -97,7 +97,8 @@ export class EmployeeIncidenceService {
         if (
           role.name == 'Jefe de Area' ||
           role.name == 'RH' ||
-          role.name == 'Admin'
+          role.name == 'Admin' || 
+          role.name == 'Jefe de Turno'
         ) {
           isLeader = true;
         }
@@ -456,7 +457,7 @@ export class EmployeeIncidenceService {
     const to = format(new Date(data.end), 'yyyy-MM-dd')
     const tipo = ''; 
     
-    const incidences = await this.employeeIncidenceRepository.find({
+    /* const incidences = await this.employeeIncidenceRepository.find({
       relations: {
         employee: true,
         incidenceCatologue: true,
@@ -475,13 +476,27 @@ export class EmployeeIncidenceService {
         },
         status: data.status ? In(data.status) : Not(IsNull()),
       },
-    });
+    }); */
     
+    const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employeeIncidence')
+        .innerJoinAndSelect('employeeIncidence.employee', 'employee')
+        .leftJoinAndSelect('employeeIncidence.leader', 'leader')
+        .innerJoinAndSelect('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+        .innerJoinAndSelect('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+        .innerJoinAndSelect('employee.employeeShift', 'employeeShift')
+        .innerJoinAndSelect('employeeShift.shift', 'shift')
+        .where('employee.id IN (:...id)', { id: data.ids })
+        .andWhere('employeeIncidence.status IN (:status)', { status: data.status ? data.status : Not(IsNull()) })
+        .andWhere(`dateEmployeeIncidence.date BETWEEN '${format(new Date(from), 'yyyy-MM-dd')}' AND '${format(new Date(to), 'yyyy-MM-dd')}' `)
+        .andWhere(data.code_band ? 'incidenceCatologue.code_band IN (:...code_band)' : 'incidenceCatologue.code_band IS NOT NULL', { code_band: data.code_band })
+        .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
+        .getMany();
+    
+        
     let i = 0;
     const newIncidences = [];
     
-
-    if (incidences) {
+   if (incidences) {
       incidences.forEach((incidence) => {
         let textColor = '#fff';
   
@@ -514,12 +529,12 @@ export class EmployeeIncidenceService {
             status: incidence.status,
             approve: incidence.leader? incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname : '',
             approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0,
-            shift: incidence.shift,
+            shift: incidence.employee.employeeShift[0].shift,
             type: incidence.type
           });
         });
       });
-    }
+    }  
 
     /* const incidencesEmployee = incidences.map(incidence => {
       i++;
@@ -1033,7 +1048,7 @@ export class EmployeeIncidenceService {
       let mailData: MailData;
   
       const calendar = ical();
-      
+
       if (updateEmployeeIncidenceDto.status == 'Autorizada') {
         employeeIncidence.date_aproved_leader = new Date();
         employeeIncidence.leader = userAutoriza.emp;
@@ -1054,6 +1069,7 @@ export class EmployeeIncidenceService {
         const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour), 'yyyy-MM-dd'));
         const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour), 'yyyy-MM-dd'));
         let dias = diaFin.diff(diaInicio, 'days');
+
         calendar.createEvent({
           start: diaInicio,
           end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
@@ -1065,10 +1081,10 @@ export class EmployeeIncidenceService {
           busystatus: ICalEventBusyStatus.FREE,
           //status: ICalEventStatus.CONFIRMED,
           attendees: [
-            {
+            /* {
               email: to[1],
               status: ICalAttendeeStatus.ACCEPTED,
-            },
+            }, */
             {
               email: to[0],
               rsvp: true,
@@ -1132,10 +1148,10 @@ export class EmployeeIncidenceService {
       }
       
       employeeIncidence.status = updateEmployeeIncidenceDto.status;
-      
+
       return await this.employeeIncidenceRepository.save(employeeIncidence);
     } catch (error) {
-      
+
       return error;
     }
     
@@ -1819,7 +1835,7 @@ export class EmployeeIncidenceService {
       if (role.name == 'Admin' || role.name == 'RH') {
         isAdmin = true;
       }
-      if (role.name == 'Jefe de Area' || role.name == 'RH') {
+      if (role.name == 'Jefe de Area' || role.name == 'RH' || role.name == 'Jefe de Turno') {
         isLeader = true;
       }
     });

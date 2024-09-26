@@ -238,12 +238,36 @@ export class ChecadorService {
         let isTxtCompensatorio = false;
         let horasRealesTurno = 0;
         let minutosRealesTurno = 0;
+        let employeeShifAnterior: any;
+        let employeeShifSiguiente: any;
 
         const employeeShif = await this.employeeShiftService.findMore(
           dataDate,
           [iterator.id],
         );
         const incidenceIncapacidad = await this.incidenceCatalogueService.findByCodeBand('INC');
+
+        const dataDateAnterior = {
+          start: new Date(new Date(index).setDate(new Date(index).getDate() - 1)),
+          end: new Date(new Date(index).setDate(new Date(index).getDate() - 1)),
+        };
+        const dataDateSiguiente = {
+          start: new Date(new Date(index).setDate(new Date(index).getDate() + 1)),
+          end: new Date(new Date(index).setDate(new Date(index).getDate() + 1)),
+        };
+
+        employeeShifAnterior = await this.employeeShiftService.findMore(
+          dataDateAnterior,
+          [Number(iterator.id)],
+        );
+        employeeShifSiguiente = await this.employeeShiftService.findMore(
+          dataDateSiguiente,
+          [Number(iterator.id)],
+        );
+
+
+        //se verifica si el dia seleccionado es festivo
+        const dayCalendar = await this.calendarService.findByDate(index as any);
 
         
         //si en la fecha el empleado no tiene turno se continua con el siguiente dia
@@ -268,7 +292,7 @@ export class ChecadorService {
           const iniciaTurno = new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`);
           const termianTurno = new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`);
           
-          if(employeeShif.events[0]?.nameShift == 'T3'){
+          if(employeeShif.events[0]?.nameShift == 'T3' || employeeShif.events[0]?.nameShift == 'T12-2'){
             termianTurno.setDate(termianTurno.getDate() + 1)
           }
           
@@ -334,9 +358,6 @@ export class ChecadorService {
           }
 
 
-          //se verifica si el dia seleccionado es festivo
-          const dayCalendar = await this.calendarService.findByDate(index as any);
-
           if (dayCalendar) {
             if (dayCalendar.holiday) {
               
@@ -352,23 +373,7 @@ export class ChecadorService {
           let diaAnterior = new Date(index);
           let diaSiguente = new Date(index);
           const turnoActual = employeeShif.events[0]?.nameShift;
-          const dataDateAnterior = {
-            start: new Date(new Date(index).setDate(new Date(index).getDate() - 1)),
-            end: new Date(new Date(index).setDate(new Date(index).getDate() - 1)),
-          };
-          const dataDateSiguiente = {
-            start: new Date(new Date(index).setDate(new Date(index).getDate() + 1)),
-            end: new Date(new Date(index).setDate(new Date(index).getDate() + 1)),
-          };
-
-          const employeeShifAnterior = await this.employeeShiftService.findMore(
-            dataDateAnterior,
-            [Number(iterator.id)],
-          );
-          const employeeShifSiguiente = await this.employeeShiftService.findMore(
-            dataDateSiguiente,
-            [Number(iterator.id)],
-          );
+          
           const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
           const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
 
@@ -698,7 +703,11 @@ export class ChecadorService {
           if (registrosChecador.length == 0 && incidenciasNormales.length == 0 && !dayCalendar && employeeShif.events.length >0 && !isTxtCompensatorio) {
             incidenciaFalta = true;
             isIncidenceIncapacidad = false;
-            incidenceExtra.push(`1` + faltaInjustificada.code_band);
+
+            if(format(index, 'yyyy-MM-dd') <= format(new Date(), 'yyyy-MM-dd')){
+              incidenceExtra.push(`1` + faltaInjustificada.code_band);
+
+            }
           }
 
           //se obtiene la diferencia de horas trabajadas
@@ -801,12 +810,42 @@ export class ChecadorService {
 
         }
 
+        let sinTurno= '';
+        //si el empleado no tiene turno se pone S/N
+        if(employeeShif.events.length > 0){
+          sinTurno = employeeShif.events[0].nameShift;
+        }else{
+          //si es de lunes a viernes
+          if(Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 0 && Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 6){
+            //si es viernes
+            if(Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) == 5){
+              if(employeeShifAnterior?.events[0]?.nameShift == 'T12-1' || employeeShifAnterior?.events[0]?.nameShift == 'T12-2'){
+                sinTurno = '';
+              }else{
+                sinTurno = 'S/N'
+              }
+            }else{
+              //si es dia festivo
+              if(dayCalendar){
+                sinTurno = ''
+              }else{
+                sinTurno = 'S/N'
+              }
+              
+            }
+            
+          }else{
+            sinTurno = '';
+          }
+        }
         
+
+        //se agrega el dia al arreglo de dias
 
         eventDays.push({
           date: format(index, 'yyyy-MM-dd'),
           incidencia: { extra: incidenceExtra},
-          employeeShift: employeeShif.events.length > 0? employeeShif.events[0].nameShift: (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 0 && Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 6) ? 'S/N' : '',
+          employeeShift: sinTurno,
         });
         
         
