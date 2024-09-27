@@ -10,6 +10,7 @@ import {
     JoinColumn,
 } from 'typeorm';
 import { Employee } from 'src/employees/entities/employee.entity';
+import { Payroll } from 'src/payrolls/entities/payroll.entity';
 
 @Entity()
 export class EnabledCreateIncidence {
@@ -34,4 +35,9 @@ export class EnabledCreateIncidence {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @ManyToOne(() => Payroll, (post) => post.enabledCreateIncidence)
+    @JoinColumn()
+    payroll: Payroll;
+
 }

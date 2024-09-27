@@ -315,7 +315,7 @@ export class OrganigramaService {
         },
       });
       
-      let visibleJefeTurno = await this.organigramaRepository.find({
+      /* let visibleJefeTurno = await this.organigramaRepository.find({
         relations: {
           employee: {
             department: true,
@@ -340,8 +340,16 @@ export class OrganigramaService {
             employee_number: 'ASC',
           },
         },
-      });
-      
+      }); */
+      let visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+      .innerJoinAndSelect('employee.job', 'job')
+      .innerJoinAndSelect('employee.payRoll', 'payRoll')
+      .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+      .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+      .where('job.shift_leader = 1')
+      .orderBy('employee.employee_number', 'ASC')
+      .getMany();
+
       levelOne.forEach((element) => {
         if(element.employee){
           employees.push(element.employee);
@@ -349,13 +357,14 @@ export class OrganigramaService {
         
       });
       
+      
       //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
       if(isJefeTurno){
         let test: any[] = [];
         let test2: any[] = [];
         
         visibleJefeTurno.forEach((element) => {
-          test.push(element.employee);
+          test.push(element);
         });
         test2 = test.filter((element) => !employees.some((emp) => emp.id === element.id));
         employees.push(...test2);
