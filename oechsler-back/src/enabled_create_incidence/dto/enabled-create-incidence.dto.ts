@@ -11,4 +11,11 @@ export class EnabledCreateIncidenceDto {
     @ApiProperty()
     enabled: boolean;
 
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ description: 'Tipo de nomina' })
+    type: string;
+      
+    
+
 }

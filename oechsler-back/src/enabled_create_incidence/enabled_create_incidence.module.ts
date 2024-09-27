@@ -8,11 +8,13 @@ import { EnabledCreateIncidenceService } from './service/enabled-create-incidenc
 import { EnabledCreateIncidenceController } from './controller/enabled-create-incidence.controller';
 import { EnabledCreateIncidence } from './entities/enabled-create-incidence.entity';
 import { EmployeesModule } from '../employees/employees.module';
+import { PayrollsModule } from 'src/payrolls/payrolls.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([EnabledCreateIncidence]),
         EmployeesModule,
+        PayrollsModule
     ],
     controllers: [EnabledCreateIncidenceController],
     providers: [EnabledCreateIncidenceService],
