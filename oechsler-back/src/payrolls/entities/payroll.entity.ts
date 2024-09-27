@@ -8,6 +8,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
+import { EnabledCreateIncidence } from 'src/enabled_create_incidence/entities/enabled-create-incidence.entity';
 
 @Entity()
 export class Payroll {
@@ -28,4 +29,7 @@ export class Payroll {
 
   @DeleteDateColumn()
   deleted_at: Date;
+
+  @OneToMany(() => EnabledCreateIncidence, (post) => post.payroll)
+  enabledCreateIncidence: EnabledCreateIncidence[];
 }

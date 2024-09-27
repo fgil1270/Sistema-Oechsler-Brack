@@ -13,15 +13,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { EnabledCreateIncidenceDto } from '../dto/enabled-create-incidence.dto';
 import { EnabledCreateIncidence } from '../entities/enabled-create-incidence.entity';
-import { EmployeesService } from 'src/employees/service/employees.service';
-import e from 'express';
-import { find } from 'rxjs';
+import { EmployeesService } from '../../employees/service/employees.service';
+import { PayrollsService } from '../../payrolls/service/payrolls.service';
 
 @Injectable()
 export class EnabledCreateIncidenceService { 
     constructor(
         @InjectRepository(EnabledCreateIncidence) private enabledCreateIncidenceRepository: Repository<EnabledCreateIncidence>,
         private employeeService: EmployeesService,
+        private payrollService: PayrollsService,
     ) {}
     
     async create(enabledCreateIncidenceDto: EnabledCreateIncidenceDto, user: any) {
@@ -34,6 +34,7 @@ export class EnabledCreateIncidenceService {
           };
         
         const employee = await this.employeeService.findOne(user.idEmployee);
+        const payroll = await this.payrollService.findName(enabledCreateIncidenceDto.type);
 
         if (!employee) {
             status.error = true;
@@ -42,38 +43,45 @@ export class EnabledCreateIncidenceService {
             return {status};
             
         }
-        const findEnabledCreateIncidence = await this.enabledCreateIncidenceRepository.find();
-
-
+        const findEnabledCreateIncidence = await this.enabledCreateIncidenceRepository.findOne({
+            where: {
+                payroll: {
+                    id: payroll.payroll.id
+                },
+            }
+        });
+        
         if(enabledCreateIncidenceDto.enabled == true){
-            if(findEnabledCreateIncidence.length <= 0){
+            if(!findEnabledCreateIncidence){
                 const enabledCreateIncidence = this.enabledCreateIncidenceRepository.create(enabledCreateIncidenceDto);
                 enabledCreateIncidence.employee = employee.emp;
+                enabledCreateIncidence.payroll = payroll.payroll;
 
                 await this.enabledCreateIncidenceRepository.save(enabledCreateIncidence);
 
                 status.data = enabledCreateIncidence;
                 status.message = 'Habilitar incidencia creado';
             }else{
-                findEnabledCreateIncidence[0].enabled = enabledCreateIncidenceDto.enabled;
-                findEnabledCreateIncidence[0].employee = employee.emp;
-                findEnabledCreateIncidence[0].date = new Date(enabledCreateIncidenceDto.date);
-                status.data = findEnabledCreateIncidence[0];
+                findEnabledCreateIncidence.enabled = enabledCreateIncidenceDto.enabled;
+                findEnabledCreateIncidence.employee = employee.emp;
+                findEnabledCreateIncidence.date = new Date(enabledCreateIncidenceDto.date);
+                findEnabledCreateIncidence.payroll = payroll.payroll;
+                status.data = findEnabledCreateIncidence;
                 status.message = 'Habilitar incidencia actualizado';
 
-                await this.enabledCreateIncidenceRepository.save(findEnabledCreateIncidence[0]);
+                await this.enabledCreateIncidenceRepository.save(findEnabledCreateIncidence);
             }
         }else{
 
-            if(findEnabledCreateIncidence.length > 0){
+            if(findEnabledCreateIncidence){
 
-                findEnabledCreateIncidence[0].enabled = enabledCreateIncidenceDto.enabled;
-                findEnabledCreateIncidence[0].employee = employee.emp;
-                findEnabledCreateIncidence[0].date = new Date(enabledCreateIncidenceDto.date);
-                status.data = findEnabledCreateIncidence[0];
+                findEnabledCreateIncidence.enabled = enabledCreateIncidenceDto.enabled;
+                findEnabledCreateIncidence.employee = employee.emp;
+                findEnabledCreateIncidence.date = new Date(enabledCreateIncidenceDto.date);
+                status.data = findEnabledCreateIncidence;
                 status.message = 'Habilitar incidencia actualizado';
 
-                await this.enabledCreateIncidenceRepository.save(findEnabledCreateIncidence[0]);
+                await this.enabledCreateIncidenceRepository.save(findEnabledCreateIncidence);
             }
         }
         return {
@@ -83,13 +91,25 @@ export class EnabledCreateIncidenceService {
     }
 
     async findAll() {
-        return await this.enabledCreateIncidenceRepository.find();
+        return await this.enabledCreateIncidenceRepository.find({
+            relations: ['payroll'],
+        });
     }
 
     async findByDate(date: string) {
         return await this.enabledCreateIncidenceRepository.findOne({
             where: {
                 date: date as any,
+            }
+        });
+    }
+
+    async findByPayroll(idPayRoll: number) {
+        return await this.enabledCreateIncidenceRepository.findOne({
+            where: {
+                payroll: {
+                    id: idPayRoll
+                },
             }
         });
     }

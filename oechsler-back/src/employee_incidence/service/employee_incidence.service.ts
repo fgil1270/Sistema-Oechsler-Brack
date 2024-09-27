@@ -91,7 +91,7 @@ export class EmployeeIncidenceService {
 
     for (let j = 0; j < employee.emps.length; j++) {
       const element = employee.emps[j];
-
+      
       let isLeader = false;
       user.roles.forEach((role) => {
         if (
@@ -128,10 +128,11 @@ export class EmployeeIncidenceService {
         }
 
         //valida si esta habilitado para crear incidencia
-        const enabledCreateIncidence = await this.enabledCreateIncidenceService.findAll();
-        if (enabledCreateIncidence.length > 0) {
-          if (enabledCreateIncidence[0].enabled) {
-            if (format(index, 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence[0].date), 'yyyy-MM-dd')) {
+        const enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employee.emps[j].payRoll.id);
+        
+        if (enabledCreateIncidence) {
+          if (enabledCreateIncidence.enabled) {
+            if (format(index, 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence.date), 'yyyy-MM-dd')) {
               throw new NotFoundException(
                 `No esta habilitado para crear incidencia en la fecha ${format(
                   index,
@@ -1070,47 +1071,50 @@ export class EmployeeIncidenceService {
         const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour), 'yyyy-MM-dd'));
         let dias = diaFin.diff(diaInicio, 'days');
 
-        calendar.createEvent({
-          start: diaInicio,
-          end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
-          allDay: true,
-          timezone: 'America/Mexico_City',
-          summary: subject,
-          description: 'It works ;)',
-          url: 'https://example.com',
-          busystatus: ICalEventBusyStatus.FREE,
-          //status: ICalEventStatus.CONFIRMED,
-          attendees: [
-            /* {
-              email: to[1],
-              status: ICalAttendeeStatus.ACCEPTED,
-            }, */
-            {
-              email: to[0],
-              rsvp: true,
-              status: ICalAttendeeStatus.ACCEPTED,
-            },
-          ],
-        });
+        if(to.length > 0){
+          calendar.createEvent({
+            start: diaInicio,
+            end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
+            allDay: true,
+            timezone: 'America/Mexico_City',
+            summary: subject,
+            description: 'It works ;)',
+            url: 'https://example.com',
+            busystatus: ICalEventBusyStatus.FREE,
+            //status: ICalEventStatus.CONFIRMED,
+            attendees: [
+              /* {
+                email: to[1],
+                status: ICalAttendeeStatus.ACCEPTED,
+              }, */
+              {
+                email: to[0],
+                rsvp: true,
+                status: ICalAttendeeStatus.ACCEPTED,
+              },
+            ],
+          });
+          
+          let day = new Date();
+          // Generar archivo .ics y guardar en la ruta especificada
+          /* const icsFilePath = 'documents/calendar/empleados';
+          const icsFileName = `${employeeIncidence.employee.employee_number}_${employeeIncidence.id}_${day.getFullYear()}${day.getMonth()}${day.getDate()}${day.getHours()}${day.getMinutes()}${day.getSeconds()}.ics`;
+          const icsFileContent = calendar.toString();
+    
+          // Guardar archivo .ics
+          fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
+    
+          // Continuar con el resto del código...
+          
+          //se envia correo
+          const mail = await this.mailService.sendEmailAutorizaIncidence(
+            subject,
+            mailData,
+            to,
+            calendar,
+          );
+        }
         
-        let day = new Date();
-        // Generar archivo .ics y guardar en la ruta especificada
-        /* const icsFilePath = 'documents/calendar/empleados';
-        const icsFileName = `${employeeIncidence.employee.employee_number}_${employeeIncidence.id}_${day.getFullYear()}${day.getMonth()}${day.getDate()}${day.getHours()}${day.getMinutes()}${day.getSeconds()}.ics`;
-        const icsFileContent = calendar.toString();
-  
-        // Guardar archivo .ics
-        fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
-  
-        // Continuar con el resto del código...
-        
-        //se envia correo
-        const mail = await this.mailService.sendEmailAutorizaIncidence(
-          subject,
-          mailData,
-          to,
-          calendar,
-        );
       }else if (updateEmployeeIncidenceDto.status == 'Rechazada') {
         employeeIncidence.date_canceled = new Date();
         employeeIncidence.canceledBy = userAutoriza.emp;
@@ -1151,7 +1155,7 @@ export class EmployeeIncidenceService {
 
       return await this.employeeIncidenceRepository.save(employeeIncidence);
     } catch (error) {
-
+      
       return error;
     }
     
