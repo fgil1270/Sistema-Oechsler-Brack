@@ -96,7 +96,7 @@ export class ChecadorService {
 
   //buscar registros de entrada y salida por ids de empleado y rango de fechas
   async findbyDate(id: any, start: any, end: any, hrEntrada: any, hrSalida: any) {
-
+    
     const checador = await this.checadorRepository.find({
       where: {
         employee: {
@@ -267,7 +267,7 @@ export class ChecadorService {
 
 
         //se verifica si el dia seleccionado es festivo
-        const dayCalendar = await this.calendarService.findByDate(index as any);
+        const dayCalendar = await this.calendarService.findByDate(format(index, 'yyyy-MM-dd'));
 
         
         //si en la fecha el empleado no tiene turno se continua con el siguiente dia
@@ -358,12 +358,7 @@ export class ChecadorService {
           }
 
 
-          if (dayCalendar) {
-            if (dayCalendar.holiday) {
-              
-              totalHrsTrabajadas += hourShift;
-            }
-          }
+          
 
           //se obtienen las checadas del dia
           let diahoy = new Date(index);
@@ -730,13 +725,23 @@ export class ChecadorService {
           let horasExtraDia = 0;
           let minutosExtraDia = 0;
           
+          if (dayCalendar) {
+            if (dayCalendar.holiday) {
+              
+              totalHrsTrabajadas += hourShift;
+            }
+          }
 
           //tiempo extra para el turno 3
           //diffDate >= diffTimeShift 
           if (registrosChecador.length > 0 && employeeShif.events[0]?.nameShift == 'T3' && incidenciasNormales.length <= 0) {
-            incidenceExtra.push(`${mediaHoraExtra}` + incidenceHrExtra.code_band + '2');
-            sumaMediaHrExtra += Number(mediaHoraExtra);
-            totalHrsExtra += sumaMediaHrExtra;
+
+            
+              incidenceExtra.push(`${mediaHoraExtra}` + incidenceHrExtra.code_band + '2');
+              sumaMediaHrExtra += Number(mediaHoraExtra);
+              totalHrsExtra += sumaMediaHrExtra;
+            
+            
           }
           
           
