@@ -83,4 +83,10 @@ export class EmployeeIncidence {
 
   @Column({ type: 'int', nullable: true })
   shift: Number;
+
+  @Column({ type: 'text', nullable: true })
+  commentCancel: string;
+
+  @Column({ type: 'boolean', default: false })
+  approveRHComment: boolean;
 }

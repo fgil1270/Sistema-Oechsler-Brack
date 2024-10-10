@@ -628,7 +628,7 @@ export class TimeCorrectionService {
           await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
             start: format(index, 'yyyy-MM-dd 00:00:00') as any,
             end: format(index, 'yyyy-MM-dd 23:59:00') as any,
-            ids: `${iterator.id}`,
+            ids: [iterator.id],
             status: ['Autorizada'],
           });
 
