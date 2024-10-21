@@ -121,7 +121,7 @@ export class EmployeeIncidenceController {
   }
 
   @ApiOperation({ summary: 'Acceso a vista Autorizar incidencias' })
-  @Views('autorizar_incidencia')
+  @Views('autorizar_incidencia', 'cancelar_incidencia')
   @Get('view/autorizar-incidencia/access/autorizar/incidencia/leader')
   AccessAutorizaIncidencia() {
     return true;
