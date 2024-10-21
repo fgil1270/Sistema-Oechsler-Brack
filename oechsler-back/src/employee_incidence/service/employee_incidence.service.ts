@@ -707,7 +707,7 @@ export class EmployeeIncidenceService {
         status: data.status,
       };
     }
-
+    
     const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
     .innerJoinAndSelect('employee_incidence.employee', 'employee')
     .innerJoinAndSelect('employee_incidence.incidenceCatologue', 'incidenceCatologue')
@@ -722,7 +722,7 @@ export class EmployeeIncidenceService {
       end: format(new Date(data.end_date), 'yyyy-MM-dd'),
     })
     .getMany();
-   
+    
     const total = incidences.length;
 
     if (!incidences) {
