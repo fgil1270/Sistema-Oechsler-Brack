@@ -87,7 +87,17 @@ export class CreateEmployeeIncidenceDto {
 
 export class UpdateEmployeeIncidenceDto extends PartialType(
   CreateEmployeeIncidenceDto,
-) {}
+) {
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Comentario de cancelación' })
+  commentCancel?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Aprobado por RH' })
+  approveRHComment?: boolean;
+}
 
 export class ReportEmployeeIncidenceDto {
   @IsOptional()

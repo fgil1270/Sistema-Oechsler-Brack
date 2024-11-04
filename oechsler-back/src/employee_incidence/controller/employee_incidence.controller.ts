@@ -134,11 +134,29 @@ export class EmployeeIncidenceController {
     @Body() updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto,
     @CurrentUser() user: any,
   ) {
-    return this.employeeIncidenceService.update(
+    let update = this.employeeIncidenceService.update(
       id,
       updateEmployeeIncidenceDto,
       user,
     );
+    
+    return update;
+  }
+
+  @ApiOperation({ summary: 'Actualizar comentario de cancelacion de incidencia de empleado' })
+  @Put(':id/comment')
+  updateComment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto,
+    @CurrentUser() user: any,
+  ) {
+    let update = this.employeeIncidenceService.updateCommentCancelIncidence(
+      id,
+      updateEmployeeIncidenceDto,
+      user,
+    );
+    
+    return update;
   }
 
   @Delete(':id')

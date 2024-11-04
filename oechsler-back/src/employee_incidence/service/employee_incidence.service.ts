@@ -52,6 +52,8 @@ import { CalendarService } from '../../calendar/service/calendar.service';
 import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
 import { save } from 'pdfkit';
 import { is } from 'date-fns/locale';
+import { error } from 'console';
+import { array } from 'joi';
 
 
 @Injectable()
@@ -128,10 +130,13 @@ export class EmployeeIncidenceService {
         }
 
         //valida si esta habilitado para crear incidencia
+        //se busca si esta habilitado para crear incidencia por payroll
         const enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employee.emps[j].payRoll.id);
         
         if (enabledCreateIncidence) {
           if (enabledCreateIncidence.enabled) {
+            //si la fecha de la incidencia es menor o igual a la fecha inabilitada para crear incidencia
+            //no permite crear incidencias
             if (format(index, 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence.date), 'yyyy-MM-dd')) {
               throw new NotFoundException(
                 `No esta habilitado para crear incidencia en la fecha ${format(
@@ -453,6 +458,7 @@ export class EmployeeIncidenceService {
 
   //se obtienen las incidencias de los empleados por rango de fechas y ids de empleados
   async findAllIncidencesByIdsEmployee(data: any) {
+    
     let startDate = new Date(data.start);
     const from = format(new Date(data.start), 'yyyy-MM-dd')
     const to = format(new Date(data.end), 'yyyy-MM-dd')
@@ -1010,6 +1016,12 @@ export class EmployeeIncidenceService {
   }
 
   async update(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, user: any) {
+    let status = {
+      message: '',
+      status: false,
+      error: false,
+      data: {}
+    };
     
     try {
       const employeeIncidence = await this.employeeIncidenceRepository.findOne({
@@ -1017,13 +1029,17 @@ export class EmployeeIncidenceService {
           id: id,
         },
         relations: {
-          employee: true,
+          employee: {
+            payRoll: true,
+          },
           incidenceCatologue: true,
           dateEmployeeIncidence: true,
         },
       });
-  
+      
       const userAutoriza = await this.employeeService.findOne(user.idEmployee);
+      let isAdmin = user.roles.some((role) => role.name == 'Admin' || role.name == 'RH');
+      let isLeader = user.roles.some((role) => role.name == 'Jefe de Area' || role.name == 'Jefe de Turno' || role.name == 'RH');
   
       if (!employeeIncidence) {
         
@@ -1031,6 +1047,7 @@ export class EmployeeIncidenceService {
       }
       const to = [];
       const emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
+      
       const lideres = await this.organigramaService.leaders(employeeIncidence.employee.id);
       for (let index = 0; index < lideres.orgs.length; index++) {
         const lider = lideres.orgs[index];
@@ -1118,6 +1135,50 @@ export class EmployeeIncidenceService {
       }else if (updateEmployeeIncidenceDto.status == 'Rechazada') {
         employeeIncidence.date_canceled = new Date();
         employeeIncidence.canceledBy = userAutoriza.emp;
+        let enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employeeIncidence.employee.payRoll.id);
+ 
+        if(!isAdmin && employeeIncidence.commentCancel != ''){
+
+          //validacion si el status es autorizada
+          if(employeeIncidence.status == 'Autorizada'){
+            
+            //validacion si esta inabilitado para crear incidencias y si la fecha de creacion de incidencias es mayor a la fecha inicial de la incidencia
+            //no podra cancelar la incidencia y tendra que solicitarlo a RH
+            if(enabledCreateIncidence.enabled == true && (enabledCreateIncidence.date > employeeIncidence.dateEmployeeIncidence[0].date)){
+              
+              status.error = true;
+              status.message = 'No se puede cancelar la incidencia, Favor de solicitar a Recursos Humanos la cancelación';
+              return status;
+              
+            }
+            //validamos si el empleado es quincenal
+            if(employeeIncidence.employee.payRoll.name == 'Quincenal'){
+              
+              //validamos si la fecha de la incidencia es mayor a la fecha de inicio de la quincena
+              if(new Date(employeeIncidence.dateEmployeeIncidence[0].date) < new Date(new Date().getTime() - 15 * 24 * 60 * 60 * 1000)){
+                
+                status.error = true;
+                status.message = 'No se puede cancelar la incidencia, Favor de solicitar a Recursos Humanos la cancelación';
+                return status;
+                
+              }
+            }else if(employeeIncidence.employee.payRoll.name == 'Semanal'){
+              //validamos si la fecha de la incidencia es mayor a la fecha de inicio de la semana
+              if(new Date(employeeIncidence.dateEmployeeIncidence[0].date) < new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000)){
+                status.error = true;
+                status.message = 'No se puede cancelar la incidencia, Favor de solicitar a Recursos Humanos la cancelación';
+                return status;
+                
+              }
+            }
+
+            status.error = true;
+            status.message = 'need comment';
+            return status;
+          }
+        }
+        
+        
         //ENVIO DE CORREO
         subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`;
         mailData = {
@@ -1148,19 +1209,69 @@ export class EmployeeIncidenceService {
           mailData,
           to,
           
-        );
+        ); 
       }
       
-      employeeIncidence.status = updateEmployeeIncidenceDto.status;
-
-      return await this.employeeIncidenceRepository.save(employeeIncidence);
-    } catch (error) {
       
+      employeeIncidence.status = updateEmployeeIncidenceDto.status;
+      await this.employeeIncidenceRepository.save(employeeIncidence);
+
+      status.message = 'Incidencia actualizada';
+      status.data = employeeIncidence;
+      return status;
+    } catch (error) {
+      status.error = true;
+      status.message = error.message;
       return error;
     }
     
 
     
+  }
+
+  async updateCommentCancelIncidence(id: number, updateEmployeeIncidenceDto: UpdateEmployeeIncidenceDto, user: any){
+    let status = {
+      message: '',
+      status: false,
+      error: false,
+      data: {}
+    };
+    try {
+      const employeeIncidence = await this.employeeIncidenceRepository.findOne({
+        where: {
+          id: id,
+        },
+        relations: {
+          employee: {
+            payRoll: true,
+          },
+          incidenceCatologue: true,
+          dateEmployeeIncidence: true,
+        },
+      });
+
+      
+      if(updateEmployeeIncidenceDto.commentCancel){
+        employeeIncidence.commentCancel = updateEmployeeIncidenceDto.commentCancel;
+      }
+
+      if(updateEmployeeIncidenceDto.approveRHComment){
+        employeeIncidence.approveRHComment = updateEmployeeIncidenceDto.approveRHComment;
+      }
+
+      employeeIncidence.status = updateEmployeeIncidenceDto.status;
+
+      let save = await this.employeeIncidenceRepository.save(employeeIncidence);
+
+      status.message = 'Comentario actualizado';
+      status.data = employeeIncidence;
+      return status;
+      
+    } catch (error) {
+      status.error = true;
+      status.message = error.message;
+      return error;
+    }
   }
 
   async remove(id: number) {
@@ -2359,7 +2470,7 @@ export class EmployeeIncidenceService {
           if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
             
             //si es tiempo extra, tiempo extra por hora
-            if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET'){
+            if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
               if ( shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T1'){
 
               
@@ -2432,7 +2543,7 @@ export class EmployeeIncidenceService {
         const dayCalendar = await this.calendarService.findByDate(dia as any);
         const objIncidencia = [];
 
-        if (dayCalendar) {
+        if (dayCalendar) { 
           if (dayCalendar.holiday) {
             const holiday = await this.incidenceCatologueService.findName(
               'Dia festivo / Descanso trabajo',
@@ -2458,7 +2569,7 @@ export class EmployeeIncidenceService {
           hrEntrada,
           hrSalida,
         );
-        
+
 
         if (registrosChecador.length > 0) {
           firstHr = moment(new Date(registrosChecador[0]?.date));
