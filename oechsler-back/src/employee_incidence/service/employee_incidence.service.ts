@@ -2470,7 +2470,7 @@ export class EmployeeIncidenceService {
           if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
             
             //si es tiempo extra, tiempo extra por hora
-            if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET'){
+            if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
               if ( shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T1'){
 
               
