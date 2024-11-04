@@ -707,7 +707,7 @@ export class EmployeeIncidenceService {
         status: data.status,
       };
     }
-
+    
     const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
     .innerJoinAndSelect('employee_incidence.employee', 'employee')
     .innerJoinAndSelect('employee_incidence.incidenceCatologue', 'incidenceCatologue')
@@ -722,7 +722,7 @@ export class EmployeeIncidenceService {
       end: format(new Date(data.end_date), 'yyyy-MM-dd'),
     })
     .getMany();
-   
+    
     const total = incidences.length;
 
     if (!incidences) {
@@ -2470,7 +2470,7 @@ export class EmployeeIncidenceService {
           if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
             
             //si es tiempo extra, tiempo extra por hora
-            if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET'){
+            if(incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT'){
               if ( shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T1'){
 
               
