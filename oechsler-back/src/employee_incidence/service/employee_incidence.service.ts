@@ -2503,7 +2503,8 @@ export class EmployeeIncidenceService {
                 }else if(incidencias[index].shift == 2){
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
-                  diaSiguente.setDate(diaSiguente.getDate() + 1);
+                  
+                  //diaSiguente.setDate(diahoy.getDate() + 1);
                 }
               }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'TI'){
                 
@@ -2559,7 +2560,6 @@ export class EmployeeIncidenceService {
             code: incidence.incidenceCatologue.code,
           });
         });
-
 
         //se obtienen los registros del checador
         const registrosChecador = await this.checadorService.findbyDate(
