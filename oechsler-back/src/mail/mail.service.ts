@@ -51,13 +51,18 @@ export class MailService {
     to: string[],
     calendar: ICalCalendar,
   ) {
+    const envVariables = {
+      port: process.env.PORT,
+      // Agrega otras variables de entorno que necesites
+    };
+
     await this.mailerService
       .sendMail({
         to: to,
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
-        context: mailData,
+        context: {mailData, envVariables},
         /* headers: {
                 'x-invite': {
                   prepared: true,
