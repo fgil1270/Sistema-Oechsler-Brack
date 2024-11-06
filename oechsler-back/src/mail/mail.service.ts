@@ -62,7 +62,7 @@ export class MailService {
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
-        context: {mailData, envVariables},
+        context: {...mailData, ...envVariables},
         /* headers: {
                 'x-invite': {
                   prepared: true,
