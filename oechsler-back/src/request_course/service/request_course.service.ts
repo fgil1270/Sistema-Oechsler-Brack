@@ -34,7 +34,6 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { SupplierService } from '../../supplier/service/supplier.service';
 import { format } from 'date-fns';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
-import { find } from 'rxjs';
 
 
 @Injectable()
@@ -104,9 +103,8 @@ export class RequestCourseService {
           type: data.type,
           place: data.place,
           evaluation_tool: data.evaluation_tool,
+          comment: data.comment,
         });
-
-        
 
         const requestCourse = await this.requestCourse.save(
           requestCourseCreate,
@@ -151,6 +149,7 @@ export class RequestCourseService {
         type: 'Normal',
         startDate: '',
         endDate: '',
+        needUser: true,
       },
       user,
     );
@@ -175,6 +174,7 @@ export class RequestCourseService {
         rh: true,
         gm: true,
         requestCourseAssignment: true,
+        requestBy: true,
       },
       where: query as unknown as FindOptionsWhere<RequestCourse>,
     });

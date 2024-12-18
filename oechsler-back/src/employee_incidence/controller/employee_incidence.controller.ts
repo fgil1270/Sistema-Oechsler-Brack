@@ -159,6 +159,18 @@ export class EmployeeIncidenceController {
     return update;
   }
 
+  @ApiOperation({ summary: 'Aprobar Incidencia por RH' })
+  @Put(':id/approve')
+  updateRh(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateEmployeeIncidenceDto: any,
+    @CurrentUser() user: any,
+  ) {
+    let approverh = this.employeeIncidenceService.approveRh(id, updateEmployeeIncidenceDto, user);
+
+    return approverh;
+  }
+
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.employeeIncidenceService.remove(id);

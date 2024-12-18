@@ -126,5 +126,8 @@ export class RequestCourse {
   )
   requestCourseAssignment: RequestCourseAssignment[];
 
+  @Column({ type: 'text', default: null })
+  comment: string;
+
 
 }

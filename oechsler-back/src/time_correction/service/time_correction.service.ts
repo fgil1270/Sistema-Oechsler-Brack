@@ -174,7 +174,7 @@ export class TimeCorrectionService {
             },
         });
 
-        
+
         //se verifica si el dia es festivo
         const dayCalendar = await this.calendarService.findByDate(index as any);
 
@@ -193,6 +193,38 @@ export class TimeCorrectionService {
           dataDate,
           [iterator.id],
         );
+
+        //se realiza la busqueda de incidencias de tiempo compensatorio por empleado y por rango de fechas
+        //y que esten autorizadas
+        const incidenciaCompensatorio =
+          await this.employeeIncidenceRepository.find({
+            relations: {
+              employee: true,
+              incidenceCatologue: true,
+              dateEmployeeIncidence: true,
+            },
+            where: {
+              employee: {
+                id: iterator.id,
+              },
+              dateEmployeeIncidence: {
+                date: Between(index as any, index as any),
+              },
+              status: 'Autorizada',
+              type: In(['Compensatorio', 'Repago']),
+            },
+            order: {
+              employee: {
+                id: 'ASC',
+              },
+              type: 'ASC',
+            },
+          });
+
+        //si existe incidencia de tiempo compensatorio autorizada salta el proceso
+        if (incidenciaCompensatorio.length > 0) {
+          continue;
+        }
 
         //se obtienen las incidencias del dia
         //si existe alguna de las siguientes no mostrara en el reporte
