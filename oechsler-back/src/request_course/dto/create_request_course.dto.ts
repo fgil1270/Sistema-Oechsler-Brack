@@ -125,6 +125,11 @@ export class RequestCourseDto {
   @IsString()
   @ApiProperty({ description: 'Herramienta de evaluación' })
   evaluation_tool: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Comentarios' })
+  comment: string;
 }
 
 export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {

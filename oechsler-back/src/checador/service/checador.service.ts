@@ -96,7 +96,7 @@ export class ChecadorService {
 
   //buscar registros de entrada y salida por ids de empleado y rango de fechas
   async findbyDate(id: any, start: any, end: any, hrEntrada: any, hrSalida: any) {
-    
+
     const checador = await this.checadorRepository.find({
       where: {
         employee: {
@@ -285,7 +285,7 @@ export class ChecadorService {
             start: format(index, 'yyyy-MM-dd 00:00:00') as any,
             end: format(index, 'yyyy-MM-dd 23:59:00') as any,
             ids: [iterator.id],
-            code_band: ['VAC', 'PCS', 'PSS', 'HDS', 'CAST', 'FINJ', 'INC', 'DFT', 'PRTC', 'DOM', 'VACA', 'HE', 'HET', 'TXT'],
+            code_band: ['VAC', 'PCS', 'PSS', 'HDS', 'CAST', 'FINJ', 'INC', 'DFT', 'PRTC', 'DOM', 'VACA', 'HE', 'HET', 'TXT', 'PSSE'],
             status: ['Autorizada']
           });
           
@@ -349,7 +349,7 @@ export class ChecadorService {
             }
 
           
-            if (incidenciasNormales[index].codeBand == 'PCS') {
+            if (incidenciasNormales[index].codeBand == 'PCS' || incidenciasNormales[index].codeBand == 'PSSE') {
                 totalHrsTrabajadas += Number(moment((parseFloat(incidenciasNormales[index].total_hour) / Number(findIncidence.dateEmployeeIncidence.length))).hours());
                 totalMinTrabajados += Number(moment((parseFloat(incidenciasNormales[index].total_hour) / Number(findIncidence.dateEmployeeIncidence.length))).minutes())
             }

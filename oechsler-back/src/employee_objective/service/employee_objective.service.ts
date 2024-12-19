@@ -70,6 +70,7 @@ export class EmployeeObjetiveService {
       data: {},
       status: 'success',
     };
+    
     try {
       //si ya existe la asignacion de objetivos solo asigna las competencias por puesto
       let saveDefinitionObjetive: any;
@@ -184,7 +185,7 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: course.name,
-            employeeId: employee.id,
+            employeeId: [employee.emp.id],
             traininReason: dncCourse.train,
             priority: dncCourse.priority,
             efficiencyPeriod: '',
@@ -205,6 +206,7 @@ export class EmployeeObjetiveService {
             competenceId: course.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncCourse.comment,
           };
           await this.requestCourseService.create(dataRequestCourse, user);
         }
@@ -232,7 +234,7 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: dncCourseManual.goal,
-            employeeId: employee.id,
+            employeeId: [employee.emp.id],
             traininReason: dncCourseManual.train,
             priority: dncCourseManual.priority,
             efficiencyPeriod: '',
@@ -253,6 +255,7 @@ export class EmployeeObjetiveService {
             competenceId: dncCourseManual.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncCourseManual.comment,
           };
           await this.requestCourseService.create(dataRequestCourse, user);
         }
@@ -681,7 +684,7 @@ export class EmployeeObjetiveService {
     };
     let saveDefinitionObjetive = null;
     const evaluatedBy = await this.employeeService.findOne(user.idEmployee);
-
+    
     try {
       //si ya existe la asignacion de objetivos se asignan
       //objetivos
@@ -756,6 +759,7 @@ export class EmployeeObjetiveService {
             competenceId: course.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncCourse.comment,
           };
           
 
@@ -810,6 +814,7 @@ export class EmployeeObjetiveService {
             competenceId: dncManual.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncManual.comment,
           };
           
           const requestCourse = await this.requestCourseService.create(
@@ -907,9 +912,9 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: course.name,
-            employeeId: saveDefinitionObjetive.employee.id,
-            traininReason: dncCourse.train,
-            priority: dncCourse.priority,
+            employeeId: [saveDefinitionObjetive.employee.id],
+            traininReason: createDncCourse.train,
+            priority: createDncCourse.priority,
             efficiencyPeriod: null,
             cost: 0,
             currency: null,
@@ -928,6 +933,7 @@ export class EmployeeObjetiveService {
             competenceId: course.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: createDncCourse.comment,
           };
 
           const requestCourse = await this.requestCourseService.create(
@@ -960,7 +966,7 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: dncManual.goal,
-            employeeId: saveDefinitionObjetive.employee.id,
+            employeeId: [saveDefinitionObjetive.employee.id],
             traininReason: dncManual.train,
             priority: dncManual.priority,
             efficiencyPeriod: null,
@@ -981,6 +987,7 @@ export class EmployeeObjetiveService {
             competenceId: dncManual.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncManual.comment,
           };
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
