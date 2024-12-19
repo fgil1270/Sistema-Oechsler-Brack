@@ -408,6 +408,7 @@ export class RequestCourseService {
 
   //crear asignacion de curso
   async createAssignmentCourse(currData: RequestCourseAssignmentDto){
+    //revisar cuando sea el mismo empleado 2 veces
     try {
       const employees = await this.employeeService.findMore(currData.employeeId);
       const course = await this.courseService.findOne(currData.courseId);
@@ -439,7 +440,7 @@ export class RequestCourseService {
         date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
         date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
         day: currData.day,
-        requestCourse: requestCourse,
+        requestCourse: requestCourse, 
         teacher: teacher,
 
       });
