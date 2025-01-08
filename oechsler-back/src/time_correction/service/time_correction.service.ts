@@ -234,14 +234,14 @@ export class TimeCorrectionService {
           status: ['Autorizada'],
           ids: [`${iterator.id}`],
           code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS', 'CAST', 'FINJ', 'HE', 'INC', 
-            'DFT', 'VacM', 'Sind', 'PRTC', 'DOM', 'VACA', 'HO', 'HET'
-          ],
+            'DFT', 'VacM', 'Sind', 'PRTC', 'DOM', 'VACA', 'HO', 'HET', 'PSSE'],
         });
         
         if (employeeShif.events.length == 0) {
           continue;
         }
 
+        //si existe incidencia no se muestra en el reporte
         if (incidencias.length > 0) {
           
           continue;
