@@ -51,15 +51,30 @@ export class DefinitionObjectiveAnnualDto {
   @ApiProperty({ description: 'Comentario medio año empleado' })
   half_year_employee_comment?: string;
 
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Rango de calificacion fin año empleado' })
+  end_year_employee_range?: string;
+
+
 }
 
 export class UpdateDefinitionObjectiveAnnualDto extends PartialType(DefinitionObjectiveAnnualDto) {}
 
-export class UpdateDefinitionObjectiveAnnualLeaderMidYearDto extends PartialType(DefinitionObjectiveAnnualDto) {
+export class UpdateDefinitionObjectiveAnnualEvaluadtionLeaderDto extends PartialType(DefinitionObjectiveAnnualDto) {
   @IsArray()
   @ApiProperty({ description: 'Objetivo de empleado' })
   dataObjective: any[];
+
+  @IsArray()
+  @ApiProperty({ description: 'Competencias de empleado' })
+  dataCompetence: any[];
+
+  @IsArray()
+  @ApiProperty({ description: 'Competencias de empleado asignadas manualmente' })
+  dataCompetenceManual: any[];
 }
+
 
 export class EmployeeObjectiveDto {
   @IsNotEmpty()
@@ -227,6 +242,10 @@ export class CreateEmployeeObjectiveDto {
   @IsArray()
   @ApiProperty({ description: 'Evaluacion de competencias' })
   competenceEvaluation: CompetenceEvaluationDto[];
+
+  @IsOptional()
+  @ApiProperty({ description: 'Saltar evaluacion medio año' })
+  skipMidYearEvaluation?: boolean;
 }
 
 export class UpdateEmployeeObjectiveDto extends PartialType(CreateEmployeeObjectiveDto) {}

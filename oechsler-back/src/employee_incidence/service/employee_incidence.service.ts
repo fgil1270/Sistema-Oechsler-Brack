@@ -52,7 +52,6 @@ import { CalendarService } from '../../calendar/service/calendar.service';
 import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
 import { save } from 'pdfkit';
 import { is } from 'date-fns/locale';
-import { error } from 'console';
 import { array } from 'joi';
 
 
@@ -889,6 +888,7 @@ export class EmployeeIncidenceService {
           },
         });
 
+
       if (incidenciaCompensatorio.length <= 0) {
         continue;
       }
@@ -1260,6 +1260,46 @@ export class EmployeeIncidenceService {
       }
 
       employeeIncidence.status = updateEmployeeIncidenceDto.status;
+
+      let save = await this.employeeIncidenceRepository.save(employeeIncidence);
+
+      status.message = 'Comentario actualizado';
+      status.data = employeeIncidence;
+      return status;
+      
+    } catch (error) {
+      status.error = true;
+      status.message = error.message;
+      return error;
+    }
+  }
+
+  async approveRh(id: number, updateEmployeeIncidenceDto: any, user: any){
+    let status = {
+      message: '',
+      status: false,
+      error: false,
+      data: {}
+    };
+    try {
+      const userAutoriza = await this.employeeService.findOne(user.idEmployee);
+      const employeeIncidence = await this.employeeIncidenceRepository.findOne({
+        where: {
+          id: id,
+        },
+        relations: {
+          employee: {
+            payRoll: true,
+          },
+          incidenceCatologue: true,
+          dateEmployeeIncidence: true,
+        },
+      });
+
+      
+     
+      employeeIncidence.date_aproved_rh = new Date();
+      employeeIncidence.rh = userAutoriza.emp;
 
       let save = await this.employeeIncidenceRepository.save(employeeIncidence);
 
@@ -2210,9 +2250,9 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(dia);
                 break;
               case 'T4':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
+                hrEntrada = '05:00:00'; //dia anterior
+                hrSalida = '16:00:00'; //dia actual
+                diaAnterior = new Date(dia);
                 diaSiguente = new Date(dia);
                 break;
               case 'T12-1':
@@ -2261,9 +2301,9 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(dia);
                 break;
               case 'T4':
-                hrEntrada = '21:00:00'; //dia anterior
+                hrEntrada = '05:00:00'; //dia anterior
                 hrSalida = '15:00:00'; //dia actual
-                diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
+                diaAnterior = new Date(dia);
                 diaSiguente = new Date(dia);
                 break;
               case 'T12-1':
@@ -2315,9 +2355,9 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(dia);
                 break;
               case 'T4':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
+                hrEntrada = '05:00:00'; //dia anterior
+                hrSalida = '16:00:00'; //dia actual
+                diaAnterior = new Date(dia);
                 diaSiguente = new Date(dia);
                 break;
               case 'T12-1':
@@ -2561,6 +2601,7 @@ export class EmployeeIncidenceService {
           });
         });
 
+        //********* agregar dato dia del turno */
         //se obtienen los registros del checador
         const registrosChecador = await this.checadorService.findbyDate(
           parseInt(newArray[i].id),
@@ -2569,7 +2610,7 @@ export class EmployeeIncidenceService {
           hrEntrada,
           hrSalida,
         );
-
+        
 
         if (registrosChecador.length > 0) {
           firstHr = moment(new Date(registrosChecador[0]?.date));

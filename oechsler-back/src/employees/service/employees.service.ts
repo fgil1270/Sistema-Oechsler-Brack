@@ -743,6 +743,7 @@ export class EmployeesService {
         
 
       });
+
       //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
 
       //se calculan los dias de vacaciones al dia de la consulta
@@ -948,9 +949,8 @@ export class EmployeesService {
     const ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
     const diaConsulta = moment(new Date(dateStart.getFullYear(), dateStart.getMonth(), dateStart.getDate())); //dia de consulta del reporte
     const anoCumplidos = diaConsulta.diff(ingreso, 'years', true); // años cumplidos al dia del reporte
-    const finAno = moment(new Date(new Date().getFullYear(), 11, 31)); //fin de año
+    const finAno = moment(new Date(new Date(data.start).getFullYear(), 11, 31)); //fin de año
     const anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
-
     const vacationsAno = await this.vacationsProfileService.findOne(
       emp.vacationProfile.id,
     );

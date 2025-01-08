@@ -9,6 +9,7 @@ import { EmployeeObjetiveService } from './service/employee_objective.service';
 import { DefinitionObjectiveAnnual } from './entities/definition_objective_annual.entity';
 import { EmployeeObjective } from './entities/objective.entity';
 import { EmployeeObjectiveEvaluation } from './entities/objetive_evaluation.entity';
+import { ObjectiveQuestion } from './entities/objective_question.entity';
 import { DncCourse } from './entities/dnc_course.entity';
 import { DncCourseManual } from './entities/dnc_manual.entity';
 import { CourseEvaluation } from './entities/course_evaluation.entity';
@@ -23,6 +24,7 @@ import { MailModule } from '../mail/mail.module';
 import { RequestCourseModule } from '../request_course/request_course.module';
 import { SupplierModule } from '../supplier/supplier.module';
 
+
 @Module({ 
   imports: [
     TypeOrmModule.forFeature([
@@ -34,6 +36,7 @@ import { SupplierModule } from '../supplier/supplier.module';
       CourseEvaluation,
       CourseEvaluationMannual,
       CompetenceEvaluation,
+      ObjectiveQuestion,
     ]),
     OrganigramaModule,
     PercentageDefinitionModule,

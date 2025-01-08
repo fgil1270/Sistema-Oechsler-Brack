@@ -15,6 +15,7 @@ import { EmployeeObjective } from './objective.entity';
 import { DncCourse } from './dnc_course.entity';
 import { DncCourseManual } from './dnc_manual.entity';
 import { CompetenceEvaluation } from './competence_evaluation.entity';
+import { ObjectiveQuestion } from './objective_question.entity';
 
 @Entity()
 export class DefinitionObjectiveAnnual {
@@ -104,5 +105,11 @@ export class DefinitionObjectiveAnnual {
 
   @Column({ type: 'text', nullable: true })
   end_year_leader_comment: string;
+
+  @OneToMany(() => ObjectiveQuestion, (post) => post.definitionObjectiveAnnual)
+  objectiveQuestion: ObjectiveQuestion[];
+
+  @Column({ type: 'boolean', nullable: true })
+  is_evaluated: boolean;
 
 }

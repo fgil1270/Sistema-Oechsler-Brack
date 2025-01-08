@@ -70,6 +70,7 @@ export class EmployeeObjetiveService {
       data: {},
       status: 'success',
     };
+    
     try {
       //si ya existe la asignacion de objetivos solo asigna las competencias por puesto
       let saveDefinitionObjetive: any;
@@ -89,7 +90,20 @@ export class EmployeeObjetiveService {
           },
         });
 
-        saveDefinitionObjetive.status = 'Definido';
+        if(currData.skipMidYearEvaluation){
+          saveDefinitionObjetive.status = 'Pendiente evaluado fin de año';
+          saveDefinitionObjetive.is_evaluated = true;
+          saveDefinitionObjetive.half_year_employee_range = 'B - Dentro de las expectativas';
+          saveDefinitionObjetive.half_year_employee_value = 100;
+          saveDefinitionObjetive.half_year_employee_comment = 'Evaluado por sistema';
+          saveDefinitionObjetive.half_year_leader_range = 'B - Dentro de las expectativas';
+          saveDefinitionObjetive.half_year_leader_value = 100;
+          saveDefinitionObjetive.half_year_leader_comment = 'Evaluado por sistema';
+          
+        }else{
+          saveDefinitionObjetive.status = 'Definido';
+        }
+        
 
         await this.definitionObjectiveAnnual.save(saveDefinitionObjetive);
 
@@ -184,7 +198,7 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: course.name,
-            employeeId: employee.id,
+            employeeId: [employee.emp.id],
             traininReason: dncCourse.train,
             priority: dncCourse.priority,
             efficiencyPeriod: '',
@@ -205,6 +219,7 @@ export class EmployeeObjetiveService {
             competenceId: course.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncCourse.comment,
           };
           await this.requestCourseService.create(dataRequestCourse, user);
         }
@@ -232,7 +247,7 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: dncCourseManual.goal,
-            employeeId: employee.id,
+            employeeId: [employee.emp.id],
             traininReason: dncCourseManual.train,
             priority: dncCourseManual.priority,
             efficiencyPeriod: '',
@@ -253,6 +268,7 @@ export class EmployeeObjetiveService {
             competenceId: dncCourseManual.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncCourseManual.comment,
           };
           await this.requestCourseService.create(dataRequestCourse, user);
         }
@@ -681,7 +697,7 @@ export class EmployeeObjetiveService {
     };
     let saveDefinitionObjetive = null;
     const evaluatedBy = await this.employeeService.findOne(user.idEmployee);
-
+    
     try {
       //si ya existe la asignacion de objetivos se asignan
       //objetivos
@@ -710,6 +726,7 @@ export class EmployeeObjetiveService {
             definitionObjectiveAnnual: saveDefinitionObjetive,
           });
 
+          
           await this.employeeObjective.save(createEmployeeObjective);
 
           status.message = 'Objetivo asignado correctamente';
@@ -756,6 +773,7 @@ export class EmployeeObjetiveService {
             competenceId: course.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncCourse.comment,
           };
           
 
@@ -810,6 +828,7 @@ export class EmployeeObjetiveService {
             competenceId: dncManual.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncManual.comment,
           };
           
           const requestCourse = await this.requestCourseService.create(
@@ -907,9 +926,9 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: course.name,
-            employeeId: saveDefinitionObjetive.employee.id,
-            traininReason: dncCourse.train,
-            priority: dncCourse.priority,
+            employeeId: [saveDefinitionObjetive.employee.id],
+            traininReason: createDncCourse.train,
+            priority: createDncCourse.priority,
             efficiencyPeriod: null,
             cost: 0,
             currency: null,
@@ -928,6 +947,7 @@ export class EmployeeObjetiveService {
             competenceId: course.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: createDncCourse.comment,
           };
 
           const requestCourse = await this.requestCourseService.create(
@@ -960,7 +980,7 @@ export class EmployeeObjetiveService {
           const dataRequestCourse = {
             requestBy: null,
             courseName: dncManual.goal,
-            employeeId: saveDefinitionObjetive.employee.id,
+            employeeId: [saveDefinitionObjetive.employee.id],
             traininReason: dncManual.train,
             priority: dncManual.priority,
             efficiencyPeriod: null,
@@ -981,6 +1001,7 @@ export class EmployeeObjetiveService {
             competenceId: dncManual.competence.id,
             origin: 'Objetivo',
             evaluation_tool: null,
+            comment: dncManual.comment,
           };
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
@@ -1780,7 +1801,8 @@ export class EmployeeObjetiveService {
     }
   }
 
-  async evaluationEmployee(id: number, currData: any, user: any) {
+  //evaluacion medio año empleado
+  async evaluationEmployeeMidYear(id: number, currData: any, user: any) {
     let status = {
       code: 200,
       message: 'OK',
@@ -1832,7 +1854,8 @@ export class EmployeeObjetiveService {
     
   }
 
-  async evaluationLeader(id: number, currData: any, user: any) {
+  //evaluacion medio año lider
+  async evaluationLeaderMidYear(id: number, currData: any, user: any) {
     let status = {
       code: 200,
       message: 'OK',
@@ -1928,5 +1951,173 @@ export class EmployeeObjetiveService {
     }
 
     return status;
+  }
+
+  //evaluacion fin de año empleado
+  async evaluationEmployeeEndYear(id: number, currData: any, user: any) {
+    let status = {
+      code: 200,
+      message: 'OK',
+      error: false,
+      data: {},
+      status: 'success',
+    };
+    try {
+      const definitionObjectiveAnnual = await this.definitionObjectiveAnnual.findOne({
+        relations: {
+          employee: true,
+          evaluatedBy: true,
+          percentageDefinition: true,
+          objective: true,
+          dncCourse: true,
+          dncCourseManual: true,
+          competenceEvaluation: true,
+        },
+        where: {
+          id: id,
+        },
+      });
+  
+      if(!definitionObjectiveAnnual){
+        status.code = 200;
+        status.message = 'No se encontro la definicion de objetivos';
+        status.error = true;
+        return status;
+      }
+  
+      definitionObjectiveAnnual.status = 'Pendiente evaluador fin de año';
+      definitionObjectiveAnnual.end_year_employee_range = currData.end_year_employee_range;
+      definitionObjectiveAnnual.end_year_employee_value = currData.end_year_employee_value;
+      definitionObjectiveAnnual.end_year_employee_comment = currData.end_year_employee_comment;
+  
+      await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
+  
+      
+      status.message = 'Objetivos de empleado evaluados correctamente';
+      return status;
+    } catch (error) {
+      status.error = true;
+      status.message = error;
+      status.code = 400;
+  
+      return status;
+    }
+
+    
+  }
+
+  //evaluacion fin de año lider
+  async evaluationLeaderEndYear(id: number, currData: any, user: any) {
+    let status = {
+      code: 200,
+      message: 'OK',
+      error: false,
+      data: {},
+      status: 'success',
+    };
+
+    try {
+      const definitionObjectiveAnnual = await this.definitionObjectiveAnnual.findOne({
+        relations: {
+          employee: true,
+          evaluatedBy: true,
+          percentageDefinition: true,
+          objective: true,
+          dncCourse: true,
+          dncCourseManual: true,
+          competenceEvaluation: true,
+        }, 
+        where: {
+          id: id,
+        },
+      });
+      
+      if(!definitionObjectiveAnnual){
+        status.code = 200;
+        status.message = 'No se encontro la definicion de objetivos';
+        status.error = true;
+        return status;
+      }
+  
+      definitionObjectiveAnnual.status = 'Evaluado';
+      definitionObjectiveAnnual.end_year_leader_range = currData.end_year_leader_range;
+      definitionObjectiveAnnual.end_year_leader_value = currData.end_year_leader_value;
+      definitionObjectiveAnnual.end_year_leader_comment = currData.end_year_leader_comment;
+
+      
+      await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
+
+      //se califican los objetivos
+      for (let index = 0; index < currData.dataObjective.length; index++) {
+        const element = currData.dataObjective[index];
+
+        //se busca el objetivo
+        const objective = await this.employeeObjective.findOne({
+          where: {
+            id: element.id,
+          }
+        });
+
+        //se busca si el objetivo ya fue evaluado
+        const objectiveEvaluation = await this.employeeObjectiveEvaluation.findOne({
+          relations: {
+            objective: true,
+          },
+          where: {
+            objective: {
+              id: objective.id,
+            },
+          } 
+        })
+
+
+        if(objectiveEvaluation){
+          //se actualiza la evaluacion
+          objectiveEvaluation.value_end_year = Number(element.value);
+          objectiveEvaluation.comment_end_year = element.comment;
+
+          await this.employeeObjectiveEvaluation.save(objectiveEvaluation);
+        }
+       
+        
+      }
+      
+      //se califican las competencias
+      for (let index = 0; index < currData.dataCompetence.length; index++) {
+        const element = currData.dataCompetence[index];
+
+        //se busca si la competencia ya fue evaluada
+        const competenceEvaluation = await this.competenceEvaluation.findOne({
+          relations: {
+            competence: true,
+          },
+          where: {
+            id: element.id,
+          } 
+        })
+
+        if(competenceEvaluation){
+          //se actualiza la evaluacion
+          competenceEvaluation.value_end_year = Number(element.value);
+          competenceEvaluation.comment_end_year = element.comment;
+
+          await this.competenceEvaluation.save(competenceEvaluation);
+        }
+        
+      }
+      
+      status.message = 'Objetivos de empleado evaluados correctamente';
+      return status;
+      
+    } catch (error) {
+      status.error = true;
+      status.message = error.message;
+      status.code = 400;
+      status.status = 'error';
+  
+      return status;
+    }
+
+    
   }
 }
