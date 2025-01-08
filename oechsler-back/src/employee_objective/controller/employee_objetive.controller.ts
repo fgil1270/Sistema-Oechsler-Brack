@@ -26,7 +26,7 @@ import {
   UpdateDncCourseManualDto,
   UpdateEmployeeObjectiveDtoPartial,
   UpdateDefinitionObjectiveAnnualDto,
-  UpdateDefinitionObjectiveAnnualLeaderMidYearDto
+  UpdateDefinitionObjectiveAnnualEvaluadtionLeaderDto
 } from '../dto/create_employee_objective.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
@@ -244,15 +244,16 @@ export class EmployeeObjetiveMedioAnoController {
     }
   }
 
-  @ApiOperation({ summary: 'Evaluacion medio año empleado' })
+  @ApiOperation({ summary: 'Evaluacion de empleado medio y fin de año' })
   @Put(':id')
   async updateObjective(@Param('id', ParseIntPipe) id: number, @Body() currData: any, @CurrentUser() user: any) {
     
     switch (currData.action) {
+      //evaluacion medio año empleado
       case 'updateEvaluationEmployee':
         const dataDefinition: UpdateDefinitionObjectiveAnnualDto = currData.evaluacionEmployee;
         const result1 =
-          await this.employeeObjetiveService.evaluationEmployee(
+          await this.employeeObjetiveService.evaluationEmployeeMidYear(
             id,
             dataDefinition,
             user,
@@ -263,9 +264,10 @@ export class EmployeeObjetiveMedioAnoController {
         this.status.message = result1.message;
         this.status.data = result1.data;
         break;
+      //evaluacion medio año lider
       case 'updateEvaluationLeader':
-        const dataObjective: UpdateDefinitionObjectiveAnnualLeaderMidYearDto = currData.evaluacionEmployee;
-        const result2 = await this.employeeObjetiveService.evaluationLeader(
+        const dataObjective: UpdateDefinitionObjectiveAnnualEvaluadtionLeaderDto = currData.evaluacionEmployee;
+        const result2 = await this.employeeObjetiveService.evaluationLeaderMidYear(
           id,
           dataObjective,
           user,
@@ -290,6 +292,37 @@ export class EmployeeObjetiveMedioAnoController {
         this.status.status = result3.status;
         this.status.message = result3.message;
         this.status.data = result3.data;
+        break;
+      //evaluacion fin de año empleado
+      case 'updateEvaluationEndYearEmployee':
+        const dataDefinitionFin: UpdateDefinitionObjectiveAnnualDto = currData.evaluacionEmployee;
+        
+        const resultFin =
+          await this.employeeObjetiveService.evaluationEmployeeEndYear(
+            id,
+            dataDefinitionFin,
+            user,
+          );
+        this.status.code = resultFin.code;
+        this.status.error = resultFin.error;
+        this.status.status = resultFin.status;
+        this.status.message = resultFin.message;
+        this.status.data = resultFin.data;
+        break;
+      //evaluacion fin año lider
+      case 'updateEvaluationEndYearLeader':
+        const dataObjectiveEnd: UpdateDefinitionObjectiveAnnualEvaluadtionLeaderDto = currData.evaluacionEmployee;
+        const result2End = await this.employeeObjetiveService.evaluationLeaderEndYear(
+          id,
+          dataObjectiveEnd,
+          user,
+        );
+
+        this.status.code = result2End.code;
+        this.status.error = result2End.error;
+        this.status.status = result2End.status;
+        this.status.message = result2End.message;
+        this.status.data = result2End.data;
         break;
       default:
         break;
