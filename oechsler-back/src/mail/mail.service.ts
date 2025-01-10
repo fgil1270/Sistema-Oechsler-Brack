@@ -18,9 +18,16 @@ export interface MailData {
   employeeAutoriza: string;
 }
 
+export interface MailDataPendingIncidence {
+  totalIncidencias: number;
+  totalTimeCorrection: number;
+}
+
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(
+    private readonly mailerService: MailerService
+  ) {}
 
   async sendEmailCreateIncidence(
     subject: string,
@@ -36,7 +43,7 @@ export class MailService {
         context: mailData,
       })
       .then((success) => {
-        //console.log('correcto:', success);
+        
         return true;
       })
       .catch((err) => {
@@ -90,7 +97,7 @@ export class MailService {
             ], */
       })
       .then((success) => {
-        //console.log('correcto:', success);
+        
         return true;
       })
       .catch((err) => {
@@ -110,7 +117,7 @@ export class MailService {
         context: mailData,
       })
       .then((success) => {
-        //console.log('correcto:', success);
+        
         return true;
       })
       .catch((err) => {
@@ -158,5 +165,31 @@ export class MailService {
     }
 
     return resp;
+  }
+
+
+  //Enviar correo a los lideres que tengan incidencias pendientes por autorizar
+  async sendEmailPendingIncidence(to: string[], subject: string, mailData: MailDataPendingIncidence) {
+    const envVariables = {
+      port: process.env.PORT,
+      // Agrega otras variables de entorno que necesites
+    };
+    
+    await this.mailerService
+      .sendMail({
+        to: ['f.gil@oechsler.mx'],
+        from: 'OechslerMX<notificationes@oechsler.mx>',
+        subject: subject,
+        template: 'pending_incidence_authorize', // `.hbs` extension is appended automatically
+        context: {...mailData, ...envVariables},
+      })
+      .then((success) => {
+        
+        return true;
+      })
+      .catch((err) => {
+        
+        return true;
+      });
   }
 }

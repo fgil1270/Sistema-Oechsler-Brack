@@ -4,8 +4,10 @@ import { Module } from '@nestjs/common';
 import * as Joi from 'joi';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
+import { TaskService } from './task/task.service';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -71,6 +73,7 @@ import { JobDocumentModule } from './job_document/job_document.module';
       autoLoadEntities: true,
       synchronize: false,
     }),
+    ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,
     DatabaseModule,
@@ -101,11 +104,13 @@ import { JobDocumentModule } from './job_document/job_document.module';
     DocumentClasificationModule,
     RequestCourseModule,
     SupplierModule,
-    EnabledCreateIncidenceModule
+    EnabledCreateIncidenceModule,
   ],
   controllers: [
-    AppController],
+    AppController
+  ],
   providers: [
-    AppService],
+    AppService
+  ],
 })
 export class AppModule { }
