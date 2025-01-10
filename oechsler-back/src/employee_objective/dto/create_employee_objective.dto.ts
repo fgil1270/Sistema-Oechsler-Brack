@@ -73,6 +73,14 @@ export class UpdateDefinitionObjectiveAnnualEvaluadtionLeaderDto extends Partial
   @IsArray()
   @ApiProperty({ description: 'Competencias de empleado asignadas manualmente' })
   dataCompetenceManual: any[];
+
+  @IsArray()
+  @ApiProperty({ description: 'Desempeño personal' })
+  dataPerformance: any[];
+
+  @IsArray()
+  @ApiProperty({ description: 'Crear Desempeño personal' })
+  createPerformance: any[];
 }
 
 

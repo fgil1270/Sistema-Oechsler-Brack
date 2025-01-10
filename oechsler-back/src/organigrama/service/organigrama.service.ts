@@ -127,7 +127,7 @@ export class OrganigramaService {
     };
   }
 
-  //SE OBTIENEN lideres
+  //SE OBTIENEN lideres del empleado
   async leaders(id: number) {
     const leaders = await this.organigramaRepository.find({
       relations: {

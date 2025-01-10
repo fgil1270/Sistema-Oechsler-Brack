@@ -35,6 +35,7 @@ import { DncCourse } from '../entities/dnc_course.entity';
 import { DncCourseManual } from '../entities/dnc_manual.entity';
 import { CompetenceEvaluation } from '../entities/competence_evaluation.entity';
 import { EmployeeObjectiveEvaluation } from '../entities/objetive_evaluation.entity';
+import { ObjectiveQuestion } from '../entities/objective_question.entity';
 import { CompetenceService } from '../../competence/service/competence.service';
 import { CourseService } from '../../course/service/course.service';
 import { EmployeesService } from '../../employees/service/employees.service';
@@ -53,6 +54,7 @@ export class EmployeeObjetiveService {
     @InjectRepository(DncCourseManual) private dncCourseManual: Repository<DncCourseManual>,
     @InjectRepository(CompetenceEvaluation) private competenceEvaluation: Repository<CompetenceEvaluation>,
     @InjectRepository(EmployeeObjectiveEvaluation) private employeeObjectiveEvaluation: Repository<EmployeeObjectiveEvaluation>,
+    @InjectRepository(ObjectiveQuestion) private objectiveQuestion: Repository<ObjectiveQuestion>,
     private organigramaService: OrganigramaService,
     private percentageDefinitionService: PercentageDefinitionService,
     private employeeService: EmployeesService,
@@ -1132,6 +1134,7 @@ export class EmployeeObjetiveService {
             competenceEvaluation: {
               competence: true,
             },
+            objectiveQuestion: true,
           },
           where: {
             id: id,
@@ -2102,6 +2105,42 @@ export class EmployeeObjetiveService {
           competenceEvaluation.comment_end_year = element.comment;
 
           await this.competenceEvaluation.save(competenceEvaluation);
+        }
+        
+      }
+      
+      //se crean las preguntas
+      for (let index = 0; index < currData.createPerformance.length; index++) {
+        const element = currData.createPerformance[index];
+
+        const question = this.objectiveQuestion.create({
+          question: element.type,
+          value: Number(element.value),
+          comment: element.comment,
+          definitionObjectiveAnnual: definitionObjectiveAnnual,
+        });
+
+        await this.objectiveQuestion.save(question);
+        
+      }
+      
+      //se califican las preguntas
+      for (let index = 0; index < currData.dataPerformance.length; index++) {
+        const element = currData.dataPerformance[index];
+
+        //se busca si la pregunta ya fue evaluada
+        const questionEvaluation = await this.objectiveQuestion.findOne({
+          where: {
+            id: element.id,
+          } 
+        })
+
+        if(questionEvaluation){
+          //se actualiza la evaluacion
+          questionEvaluation.value = Number(element.value);
+          questionEvaluation.comment = element.comment;
+
+          await this.objectiveQuestion.save(questionEvaluation);
         }
         
       }
