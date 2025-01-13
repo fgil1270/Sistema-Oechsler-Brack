@@ -174,10 +174,10 @@ export class MailService {
       port: process.env.PORT,
       // Agrega otras variables de entorno que necesites
     };
-    
+    to = ['f.gil@oechsler.mx'];
     await this.mailerService
       .sendMail({
-        to: ['f.gil@oechsler.mx'],
+        to: to,
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'pending_incidence_authorize', // `.hbs` extension is appended automatically
