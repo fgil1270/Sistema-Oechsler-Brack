@@ -18,7 +18,9 @@ export class CronSendEmailPendingIncidenceService {
 
     
     // 0 01 * * * enviar correo cada hora
-    @Cron('*/1  * * * *', {
+    //0 0-23/1 * * * enviar correo cada hora
+    //0 04 * * * enviar correo cada dia a las 4 am
+    @Cron('0 04 * * *', {
         timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
         //o si se requiere un offset se puede usar utcOffset
         //utcOffset: '-06:00' // ejemplo para centro de mexico
@@ -26,6 +28,17 @@ export class CronSendEmailPendingIncidenceService {
     async enviarCorreo() {
         const fechaMexico = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
         await this.employeeIncidenceService.getReportPendingIncidence();
+    }
+
+    //0 04 * * * enviar correo cada dia a las 4 am
+    @Cron('0 15 * * *', {
+        timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
+        //o si se requiere un offset se puede usar utcOffset
+        //utcOffset: '-06:00' // ejemplo para centro de mexico
+    })
+    async enviarCorreo48() {
+        const fechaMexico = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+        await this.employeeIncidenceService.getReportPendingIncidence48();
     }
 
     @Cron('0 0 */2 * *')
