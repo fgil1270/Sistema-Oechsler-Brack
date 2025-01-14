@@ -168,19 +168,45 @@ export class MailService {
   }
 
 
-  //Enviar correo a los lideres que tengan incidencias pendientes por autorizar
+  //Enviar correo a los lideres que tengan incidencias con 24 hrs pendientes por autorizar
   async sendEmailPendingIncidence(to: string[], subject: string, mailData: MailDataPendingIncidence) {
     const envVariables = {
       port: process.env.PORT,
       // Agrega otras variables de entorno que necesites
     };
-    to = ['f.gil@oechsler.mx'];
+    //to = ['f.gil@oechsler.mx', 'm.olmos@oechsler.mx'];
     await this.mailerService
       .sendMail({
         to: to,
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'pending_incidence_authorize', // `.hbs` extension is appended automatically
+        context: {...mailData, ...envVariables},
+      })
+      .then((success) => {
+        
+        return true;
+      })
+      .catch((err) => {
+        
+        return true;
+      });
+  }
+
+  pending_incidence_authorize_leader
+  //enviar correo a los jefes de los lideres que tengan incidencias con 48 hrs pendientes por autorizar
+  async sendEmailPendingIncidenceJefe(to: string[], subject: string, mailData: MailDataPendingIncidence) {
+    const envVariables = {
+      port: process.env.PORT,
+      // Agrega otras variables de entorno que necesites
+    };
+    //to = ['f.gil@oechsler.mx', 'm.olmos@oechsler.mx'];
+    await this.mailerService
+      .sendMail({
+        to: to,
+        from: 'OechslerMX<notificationes@oechsler.mx>',
+        subject: subject,
+        template: 'pending_incidence_authorize_leader', // `.hbs` extension is appended automatically
         context: {...mailData, ...envVariables},
       })
       .then((success) => {
