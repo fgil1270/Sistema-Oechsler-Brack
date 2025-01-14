@@ -20,6 +20,7 @@ import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
 import { CalendarModule } from '../calendar/calendar.module';
 import { EnabledCreateIncidenceModule } from 'src/enabled_create_incidence/enabled_create_incidence.module';
+import { CronSendEmailPendingIncidenceService } from './service/cron_send_email_pending_incidence.service';
 
 @Module({
   imports: [
@@ -41,7 +42,7 @@ import { EnabledCreateIncidenceModule } from 'src/enabled_create_incidence/enabl
     ReportEmployeeIncidenceController,
     ReportFlexTimeController,
   ],
-  providers: [EmployeeIncidenceService, EmployeeIncidence],
+  providers: [EmployeeIncidenceService, EmployeeIncidence, CronSendEmailPendingIncidenceService],
   exports: [EmployeeIncidenceService, EmployeeIncidence],
 })
 export class EmployeeIncidenceModule {}

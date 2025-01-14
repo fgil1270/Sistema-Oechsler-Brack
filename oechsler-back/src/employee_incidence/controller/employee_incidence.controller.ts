@@ -79,6 +79,17 @@ export class EmployeeIncidenceController {
     return this.employeeIncidenceService.findIncidencesByStatus(data, user);
   }
 
+  //buscar incidencias por status y
+  //rango de fechas
+  @ApiOperation({ summary: 'Buscar incidencia por status' })
+  @Get('incidences/jerente/:status')
+  findIncidencesPendientes(
+    @Query() data: ReportEmployeeIncidenceDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.employeeIncidenceService.findIncidencesPendientes(data, user);
+  }
+
   //buscar incidencias de empleados por ids de empleados
   //y por rango de fechas
   @ApiOperation({
