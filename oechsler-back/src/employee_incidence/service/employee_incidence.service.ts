@@ -2597,7 +2597,8 @@ export class EmployeeIncidenceService {
         }
          
         //envio de correo
-        if(mailData.totalIncidencias > 0 || mailData.totalTimeCorrection > 0){
+        if((mailData.totalIncidencias > 0 || mailData.totalTimeCorrection > 0) && idsLider[i] == 368 ){
+          
           await this.mailService.sendEmailPendingIncidence(user.map(user => user.email), 'Incidencias y correcciones de tiempo pendientes', mailData);
         }
         

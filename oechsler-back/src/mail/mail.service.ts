@@ -174,7 +174,7 @@ export class MailService {
       port: process.env.PORT,
       // Agrega otras variables de entorno que necesites
     };
-    //to = ['f.gil@oechsler.mx', 'm.olmos@oechsler.mx'];
+    to = ['f.gil@oechsler.mx'];
     await this.mailerService
       .sendMail({
         to: to,
@@ -193,7 +193,6 @@ export class MailService {
       });
   }
 
-  pending_incidence_authorize_leader
   //enviar correo a los jefes de los lideres que tengan incidencias con 48 hrs pendientes por autorizar
   async sendEmailPendingIncidenceJefe(to: string[], subject: string, mailData: MailDataPendingIncidence) {
     const envVariables = {
