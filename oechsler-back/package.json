@@ -65,6 +65,8 @@
     "socket.io": "^4.7.5",
     "swagger-ui-express": "^4.6.3",
     "typeorm": "^0.3.17",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
