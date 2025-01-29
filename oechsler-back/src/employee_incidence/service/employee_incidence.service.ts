@@ -47,7 +47,7 @@ import { EmployeeProfile } from '../../employee-profiles/entities/employee-profi
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
-import { save } from 'pdfkit';
+import { list, save } from 'pdfkit';
 import { id, is } from 'date-fns/locale';
 
 @Injectable()
@@ -1619,8 +1619,8 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '02:00:00'; //dia actual
+                hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(dia);
                 diaSiguente = new Date(dia);
                 break;
@@ -1650,56 +1650,111 @@ export class EmployeeIncidenceService {
                 break;
             }
           } else {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '15:00:00'; //dia actual
-                diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
-                diaSiguente = new Date(dia);
-                break;
-              case 'T2':
-                hrEntrada = '05:00:00'; //dia Actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T4':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '15:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
+            //si existe turno siguiente
+            if(turnoSiguiente){
+              switch (turnoActual) {
+                case 'T1':
+                  hrEntrada = '21:00:00'; //dia anterior
+                  hrSalida = '15:00:00'; //dia actual
+                  diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T2':
+                  hrEntrada = '05:00:00'; //dia Actual
+                  hrSalida = '22:00:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T3':
+                  hrEntrada = '13:00:00'; //dia actual
+                  hrSalida = '07:00:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
+                  break;
+                case 'MIX':
+                  hrEntrada = '03:00:00'; //dia actual
+                  hrSalida = '23:59:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'TI':
+                  hrEntrada = '02:00:00'; //dia actual
+                  hrSalida = '23:00:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T4':
+                  hrEntrada = '05:00:00'; //dia anterior
+                  hrSalida = '15:00:00'; //dia actual
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T12-1':
+                  hrEntrada = '03:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T12-2':
+                  hrEntrada = '12:00:00'; //dia anterior
+                  hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
+                  break;
+              }
+            }else{
+              switch (turnoActual) {
+                case 'T1':
+                  hrEntrada = '21:00:00'; //dia anterior
+                  hrSalida = '15:00:00'; //dia actual
+                  diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T2':
+                  hrEntrada = '05:00:00'; //dia Actual
+                  hrSalida = '22:00:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T3':
+                  hrEntrada = '13:00:00'; //dia actual
+                  hrSalida = '07:00:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
+                  break;
+                case 'MIX':
+                  hrEntrada = '03:00:00'; //dia actual
+                  hrSalida = '23:59:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'TI':
+                  hrEntrada = '02:00:00'; //dia actual
+                  hrSalida = '23:00:00'; //dia siguiente
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T4':
+                  hrEntrada = '05:00:00'; //dia anterior
+                  hrSalida = '15:00:00'; //dia actual
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T12-1':
+                  hrEntrada = '03:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(dia);
+                  break;
+                case 'T12-2':
+                  hrEntrada = '12:00:00'; //dia anterior
+                  hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(dia);
+                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
+                  break;
+              }
             }
+            
           }
         } else {
           //turno actual es igual al turno del dia siguiente
@@ -1809,7 +1864,6 @@ export class EmployeeIncidenceService {
 
         }
 
-
         //se realiza la suma o resta de horas de las incidencias
         for (let index = 0; index < incidencias.length; index++) {
           const incidence = incidencias[index];
@@ -1913,7 +1967,7 @@ export class EmployeeIncidenceService {
                 }else if(incidencias[index].shift == 3){
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
-                  diaSiguente.setDate(diahoy.getDate() - 1);
+                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
                 }
               }else if(shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T3'){
                 
@@ -2089,10 +2143,9 @@ export class EmployeeIncidenceService {
     let idsLider: number[] = [];
     let user: any;
     let empleados: any;
-    let idsEmployees: number[] = [];
-    let registros = [];
     let visibleJefeTurno: any[];
-    let totalIncidenciaPendiente = 0;
+    
+    let listOrg = [];
 
     //se obtienen los jefes de turno
     const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
@@ -2107,24 +2160,28 @@ export class EmployeeIncidenceService {
     idsLider = [...idsJefeTurno];
     
     //se obtienen los lideres que tienen empleados a su cargo
-    const listOrg = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-      .leftJoinAndSelect('employee.organigramaL', 'org')
-      .where('employee.deleted_at IS NULL')
-      .andWhere('org.id NOT IN (:...ids)', { ids: idsLider })
-      .groupBy('employee.id, org.id')
-      .select([
-        'employee.id',
-        'org.id',
-        
-      ]) 
-      .getMany();
+    try {
+       listOrg = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+      .innerJoinAndSelect('organigrama.leader', 'leader')
+      .select('leader.id', 'leaderId')
+      .addSelect('leader.name', 'leaderName')
+      .addSelect('COUNT(organigrama.id)', 'total')
+      .where('leader.deleted_at IS NULL')
+      .andWhere('leader.id NOT IN (:...ids)', { ids: idsLider })
+      .groupBy('leader.id')
+      .getRawMany();
+    } catch (error) {
+      console.log(error)
+    }
     
     
-      let temporalIds = listOrg.map(lider => lider.id);
-    idsLider.push(...listOrg.map(lider => lider.id));
-    
+    let temporalIds = listOrg.map(lider => lider.leaderId);
+    idsLider.push(...listOrg.map(lider => lider.leaderId));
 
     for (let i = 0; i < idsLider.length; i++) {
+      let idsEmployees: number[] = [];
+      let totalIncidenciaPendiente = 0;
+      let registros = [];
       //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
       
       
@@ -2143,7 +2200,6 @@ export class EmployeeIncidenceService {
 
         
         idsEmployees = [...org.map(emp => emp.employee.id)];
-
 
         //se obtienen los empleados que puesto es visible por jefe de turno
         if(idsJefeTurno.includes(idsLider[i])){
@@ -2200,7 +2256,7 @@ export class EmployeeIncidenceService {
         //correccion de tiempos
 
         const diaAyer =  subDays(new Date(), 1);
-        const sixMonthsAgo = subDays(new Date(), 180);
+        const sixMonthsAgo = subDays(new Date(), 90);
         
         const from = format(new Date(diaAyer), 'yyyy-MM-dd 00:00:00');
         const to = format(new Date(sixMonthsAgo), 'yyyy-MM-dd 23:59:59');
@@ -2595,9 +2651,9 @@ export class EmployeeIncidenceService {
           totalIncidencias: totalIncidenciaPendiente,
           totalTimeCorrection: registros.length,
         }
-         
+
         //envio de correo
-        if((mailData.totalIncidencias > 0 || mailData.totalTimeCorrection > 0) && idsLider[i] == 368 ){
+        if(mailData.totalIncidencias > 0 || mailData.totalTimeCorrection > 0){
           
           await this.mailService.sendEmailPendingIncidence(user.map(user => user.email), 'Incidencias y correcciones de tiempo pendientes', mailData);
         }
@@ -2632,23 +2688,22 @@ export class EmployeeIncidenceService {
     idsLider = [...idsJefeTurno];
     
     //se obtienen los lideres que tienen empleados a su cargo
-    const listOrg = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-      .leftJoinAndSelect('employee.organigramaL', 'org')
-      .where('employee.deleted_at IS NULL')
-      .andWhere('org.id NOT IN (:...ids)', { ids: idsLider })
-      .groupBy('employee.id, org.id')
-      .select([
-        'employee.id',
-        'org.id',
-        
-      ]) 
-      .getMany();
+    const listOrg = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+      .innerJoinAndSelect('organigrama.leader', 'leader')
+      .select('leader.id', 'leaderId')
+      .addSelect('leader.name', 'leaderName')
+      .addSelect('COUNT(organigrama.id)', 'total')
+      .where('leader.deleted_at IS NULL')
+      .andWhere('leader.id NOT IN (:...ids)', { ids: idsLider })
+      .groupBy('leader.id')
+      .getRawMany();
 
     let temporalIds = listOrg.map(lider => lider.id);
     idsLider.push(...listOrg.map(lider => lider.id));
     
     
     for (let i = 0; i < idsLider.length; i++) {
+      let idsEmployees: number[] = [];
       let totalIncidenciaPendiente = 0;
       let registros = [];
       

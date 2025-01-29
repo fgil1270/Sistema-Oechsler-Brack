@@ -7,6 +7,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { ICalCalendar } from 'ical-generator';
 import * as fs from 'fs';
 import * as path from 'path';
+import { CustomLoggerService } from '../logger/logger.service';
 
 export interface MailData {
   employee: string;
@@ -25,6 +26,7 @@ export interface MailDataPendingIncidence {
 
 @Injectable()
 export class MailService {
+  private log = new CustomLoggerService();
   constructor(
     private readonly mailerService: MailerService
   ) {}
@@ -174,7 +176,7 @@ export class MailService {
       port: process.env.PORT,
       // Agrega otras variables de entorno que necesites
     };
-    to = ['f.gil@oechsler.mx'];
+    //to = ['f.gil@oechsler.mx']
     await this.mailerService
       .sendMail({
         to: to,
@@ -184,11 +186,11 @@ export class MailService {
         context: {...mailData, ...envVariables},
       })
       .then((success) => {
-        
+        this.log.log('se envio correo de notificacion');
         return true;
       })
       .catch((err) => {
-        
+        this.log.error('Error al enviar correo', err);
         return true;
       });
   }
@@ -199,7 +201,7 @@ export class MailService {
       port: process.env.PORT,
       // Agrega otras variables de entorno que necesites
     };
-    //to = ['f.gil@oechsler.mx', 'm.olmos@oechsler.mx'];
+    
     await this.mailerService
       .sendMail({
         to: to,
@@ -209,11 +211,11 @@ export class MailService {
         context: {...mailData, ...envVariables},
       })
       .then((success) => {
-        
+        this.log.log('se envio correo de notificacion');
         return true;
       })
       .catch((err) => {
-        
+        this.log.error('Error al enviar correo', err);
         return true;
       });
   }

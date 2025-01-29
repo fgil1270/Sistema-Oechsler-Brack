@@ -10,7 +10,9 @@ export class CustomLoggerService implements LoggerService {
     this.logger = winston.createLogger({
       level: 'debug',
       format: winston.format.combine(
-        winston.format.timestamp(),
+        winston.format.timestamp({
+          format: () => new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
+        }),
         winston.format.printf(({ timestamp, level, message }) => {
           return `${timestamp} [${level}]: ${message}`;
         }),
