@@ -7,7 +7,7 @@ import * as expressListRoutes from 'express-list-endpoints';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    //logger: new CustomLoggerService(),
+    logger: new CustomLoggerService(),
   });
   app.enableCors( {
     origin: '*',

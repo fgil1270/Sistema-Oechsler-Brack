@@ -80,6 +80,7 @@ export class TimeCorrectionService {
 
   //reporte correccion de tiempo
   async find(data: any, user: any) {
+    
     const tipoNomina = data.tipoEmpleado;
     const isAdmin = user.roles.some(
       (role) => role.name === 'Admin' || role.name === 'RH',
@@ -168,9 +169,7 @@ export class TimeCorrectionService {
           await this.timeCorrectionRepository.findOne({
             where: {
               date: format(index, 'yyyy-MM-dd') as any,
-              employee: {
-                id: iterator.id,
-              },
+              employee: { id: iterator.id },
             },
         });
 
@@ -440,7 +439,6 @@ export class TimeCorrectionService {
           hrSalida,
         );
         
-        
 
         //se verifica si el dia anterior para el turno 1 es el mismo turno
         //se toman los horarios de entra del segundo Turno pero si son distintos
@@ -597,6 +595,8 @@ export class TimeCorrectionService {
       registros,
       diasGenerados,
     };
+
+    
   }
 
   //Buscar checadas

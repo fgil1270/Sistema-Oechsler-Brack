@@ -33,7 +33,7 @@ export class UsersService {
 
   async create(user: CreateUserDto) {
     const userSearch = await this.userRepository.findOneBy({
-      name: Like(`%${user.name}%`),
+      name: Like(`${user.name}`),
     });
     if (userSearch?.id) {
       throw new BadRequestException(`El usuario ya existe`);
