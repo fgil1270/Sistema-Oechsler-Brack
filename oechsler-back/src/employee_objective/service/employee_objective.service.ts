@@ -1332,8 +1332,8 @@ export class EmployeeObjetiveService {
       rows: [
         [
           `${definitionObjectiveAnnual.evaluatedBy.name} ${definitionObjectiveAnnual.evaluatedBy.paternal_surname} ${definitionObjectiveAnnual.evaluatedBy.maternal_surname}`,
-          `${definitionObjectiveAnnual.created_at}`,
-          `${definitionObjectiveAnnual.updated_at}`,
+          `${definitionObjectiveAnnual.created_at.toLocaleDateString()}`,
+          `${definitionObjectiveAnnual.updated_at.toLocaleDateString()}`,
           `${definitionObjectiveAnnual.comment_edit}`,
         ],
       ],
@@ -1363,7 +1363,7 @@ export class EmployeeObjetiveService {
         `${element.percentage}`,
         `${element.objectiveEvaluation[0]?.value_half_year}`,
         `${element.objectiveEvaluation[0]?.value_end_year}`,
-        `${percentageObjective}`,
+        `${percentageObjective.toFixed(1)}`,
       ]);
       totalObjective += Number(element.percentage);
     });
@@ -1407,15 +1407,15 @@ export class EmployeeObjetiveService {
       percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
       totalPercentagePerformance += percentagePerformance;
       if(element.question == 'Conocimiento'){
-        arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Trabajo'){
-        arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Administracion'){
-        arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Compromiso'){
-        arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Decision'){
-        arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }
     });
     /* arrayPerformance.push(['Promedio', '', '', '']);
@@ -1432,7 +1432,7 @@ export class EmployeeObjetiveService {
       doc.moveDown();
     }
 
-    doc.table(table4, {
+    await doc.table(table4, {
       x: 40,
       width: 550,
       divider: {
@@ -1473,7 +1473,7 @@ export class EmployeeObjetiveService {
       rows: arrayCompetence,
     };
 
-    doc.table(table5, {
+    await doc.table(table5, {
       x: 40,
       width: 550,
       divider: {
@@ -1484,7 +1484,7 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 650) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
@@ -1510,13 +1510,13 @@ export class EmployeeObjetiveService {
       ],
     };
     
-    if (doc.y > 649) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
     }
 
-    doc.table(table6, {
+    await doc.table(table6, {
       x: 40,
       width: 550,
       divider: {
@@ -1527,7 +1527,7 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 649) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
@@ -1600,7 +1600,7 @@ export class EmployeeObjetiveService {
             )
           }`,
         ],
-        [`Obtenido`, `${totalPercentageObjective}`, `${totalPercentagePerformance}`, `${totalPercentageCompetence}`, `${totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence}`]
+        [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence).toFixed(1)}`]
       ],
     };
 
