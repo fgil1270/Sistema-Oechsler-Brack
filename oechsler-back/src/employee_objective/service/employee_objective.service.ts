@@ -331,6 +331,8 @@ export class EmployeeObjetiveService {
 
       let i;
       let end;
+      const arrayObjective = [];
+      let totalObjective = 0;
 
       //image
       const logoImg = path.resolve(__dirname, '../../../assets/imgs/logo.png');
@@ -389,6 +391,35 @@ export class EmployeeObjetiveService {
         },
       });
 
+      const definitionObjectiveAnnual =
+        await this.definitionObjectiveAnnual.findOne({
+          relations: {
+            employee: {
+              userId: true,
+            },
+            percentageDefinition: true,
+            evaluatedBy: true,
+            objective: {
+              objectiveEvaluation: true,
+            },
+            objectiveQuestion: true,
+            dncCourse: true,
+            dncCourseManual: true,
+            competenceEvaluation: {
+              competence: true,
+            },
+          },
+          where: {
+            employee: {
+              id: asigmentObjective.employee.id,
+            },
+            percentageDefinition: {
+              year: asigmentObjective.percentageDefinition.year,
+            },
+          },
+        });
+
+      //tabla de datos generales
       const table2 = {
         headers: [
           'Nombre del jefe superiro directo',
@@ -398,10 +429,10 @@ export class EmployeeObjetiveService {
         ],
         rows: [
           [
-            `${evaluatedBy.emp.name} ${evaluatedBy.emp.paternal_surname} ${evaluatedBy.emp.maternal_surname}`,
-            `${asigmentObjective.created_at}`,
-            `${asigmentObjective.updated_at}`,
-            `${asigmentObjective.comment_edit}`,
+            `${definitionObjectiveAnnual.evaluatedBy.name} ${definitionObjectiveAnnual.evaluatedBy.paternal_surname} ${definitionObjectiveAnnual.evaluatedBy.maternal_surname}`,
+            `${definitionObjectiveAnnual.created_at.toLocaleDateString()}`,
+            `${definitionObjectiveAnnual.updated_at.toLocaleDateString()}`,
+            `${definitionObjectiveAnnual.comment_edit}`,
           ],
         ],
       };
@@ -417,17 +448,20 @@ export class EmployeeObjetiveService {
         },
       });
 
+      
       //tabla de metas y objetivos
-      const arrayObjective = [];
-      let totalObjective = 0;
-      asigmentObjective.objective.forEach((element) => {
+      let totalPercentageObjective = 0;
+      definitionObjectiveAnnual.objective.forEach((element) => {
+        let percentageObjective = 0;
+        percentageObjective = element.objectiveEvaluation[0]?.value_end_year ? (Number(element.percentage) * Number(element.objectiveEvaluation? element.objectiveEvaluation[0].value_end_year : 0)) / 100 : 0;
+        totalPercentageObjective += percentageObjective;
         arrayObjective.push([
           `${element.goal}`,
           `${element.calculation}`,
           `${element.percentage}`,
-          ``,
-          ``,
-          ``,
+          `${element.objectiveEvaluation[0]?.value_half_year}`,
+          `${element.objectiveEvaluation[0]?.value_end_year}`,
+          `${percentageObjective.toFixed(1)}`,
         ]);
         totalObjective += Number(element.percentage);
       });
@@ -463,19 +497,31 @@ export class EmployeeObjetiveService {
       }
 
       //tabla de desempeño personal
+      let arrayPerformance = [];
+      let totalPercentagePerformance = 0;
 
+      definitionObjectiveAnnual.objectiveQuestion.forEach((element) => {
+        let percentagePerformance = 0;
+        percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
+        totalPercentagePerformance += percentagePerformance;
+        if(element.question == 'Conocimiento'){
+          arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Trabajo'){
+          arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Administracion'){
+          arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Compromiso'){
+          arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Decision'){
+          arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }
+      });
+      /* arrayPerformance.push(['Promedio', '', '', '']);
+      arrayPerformance.push(['Procentaje logrado', '', '', `${totalPercentagePerformance}`]); */
       const table4 = {
         title: 'Desempeño Personal',
-        headers: ['Factor', 'Grado', 'Comentarios', 'Detalle'],
-        rows: [
-          ['Conocimientos Tecnicos normativos', '', '', ''],
-          ['Trabajo bajo presión', '', '', ''],
-          ['Administración del tiempo', '', '', ''],
-          ['Compromiso', '', '', ''],
-          ['Toma de decisiones', '', '', ''],
-          ['Promedio', '', '', ''],
-          ['Procentaje logrado', '', '', ''],
-        ],
+        headers: ['Factor', 'Comentarios', 'Detalle', 'Procentaje logrado'],
+        rows: arrayPerformance,
       };
 
       if (doc.y > 650) {
@@ -484,7 +530,7 @@ export class EmployeeObjetiveService {
         doc.moveDown();
       }
 
-      doc.table(table4, {
+      await doc.table(table4, {
         x: 40,
         width: 550,
         divider: {
@@ -495,7 +541,7 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if (doc.y > 650) {
+      if (doc.y > 630) {
         doc.addPage();
       } else {
         doc.moveDown();
@@ -503,25 +549,29 @@ export class EmployeeObjetiveService {
 
       //Competencias
       const arrayCompetence = [];
-      asigmentObjective.competenceEvaluation.forEach((element) => {
+      let totalPercentageCompetence = 0;
+      definitionObjectiveAnnual.competenceEvaluation.forEach((element) => {
+        totalPercentageCompetence += element.value_end_year ? ((Number(element.value_end_year) / Number(definitionObjectiveAnnual.competenceEvaluation.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_competence)) / 100 : 0;
         arrayCompetence.push([
-          `${element.type}`,
+          //`${element.type}`,
           `${element.competence.name}`,
-          ``,
+          `${element.value_end_year ? element.value_end_year : 0}`,
+          `${element.comment_end_year ? element.comment_end_year : ''}`
         ]);
       });
-      arrayCompetence.push(
+      
+      /* arrayCompetence.push(
         ['Promedio Competencias', '', ''],
         ['Porcentaje logrado', '', ''],
-      );
+      ); */
 
       const table5 = {
         title: 'Competencias',
-        headers: ['Tipo', 'Competencia/Habilidad', 'Calificación'],
+        headers: ['Competencia/Habilidad', 'Calificación', 'Comentarios'],
         rows: arrayCompetence,
       };
 
-      doc.table(table5, {
+      await doc.table(table5, {
         x: 40,
         width: 550,
         divider: {
@@ -532,7 +582,7 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if (doc.y > 650) {
+      if (doc.y > 630) {
         doc.addPage();
       } else {
         doc.moveDown();
@@ -543,12 +593,28 @@ export class EmployeeObjetiveService {
         title: 'Evaluación de Empleado',
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
-          [`Medio Año`, ``, ``, ``],
-          [`Fin de Año`, ``, ``, ``],
+          [
+            `Medio Año`, 
+            `${definitionObjectiveAnnual.half_year_employee_value ? definitionObjectiveAnnual.half_year_employee_value : 0}`, 
+            `${definitionObjectiveAnnual.half_year_employee_range ? definitionObjectiveAnnual.half_year_employee_range : ''}`, 
+            `${definitionObjectiveAnnual.half_year_employee_comment ? definitionObjectiveAnnual.half_year_employee_comment : ''}`
+          ],
+          [
+            `Fin de Año`, 
+            `${definitionObjectiveAnnual.end_year_employee_value ? definitionObjectiveAnnual.end_year_employee_value : 0}`, 
+            `${definitionObjectiveAnnual.end_year_employee_range ? definitionObjectiveAnnual.end_year_employee_range : ''}`, 
+            `${definitionObjectiveAnnual.end_year_employee_comment ? definitionObjectiveAnnual.end_year_employee_comment : ''}`
+          ],
         ],
       };
+      
+      if (doc.y > 630) {
+        doc.addPage();
+      } else {
+        doc.moveDown();
+      }
 
-      doc.table(table6, {
+      await doc.table(table6, {
         x: 40,
         width: 550,
         divider: {
@@ -559,7 +625,7 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if (doc.y > 650) {
+      if (doc.y > 630) {
         doc.addPage();
       } else {
         doc.moveDown();
@@ -571,10 +637,21 @@ export class EmployeeObjetiveService {
         title: 'Evaluación de Jefe Directo',
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
-          [`Medio Año`, ``, ``, ``],
-          [`Fin de Año`, ``, ``, ``],
+          [
+            `Medio Año`, 
+            `${definitionObjectiveAnnual.half_year_leader_value ? definitionObjectiveAnnual.half_year_leader_value : 0}`, 
+            `${definitionObjectiveAnnual.half_year_leader_range ? definitionObjectiveAnnual.half_year_leader_range : ''}`, 
+            `${definitionObjectiveAnnual.half_year_leader_comment ? definitionObjectiveAnnual.half_year_leader_comment : ''}`
+          ],
+          [`Fin de Año`, `${definitionObjectiveAnnual.end_year_leader_value}`, `${definitionObjectiveAnnual.end_year_leader_range}`, `${definitionObjectiveAnnual.end_year_leader_comment}`],
         ],
       };
+
+      if (doc.y > 650) {
+        doc.addPage();
+      } else {
+        doc.moveDown();
+      }
 
       doc.table(table7, {
         x: 40,
@@ -605,18 +682,23 @@ export class EmployeeObjetiveService {
         ],
         rows: [
           [
-            `${asigmentObjective.percentageDefinition.year}`,
-            `${asigmentObjective.percentageDefinition.value_objetive}`,
-            `${asigmentObjective.percentageDefinition.value_performance}`,
-            `${asigmentObjective.percentageDefinition.value_competence}`,
+            `${definitionObjectiveAnnual.percentageDefinition.year}`,
+            `${definitionObjectiveAnnual.percentageDefinition.value_objetive}`,
+            `${definitionObjectiveAnnual.percentageDefinition.value_performance}`,
+            `${definitionObjectiveAnnual.percentageDefinition.value_competence}`,
             `${
-              Number(asigmentObjective.percentageDefinition.value_objetive) +
-              Number(asigmentObjective.percentageDefinition.value_performance) +
-              Number(asigmentObjective.percentageDefinition.value_competence)
+              Number(
+                definitionObjectiveAnnual.percentageDefinition.value_objetive,
+              ) +
+              Number(
+                definitionObjectiveAnnual.percentageDefinition.value_performance,
+              ) +
+              Number(
+                definitionObjectiveAnnual.percentageDefinition.value_competence,
+              )
             }`,
           ],
-          [`Obtenido`, ``, ``, ``, ``],
-          [`Resumen`, ``, ``, ``, ``],
+          [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence).toFixed(1)}`]
         ],
       };
 
@@ -1332,8 +1414,8 @@ export class EmployeeObjetiveService {
       rows: [
         [
           `${definitionObjectiveAnnual.evaluatedBy.name} ${definitionObjectiveAnnual.evaluatedBy.paternal_surname} ${definitionObjectiveAnnual.evaluatedBy.maternal_surname}`,
-          `${definitionObjectiveAnnual.created_at}`,
-          `${definitionObjectiveAnnual.updated_at}`,
+          `${definitionObjectiveAnnual.created_at.toLocaleDateString()}`,
+          `${definitionObjectiveAnnual.updated_at.toLocaleDateString()}`,
           `${definitionObjectiveAnnual.comment_edit}`,
         ],
       ],
@@ -1363,7 +1445,7 @@ export class EmployeeObjetiveService {
         `${element.percentage}`,
         `${element.objectiveEvaluation[0]?.value_half_year}`,
         `${element.objectiveEvaluation[0]?.value_end_year}`,
-        `${percentageObjective}`,
+        `${percentageObjective.toFixed(1)}`,
       ]);
       totalObjective += Number(element.percentage);
     });
@@ -1407,15 +1489,15 @@ export class EmployeeObjetiveService {
       percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
       totalPercentagePerformance += percentagePerformance;
       if(element.question == 'Conocimiento'){
-        arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Trabajo'){
-        arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Administracion'){
-        arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Compromiso'){
-        arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }else if(element.question == 'Decision'){
-        arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance}`]);
+        arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }
     });
     /* arrayPerformance.push(['Promedio', '', '', '']);
@@ -1432,7 +1514,7 @@ export class EmployeeObjetiveService {
       doc.moveDown();
     }
 
-    doc.table(table4, {
+    await doc.table(table4, {
       x: 40,
       width: 550,
       divider: {
@@ -1473,7 +1555,7 @@ export class EmployeeObjetiveService {
       rows: arrayCompetence,
     };
 
-    doc.table(table5, {
+    await doc.table(table5, {
       x: 40,
       width: 550,
       divider: {
@@ -1484,7 +1566,7 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 650) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
@@ -1510,13 +1592,13 @@ export class EmployeeObjetiveService {
       ],
     };
     
-    if (doc.y > 649) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
     }
 
-    doc.table(table6, {
+    await doc.table(table6, {
       x: 40,
       width: 550,
       divider: {
@@ -1527,7 +1609,7 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 649) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
@@ -1600,7 +1682,7 @@ export class EmployeeObjetiveService {
             )
           }`,
         ],
-        [`Obtenido`, `${totalPercentageObjective}`, `${totalPercentagePerformance}`, `${totalPercentageCompetence}`, `${totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence}`]
+        [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence).toFixed(1)}`]
       ],
     };
 
@@ -2207,6 +2289,29 @@ export class EmployeeObjetiveService {
           await this.competenceEvaluation.save(competenceEvaluation);
         }
         
+      }
+
+      //se califican las competencias asignadas manualmente
+      for (let index = 0; index < currData.dataCompetenceManual.length; index++){
+        const element = currData.dataCompetenceManual[index];
+
+        //se busca si la competencia ya fue evaluada
+        const competenceEvaluation = await this.competenceEvaluation.findOne({
+          relations: {
+            competence: true,
+          },
+          where: {
+            id: element.id,
+          } 
+        })
+
+        if(competenceEvaluation){
+          //se actualiza la evaluacion
+          competenceEvaluation.value_end_year = Number(element.value);
+          competenceEvaluation.comment_end_year = element.comment;
+
+          await this.competenceEvaluation.save(competenceEvaluation);
+        }
       }
       
       //se crean las preguntas

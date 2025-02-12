@@ -127,7 +127,14 @@ export class RequestCourseService {
   findRequestCourseById(id: number) {
     return this.requestCourse.findOne({
       relations: {
-        employee: true,
+        employee: {
+          job: true,
+          organigramaL: {
+            leader: {
+              job: true,
+            },
+          },
+        },
         department: true,
         competence: true,
         course: true,
