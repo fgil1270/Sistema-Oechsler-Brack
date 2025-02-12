@@ -312,7 +312,7 @@ export class EmployeeIncidenceService {
         }
       }
 
-
+       let dayCreateIncidence = moment(new Date()).zone('-06:00').format('YYYY-MM-DD HH:mm:ss');
       //crea la incidencia
       const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
           employee: employee.emps[j],
@@ -321,7 +321,8 @@ export class EmployeeIncidenceService {
           total_hour: createEmployeeIncidenceDto.total_hour,
           start_hour: createEmployeeIncidenceDto.start_hour,
           end_hour: createEmployeeIncidenceDto.end_hour,
-          date_aproved_leader: isLeader ? new Date() : null,
+          date_aproved_leader: isLeader ? dayCreateIncidence : null,
+          hour_approved_leader: isLeader ? dayCreateIncidence : null,
           leader: isLeader ? leader.emp : null,
           status: isLeader ? 'Autorizada' : 'Pendiente',
           type: createEmployeeIncidenceDto.type,
@@ -1183,6 +1184,7 @@ export class EmployeeIncidenceService {
 
       if (updateEmployeeIncidenceDto.status == 'Autorizada') {
         employeeIncidence.date_aproved_leader = new Date();
+        employeeIncidence.hour_approved_leader = new Date();
         employeeIncidence.leader = userAutoriza.emp;
         //ENVIO DE CORREO
         subject = `${employeeIncidence.incidenceCatologue.name} / ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} / (-)`;
