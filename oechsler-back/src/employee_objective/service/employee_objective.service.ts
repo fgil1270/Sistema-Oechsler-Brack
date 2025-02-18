@@ -1164,6 +1164,16 @@ export class EmployeeObjetiveService {
           relations: {
             employee: true,
             percentageDefinition: true,
+            evaluatedBy: true,
+            objective: {
+              objectiveEvaluation: true,
+            },
+            objectiveQuestion: true,
+            dncCourse: true,
+            dncCourseManual: true,
+            competenceEvaluation: {
+              competence: true,
+            },
           },
           where: {
             employee: {

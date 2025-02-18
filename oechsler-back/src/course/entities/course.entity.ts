@@ -23,7 +23,7 @@ export class Course {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'text' })
   description: string;
 
   @Column({ type: 'varchar', length: 255 })

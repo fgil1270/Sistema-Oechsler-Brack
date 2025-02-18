@@ -27,7 +27,7 @@ export class CourseService {
   async create(createCourseDto: CourseDto) {
     const courseNameExist = await this.courseRepository.findOne({
       where: {
-        name: Like(`%${createCourseDto.name}%`),
+        name: Like(`${createCourseDto.name}`),
       },
     });
 
