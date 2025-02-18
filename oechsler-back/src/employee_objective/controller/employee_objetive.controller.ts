@@ -139,7 +139,7 @@ export class EmployeeObjetiveController {
   }
 
   @ApiOperation({
-    summary: 'Obtiene todos los objetivos de un empleado por id de empleado',
+    summary: 'Obtiene todos los objetivos de un empleado por id de empleado y año de asignacion',
   })
   @Get('employee/:idEmployee/:year')
   async findOneByEmployeeAndYear(
