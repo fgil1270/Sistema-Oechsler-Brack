@@ -54,9 +54,11 @@ export class CourseService {
   }
 
   async findOne(id: number) {
+    console.log('id', id);
     const course = await this.courseRepository.findOne({
       relations: {
         competence: true,
+        traininGoal: true,
       },
       where: {
         id: id,
@@ -106,6 +108,37 @@ export class CourseService {
     });
 
     return traininGoal;
+  }
+
+  //actualizar curso
+  async update(id: number, updateCourseDto: CourseDto) {
+
+    console.log('updateCourseDto', updateCourseDto);
+    
+    const course = await this.courseRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course not found`);
+    }
+
+    const competence = await this.competenceService.findOne(
+      updateCourseDto.competences,
+    );
+    const traininGoal = await this.getTraininGoalById(
+      updateCourseDto.traininGoal,
+    );
+
+    course.name = updateCourseDto.name;
+    course.description = updateCourseDto.description;
+    course.status = updateCourseDto.status;
+    course.competence = competence;
+    course.traininGoal = traininGoal;
+
+    return await this.courseRepository.save(course);
   }
 
   //eliminar curso

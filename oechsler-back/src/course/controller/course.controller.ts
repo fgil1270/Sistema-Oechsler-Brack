@@ -35,22 +35,43 @@ export class CourseController {
     return this.courseService.create(createCourseDto);
   }
 
+  @ApiOperation({ summary: 'Obtener todos los cursos' })
   @Get()
   findAll() {
     return this.courseService.findAll();
   }
 
-  @Get('acceso')
+  @ApiOperation({ summary: 'Acceso a la vista de cursos' })
+  @Get('/acceso')
   @Views('cursos')
   findOne() {
     return this.courseService.findAll();
   }
 
-  @Get('trainin-goal')
+  
+  @ApiOperation({ summary: 'Obtener objetivos de entrenamiento' })
+  @Get('/trainin-goal')
   getTraininGoalAll() {
+    console.log('getTraininGoalAll');
     return this.courseService.getTraininGoalAll();
   }
 
+  @ApiOperation({ summary: 'Obtener curso por id' })
+  @Get(':id')
+  findCourseById(@Param('id', ParseIntPipe) id: number) {
+    return this.courseService.findOne(id); 
+  }
+
+  @ApiOperation({ summary: 'Actualizar Curso' })
+  @Put(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateCourseDto: CourseDto,
+  ) {
+    return this.courseService.update(id, updateCourseDto);
+  }
+  
+  @ApiOperation({ summary: 'Eliminar Curso' })
   @Delete(':id')
   delete(@Param('id', ParseIntPipe) id: number) {
     return this.courseService.delete(id);

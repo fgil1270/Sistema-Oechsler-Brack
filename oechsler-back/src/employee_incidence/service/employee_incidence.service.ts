@@ -312,7 +312,7 @@ export class EmployeeIncidenceService {
         }
       }
 
-       let dayCreateIncidence = moment(new Date()).zone('-06:00').format('YYYY-MM-DD HH:mm:ss');
+       let dayCreateIncidence = moment(new Date()).utcOffset('-06:00').format('YYYY-MM-DD HH:mm:ss');
       //crea la incidencia
       const employeeIncidenceCreate = await this.employeeIncidenceRepository.create({
           employee: employee.emps[j],
@@ -358,10 +358,10 @@ export class EmployeeIncidenceService {
         )}`;
       } else {
         const mailUser = await this.userService.findByIdEmployee(
-          employeeIncidenceCreate.employee.id,
+          employeeIncidenceCreate.employee.id
         );
         let lideres = await this.organigramaService.leaders(
-          employeeIncidenceCreate.employee.id,
+          employeeIncidenceCreate.employee.id
         );
         for (let index = 0; index < lideres.orgs.length; index++) {
           const lider = lideres.orgs[index];
