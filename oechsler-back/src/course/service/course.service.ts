@@ -54,7 +54,6 @@ export class CourseService {
   }
 
   async findOne(id: number) {
-    console.log('id', id);
     const course = await this.courseRepository.findOne({
       relations: {
         competence: true,
@@ -112,8 +111,6 @@ export class CourseService {
 
   //actualizar curso
   async update(id: number, updateCourseDto: CourseDto) {
-
-    console.log('updateCourseDto', updateCourseDto);
     
     const course = await this.courseRepository.findOne({
       where: {

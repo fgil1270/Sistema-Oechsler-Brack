@@ -52,7 +52,6 @@ export class CourseController {
   @ApiOperation({ summary: 'Obtener objetivos de entrenamiento' })
   @Get('/trainin-goal')
   getTraininGoalAll() {
-    console.log('getTraininGoalAll');
     return this.courseService.getTraininGoalAll();
   }
 
@@ -70,7 +69,7 @@ export class CourseController {
   ) {
     return this.courseService.update(id, updateCourseDto);
   }
-  
+
   @ApiOperation({ summary: 'Eliminar Curso' })
   @Delete(':id')
   delete(@Param('id', ParseIntPipe) id: number) {
