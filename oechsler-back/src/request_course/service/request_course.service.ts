@@ -166,7 +166,7 @@ export class RequestCourseService {
     for (const emp of employee) {
       eployeesIds.push(emp.id);
     }
-    console.log(query);
+    
     const requestCourse = await this.requestCourse.find({
       relations: {
         employee: {
@@ -241,7 +241,7 @@ export class RequestCourseService {
       },
       where: findOption,
     });
-    console.log(query);
+    
     return requestCourse;
   }
 

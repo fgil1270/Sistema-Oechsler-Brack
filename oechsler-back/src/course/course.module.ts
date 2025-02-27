@@ -10,9 +10,10 @@ import { CourseController } from './controller/course.controller';
 import { Course } from './entities/course.entity';
 import { CompetenceModule } from '../competence/competence.module';
 import { TraininGoal } from './entities/trainin_goal.entity';
+import { CourseFile } from './entities/course_file.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Course, TraininGoal]), CompetenceModule],
+  imports: [TypeOrmModule.forFeature([Course, TraininGoal, CourseFile]), CompetenceModule],
   controllers: [CourseController],
   providers: [CourseService],
   exports: [CourseService],
