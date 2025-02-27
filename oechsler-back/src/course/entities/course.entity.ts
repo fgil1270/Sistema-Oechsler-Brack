@@ -14,6 +14,7 @@ import { Competence } from '../../competence/entities/competence.entity';
 import { DncCourse } from '../../employee_objective/entities/dnc_course.entity';
 import { TraininGoal } from './trainin_goal.entity';
 import { RequestCourse } from '../../request_course/entities/request_course.entity';
+import { CourseFile } from './course_file.entity';
 
 @Entity()
 export class Course {
@@ -54,4 +55,7 @@ export class Course {
 
   @OneToMany(() => RequestCourse, (post) => post.course)
   requestCourse: RequestCourse[];
+
+  @OneToMany(() => CourseFile, (post) => post.course)
+  courseFile: CourseFile[];
 }

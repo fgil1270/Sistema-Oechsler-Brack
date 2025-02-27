@@ -9,19 +9,21 @@ import {
 } from '@nestjs/common';
 import { Repository, In, Not, IsNull, Like } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { join } from 'path';
 
 import { CourseDto } from '../dto/create_course.dto';
 import { Course } from '../entities/course.entity';
 import { CompetenceService } from '../../competence/service/competence.service';
 import { TraininGoal } from '../entities/trainin_goal.entity';
+import { CourseFile } from '../entities/course_file.entity';
 
 @Injectable()
 export class CourseService {
   constructor(
     @InjectRepository(Course) private courseRepository: Repository<Course>,
     private competenceService: CompetenceService,
-    @InjectRepository(TraininGoal)
-    private traininGoalRepository: Repository<TraininGoal>,
+    @InjectRepository(TraininGoal) private traininGoalRepository: Repository<TraininGoal>,
+    @InjectRepository(CourseFile) private courseFileRepository: Repository<CourseFile>,
   ) {}
 
   async create(createCourseDto: CourseDto) {
@@ -57,6 +59,7 @@ export class CourseService {
     const course = await this.courseRepository.findOne({
       relations: {
         competence: true,
+        traininGoal: true,
       },
       where: {
         id: id,
@@ -71,6 +74,7 @@ export class CourseService {
     const courses = await this.courseRepository.find({
       relations: {
         competence: true,
+        courseFile: true,
       },
       order: {
         name: 'ASC',
@@ -106,6 +110,90 @@ export class CourseService {
     });
 
     return traininGoal;
+  }
+
+  async getFilePath(courseId: number) {
+    let file: any;
+    let path: any;
+    
+    const course = await this.courseRepository.findOne({
+      relations: {
+        courseFile: true,
+      },
+      where: {
+        id: courseId,
+      },
+    });
+
+    path = join(
+      __dirname,
+      `../../../documents/catalogos/cursos/${course.id}`,
+      course.courseFile[0].route,
+    )
+
+    return {
+      path: path,
+      fileName: course.courseFile[0].route,
+    };
+  }
+
+  async uploadCourseFile(id: number, file: Express.Multer.File) {
+    const course = await this.courseRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course not found`);
+    }
+
+    //elimina los archivos anteriores del curso
+    await this.courseFileRepository.softDelete({
+      course: {
+        id: course.id,
+      },
+    });
+
+    //guarda el nuevo archivo
+    await this.courseFileRepository.save({
+      name: file.originalname,
+      route: file.filename,
+      course: course
+    });
+
+    return {
+      message: 'File uploaded successfully',
+    };
+  }
+
+  //actualizar curso
+  async update(id: number, updateCourseDto: CourseDto) {
+    
+    const course = await this.courseRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Course not found`);
+    }
+
+    const competence = await this.competenceService.findOne(
+      updateCourseDto.competences,
+    );
+    const traininGoal = await this.getTraininGoalById(
+      updateCourseDto.traininGoal,
+    );
+
+    course.name = updateCourseDto.name;
+    course.description = updateCourseDto.description;
+    course.status = updateCourseDto.status;
+    course.competence = competence;
+    course.traininGoal = traininGoal;
+
+    return await this.courseRepository.save(course);
   }
 
   //eliminar curso

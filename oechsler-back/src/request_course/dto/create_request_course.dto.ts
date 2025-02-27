@@ -38,7 +38,7 @@ export class RequestCourseDto {
 
   @IsOptional()
   @IsString()
-  @ApiProperty({ description: 'Periodo de eficiencia' })
+  @ApiProperty({ description: 'Periodo de eficiencia en dias' })
   efficiencyPeriod: string;
 
   @IsOptional()
