@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { RequestCourse } from '../../request_course/entities/request_course.entity';
+import { CourseEfficiencyQuestion } from './course_efficiency_question.entity';
 
 @Entity()
 export class CourseEfficiency {
@@ -45,4 +46,7 @@ export class CourseEfficiency {
     @ManyToOne(() => RequestCourse, (post) => post.courseEfficiency)
     @JoinColumn()
     requestCourse: RequestCourse;
+
+    @OneToMany(() => CourseEfficiencyQuestion, (post) => post.courseEfficiency)
+    courseEfficiencyQuestion: CourseEfficiencyQuestion[];
 }
