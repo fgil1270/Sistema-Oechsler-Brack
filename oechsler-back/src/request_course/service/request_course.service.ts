@@ -142,6 +142,9 @@ export class RequestCourseService {
         rh: true,
         gm: true,
         requestBy: true,
+        courseEfficiency: {
+          courseEfficiencyQuestion: true,
+        },
       },
       where: {
         id: id,

@@ -1153,16 +1153,27 @@ export class EmployeeObjetiveService {
       },
       user,
     );
+    let objEmployee = [];
 
-    for (let index = 0; index < employee.length; index++) {
-      const element = employee[index];
+    //se filtran los empleados que no son operadores
+    objEmployee = employee.filter((element) => {
+      
+      return element.job.cv_name != 'OPERADOR GENERAL A' && element.job.cv_name != 'OPERADOR GENERAL B' && element.job.cv_name != 'OPERADOR GENERAL C' 
+        && element.job.cv_name != 'OPERADOR GENERAL D'
+    });
+
+      
+    for (let index = 0; index < objEmployee.length; index++) {
+      const element = objEmployee[index];
       
       
       //se busca si el empleado tiene objetivos asignados para el año seleccionado
       const definitionObjectiveAnnual =
         await this.definitionObjectiveAnnual.findOne({
           relations: {
-            employee: true,
+            employee: {
+              job: true,
+            },
             percentageDefinition: true,
             evaluatedBy: true,
             objective: {
@@ -1178,6 +1189,9 @@ export class EmployeeObjetiveService {
           where: {
             employee: {
               id: element.id,
+              job: {
+                cv_name: Not(In(['OPERADOR GENERAL A', 'OPERADOR GENERAL B', 'OPERADOR GENERAL C', 'OPERADOR GENERAL D'])),
+              }
             },
             percentageDefinition: {
               id: currdata.idYear,

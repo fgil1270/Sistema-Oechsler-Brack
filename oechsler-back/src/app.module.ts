@@ -44,6 +44,7 @@ import { SupplierModule } from './supplier/supplier.module';
 import { EnabledCreateIncidenceModule } from './enabled_create_incidence/enabled_create_incidence.module';
 import { JobDocumentModule } from './job_document/job_document.module';
 import { CustomLoggerService } from './logger/logger.service';
+import { CourseEfficiencyModule } from './course_efficiency/course_efficiency.module';
 
 
 @Module({
@@ -106,6 +107,7 @@ import { CustomLoggerService } from './logger/logger.service';
     RequestCourseModule,
     SupplierModule,
     EnabledCreateIncidenceModule,
+    CourseEfficiencyModule
   ],
   controllers: [
     AppController

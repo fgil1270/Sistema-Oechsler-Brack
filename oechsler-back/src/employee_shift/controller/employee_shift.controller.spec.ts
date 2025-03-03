@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmployeeShiftController } from './employee_shift.controller';
-import { EmployeeShiftService } from './employee_shift.service';
+import { EmployeeShiftService } from './../service/employee_shift.service';
 
 describe('EmployeeShiftController', () => {
   let controller: EmployeeShiftController;
