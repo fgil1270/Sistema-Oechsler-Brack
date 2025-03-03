@@ -19,8 +19,8 @@ export class CourseEfficiencyQuestion {
     @Column({ type: 'text', default: null })
     question: string;
 
-    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
-    calification: number;
+    @Column({ type: 'varchar', length: 255, default: null })
+    calification: string;
 
     @Column({ type: 'boolean', default: false })
     is_number: boolean;
