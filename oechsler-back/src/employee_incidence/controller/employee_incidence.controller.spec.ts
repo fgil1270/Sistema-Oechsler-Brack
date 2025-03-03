@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmployeeIncidenceController } from './employee_incidence.controller';
-import { EmployeeIncidenceService } from './employee_incidence.service';
+import { EmployeeIncidenceService } from './../service/employee_incidence.service';
 
 describe('EmployeeIncidenceController', () => {
   let controller: EmployeeIncidenceController;
