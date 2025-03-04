@@ -127,7 +127,14 @@ export class RequestCourseService {
   findRequestCourseById(id: number) {
     return this.requestCourse.findOne({
       relations: {
-        employee: true,
+        employee: {
+          job: true,
+          organigramaL: {
+            leader: {
+              job: true,
+            },
+          },
+        },
         department: true,
         competence: true,
         course: true,
@@ -135,6 +142,9 @@ export class RequestCourseService {
         rh: true,
         gm: true,
         requestBy: true,
+        courseEfficiency: {
+          courseEfficiencyQuestion: true,
+        },
       },
       where: {
         id: id,
@@ -159,7 +169,7 @@ export class RequestCourseService {
     for (const emp of employee) {
       eployeesIds.push(emp.id);
     }
-
+    
     const requestCourse = await this.requestCourse.find({
       relations: {
         employee: {
@@ -234,7 +244,7 @@ export class RequestCourseService {
       },
       where: findOption,
     });
-
+    
     return requestCourse;
   }
 
@@ -379,12 +389,13 @@ export class RequestCourseService {
     const courseApproved = await this.requestCourse
       .createQueryBuilder('request_course')
       .select('request_course.status')
-      .addSelect('COUNT(request_course.status)', 'total')
-      .addSelect('MAX(course.id)', 'id_course')
-      .addSelect('MAX(course.name)', 'course_name')
+      //.addSelect('COUNT(request_course.status)', 'total')
+      .addSelect('course.id', 'id_course')
+      .addSelect('course.name', 'course_name')
+      .addSelect('request_course.id', 'id_request_course')
       .innerJoin('request_course.course', 'course')
       .where('request_course.status = :status', { status: status })
-      .groupBy('request_course.status')
+      //.groupBy('request_course.status')
       .getRawMany();
     const employees = await this.requestCourse
       .createQueryBuilder('request_course')

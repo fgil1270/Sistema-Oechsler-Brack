@@ -7,7 +7,6 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
-import { TaskService } from './task/task.service';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -27,6 +26,7 @@ import { PatternModule } from './pattern/pattern.module';
 import { EmployeeShiftModule } from './employee_shift/employee_shift.module';
 import { IncidenceCatologueModule } from './incidence_catologue/incidence_catologue.module';
 import { EmployeeIncidenceModule } from './employee_incidence/employee_incidence.module';
+import { CronSendEmailPendingIncidenceService } from './employee_incidence/service/cron_send_email_pending_incidence.service';
 import config from './config';
 import { ChecadorModule } from './checador/checador.module';
 import { TimeCorrectionModule } from './time_correction/time_correction.module';
@@ -43,6 +43,8 @@ import { RequestCourseModule } from './request_course/request_course.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { EnabledCreateIncidenceModule } from './enabled_create_incidence/enabled_create_incidence.module';
 import { JobDocumentModule } from './job_document/job_document.module';
+import { CustomLoggerService } from './logger/logger.service';
+import { CourseEfficiencyModule } from './course_efficiency/course_efficiency.module';
 
 
 @Module({
@@ -105,12 +107,15 @@ import { JobDocumentModule } from './job_document/job_document.module';
     RequestCourseModule,
     SupplierModule,
     EnabledCreateIncidenceModule,
+    CourseEfficiencyModule
   ],
   controllers: [
     AppController
   ],
   providers: [
-    AppService
+    AppService,
+    CronSendEmailPendingIncidenceService,
+    CustomLoggerService
   ],
 })
 export class AppModule { }

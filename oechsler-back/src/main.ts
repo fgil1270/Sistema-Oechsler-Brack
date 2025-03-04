@@ -2,10 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { CustomLoggerService } from './logger/logger.service';
 import * as expressListRoutes from 'express-list-endpoints';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new CustomLoggerService(),
+  });
   app.enableCors( {
     origin: '*',
     /*methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

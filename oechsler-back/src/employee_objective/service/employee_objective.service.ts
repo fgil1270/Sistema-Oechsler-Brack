@@ -24,6 +24,7 @@ import { Readable } from 'stream';
 
 import {
   CreateEmployeeObjectiveDto,
+  UpdateEmployeeObjectiveDto,
   UpdateObjectiveDTO,
   UpdateDncCourseDto,
   UpdateDncCourseManualDto,
@@ -92,6 +93,8 @@ export class EmployeeObjetiveService {
           },
         });
 
+        //si skipMidYearEvaluation es true se asigna el status de evaluado fin de año
+        //y se asignan los valores de evaluacion
         if(currData.skipMidYearEvaluation){
           saveDefinitionObjetive.status = 'Pendiente evaluado fin de año';
           saveDefinitionObjetive.is_evaluated = true;
@@ -328,6 +331,8 @@ export class EmployeeObjetiveService {
 
       let i;
       let end;
+      const arrayObjective = [];
+      let totalObjective = 0;
 
       //image
       const logoImg = path.resolve(__dirname, '../../../assets/imgs/logo.png');
@@ -386,6 +391,35 @@ export class EmployeeObjetiveService {
         },
       });
 
+      const definitionObjectiveAnnual =
+        await this.definitionObjectiveAnnual.findOne({
+          relations: {
+            employee: {
+              userId: true,
+            },
+            percentageDefinition: true,
+            evaluatedBy: true,
+            objective: {
+              objectiveEvaluation: true,
+            },
+            objectiveQuestion: true,
+            dncCourse: true,
+            dncCourseManual: true,
+            competenceEvaluation: {
+              competence: true,
+            },
+          },
+          where: {
+            employee: {
+              id: asigmentObjective.employee.id,
+            },
+            percentageDefinition: {
+              year: asigmentObjective.percentageDefinition.year,
+            },
+          },
+        });
+
+      //tabla de datos generales
       const table2 = {
         headers: [
           'Nombre del jefe superiro directo',
@@ -395,10 +429,10 @@ export class EmployeeObjetiveService {
         ],
         rows: [
           [
-            `${evaluatedBy.emp.name} ${evaluatedBy.emp.paternal_surname} ${evaluatedBy.emp.maternal_surname}`,
-            `${asigmentObjective.created_at}`,
-            `${asigmentObjective.updated_at}`,
-            `${asigmentObjective.comment_edit}`,
+            `${definitionObjectiveAnnual.evaluatedBy.name} ${definitionObjectiveAnnual.evaluatedBy.paternal_surname} ${definitionObjectiveAnnual.evaluatedBy.maternal_surname}`,
+            `${definitionObjectiveAnnual.created_at.toLocaleDateString()}`,
+            `${definitionObjectiveAnnual.updated_at.toLocaleDateString()}`,
+            `${definitionObjectiveAnnual.comment_edit}`,
           ],
         ],
       };
@@ -414,17 +448,20 @@ export class EmployeeObjetiveService {
         },
       });
 
+      
       //tabla de metas y objetivos
-      const arrayObjective = [];
-      let totalObjective = 0;
-      asigmentObjective.objective.forEach((element) => {
+      let totalPercentageObjective = 0;
+      definitionObjectiveAnnual.objective.forEach((element) => {
+        let percentageObjective = 0;
+        percentageObjective = element.objectiveEvaluation[0]?.value_end_year ? (Number(element.percentage) * Number(element.objectiveEvaluation? element.objectiveEvaluation[0].value_end_year : 0)) / 100 : 0;
+        totalPercentageObjective += percentageObjective;
         arrayObjective.push([
           `${element.goal}`,
           `${element.calculation}`,
           `${element.percentage}`,
-          ``,
-          ``,
-          ``,
+          `${element.objectiveEvaluation[0]?.value_half_year}`,
+          `${element.objectiveEvaluation[0]?.value_end_year}`,
+          `${percentageObjective.toFixed(1)}`,
         ]);
         totalObjective += Number(element.percentage);
       });
@@ -460,19 +497,31 @@ export class EmployeeObjetiveService {
       }
 
       //tabla de desempeño personal
+      let arrayPerformance = [];
+      let totalPercentagePerformance = 0;
 
+      definitionObjectiveAnnual.objectiveQuestion.forEach((element) => {
+        let percentagePerformance = 0;
+        percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
+        totalPercentagePerformance += percentagePerformance;
+        if(element.question == 'Conocimiento'){
+          arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Trabajo'){
+          arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Administracion'){
+          arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Compromiso'){
+          arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }else if(element.question == 'Decision'){
+          arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+        }
+      });
+      /* arrayPerformance.push(['Promedio', '', '', '']);
+      arrayPerformance.push(['Procentaje logrado', '', '', `${totalPercentagePerformance}`]); */
       const table4 = {
         title: 'Desempeño Personal',
-        headers: ['Factor', 'Grado', 'Comentarios', 'Detalle'],
-        rows: [
-          ['Conocimientos Tecnicos normativos', '', '', ''],
-          ['Trabajo bajo presión', '', '', ''],
-          ['Administración del tiempo', '', '', ''],
-          ['Compromiso', '', '', ''],
-          ['Toma de decisiones', '', '', ''],
-          ['Promedio', '', '', ''],
-          ['Procentaje logrado', '', '', ''],
-        ],
+        headers: ['Factor', 'Comentarios', 'Detalle', 'Procentaje logrado'],
+        rows: arrayPerformance,
       };
 
       if (doc.y > 650) {
@@ -481,7 +530,7 @@ export class EmployeeObjetiveService {
         doc.moveDown();
       }
 
-      doc.table(table4, {
+      await doc.table(table4, {
         x: 40,
         width: 550,
         divider: {
@@ -492,7 +541,7 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if (doc.y > 650) {
+      if (doc.y > 630) {
         doc.addPage();
       } else {
         doc.moveDown();
@@ -500,25 +549,29 @@ export class EmployeeObjetiveService {
 
       //Competencias
       const arrayCompetence = [];
-      asigmentObjective.competenceEvaluation.forEach((element) => {
+      let totalPercentageCompetence = 0;
+      definitionObjectiveAnnual.competenceEvaluation.forEach((element) => {
+        totalPercentageCompetence += element.value_end_year ? ((Number(element.value_end_year) / Number(definitionObjectiveAnnual.competenceEvaluation.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_competence)) / 100 : 0;
         arrayCompetence.push([
-          `${element.type}`,
+          //`${element.type}`,
           `${element.competence.name}`,
-          ``,
+          `${element.value_end_year ? element.value_end_year : 0}`,
+          `${element.comment_end_year ? element.comment_end_year : ''}`
         ]);
       });
-      arrayCompetence.push(
+      
+      /* arrayCompetence.push(
         ['Promedio Competencias', '', ''],
         ['Porcentaje logrado', '', ''],
-      );
+      ); */
 
       const table5 = {
         title: 'Competencias',
-        headers: ['Tipo', 'Competencia/Habilidad', 'Calificación'],
+        headers: ['Competencia/Habilidad', 'Calificación', 'Comentarios'],
         rows: arrayCompetence,
       };
 
-      doc.table(table5, {
+      await doc.table(table5, {
         x: 40,
         width: 550,
         divider: {
@@ -529,7 +582,7 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if (doc.y > 650) {
+      if (doc.y > 630) {
         doc.addPage();
       } else {
         doc.moveDown();
@@ -540,12 +593,28 @@ export class EmployeeObjetiveService {
         title: 'Evaluación de Empleado',
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
-          [`Medio Año`, ``, ``, ``],
-          [`Fin de Año`, ``, ``, ``],
+          [
+            `Medio Año`, 
+            `${definitionObjectiveAnnual.half_year_employee_value ? definitionObjectiveAnnual.half_year_employee_value : 0}`, 
+            `${definitionObjectiveAnnual.half_year_employee_range ? definitionObjectiveAnnual.half_year_employee_range : ''}`, 
+            `${definitionObjectiveAnnual.half_year_employee_comment ? definitionObjectiveAnnual.half_year_employee_comment : ''}`
+          ],
+          [
+            `Fin de Año`, 
+            `${definitionObjectiveAnnual.end_year_employee_value ? definitionObjectiveAnnual.end_year_employee_value : 0}`, 
+            `${definitionObjectiveAnnual.end_year_employee_range ? definitionObjectiveAnnual.end_year_employee_range : ''}`, 
+            `${definitionObjectiveAnnual.end_year_employee_comment ? definitionObjectiveAnnual.end_year_employee_comment : ''}`
+          ],
         ],
       };
+      
+      if (doc.y > 630) {
+        doc.addPage();
+      } else {
+        doc.moveDown();
+      }
 
-      doc.table(table6, {
+      await doc.table(table6, {
         x: 40,
         width: 550,
         divider: {
@@ -556,7 +625,7 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if (doc.y > 650) {
+      if (doc.y > 630) {
         doc.addPage();
       } else {
         doc.moveDown();
@@ -568,10 +637,21 @@ export class EmployeeObjetiveService {
         title: 'Evaluación de Jefe Directo',
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
-          [`Medio Año`, ``, ``, ``],
-          [`Fin de Año`, ``, ``, ``],
+          [
+            `Medio Año`, 
+            `${definitionObjectiveAnnual.half_year_leader_value ? definitionObjectiveAnnual.half_year_leader_value : 0}`, 
+            `${definitionObjectiveAnnual.half_year_leader_range ? definitionObjectiveAnnual.half_year_leader_range : ''}`, 
+            `${definitionObjectiveAnnual.half_year_leader_comment ? definitionObjectiveAnnual.half_year_leader_comment : ''}`
+          ],
+          [`Fin de Año`, `${definitionObjectiveAnnual.end_year_leader_value}`, `${definitionObjectiveAnnual.end_year_leader_range}`, `${definitionObjectiveAnnual.end_year_leader_comment}`],
         ],
       };
+
+      if (doc.y > 650) {
+        doc.addPage();
+      } else {
+        doc.moveDown();
+      }
 
       doc.table(table7, {
         x: 40,
@@ -602,18 +682,23 @@ export class EmployeeObjetiveService {
         ],
         rows: [
           [
-            `${asigmentObjective.percentageDefinition.year}`,
-            `${asigmentObjective.percentageDefinition.value_objetive}`,
-            `${asigmentObjective.percentageDefinition.value_performance}`,
-            `${asigmentObjective.percentageDefinition.value_competence}`,
+            `${definitionObjectiveAnnual.percentageDefinition.year}`,
+            `${definitionObjectiveAnnual.percentageDefinition.value_objetive}`,
+            `${definitionObjectiveAnnual.percentageDefinition.value_performance}`,
+            `${definitionObjectiveAnnual.percentageDefinition.value_competence}`,
             `${
-              Number(asigmentObjective.percentageDefinition.value_objetive) +
-              Number(asigmentObjective.percentageDefinition.value_performance) +
-              Number(asigmentObjective.percentageDefinition.value_competence)
+              Number(
+                definitionObjectiveAnnual.percentageDefinition.value_objetive,
+              ) +
+              Number(
+                definitionObjectiveAnnual.percentageDefinition.value_performance,
+              ) +
+              Number(
+                definitionObjectiveAnnual.percentageDefinition.value_competence,
+              )
             }`,
           ],
-          [`Obtenido`, ``, ``, ``, ``],
-          [`Resumen`, ``, ``, ``, ``],
+          [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence).toFixed(1)}`]
         ],
       };
 
@@ -1068,21 +1153,45 @@ export class EmployeeObjetiveService {
       },
       user,
     );
+    let objEmployee = [];
 
-    for (let index = 0; index < employee.length; index++) {
-      const element = employee[index];
+    //se filtran los empleados que no son operadores
+    objEmployee = employee.filter((element) => {
+      
+      return element.job.cv_name != 'OPERADOR GENERAL A' && element.job.cv_name != 'OPERADOR GENERAL B' && element.job.cv_name != 'OPERADOR GENERAL C' 
+        && element.job.cv_name != 'OPERADOR GENERAL D'
+    });
+
+      
+    for (let index = 0; index < objEmployee.length; index++) {
+      const element = objEmployee[index];
       
       
       //se busca si el empleado tiene objetivos asignados para el año seleccionado
       const definitionObjectiveAnnual =
         await this.definitionObjectiveAnnual.findOne({
           relations: {
-            employee: true,
+            employee: {
+              job: true,
+            },
             percentageDefinition: true,
+            evaluatedBy: true,
+            objective: {
+              objectiveEvaluation: true,
+            },
+            objectiveQuestion: true,
+            dncCourse: true,
+            dncCourseManual: true,
+            competenceEvaluation: {
+              competence: true,
+            },
           },
           where: {
             employee: {
               id: element.id,
+              job: {
+                cv_name: Not(In(['OPERADOR GENERAL A', 'OPERADOR GENERAL B', 'OPERADOR GENERAL C', 'OPERADOR GENERAL D'])),
+              }
             },
             percentageDefinition: {
               id: currdata.idYear,
@@ -1298,7 +1407,10 @@ export class EmployeeObjetiveService {
           },
           percentageDefinition: true,
           evaluatedBy: true,
-          objective: true,
+          objective: {
+            objectiveEvaluation: true,
+          },
+          objectiveQuestion: true,
           dncCourse: true,
           dncCourseManual: true,
           competenceEvaluation: {
@@ -1326,8 +1438,8 @@ export class EmployeeObjetiveService {
       rows: [
         [
           `${definitionObjectiveAnnual.evaluatedBy.name} ${definitionObjectiveAnnual.evaluatedBy.paternal_surname} ${definitionObjectiveAnnual.evaluatedBy.maternal_surname}`,
-          `${definitionObjectiveAnnual.created_at}`,
-          `${definitionObjectiveAnnual.updated_at}`,
+          `${definitionObjectiveAnnual.created_at.toLocaleDateString()}`,
+          `${definitionObjectiveAnnual.updated_at.toLocaleDateString()}`,
           `${definitionObjectiveAnnual.comment_edit}`,
         ],
       ],
@@ -1344,15 +1456,20 @@ export class EmployeeObjetiveService {
       },
     });
 
+    
     //tabla de metas y objetivos
+    let totalPercentageObjective = 0;
     definitionObjectiveAnnual.objective.forEach((element) => {
+      let percentageObjective = 0;
+      percentageObjective = element.objectiveEvaluation[0]?.value_end_year ? (Number(element.percentage) * Number(element.objectiveEvaluation? element.objectiveEvaluation[0].value_end_year : 0)) / 100 : 0;
+      totalPercentageObjective += percentageObjective;
       arrayObjective.push([
         `${element.goal}`,
         `${element.calculation}`,
         `${element.percentage}`,
-        ``,
-        ``,
-        ``,
+        `${element.objectiveEvaluation[0]?.value_half_year}`,
+        `${element.objectiveEvaluation[0]?.value_end_year}`,
+        `${percentageObjective.toFixed(1)}`,
       ]);
       totalObjective += Number(element.percentage);
     });
@@ -1388,19 +1505,31 @@ export class EmployeeObjetiveService {
     }
 
     //tabla de desempeño personal
+    let arrayPerformance = [];
+    let totalPercentagePerformance = 0;
 
+    definitionObjectiveAnnual.objectiveQuestion.forEach((element) => {
+      let percentagePerformance = 0;
+      percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
+      totalPercentagePerformance += percentagePerformance;
+      if(element.question == 'Conocimiento'){
+        arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+      }else if(element.question == 'Trabajo'){
+        arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+      }else if(element.question == 'Administracion'){
+        arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+      }else if(element.question == 'Compromiso'){
+        arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+      }else if(element.question == 'Decision'){
+        arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
+      }
+    });
+    /* arrayPerformance.push(['Promedio', '', '', '']);
+    arrayPerformance.push(['Procentaje logrado', '', '', `${totalPercentagePerformance}`]); */
     const table4 = {
       title: 'Desempeño Personal',
-      headers: ['Factor', 'Grado', 'Comentarios', 'Detalle'],
-      rows: [
-        ['Conocimientos Tecnicos normativos', '', '', ''],
-        ['Trabajo bajo presión', '', '', ''],
-        ['Administración del tiempo', '', '', ''],
-        ['Compromiso', '', '', ''],
-        ['Toma de decisiones', '', '', ''],
-        ['Promedio', '', '', ''],
-        ['Procentaje logrado', '', '', ''],
-      ],
+      headers: ['Factor', 'Comentarios', 'Detalle', 'Procentaje logrado'],
+      rows: arrayPerformance,
     };
 
     if (doc.y > 650) {
@@ -1409,7 +1538,7 @@ export class EmployeeObjetiveService {
       doc.moveDown();
     }
 
-    doc.table(table4, {
+    await doc.table(table4, {
       x: 40,
       width: 550,
       divider: {
@@ -1428,25 +1557,29 @@ export class EmployeeObjetiveService {
 
     //Competencias
     const arrayCompetence = [];
+    let totalPercentageCompetence = 0;
     definitionObjectiveAnnual.competenceEvaluation.forEach((element) => {
+      totalPercentageCompetence += element.value_end_year ? ((Number(element.value_end_year) / Number(definitionObjectiveAnnual.competenceEvaluation.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_competence)) / 100 : 0;
       arrayCompetence.push([
-        `${element.type}`,
+        //`${element.type}`,
         `${element.competence.name}`,
-        ``,
+        `${element.value_end_year ? element.value_end_year : 0}`,
+        `${element.comment_end_year ? element.comment_end_year : ''}`
       ]);
     });
-    arrayCompetence.push(
+    
+    /* arrayCompetence.push(
       ['Promedio Competencias', '', ''],
       ['Porcentaje logrado', '', ''],
-    );
+    ); */
 
     const table5 = {
       title: 'Competencias',
-      headers: ['Tipo', 'Competencia/Habilidad', 'Calificación'],
+      headers: ['Competencia/Habilidad', 'Calificación', 'Comentarios'],
       rows: arrayCompetence,
     };
 
-    doc.table(table5, {
+    await doc.table(table5, {
       x: 40,
       width: 550,
       divider: {
@@ -1457,7 +1590,7 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 650) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
@@ -1468,12 +1601,28 @@ export class EmployeeObjetiveService {
       title: 'Evaluación de Empleado',
       headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
       rows: [
-        [`Medio Año`, ``, ``, ``],
-        [`Fin de Año`, ``, ``, ``],
+        [
+          `Medio Año`, 
+          `${definitionObjectiveAnnual.half_year_employee_value ? definitionObjectiveAnnual.half_year_employee_value : 0}`, 
+          `${definitionObjectiveAnnual.half_year_employee_range ? definitionObjectiveAnnual.half_year_employee_range : ''}`, 
+          `${definitionObjectiveAnnual.half_year_employee_comment ? definitionObjectiveAnnual.half_year_employee_comment : ''}`
+        ],
+        [
+          `Fin de Año`, 
+          `${definitionObjectiveAnnual.end_year_employee_value ? definitionObjectiveAnnual.end_year_employee_value : 0}`, 
+          `${definitionObjectiveAnnual.end_year_employee_range ? definitionObjectiveAnnual.end_year_employee_range : ''}`, 
+          `${definitionObjectiveAnnual.end_year_employee_comment ? definitionObjectiveAnnual.end_year_employee_comment : ''}`
+        ],
       ],
     };
+    
+    if (doc.y > 630) {
+      doc.addPage();
+    } else {
+      doc.moveDown();
+    }
 
-    doc.table(table6, {
+    await doc.table(table6, {
       x: 40,
       width: 550,
       divider: {
@@ -1484,7 +1633,7 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 650) {
+    if (doc.y > 630) {
       doc.addPage();
     } else {
       doc.moveDown();
@@ -1496,10 +1645,21 @@ export class EmployeeObjetiveService {
       title: 'Evaluación de Jefe Directo',
       headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
       rows: [
-        [`Medio Año`, ``, ``, ``],
-        [`Fin de Año`, ``, ``, ``],
+        [
+          `Medio Año`, 
+          `${definitionObjectiveAnnual.half_year_leader_value ? definitionObjectiveAnnual.half_year_leader_value : 0}`, 
+          `${definitionObjectiveAnnual.half_year_leader_range ? definitionObjectiveAnnual.half_year_leader_range : ''}`, 
+          `${definitionObjectiveAnnual.half_year_leader_comment ? definitionObjectiveAnnual.half_year_leader_comment : ''}`
+        ],
+        [`Fin de Año`, `${definitionObjectiveAnnual.end_year_leader_value}`, `${definitionObjectiveAnnual.end_year_leader_range}`, `${definitionObjectiveAnnual.end_year_leader_comment}`],
       ],
     };
+
+    if (doc.y > 650) {
+      doc.addPage();
+    } else {
+      doc.moveDown();
+    }
 
     doc.table(table7, {
       x: 40,
@@ -1546,8 +1706,7 @@ export class EmployeeObjetiveService {
             )
           }`,
         ],
-        [`Obtenido`, ``, ``, ``, ``],
-        [`Resumen`, ``, ``, ``, ``],
+        [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence).toFixed(1)}`]
       ],
     };
 
@@ -1801,6 +1960,42 @@ export class EmployeeObjetiveService {
       status.error = true;
       status.status = 'error';
       return status;
+    }
+  }
+
+  //saltar evaluacion de medio año
+  async skipEvaluationMidYear(currData: UpdateEmployeeObjectiveDto, user: any) {
+
+    if (currData.idObjectiveAnnual) {
+      let evaluatedBy = await this.employeeService.findOne(user.idEmployee);
+      let saveDefinitionObjetive = await this.definitionObjectiveAnnual.findOne({
+        relations: {
+          employee: true,
+          percentageDefinition: true,
+        },
+        where: {
+          id: currData.idObjectiveAnnual,
+        },
+      });
+
+      if(currData.skipMidYearEvaluation){
+        saveDefinitionObjetive.evaluatedBy = evaluatedBy.emp;
+        saveDefinitionObjetive.status = 'Pendiente evaluado fin de año';
+        saveDefinitionObjetive.is_evaluated = true;
+        saveDefinitionObjetive.half_year_employee_range = 'B - Dentro de las expectativas';
+        saveDefinitionObjetive.half_year_employee_value = 100;
+        saveDefinitionObjetive.half_year_employee_comment = 'Evaluado por sistema';
+        saveDefinitionObjetive.half_year_leader_range = 'B - Dentro de las expectativas';
+        saveDefinitionObjetive.half_year_leader_value = 100;
+        saveDefinitionObjetive.half_year_leader_comment = 'Evaluado por sistema';
+        
+        await this.definitionObjectiveAnnual.save(saveDefinitionObjetive);
+      }
+    }
+
+    return {
+      error: false,
+      message: 'Evalucion de medio año realizada correctamente',
     }
   }
 
@@ -2080,6 +2275,17 @@ export class EmployeeObjetiveService {
           objectiveEvaluation.comment_end_year = element.comment;
 
           await this.employeeObjectiveEvaluation.save(objectiveEvaluation);
+        }else{
+          //se crea la evaluacion
+          const evaluation = this.employeeObjectiveEvaluation.create({
+            value_half_year: 100,
+            comment_half_year: 'Evaluado por sistema',
+            value_end_year: Number(element.value),
+            comment_end_year: element.comment,
+            objective: objective
+          })
+
+          await this.employeeObjectiveEvaluation.save(evaluation);
         }
        
         
@@ -2108,6 +2314,29 @@ export class EmployeeObjetiveService {
         }
         
       }
+
+      //se califican las competencias asignadas manualmente
+      for (let index = 0; index < currData.dataCompetenceManual.length; index++){
+        const element = currData.dataCompetenceManual[index];
+
+        //se busca si la competencia ya fue evaluada
+        const competenceEvaluation = await this.competenceEvaluation.findOne({
+          relations: {
+            competence: true,
+          },
+          where: {
+            id: element.id,
+          } 
+        })
+
+        if(competenceEvaluation){
+          //se actualiza la evaluacion
+          competenceEvaluation.value_end_year = Number(element.value);
+          competenceEvaluation.comment_end_year = element.comment;
+
+          await this.competenceEvaluation.save(competenceEvaluation);
+        }
+      }
       
       //se crean las preguntas
       for (let index = 0; index < currData.createPerformance.length; index++) {
@@ -2115,6 +2344,7 @@ export class EmployeeObjetiveService {
 
         const question = this.objectiveQuestion.create({
           question: element.type,
+          description: element.description,
           value: Number(element.value),
           comment: element.comment,
           definitionObjectiveAnnual: definitionObjectiveAnnual,
@@ -2138,6 +2368,7 @@ export class EmployeeObjetiveService {
         if(questionEvaluation){
           //se actualiza la evaluacion
           questionEvaluation.value = Number(element.value);
+          questionEvaluation.description = element.description;
           questionEvaluation.comment = element.comment;
 
           await this.objectiveQuestion.save(questionEvaluation);
@@ -2159,4 +2390,6 @@ export class EmployeeObjetiveService {
 
     
   }
+
+
 }

@@ -16,6 +16,7 @@ import { Department } from '../../departments/entities/department.entity';
 import { Employee } from '../../employees/entities/employee.entity';
 import { Competence } from '../../competence/entities/competence.entity';
 import { RequestCourseAssignment } from './request_course_assignment.entity';
+import { CourseEfficiency } from '../../course_efficiency/entities/course_efficiency.entity';
 
 @Entity()
 export class RequestCourse {
@@ -129,5 +130,6 @@ export class RequestCourse {
   @Column({ type: 'text', default: null })
   comment: string;
 
-
+  @OneToMany(() => CourseEfficiency, (post) => post.requestCourse)
+  courseEfficiency: CourseEfficiency[];
 }

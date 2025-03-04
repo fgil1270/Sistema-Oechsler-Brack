@@ -89,4 +89,7 @@ export class EmployeeIncidence {
 
   @Column({ type: 'boolean', default: false })
   approveRHComment: boolean;
+
+  @Column({ type: 'time', nullable: true })
+  hour_approved_leader: Date;
 }

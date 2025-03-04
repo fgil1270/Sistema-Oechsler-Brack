@@ -21,6 +21,7 @@ import { Response } from 'express';
 import { EmployeeObjetiveService } from '../service/employee_objective.service';
 import {
   CreateEmployeeObjectiveDto,
+  UpdateEmployeeObjectiveDto,
   UpdateObjectiveDTO,
   UpdateDncCourseDto,
   UpdateDncCourseManualDto,
@@ -63,6 +64,18 @@ export class EmployeeObjetiveController {
     @CurrentUser() user: any,
   ) {
     return this.employeeObjetiveService.createDefinitionObjectiveAnnual(
+      currData,
+      user,
+    );
+  }
+
+  @ApiOperation({ summary: 'Omitir Evaluacion de medio año'})
+  @Post('skipEvaluationMidYear')
+  async skipEvaluationMidYear(
+    @Body() currData: UpdateEmployeeObjectiveDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.employeeObjetiveService.skipEvaluationMidYear(
       currData,
       user,
     );
@@ -126,7 +139,7 @@ export class EmployeeObjetiveController {
   }
 
   @ApiOperation({
-    summary: 'Obtiene todos los objetivos de un empleado por id de empleado',
+    summary: 'Obtiene todos los objetivos de un empleado por id de empleado y año de asignacion',
   })
   @Get('employee/:idEmployee/:year')
   async findOneByEmployeeAndYear(
