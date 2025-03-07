@@ -327,7 +327,8 @@ export class EmployeeIncidenceService {
           status: isLeader ? 'Autorizada' : 'Pendiente',
           type: createEmployeeIncidenceDto.type,
           createdBy: createdBy.emp,
-          shift: createEmployeeIncidenceDto.shift ? createEmployeeIncidenceDto.shift : null
+          shift: createEmployeeIncidenceDto.shift ? createEmployeeIncidenceDto.shift : null,
+          created_at: dayCreateIncidence
         });
       let to = [];
       let subject = '';
