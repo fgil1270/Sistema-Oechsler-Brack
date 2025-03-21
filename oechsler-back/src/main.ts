@@ -38,6 +38,7 @@ async function bootstrap() {
 
   const server = app.getHttpServer();
   const router = server._events.request._router;
+  console.log('Application is running on: ', await app.getUrl());
   //console.log(expressListRoutes({}, 'API:', router));
 }
 bootstrap();

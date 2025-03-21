@@ -50,7 +50,7 @@ export class EmployeeIncidenceController {
     return true;
   }
 
-  @ApiOperation({ summary: 'Buscar incidencia de empleado' })
+  @ApiOperation({ summary: 'Buscar incidencia por id' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.employeeIncidenceService.findOne(id);

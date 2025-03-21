@@ -28,7 +28,9 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 @ApiTags('Reloj Checador')
 @Controller('checador')
 export class ChecadorController {
-  constructor(private readonly checadorService: ChecadorService) {}
+  constructor(
+    private readonly checadorService: ChecadorService
+  ) {}
 
   @ApiOperation({ summary: 'Crear registro de entrada o salida del empleado' })
   @Post()

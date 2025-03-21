@@ -19,7 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage, memoryStorage } from 'multer';
 
 import { EmployeesService } from '../service/employees.service';
-import { CreateEmployeeDto } from '../dto/create-employee.dto';
+import { CreateEmployeeDto, UpdateEmployeeDto, findEmployeeProduccion } from '../dto/create-employee.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
@@ -90,19 +90,33 @@ export class EmployeesController {
     return this.employeesService.findAll();
   }
 
+  @ApiOperation({ summary: 'Buscar por argumento' })
+  @Get('/findBy')
+  findBy(@Query() query: Partial<CreateEmployeeDto>) {
+    return this.employeesService.findBy(query);
+  }
+
+  @ApiOperation({ summary: 'Buscar por argumento' })
+  @Post('/findEmployeeProduction')
+  findEmployeeProduction(@Body() query: Partial<findEmployeeProduccion>) {
+    return this.employeesService.findEmployeeProduction(query);
+  }
+
+
+
   @ApiOperation({ summary: 'Buscar empleado' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.employeesService.findOne(id);
   }
 
-  
-
   @ApiOperation({ summary: 'Buscar por array de numero de empleados' })
   @Get('/findByEmployeeNumber/:ids')
   findByEmployeeNumber(@Param('ids') ids: any) {
     return this.employeesService.findByEmployeeNumber(ids.split(','));
   }
+
+  
 
   @ApiOperation({ summary: 'Actualizar empleado' })
   @Put(':id')

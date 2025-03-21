@@ -23,6 +23,11 @@ export class CreateJobDto {
   @IsBoolean()
   @ApiProperty({ description: 'Indica si el puesto es visible por plc' })
   plc: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Es visible por produccion' })
+  produccion_visible: boolean;
 }
 
 export class UpdateJobDto extends PartialType(CreateJobDto) {}
