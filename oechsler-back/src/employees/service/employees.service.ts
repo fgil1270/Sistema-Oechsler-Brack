@@ -12,7 +12,7 @@ import { read, utils } from 'xlsx';
 import { format } from 'date-fns';
 import * as moment from 'moment';
 
-import { CreateEmployeeDto } from '../dto/create-employee.dto';
+import { CreateEmployeeDto, UpdateEmployeeDto, findEmployeeProduccion } from '../dto/create-employee.dto';
 import { Employee } from '../entities/employee.entity';
 import { JobsService } from '../../jobs/service/jobs.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
@@ -22,7 +22,7 @@ import { EmployeeProfilesService } from '../../employee-profiles/service/employe
 import { join } from 'path';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
-import { da } from 'date-fns/locale';
+import { da, tr } from 'date-fns/locale';
 import { EmployeeShift } from 'src/employee_shift/entities/employee_shift.entity';
 
 @Injectable()
@@ -668,6 +668,51 @@ export class EmployeesService {
     });
 
     return leaders;
+  }
+
+  //Buscar empleado por algun argumento
+  async findBy(query: Partial<CreateEmployeeDto>) {
+    const emps = await this.employeeRepository.findOne({
+      where: query,
+      relations: [
+        'department',
+        'job',
+        'payRoll',
+        'vacationProfile',
+        'employeeProfile',
+      ],
+      order: {
+        employee_number: 'ASC',
+        //name: 'ASC'
+      },
+    })
+
+    if (!emps) {
+      throw new NotFoundException(`Employee #${query} not found`);
+    }
+    return emps;
+  }
+
+  //Buscar empleados de produccion
+  async findEmployeeProduction(query: Partial<findEmployeeProduccion>) {
+    const queryEmps = await this.employeeRepository.createQueryBuilder('employee')
+    .innerJoinAndSelect('employee.department', 'department')
+    .innerJoinAndSelect('employee.job', 'job')
+    .innerJoinAndSelect('employee.payRoll', 'payRoll')
+    .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+    .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+    .where('employee.employee_number = :employee_number', { employee_number: query.employee_number })
+    .andWhere('job.produccion_visible = :produccion_visible', { produccion_visible: query.produccion_visible })
+    if (query.birthdate) {
+      queryEmps.andWhere('employee.birthdate = :birthdate', { birthdate: new Date(query.birthdate) });
+    }
+    
+    queryEmps.orderBy('employee.employee_number', 'ASC');
+    const [sql, parameters] = queryEmps.getQueryAndParameters();
+
+    const emps = await queryEmps.getOne();
+
+    return emps;
   }
 
   async update(id: number, updateEmployeeDto: CreateEmployeeDto) {

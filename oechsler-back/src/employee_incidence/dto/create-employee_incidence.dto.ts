@@ -83,6 +83,11 @@ export class CreateEmployeeIncidenceDto {
   @IsNumber()
   @ApiProperty({ description: 'Numero del turno(horario) en el que se ejecutara la incidencia ' })
   shift?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Es de produccion' })
+  isProduction?: boolean;
 }
 
 export class UpdateEmployeeIncidenceDto extends PartialType(

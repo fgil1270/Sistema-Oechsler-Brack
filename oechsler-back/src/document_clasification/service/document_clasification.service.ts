@@ -197,7 +197,7 @@ export class DocumentClasificationService {
         }
 
         // Guarda el archivo en la ruta especificada
-        writeFileSync(filepath, archivo.buffer);
+        writeFileSync(filepath, new Uint8Array(archivo.buffer));
         
       }
       return {

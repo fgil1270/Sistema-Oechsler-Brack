@@ -79,14 +79,17 @@ export class EmployeeIncidenceService {
     const employee = await this.employeeService.findMore(
       idsEmployees.split(','),
     );
+    
     const leader = await this.employeeService.findOne(user.idEmployee);
     const startDate = new Date(createEmployeeIncidenceDto.start_date);
     const endDate = new Date(createEmployeeIncidenceDto.end_date);
-    const createdBy = await this.employeeService.findOne(user.idEmployee);
+    //si existe isProduction se obtiene el empleado de la incidencia
+    //y si no, se obtiene del usuario
+    const createdBy = createEmployeeIncidenceDto.isProduction? await this.employeeService.findOne(idsEmployees) : await this.employeeService.findOne(user.idEmployee) ;
     const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
     let totalDays = 0;
 
-
+    //recorre los empleados
     for (let j = 0; j < employee.emps.length; j++) {
       const element = employee.emps[j];
       
@@ -105,6 +108,7 @@ export class EmployeeIncidenceService {
       if (employee.emps[j].id == user.idEmployee) {
         isLeader = false;
       }
+
 
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date + ' 00:00:00');
@@ -435,14 +439,17 @@ export class EmployeeIncidenceService {
           to,
         );
       } else {
+        //si isProduction es falso se envia correo de autorizacion
+        if(!createEmployeeIncidenceDto.isProduction){
+          //ENVIO DE CORREO de autorizacion
+          const mail = await this.mailService.sendEmailAutorizaIncidence(
+            subject,
+            mailData,
+            to,
+            calendar,
+          );
+        }
         
-        //ENVIO DE CORREO de autorizacion
-        const mail = await this.mailService.sendEmailAutorizaIncidence(
-          subject,
-          mailData,
-          to,
-          calendar,
-        );
       }
 
       const employeeIncidence = await this.employeeIncidenceRepository.save(
@@ -588,6 +595,8 @@ export class EmployeeIncidenceService {
             title: incidence.incidenceCatologue.name,
             code: incidence.incidenceCatologue.code,
             codeBand: incidence.incidenceCatologue.code_band,
+            incidenceName: incidence.incidenceCatologue.name,
+            employeeName: incidence.employee.name + ' ' + incidence.employee.paternal_surname + ' ' + incidence.employee.maternal_surname,
             reportNomina: incidence.incidenceCatologue.repor_nomina,
             description: incidence.descripcion,
             total_hour: incidence.total_hour,
@@ -601,45 +610,14 @@ export class EmployeeIncidenceService {
             approve: incidence.leader? incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname : '',
             approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0,
             shift: incidence.employee.employeeShift[0].shift,
-            type: incidence.type
+            type: incidence.type,
+            created_at: incidence.created_at,
           });
         });
       });
     }  
 
-    /* const incidencesEmployee = incidences.map(incidence => {
-      i++;
-      let textColor = '#fff';
-      if(incidence.incidenceCatologue.color == '#faf20f' || incidence.incidenceCatologue.color == '#ffdeec'){
-        textColor = '#000';
-      }
-      let dateLength = incidence.dateEmployeeIncidence.length;
-      let startDate = incidence.dateEmployeeIncidence[0].date;
-      let endDate = incidence.dateEmployeeIncidence[dateLength - 1].date;
-      if(dateLength == 1){
-        endDate = incidence.dateEmployeeIncidence[0].date;
-      }else{
-        endDate = incidence.dateEmployeeIncidence[dateLength - 1].date;
-      }
-       
-      return {
-        id: i,
-        incidenceId: incidence.id,
-        resourceId: incidence.employee.id,
-        title: incidence.incidenceCatologue.name,
-        code: incidence.incidenceCatologue.code,
-        codeBand: incidence.incidenceCatologue.code_band,
-        reportNomina: incidence.incidenceCatologue.repor_nomina,
-        description: incidence.descripcion,
-        total_hour: incidence.total_hour,
-        start: startDate,
-        end: endDate,
-        backgroundColor: incidence.incidenceCatologue.color,
-        unique_day: incidence.incidenceCatologue.unique_day,
-        textColor: textColor,
-        status: incidence.status
-      }
-    }); */
+   
 
     return newIncidences;
   }

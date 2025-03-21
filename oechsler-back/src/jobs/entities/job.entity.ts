@@ -56,4 +56,8 @@ export class Job {
 
   @OneToMany(() => JobDocument, (post) => post.job)
   jobDocument: JobDocument[];
+
+  
+  @Column({ type: 'boolean', default: false })
+  produccion_visible: boolean;
 }
