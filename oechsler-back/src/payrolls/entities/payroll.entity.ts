@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { EnabledCreateIncidence } from 'src/enabled_create_incidence/entities/enabled-create-incidence.entity';
+import { EmployeePayrollHistory } from '../../employees/entities/employee_payroll_history.entity';
 
 @Entity()
 export class Payroll {
@@ -32,4 +33,7 @@ export class Payroll {
 
   @OneToMany(() => EnabledCreateIncidence, (post) => post.payroll)
   enabledCreateIncidence: EnabledCreateIncidence[];
+
+  @OneToMany(() => EmployeePayrollHistory, (post) => post.payroll)
+  employeePayrollHistory: EmployeePayrollHistory[];
 }

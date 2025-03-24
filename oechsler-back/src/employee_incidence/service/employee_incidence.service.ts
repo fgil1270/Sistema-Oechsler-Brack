@@ -109,6 +109,25 @@ export class EmployeeIncidenceService {
         isLeader = false;
       }
 
+      //valida si esta habilitado para crear incidencia
+      //se busca si esta habilitado para crear incidencia por payroll
+      const enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employee.emps[j].payRoll.id);
+      
+      if (enabledCreateIncidence) {
+        if (enabledCreateIncidence.enabled) {
+          //si la fecha de la incidencia es menor o igual a la fecha inabilitada para crear incidencia
+          //no permite crear incidencias
+          if (format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence.date), 'yyyy-MM-dd')) {
+            throw new NotFoundException(
+              `No esta habilitado para crear incidencia en la fecha ${format(
+                new Date(createEmployeeIncidenceDto.start_date),
+                'yyyy-MM-dd',
+              )}, por favor revisa con Recursos Humanos`,
+            );
+          }
+          
+        }
+      }
 
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date + ' 00:00:00');
@@ -129,25 +148,7 @@ export class EmployeeIncidenceService {
           }
         }
 
-        //valida si esta habilitado para crear incidencia
-        //se busca si esta habilitado para crear incidencia por payroll
-        const enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employee.emps[j].payRoll.id);
         
-        if (enabledCreateIncidence) {
-          if (enabledCreateIncidence.enabled) {
-            //si la fecha de la incidencia es menor o igual a la fecha inabilitada para crear incidencia
-            //no permite crear incidencias
-            if (format(index, 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence.date), 'yyyy-MM-dd')) {
-              throw new NotFoundException(
-                `No esta habilitado para crear incidencia en la fecha ${format(
-                  index,
-                  'yyyy-MM-dd',
-                )}`,
-              );
-            }
-            
-          }
-        }
 
         //VERIFICA SI EL DIA ES FERIADO
         const dayHoliday = await this.calendarService.findByDate(
@@ -447,6 +448,14 @@ export class EmployeeIncidenceService {
             mailData,
             to,
             calendar,
+          );
+        }else{
+          //si Produccion es verdadero y el usuario es distinto al de la incidencia
+          //crea la incidencia con status pendiente
+          const mail = await this.mailService.sendEmailCreateIncidence(
+            subject,
+            mailData,
+            to,
           );
         }
         
@@ -1134,6 +1143,8 @@ export class EmployeeIncidenceService {
       const userAutoriza = await this.employeeService.findOne(user.idEmployee);
       let isAdmin = user.roles.some((role) => role.name == 'Admin' || role.name == 'RH');
       let isLeader = user.roles.some((role) => role.name == 'Jefe de Area' || role.name == 'Jefe de Turno' || role.name == 'RH');
+      //buscar si esta habilitada la creacion de incidencias para el payroll
+      let enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employeeIncidence.employee.payRoll.id);
   
       if (!employeeIncidence) {
         
@@ -1165,6 +1176,17 @@ export class EmployeeIncidenceService {
         employeeIncidence.date_aproved_leader = new Date();
         employeeIncidence.hour_approved_leader = new Date();
         employeeIncidence.leader = userAutoriza.emp;
+
+        //validacion si esta inabilitado para crear incidencias y si la fecha de creacion de incidencias es mayor a la fecha inicial de la incidencia
+        //no podra cancelar la incidencia y tendra que solicitarlo a RH
+        if(enabledCreateIncidence.enabled == true ){
+          
+          status.error = true;
+          status.message = 'Dia bloqueado para autorización, favor de contactar a RH';
+          return status;
+          
+        }
+
         //ENVIO DE CORREO
         subject = `${employeeIncidence.incidenceCatologue.name} / ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} / (-)`;
         mailData = {
@@ -1230,7 +1252,7 @@ export class EmployeeIncidenceService {
       }else if (updateEmployeeIncidenceDto.status == 'Rechazada') {
         employeeIncidence.date_canceled = new Date();
         employeeIncidence.canceledBy = userAutoriza.emp;
-        let enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employeeIncidence.employee.payRoll.id);
+        
  
         if(!isAdmin && employeeIncidence.commentCancel != ''){
 
