@@ -15,10 +15,11 @@ import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.m
 import { UsersModule } from '../users/users.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { CalendarModule } from '../calendar/calendar.module';
+import { EmployeeJobHistory } from './entities/employee_job_history.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Employee]),
+    TypeOrmModule.forFeature([Employee, EmployeeJobHistory]),
     JobsModule,
     DepartmentsModule,
     PayrollsModule,

@@ -27,6 +27,7 @@ import { DocumentEmployee } from 'src/document_employee/entities/document_employ
 import { RequestCourse } from '../../request_course/entities/request_course.entity';
 import { EnabledCreateIncidence } from 'src/enabled_create_incidence/entities/enabled-create-incidence.entity';
 import { CourseEfficiency } from '../../course_efficiency/entities/course_efficiency.entity';
+import { EmployeeJobHistory } from './employee_job_history.entity';
 
 @Entity()
 export class Employee {
@@ -229,4 +230,7 @@ export class Employee {
 
   @OneToMany(() => CourseEfficiency, (post) => post.evaluator)
   employeeCourseEfficiencyLeader: CourseEfficiency[];
+
+  @OneToMany(() => EmployeeJobHistory, (post) => post.employee)
+  employeeJobHistory: EmployeeJobHistory[];
 }
