@@ -30,6 +30,7 @@ import { CourseEfficiency } from '../../course_efficiency/entities/course_effici
 import { EmployeeJobHistory } from './employee_job_history.entity';
 import { EmployeeDepartmentHistory } from './employee_department_history.entity';
 import { EmployeePayrollHistory } from './employee_payroll_history.entity';
+import { EmployeeVacationProfileHistory } from './employee_vacation_profile_history.entity';
 
 @Entity()
 export class Employee {
@@ -241,4 +242,7 @@ export class Employee {
 
   @OneToMany(() => EmployeePayrollHistory, (post) => post.employee)
   employeePayrollHistory: EmployeePayrollHistory[];
+
+  @OneToMany(() => EmployeeVacationProfileHistory, (post) => post.employee)
+  employeeVacationProfileHistory: EmployeeVacationProfileHistory[];
 }

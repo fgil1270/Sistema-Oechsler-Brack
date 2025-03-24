@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { VacationsProfileDetail } from './vacations-profile-detail.entity';
+import { EmployeeVacationProfileHistory } from '../../employees/entities/employee_vacation_profile_history.entity';
 
 @Entity()
 export class VacationsProfile {
@@ -47,4 +48,7 @@ export class VacationsProfile {
 
   @OneToMany(() => VacationsProfileDetail, (post) => post.vacationProfile)
   vacationProfileDetail: VacationsProfileDetail[];
+
+  @OneToMany(() => EmployeeVacationProfileHistory, (post) => post.vacationProfile)
+  employeeVacationProfileHistory: EmployeeVacationProfileHistory[];
 }

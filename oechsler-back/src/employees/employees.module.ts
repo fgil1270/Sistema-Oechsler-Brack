@@ -18,6 +18,7 @@ import { CalendarModule } from '../calendar/calendar.module';
 import { EmployeeJobHistory } from './entities/employee_job_history.entity';
 import { EmployeeDepartmentHistory } from './entities/employee_department_history.entity';
 import { EmployeePayrollHistory } from './entities/employee_payroll_history.entity';
+import { EmployeeVacationProfileHistory } from './entities/employee_vacation_profile_history.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { EmployeePayrollHistory } from './entities/employee_payroll_history.enti
       EmployeeJobHistory,
       EmployeeDepartmentHistory,
       EmployeePayrollHistory,
+      EmployeeVacationProfileHistory
     ]),
     JobsModule,
     DepartmentsModule,
