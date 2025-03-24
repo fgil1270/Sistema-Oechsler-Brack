@@ -29,6 +29,7 @@ import { EnabledCreateIncidence } from 'src/enabled_create_incidence/entities/en
 import { CourseEfficiency } from '../../course_efficiency/entities/course_efficiency.entity';
 import { EmployeeJobHistory } from './employee_job_history.entity';
 import { EmployeeDepartmentHistory } from './employee_department_history.entity';
+import { EmployeePayrollHistory } from './employee_payroll_history.entity';
 
 @Entity()
 export class Employee {
@@ -237,4 +238,7 @@ export class Employee {
 
   @OneToMany(() => EmployeeDepartmentHistory, (post) => post.employee)
   employeeDepartmentHistory: EmployeeDepartmentHistory[];
+
+  @OneToMany(() => EmployeePayrollHistory, (post) => post.employee)
+  employeePayrollHistory: EmployeePayrollHistory[];
 }
