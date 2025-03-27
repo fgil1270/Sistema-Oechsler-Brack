@@ -125,7 +125,6 @@ export class EmployeeIncidenceService {
               )}, por favor revisa con Recursos Humanos`,
             );
           }
-          
         }
       }
 
@@ -460,10 +459,32 @@ export class EmployeeIncidenceService {
         }
         
       }
-
+      //crea la incidencia
       const employeeIncidence = await this.employeeIncidenceRepository.save(
         employeeIncidenceCreate,
       );
+
+      //almacena la imagen si existe
+      if (createEmployeeIncidenceDto.image) {
+        const base64Data = createEmployeeIncidenceDto.image.replace(/^data:image\/png;base64,/, '');
+        const path = `./documents/incidencias/${new Date().getFullYear()}/${employeeIncidence.id}`;
+        const filePath = `${path}/${new Date().getFullYear()}${new Date().getMonth()}${new Date().getDate()}${new Date().getHours()}${new Date().getMinutes()}${new Date().getSeconds()}.png`;
+        
+        // Verifica si el directorio existe, si no, lo crea
+        if (!fs.existsSync(path)) {
+          fs.mkdirSync(path, { recursive: true });
+        }
+
+        fs.writeFile(filePath, base64Data, 'base64', (err) => {
+          if (err) {
+            console.error('Error writing file:', err);
+          } else {
+            employeeIncidence.employee_image = filePath;
+            this.employeeIncidenceRepository.save(employeeIncidence);
+          }
+        });
+        
+      }
 
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date);

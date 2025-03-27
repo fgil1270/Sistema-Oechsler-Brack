@@ -88,6 +88,11 @@ export class CreateEmployeeIncidenceDto {
   @IsBoolean()
   @ApiProperty({ description: 'Es de produccion' })
   isProduction?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Imagen del empleado que crea la incidencia' })
+  image?: string;
 }
 
 export class UpdateEmployeeIncidenceDto extends PartialType(
@@ -102,6 +107,7 @@ export class UpdateEmployeeIncidenceDto extends PartialType(
   @IsBoolean()
   @ApiProperty({ description: 'Aprobado por RH' })
   approveRHComment?: boolean;
+
 }
 
 export class ReportEmployeeIncidenceDto {
