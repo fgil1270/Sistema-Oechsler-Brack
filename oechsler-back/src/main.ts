@@ -4,11 +4,15 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { CustomLoggerService } from './logger/logger.service';
 import * as expressListRoutes from 'express-list-endpoints';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new CustomLoggerService(),
   });
+  // Aumentar el límite de tamaño del cuerpo de la solicitud
+  app.use(bodyParser.json({ limit: '50mb' })); // Límite para JSON
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // Límite para datos codificados en URL
   app.enableCors( {
     origin: '*',
     /*methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

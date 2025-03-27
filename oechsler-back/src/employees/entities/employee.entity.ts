@@ -245,4 +245,5 @@ export class Employee {
 
   @OneToMany(() => EmployeeVacationProfileHistory, (post) => post.employee)
   employeeVacationProfileHistory: EmployeeVacationProfileHistory[];
+
 }
