@@ -14,6 +14,11 @@ import * as moment from 'moment';
 
 import { CreateEmployeeDto, UpdateEmployeeDto, findEmployeeProduccion } from '../dto/create-employee.dto';
 import { Employee } from '../entities/employee.entity';
+import { EmployeeJobHistory } from '../entities/employee_job_history.entity';
+import { EmployeeDepartmentHistory } from '../entities/employee_department_history.entity';
+import { EmployeePayrollHistory } from '../entities/employee_payroll_history.entity';
+import { EmployeeVacationProfileHistory } from '../entities/employee_vacation_profile_history.entity';
+import { EmployeeWorkerHistory } from '../entities/employee_worker_history.entity';
 import { JobsService } from '../../jobs/service/jobs.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
 import { PayrollsService } from '../../payrolls/service/payrolls.service';
@@ -29,6 +34,11 @@ import { EmployeeShift } from 'src/employee_shift/entities/employee_shift.entity
 export class EmployeesService {
   constructor(
     @InjectRepository(Employee) private employeeRepository: Repository<Employee>,
+    @InjectRepository(EmployeeJobHistory) private employeeJobHistoryRepository: Repository<EmployeeJobHistory>,
+    @InjectRepository(EmployeeDepartmentHistory) private employeeDepartmentHistoryRepository: Repository<EmployeeDepartmentHistory>,
+    @InjectRepository(EmployeePayrollHistory) private employeePayrollHistoryRepository: Repository<EmployeePayrollHistory>,
+    @InjectRepository(EmployeeVacationProfileHistory) private employeeVacationProfileHistoryRepository: Repository<EmployeeVacationProfileHistory>,
+    @InjectRepository(EmployeeWorkerHistory) private employeeWorkerHistoryRepository: Repository<EmployeeWorkerHistory>,
     private jobsService: JobsService,
     private departmentsService: DepartmentsService,
     private payrollsService: PayrollsService,
@@ -358,6 +368,7 @@ export class EmployeesService {
 
         if (tableEmployee?.id) {
           try {
+
             row.payRoll = tablePayRoll ? tablePayRoll.payroll : {};
             row.department = tableDepartment ? tableDepartment.dept : {};
             row.vacationProfile = tableVacationProfile
@@ -402,8 +413,61 @@ export class EmployeesService {
               work_term_date != undefined ? work_term_date.w.trim() : null;
             row.worker_status = worker_status.w.trim() === 'A' ? true : false;
             this.employeeRepository.update(tableEmployee.id, row);
+
+            //si el puesto es distinto se crea el historial
+            if (tableEmployee.job.id !== tableJob.id) {
+              const empJob = this.employeeJobHistoryRepository.create({
+                employee: tableEmployee,
+                job: tableJob,
+              });
+              await this.employeeJobHistoryRepository.save(empJob);
+            }
+
+            //si el departamento es distinto se crea el historial
+            if (tableEmployee.department.id !== tableDepartment.dept.id) {
+              const empDepartment = this.employeeDepartmentHistoryRepository.create({
+                employee: tableEmployee,
+                department: tableDepartment.dept,
+              });
+              await this.employeeDepartmentHistoryRepository.save(empDepartment);
+            }
+
+            //si la nomina es distinta se crea el historial
+            if (tableEmployee.payRoll.id !== tablePayRoll.payroll.id) {
+              const empPayroll = this.employeePayrollHistoryRepository.create({
+                employee: tableEmployee,
+                payroll: tablePayRoll.payroll,
+              });
+              await this.employeePayrollHistoryRepository.save(empPayroll);
+            }
+
+            //si el perfil de vacaciones es distinto se crea el historial
+            if (
+              tableEmployee.vacationProfile.id !== tableVacationProfile.vacationsProfile.id
+            ) {
+              const empVacationProfile =
+                this.employeeVacationProfileHistoryRepository.create({
+                  employee: tableEmployee,
+                  vacationProfile: tableVacationProfile.vacationsProfile,
+                });
+              await this.employeeVacationProfileHistoryRepository.save(
+                empVacationProfile
+              );
+            }
+
+            //si el tipo de empleado(CONFIANZA, SINDICALIZADO) es distinto se crea el historial
+            if (tableEmployee.worker !== tipeEmployee.w.toUpperCase()) {
+              const empWorker = this.employeeWorkerHistoryRepository.create({
+                employee: tableEmployee,
+                worker: tipeEmployee.w.toUpperCase(),
+              });
+              await this.employeeWorkerHistoryRepository.save(empWorker);
+            }
+
+
             totalEdit++;
           } catch (error) {
+            
             totalError++;
             errors.push({
               id: exNoEmployee.v,
@@ -457,8 +521,60 @@ export class EmployeesService {
               work_term_date != undefined ? work_term_date.w.trim() : null;
             row.worker_status = worker_status.w.trim() === 'A' ? true : false;
             const emp = this.employeeRepository.create(row);
+            //SE CREA EL EMPLEADO
             await this.employeeRepository.save(emp);
             //createAllemployee.push(row);
+
+            //si el puesto es distinto se crea el historial
+            if (tableEmployee.job.id !== tableJob.id) {
+              const empJob = this.employeeJobHistoryRepository.create({
+                employee: tableEmployee,
+                job: tableJob,
+              });
+              await this.employeeJobHistoryRepository.save(empJob);
+            }
+
+            //si el departamento es distinto se crea el historial
+            if (tableEmployee.department.id !== tableDepartment.dept.id) {
+              const empDepartment = this.employeeDepartmentHistoryRepository.create({
+                employee: tableEmployee,
+                department: tableDepartment.dept,
+              });
+              await this.employeeDepartmentHistoryRepository.save(empDepartment);
+            }
+
+            //si la nomina es distinta se crea el historial
+            if (tableEmployee.payRoll.id !== tablePayRoll.payroll.id) {
+              const empPayroll = this.employeePayrollHistoryRepository.create({
+                employee: tableEmployee,
+                payroll: tablePayRoll.payroll,
+              });
+              await this.employeePayrollHistoryRepository.save(empPayroll);
+            }
+
+            //si el perfil de vacaciones es distinto se crea el historial
+            if (
+              tableEmployee.vacationProfile.id !== tableVacationProfile.vacationsProfile.id
+            ) {
+              const empVacationProfile =
+                this.employeeVacationProfileHistoryRepository.create({
+                  employee: tableEmployee,
+                  vacationProfile: tableVacationProfile.vacationsProfile,
+                });
+              await this.employeeVacationProfileHistoryRepository.save(
+                empVacationProfile
+              );
+            }
+
+            //si el tipo de empleado(CONFIANZA, SINDICALIZADO) es distinto se crea el historial
+            if (tableEmployee.worker !== tipeEmployee.w.toUpperCase()) {
+              const empWorker = this.employeeWorkerHistoryRepository.create({
+                employee: tableEmployee,
+                worker: tipeEmployee.w.toUpperCase(),
+              });
+              await this.employeeWorkerHistoryRepository.save(empWorker);
+            }
+
             totalNew++;
           } catch (error) {
             totalError++;
