@@ -158,7 +158,7 @@ export class MailService {
 
     // Eliminar el archivo después de enviar el email
     try {
-      await fs.unlinkSync(newpath);
+      await fs.promises.unlink(newpath);
     } catch (error) {
       resp.error = true;
       (resp.msg = error.message || 'Error al eliminar el archivo:'), error;

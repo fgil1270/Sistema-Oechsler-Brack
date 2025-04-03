@@ -509,7 +509,7 @@ export class EmployeeShiftService {
     });
 
     if (!employeeShifts) {
-      throw new NotFoundException(`EmployeeShifts not found`);
+      throw new NotFoundException(`No tiene turno asignado`);
     }
 
     return { total, employeeShifts };
@@ -660,7 +660,7 @@ export class EmployeeShiftService {
     });
 
     if (!employeeShifts) {
-      throw new NotFoundException(`Employee Shifts not found`);
+      throw new NotFoundException(`No tiene turno asignado para el dia seleccionado`);
     }
 
     return employeeShifts;

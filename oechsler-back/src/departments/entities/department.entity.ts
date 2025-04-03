@@ -10,6 +10,7 @@ import {
 import { TrainingBudget } from './training-budget.entity';
 import { Employee } from '../../employees/entities/employee.entity';
 import { RequestCourse } from '../../request_course/entities/request_course.entity';
+import { EmployeeDepartmentHistory } from '../../employees/entities/employee_department_history.entity';
 
 @Entity()
 export class Department {
@@ -42,4 +43,7 @@ export class Department {
 
   @OneToMany(() => RequestCourse, (post) => post.department)
   requestDepartment: RequestCourse[];
+
+  @OneToMany(() => EmployeeDepartmentHistory, (post) => post.department)
+  employeeDepartmentHistory: EmployeeDepartmentHistory[];
 }

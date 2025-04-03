@@ -12,8 +12,13 @@ import { read, utils } from 'xlsx';
 import { format } from 'date-fns';
 import * as moment from 'moment';
 
-import { CreateEmployeeDto } from '../dto/create-employee.dto';
+import { CreateEmployeeDto, UpdateEmployeeDto, findEmployeeProduccion } from '../dto/create-employee.dto';
 import { Employee } from '../entities/employee.entity';
+import { EmployeeJobHistory } from '../entities/employee_job_history.entity';
+import { EmployeeDepartmentHistory } from '../entities/employee_department_history.entity';
+import { EmployeePayrollHistory } from '../entities/employee_payroll_history.entity';
+import { EmployeeVacationProfileHistory } from '../entities/employee_vacation_profile_history.entity';
+import { EmployeeWorkerHistory } from '../entities/employee_worker_history.entity';
 import { JobsService } from '../../jobs/service/jobs.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
 import { PayrollsService } from '../../payrolls/service/payrolls.service';
@@ -22,13 +27,18 @@ import { EmployeeProfilesService } from '../../employee-profiles/service/employe
 import { join } from 'path';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
-import { da } from 'date-fns/locale';
+import { da, tr } from 'date-fns/locale';
 import { EmployeeShift } from 'src/employee_shift/entities/employee_shift.entity';
 
 @Injectable()
 export class EmployeesService {
   constructor(
     @InjectRepository(Employee) private employeeRepository: Repository<Employee>,
+    @InjectRepository(EmployeeJobHistory) private employeeJobHistoryRepository: Repository<EmployeeJobHistory>,
+    @InjectRepository(EmployeeDepartmentHistory) private employeeDepartmentHistoryRepository: Repository<EmployeeDepartmentHistory>,
+    @InjectRepository(EmployeePayrollHistory) private employeePayrollHistoryRepository: Repository<EmployeePayrollHistory>,
+    @InjectRepository(EmployeeVacationProfileHistory) private employeeVacationProfileHistoryRepository: Repository<EmployeeVacationProfileHistory>,
+    @InjectRepository(EmployeeWorkerHistory) private employeeWorkerHistoryRepository: Repository<EmployeeWorkerHistory>,
     private jobsService: JobsService,
     private departmentsService: DepartmentsService,
     private payrollsService: PayrollsService,
@@ -358,6 +368,7 @@ export class EmployeesService {
 
         if (tableEmployee?.id) {
           try {
+
             row.payRoll = tablePayRoll ? tablePayRoll.payroll : {};
             row.department = tableDepartment ? tableDepartment.dept : {};
             row.vacationProfile = tableVacationProfile
@@ -401,9 +412,63 @@ export class EmployeesService {
             row.work_term_date =
               work_term_date != undefined ? work_term_date.w.trim() : null;
             row.worker_status = worker_status.w.trim() === 'A' ? true : false;
+
+            //si el puesto es distinto se crea el historial
+            if (tableEmployee.job.id !== tableJob.id) {
+              const empJob = this.employeeJobHistoryRepository.create({
+                employee: tableEmployee,
+                job: tableEmployee.job,
+              });
+              await this.employeeJobHistoryRepository.save(empJob);
+            }
+
+            //si el departamento es distinto se crea el historial
+            if (tableEmployee.department.id !== tableDepartment.dept.id) {
+              const empDepartment = this.employeeDepartmentHistoryRepository.create({
+                employee: tableEmployee,
+                department: tableEmployee.department,
+              });
+              await this.employeeDepartmentHistoryRepository.save(empDepartment);
+            }
+
+            //si la nomina es distinta se crea el historial
+            if (tableEmployee.payRoll.id !== tablePayRoll.payroll.id) {
+              const empPayroll = this.employeePayrollHistoryRepository.create({
+                employee: tableEmployee,
+                payroll: tableEmployee.payRoll,
+              });
+              await this.employeePayrollHistoryRepository.save(empPayroll);
+            }
+
+            //si el perfil de vacaciones es distinto se crea el historial
+            if (
+              tableEmployee.vacationProfile.id !== tableVacationProfile.vacationsProfile.id
+            ) {
+              const empVacationProfile =
+                this.employeeVacationProfileHistoryRepository.create({
+                  employee: tableEmployee,
+                  vacationProfile: tableEmployee.vacationProfile,
+                });
+              await this.employeeVacationProfileHistoryRepository.save(
+                empVacationProfile
+              );
+            }
+
+            //si el tipo de empleado(CONFIANZA, SINDICALIZADO) es distinto se crea el historial
+            if (tableEmployee.worker !== tipeEmployee.w.toUpperCase()) {
+              const empWorker = this.employeeWorkerHistoryRepository.create({
+                employee: tableEmployee,
+                worker: tableEmployee.worker,
+              });
+              await this.employeeWorkerHistoryRepository.save(empWorker);
+            }
+
+            //se actualiza el empleado
             this.employeeRepository.update(tableEmployee.id, row);
+
             totalEdit++;
           } catch (error) {
+            
             totalError++;
             errors.push({
               id: exNoEmployee.v,
@@ -457,8 +522,13 @@ export class EmployeesService {
               work_term_date != undefined ? work_term_date.w.trim() : null;
             row.worker_status = worker_status.w.trim() === 'A' ? true : false;
             const emp = this.employeeRepository.create(row);
+
+            //SE CREA EL EMPLEADO
             await this.employeeRepository.save(emp);
             //createAllemployee.push(row);
+
+            
+
             totalNew++;
           } catch (error) {
             totalError++;
@@ -670,6 +740,51 @@ export class EmployeesService {
     return leaders;
   }
 
+  //Buscar empleado por algun argumento
+  async findBy(query: Partial<CreateEmployeeDto>) {
+    const emps = await this.employeeRepository.findOne({
+      where: query,
+      relations: [
+        'department',
+        'job',
+        'payRoll',
+        'vacationProfile',
+        'employeeProfile',
+      ],
+      order: {
+        employee_number: 'ASC',
+        //name: 'ASC'
+      },
+    })
+
+    if (!emps) {
+      throw new NotFoundException(`Employee #${query} not found`);
+    }
+    return emps;
+  }
+
+  //Buscar empleados de produccion
+  async findEmployeeProduction(query: Partial<findEmployeeProduccion>) {
+    const queryEmps = await this.employeeRepository.createQueryBuilder('employee')
+    .innerJoinAndSelect('employee.department', 'department')
+    .innerJoinAndSelect('employee.job', 'job')
+    .innerJoinAndSelect('employee.payRoll', 'payRoll')
+    .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+    .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+    .where('employee.employee_number = :employee_number', { employee_number: query.employee_number })
+    .andWhere('job.produccion_visible = :produccion_visible', { produccion_visible: query.produccion_visible })
+    if (query.birthdate) {
+      queryEmps.andWhere('employee.birthdate = :birthdate', { birthdate: new Date(query.birthdate) });
+    }
+    
+    queryEmps.orderBy('employee.employee_number', 'ASC');
+    const [sql, parameters] = queryEmps.getQueryAndParameters();
+
+    const emps = await queryEmps.getOne();
+
+    return emps;
+  }
+
   async update(id: number, updateEmployeeDto: CreateEmployeeDto) {
     const emp = await this.employeeRepository.findOneBy({ id });
     if (!emp?.id) {
@@ -724,8 +839,19 @@ export class EmployeesService {
       const anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
 
       //se obtiene el perfil del empleado
-      
       const vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
+
+      //se obtiene el ultimo cambio de perfil de vacaciones
+      const lastVacationProfile = await this.employeeVacationProfileHistoryRepository.findOne({
+        where: {
+          employee: {
+            id: emp.id
+          },
+        },
+        order: {
+          created_at: 'DESC',
+        },
+      });
 
       let dayUsedAllYears = 0;
       //se obtiene el ajuste de vacaciones

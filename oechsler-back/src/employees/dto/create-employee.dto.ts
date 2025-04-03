@@ -1,5 +1,7 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { UpdateJobDto } from '../../jobs/dto/create-job.dto';
 
 export class CreateEmployeeDto {
   @IsNotEmpty()
@@ -169,6 +171,27 @@ export class CreateEmployeeDto {
   @IsBoolean()
   @ApiProperty({ description: 'Estado del trabajador (Activo o Inactivo)' })
   worker_status: boolean;
+
 }
 
-export class UpdateEmployeeDto extends PartialType(CreateEmployeeDto) {}
+export class UpdateEmployeeDto extends PartialType(CreateEmployeeDto) {
+  
+}
+
+export class findEmployeeProduccion {
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({ description: 'Numero de Empleado' })
+  employee_number: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Visible por produccion' })
+  produccion_visible
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Fecha de nacimiento' })
+  birthdate: string;
+  
+}

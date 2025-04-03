@@ -15,10 +15,22 @@ import { EmployeeProfilesModule } from '../employee-profiles/employee-profiles.m
 import { UsersModule } from '../users/users.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { CalendarModule } from '../calendar/calendar.module';
+import { EmployeeJobHistory } from './entities/employee_job_history.entity';
+import { EmployeeDepartmentHistory } from './entities/employee_department_history.entity';
+import { EmployeePayrollHistory } from './entities/employee_payroll_history.entity';
+import { EmployeeVacationProfileHistory } from './entities/employee_vacation_profile_history.entity';
+import { EmployeeWorkerHistory } from './entities/employee_worker_history.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Employee]),
+    TypeOrmModule.forFeature([
+      Employee,
+      EmployeeJobHistory,
+      EmployeeDepartmentHistory,
+      EmployeePayrollHistory,
+      EmployeeVacationProfileHistory,
+      EmployeeWorkerHistory,
+    ]),
     JobsModule,
     DepartmentsModule,
     PayrollsModule,

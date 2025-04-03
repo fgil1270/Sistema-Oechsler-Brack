@@ -13,6 +13,7 @@ import {
 import { Employee } from '../../employees/entities/employee.entity';
 import { Competence } from '../../competence/entities/competence.entity';
 import { JobDocument } from '../../job_document/entities/job-document.entity';
+import { EmployeeJobHistory } from '../../employees/entities/employee_job_history.entity';
 
 @Entity()
 export class Job {
@@ -56,4 +57,10 @@ export class Job {
 
   @OneToMany(() => JobDocument, (post) => post.job)
   jobDocument: JobDocument[];
+
+  @Column({ type: 'boolean', default: false })
+  produccion_visible: boolean;
+
+  @OneToMany(() => EmployeeJobHistory, (post) => post.job)
+  employeeJobHistory: EmployeeJobHistory[];
 }

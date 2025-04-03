@@ -50,7 +50,7 @@ export class EmployeeIncidenceController {
     return true;
   }
 
-  @ApiOperation({ summary: 'Buscar incidencia de empleado' })
+  @ApiOperation({ summary: 'Buscar incidencia por id' })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.employeeIncidenceService.findOne(id);
@@ -61,10 +61,14 @@ export class EmployeeIncidenceController {
   findIncidencesByStatusDouble(
     @Param('status') status: string,
     @Param('approval') approvalDouble: boolean,
+    @Query() data: ReportEmployeeIncidenceDto,
+    @CurrentUser() user: any,
   ) {
     return this.employeeIncidenceService.findIncidencesByStatusDouble(
+      data,
       status,
       approvalDouble,
+      user
     );
   }
 

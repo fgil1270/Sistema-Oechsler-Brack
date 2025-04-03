@@ -369,7 +369,7 @@ export class EmployeeObjetiveService {
         ],
       };
 
-      doc.table(table1, {
+      await doc.table(table1, {
         x: 40,
         width: 550,
         divider: {
@@ -437,7 +437,7 @@ export class EmployeeObjetiveService {
         ],
       };
 
-      doc.table(table2, {
+      await doc.table(table2, {
         x: 40,
         width: 550,
         divider: {
@@ -479,7 +479,7 @@ export class EmployeeObjetiveService {
         rows: arrayObjective,
       };
 
-      doc.table(table3, {
+      await doc.table(table3, {
         x: 40,
         width: 550,
         divider: {
@@ -491,9 +491,9 @@ export class EmployeeObjetiveService {
       });
 
       if (doc.y > 650) {
-        doc.addPage();
+        await doc.addPage();
       } else {
-        doc.moveDown();
+        await doc.moveDown();
       }
 
       //tabla de desempeño personal
@@ -525,9 +525,9 @@ export class EmployeeObjetiveService {
       };
 
       if (doc.y > 650) {
-        doc.addPage();
+        await doc.addPage();
       } else {
-        doc.moveDown();
+        await doc.moveDown();
       }
 
       await doc.table(table4, {
@@ -542,9 +542,9 @@ export class EmployeeObjetiveService {
       });
 
       if (doc.y > 630) {
-        doc.addPage();
+        await doc.addPage();
       } else {
-        doc.moveDown();
+        await doc.moveDown();
       }
 
       //Competencias
@@ -583,9 +583,9 @@ export class EmployeeObjetiveService {
       });
 
       if (doc.y > 630) {
-        doc.addPage();
+        await doc.addPage();
       } else {
-        doc.moveDown();
+        await doc.moveDown();
       }
 
       //evaluacion empleado
@@ -609,9 +609,9 @@ export class EmployeeObjetiveService {
       };
       
       if (doc.y > 630) {
-        doc.addPage();
+        await doc.addPage();
       } else {
-        doc.moveDown();
+        await doc.moveDown();
       }
 
       await doc.table(table6, {
@@ -647,13 +647,13 @@ export class EmployeeObjetiveService {
         ],
       };
 
-      if (doc.y > 650) {
-        doc.addPage();
+      if (doc.y > 630) {
+        await doc.addPage();
       } else {
-        doc.moveDown();
+        await doc.moveDown();
       }
 
-      doc.table(table7, {
+      await doc.table(table7, {
         x: 40,
         width: 550,
         divider: {
@@ -664,10 +664,10 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if (doc.y > 650) {
-        doc.addPage();
+      if (doc.y > 630) {
+        await doc.addPage();
       } else {
-        doc.moveDown();
+        await doc.moveDown();
       }
 
       //resumen
@@ -702,7 +702,7 @@ export class EmployeeObjetiveService {
         ],
       };
 
-      doc.table(table8, {
+      await doc.table(table8, {
         x: 40,
         width: 550,
         divider: {
@@ -712,6 +712,12 @@ export class EmployeeObjetiveService {
           },
         },
       });
+
+      if (doc.y > 630) {
+        await doc.addPage();
+      } else {
+        await doc.moveDown();
+      }
 
       // see the range of buffered pages
       const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }
@@ -1377,7 +1383,7 @@ export class EmployeeObjetiveService {
       ],
     };
 
-    doc.table(table1, {
+    await doc.table(table1, {
       x: 40,
       width: 550,
       divider: {
@@ -1445,7 +1451,7 @@ export class EmployeeObjetiveService {
       ],
     };
 
-    doc.table(table2, {
+    await doc.table(table2, {
       x: 40,
       width: 550,
       divider: {
@@ -1487,7 +1493,7 @@ export class EmployeeObjetiveService {
       rows: arrayObjective,
     };
 
-    doc.table(table3, {
+    await doc.table(table3, {
       x: 40,
       width: 550,
       divider: {
@@ -1498,10 +1504,10 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 650) {
-      doc.addPage();
+    if (doc.y > 630) {
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
     //tabla de desempeño personal
@@ -1533,9 +1539,9 @@ export class EmployeeObjetiveService {
     };
 
     if (doc.y > 650) {
-      doc.addPage();
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
     await doc.table(table4, {
@@ -1550,9 +1556,9 @@ export class EmployeeObjetiveService {
     });
 
     if (doc.y > 630) {
-      doc.addPage();
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
     //Competencias
@@ -1591,9 +1597,9 @@ export class EmployeeObjetiveService {
     });
 
     if (doc.y > 630) {
-      doc.addPage();
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
     //evaluacion empleado
@@ -1617,9 +1623,9 @@ export class EmployeeObjetiveService {
     };
     
     if (doc.y > 630) {
-      doc.addPage();
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
     await doc.table(table6, {
@@ -1634,9 +1640,9 @@ export class EmployeeObjetiveService {
     });
 
     if (doc.y > 630) {
-      doc.addPage();
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
     //evaluacion jefe directo
@@ -1655,13 +1661,13 @@ export class EmployeeObjetiveService {
       ],
     };
 
-    if (doc.y > 650) {
-      doc.addPage();
+    if (doc.y > 630) {
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
-    doc.table(table7, {
+    await doc.table(table7, {
       x: 40,
       width: 550,
       divider: {
@@ -1672,10 +1678,10 @@ export class EmployeeObjetiveService {
       },
     });
 
-    if (doc.y > 650) {
-      doc.addPage();
+    if (doc.y > 630) {
+      await doc.addPage();
     } else {
-      doc.moveDown();
+      await doc.moveDown();
     }
 
     //resumen
@@ -1710,7 +1716,13 @@ export class EmployeeObjetiveService {
       ],
     };
 
-    doc.table(table8, {
+    if (doc.y > 630) {
+      await doc.addPage();
+    } else {
+      await doc.moveDown();
+    }
+
+    await doc.table(table8, {
       x: 40,
       width: 550,
       divider: {
@@ -1720,6 +1732,12 @@ export class EmployeeObjetiveService {
         },
       },
     });
+
+    if (doc.y > 630) {
+      await doc.addPage();
+    } else {
+      await doc.moveDown();
+    }
 
     // see the range of buffered pages
     const range = doc.bufferedPageRange(); // => { start: 0, count: 2 }

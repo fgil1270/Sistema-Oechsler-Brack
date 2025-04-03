@@ -79,14 +79,17 @@ export class EmployeeIncidenceService {
     const employee = await this.employeeService.findMore(
       idsEmployees.split(','),
     );
+    
     const leader = await this.employeeService.findOne(user.idEmployee);
     const startDate = new Date(createEmployeeIncidenceDto.start_date);
     const endDate = new Date(createEmployeeIncidenceDto.end_date);
-    const createdBy = await this.employeeService.findOne(user.idEmployee);
+    //si existe isProduction se obtiene el empleado de la incidencia
+    //y si no, se obtiene del usuario
+    const createdBy = createEmployeeIncidenceDto.isProduction? await this.employeeService.findOne(idsEmployees) : await this.employeeService.findOne(user.idEmployee) ;
     const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
     let totalDays = 0;
 
-
+    //recorre los empleados
     for (let j = 0; j < employee.emps.length; j++) {
       const element = employee.emps[j];
       
@@ -104,6 +107,25 @@ export class EmployeeIncidenceService {
 
       if (employee.emps[j].id == user.idEmployee) {
         isLeader = false;
+      }
+
+      //valida si esta habilitado para crear incidencia
+      //se busca si esta habilitado para crear incidencia por payroll
+      const enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employee.emps[j].payRoll.id);
+      
+      if (enabledCreateIncidence) {
+        if (enabledCreateIncidence.enabled) {
+          //si la fecha de la incidencia es menor o igual a la fecha inabilitada para crear incidencia
+          //no permite crear incidencias
+          if (format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence.date), 'yyyy-MM-dd')) {
+            throw new NotFoundException(
+              `No esta habilitado para crear incidencia en la fecha ${format(
+                new Date(createEmployeeIncidenceDto.start_date),
+                'yyyy-MM-dd',
+              )}, por favor revisa con Recursos Humanos`,
+            );
+          }
+        }
       }
 
       for (
@@ -125,25 +147,7 @@ export class EmployeeIncidenceService {
           }
         }
 
-        //valida si esta habilitado para crear incidencia
-        //se busca si esta habilitado para crear incidencia por payroll
-        const enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employee.emps[j].payRoll.id);
         
-        if (enabledCreateIncidence) {
-          if (enabledCreateIncidence.enabled) {
-            //si la fecha de la incidencia es menor o igual a la fecha inabilitada para crear incidencia
-            //no permite crear incidencias
-            if (format(index, 'yyyy-MM-dd') <= format(new Date(enabledCreateIncidence.date), 'yyyy-MM-dd')) {
-              throw new NotFoundException(
-                `No esta habilitado para crear incidencia en la fecha ${format(
-                  index,
-                  'yyyy-MM-dd',
-                )}`,
-              );
-            }
-            
-          }
-        }
 
         //VERIFICA SI EL DIA ES FERIADO
         const dayHoliday = await this.calendarService.findByDate(
@@ -327,7 +331,8 @@ export class EmployeeIncidenceService {
           status: isLeader ? 'Autorizada' : 'Pendiente',
           type: createEmployeeIncidenceDto.type,
           createdBy: createdBy.emp,
-          shift: createEmployeeIncidenceDto.shift ? createEmployeeIncidenceDto.shift : null
+          shift: createEmployeeIncidenceDto.shift ? createEmployeeIncidenceDto.shift : null,
+          created_at: dayCreateIncidence
         });
       let to = [];
       let subject = '';
@@ -434,19 +439,52 @@ export class EmployeeIncidenceService {
           to,
         );
       } else {
+        //si isProduction es falso se envia correo de autorizacion
+        if(!createEmployeeIncidenceDto.isProduction){
+          //ENVIO DE CORREO de autorizacion
+          const mail = await this.mailService.sendEmailAutorizaIncidence(
+            subject,
+            mailData,
+            to,
+            calendar,
+          );
+        }else{
+          //si Produccion es verdadero y el usuario es distinto al de la incidencia
+          //crea la incidencia con status pendiente
+          const mail = await this.mailService.sendEmailCreateIncidence(
+            subject,
+            mailData,
+            to,
+          );
+        }
         
-        //ENVIO DE CORREO de autorizacion
-        const mail = await this.mailService.sendEmailAutorizaIncidence(
-          subject,
-          mailData,
-          to,
-          calendar,
-        );
       }
-
+      //crea la incidencia
       const employeeIncidence = await this.employeeIncidenceRepository.save(
         employeeIncidenceCreate,
       );
+
+      //almacena la imagen si existe
+      if (createEmployeeIncidenceDto.image) {
+        const base64Data = createEmployeeIncidenceDto.image.replace(/^data:image\/png;base64,/, '');
+        const path = `./documents/incidencias/${new Date().getFullYear()}/${employeeIncidence.id}`;
+        const filePath = `${path}/${new Date().getFullYear()}${new Date().getMonth()}${new Date().getDate()}${new Date().getHours()}${new Date().getMinutes()}${new Date().getSeconds()}.png`;
+        
+        // Verifica si el directorio existe, si no, lo crea
+        if (!fs.existsSync(path)) {
+          fs.mkdirSync(path, { recursive: true });
+        }
+
+        fs.writeFile(filePath, base64Data, 'base64', (err) => {
+          if (err) {
+            console.error('Error writing file:', err);
+          } else {
+            employeeIncidence.employee_image = filePath;
+            this.employeeIncidenceRepository.save(employeeIncidence);
+          }
+        });
+        
+      }
 
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date);
@@ -587,6 +625,8 @@ export class EmployeeIncidenceService {
             title: incidence.incidenceCatologue.name,
             code: incidence.incidenceCatologue.code,
             codeBand: incidence.incidenceCatologue.code_band,
+            incidenceName: incidence.incidenceCatologue.name,
+            employeeName: incidence.employee.name + ' ' + incidence.employee.paternal_surname + ' ' + incidence.employee.maternal_surname,
             reportNomina: incidence.incidenceCatologue.repor_nomina,
             description: incidence.descripcion,
             total_hour: incidence.total_hour,
@@ -600,45 +640,14 @@ export class EmployeeIncidenceService {
             approve: incidence.leader? incidence.leader.name +' '+incidence.leader.paternal_surname +' '+incidence.leader.maternal_surname : '',
             approveEmployeeNumber: incidence.leader? incidence.leader.employee_number : 0,
             shift: incidence.employee.employeeShift[0].shift,
-            type: incidence.type
+            type: incidence.type,
+            created_at: incidence.created_at,
           });
         });
       });
     }  
 
-    /* const incidencesEmployee = incidences.map(incidence => {
-      i++;
-      let textColor = '#fff';
-      if(incidence.incidenceCatologue.color == '#faf20f' || incidence.incidenceCatologue.color == '#ffdeec'){
-        textColor = '#000';
-      }
-      let dateLength = incidence.dateEmployeeIncidence.length;
-      let startDate = incidence.dateEmployeeIncidence[0].date;
-      let endDate = incidence.dateEmployeeIncidence[dateLength - 1].date;
-      if(dateLength == 1){
-        endDate = incidence.dateEmployeeIncidence[0].date;
-      }else{
-        endDate = incidence.dateEmployeeIncidence[dateLength - 1].date;
-      }
-       
-      return {
-        id: i,
-        incidenceId: incidence.id,
-        resourceId: incidence.employee.id,
-        title: incidence.incidenceCatologue.name,
-        code: incidence.incidenceCatologue.code,
-        codeBand: incidence.incidenceCatologue.code_band,
-        reportNomina: incidence.incidenceCatologue.repor_nomina,
-        description: incidence.descripcion,
-        total_hour: incidence.total_hour,
-        start: startDate,
-        end: endDate,
-        backgroundColor: incidence.incidenceCatologue.color,
-        unique_day: incidence.incidenceCatologue.unique_day,
-        textColor: textColor,
-        status: incidence.status
-      }
-    }); */
+   
 
     return newIncidences;
   }
@@ -747,6 +756,7 @@ export class EmployeeIncidenceService {
 
   //buscar por estatus
   async findIncidencesByStatus(data: ReportEmployeeIncidenceDto, user: any) {
+    
     let whereQuery: any;
     const idsEmployees: any = [];
     //se obtienen los empleados por organigrama
@@ -852,55 +862,50 @@ export class EmployeeIncidenceService {
   }
 
   //buscar incidencias doubles
-  async findIncidencesByStatusDouble(status: string, approvalDouble: boolean) {
+  async findIncidencesByStatusDouble(data: ReportEmployeeIncidenceDto, status: string, approvalDouble: boolean, user: any) {
     let whereQuery: any;
-    if (status == 'Todas') {
-      whereQuery = [
-        {
-          status: 'Pendiente',
-          incidenceCatologue: {
-            approval_double: true,
-          },
-        },
-        {
-          status: 'Autorizada',
-          incidenceCatologue: {
-            approval_double: true,
-          },
-        },
-        {
-          status: 'Rechazada',
-          incidenceCatologue: {
-            approval_double: true,
-          },
-        },
-      ];
-    } else {
-      whereQuery = {
-        status: status,
-        incidenceCatologue: {
-          approval_double: true,
-        },
-      };
+    const idsEmployees: any = [];
+    //se obtienen los empleados por organigrama
+    const organigrama = await this.organigramaService.findJerarquia(
+      {
+        type: data.type,
+      },
+      user
+    );
+    
+    for (let index = 0; index < organigrama.length; index++) {
+      const element = organigrama[index];
+      
+      idsEmployees.push(element.id);
     }
 
-    const incidences = await this.employeeIncidenceRepository.find({
-      relations: {
-        employee: true,
-        incidenceCatologue: true,
-        dateEmployeeIncidence: true,
-        leader: true,
-        createdBy: true,
-        rh: true,
-      },
-      where: whereQuery,
-    });
+    // Construir la consulta con `createQueryBuilder`
+  const queryBuilder = this.employeeIncidenceRepository.createQueryBuilder('employeeIncidence')
+  .innerJoinAndSelect('employeeIncidence.employee', 'employee')
+  .innerJoinAndSelect('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+  .leftJoinAndSelect('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+  .leftJoinAndSelect('employeeIncidence.leader', 'leader')
+  .leftJoinAndSelect('employeeIncidence.createdBy', 'createdBy')
+    .leftJoinAndSelect('employeeIncidence.rh', 'rh')
+    .where('employee.id IN (:...ids)', { ids: idsEmployees })
+    .andWhere('incidenceCatologue.approval_double = :approvalDouble', { approvalDouble });
 
-    const total = await this.employeeIncidenceRepository.count({
-      where: whereQuery,
-    });
+    // Agregar condición para el estado
+    if (status !== 'Todas') {
+      queryBuilder.andWhere('employeeIncidence.status = :status', { status });
+    } else {
+      queryBuilder.andWhere('employeeIncidence.status IN (:...statuses)', {
+        statuses: ['Pendiente', 'Autorizada', 'Rechazada'],
+      });
+    }
 
-    if (!incidences) {
+    // Ejecutar la consulta
+    const incidences = await queryBuilder.getMany();
+
+    // Contar el total de incidencias
+    const total = await queryBuilder.getCount();
+
+    if (!incidences || incidences.length === 0) {
       throw new NotFoundException(
         `Incidencias con estatus ${status} no encontradas`,
       );
@@ -1155,6 +1160,8 @@ export class EmployeeIncidenceService {
       const userAutoriza = await this.employeeService.findOne(user.idEmployee);
       let isAdmin = user.roles.some((role) => role.name == 'Admin' || role.name == 'RH');
       let isLeader = user.roles.some((role) => role.name == 'Jefe de Area' || role.name == 'Jefe de Turno' || role.name == 'RH');
+      //buscar si esta habilitada la creacion de incidencias para el payroll
+      let enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employeeIncidence.employee.payRoll.id);
   
       if (!employeeIncidence) {
         
@@ -1186,6 +1193,17 @@ export class EmployeeIncidenceService {
         employeeIncidence.date_aproved_leader = new Date();
         employeeIncidence.hour_approved_leader = new Date();
         employeeIncidence.leader = userAutoriza.emp;
+
+        //validacion si esta inabilitado para crear incidencias y si la fecha de creacion de incidencias es mayor a la fecha inicial de la incidencia
+        //no podra cancelar la incidencia y tendra que solicitarlo a RH
+        if(enabledCreateIncidence.enabled == true ){
+          
+          status.error = true;
+          status.message = 'Dia bloqueado para autorización, favor de contactar a RH';
+          return status;
+          
+        }
+
         //ENVIO DE CORREO
         subject = `${employeeIncidence.incidenceCatologue.name} / ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname} / (-)`;
         mailData = {
@@ -1251,7 +1269,7 @@ export class EmployeeIncidenceService {
       }else if (updateEmployeeIncidenceDto.status == 'Rechazada') {
         employeeIncidence.date_canceled = new Date();
         employeeIncidence.canceledBy = userAutoriza.emp;
-        let enabledCreateIncidence = await this.enabledCreateIncidenceService.findByPayroll(employeeIncidence.employee.payRoll.id);
+        
  
         if(!isAdmin && employeeIncidence.commentCancel != ''){
 

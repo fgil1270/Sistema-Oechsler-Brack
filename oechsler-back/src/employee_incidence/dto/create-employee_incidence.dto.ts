@@ -83,6 +83,16 @@ export class CreateEmployeeIncidenceDto {
   @IsNumber()
   @ApiProperty({ description: 'Numero del turno(horario) en el que se ejecutara la incidencia ' })
   shift?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Es de produccion' })
+  isProduction?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Imagen del empleado que crea la incidencia' })
+  image?: string;
 }
 
 export class UpdateEmployeeIncidenceDto extends PartialType(
@@ -97,6 +107,7 @@ export class UpdateEmployeeIncidenceDto extends PartialType(
   @IsBoolean()
   @ApiProperty({ description: 'Aprobado por RH' })
   approveRHComment?: boolean;
+
 }
 
 export class ReportEmployeeIncidenceDto {

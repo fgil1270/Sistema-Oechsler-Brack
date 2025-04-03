@@ -92,4 +92,7 @@ export class EmployeeIncidence {
 
   @Column({ type: 'time', nullable: true })
   hour_approved_leader: Date;
+
+  @Column({ type: 'text', nullable: true })
+  employee_image: string;
 }
