@@ -412,13 +412,12 @@ export class EmployeesService {
             row.work_term_date =
               work_term_date != undefined ? work_term_date.w.trim() : null;
             row.worker_status = worker_status.w.trim() === 'A' ? true : false;
-            this.employeeRepository.update(tableEmployee.id, row);
 
             //si el puesto es distinto se crea el historial
             if (tableEmployee.job.id !== tableJob.id) {
               const empJob = this.employeeJobHistoryRepository.create({
                 employee: tableEmployee,
-                job: tableJob,
+                job: tableEmployee.job,
               });
               await this.employeeJobHistoryRepository.save(empJob);
             }
@@ -427,7 +426,7 @@ export class EmployeesService {
             if (tableEmployee.department.id !== tableDepartment.dept.id) {
               const empDepartment = this.employeeDepartmentHistoryRepository.create({
                 employee: tableEmployee,
-                department: tableDepartment.dept,
+                department: tableEmployee.department,
               });
               await this.employeeDepartmentHistoryRepository.save(empDepartment);
             }
@@ -436,7 +435,7 @@ export class EmployeesService {
             if (tableEmployee.payRoll.id !== tablePayRoll.payroll.id) {
               const empPayroll = this.employeePayrollHistoryRepository.create({
                 employee: tableEmployee,
-                payroll: tablePayRoll.payroll,
+                payroll: tableEmployee.payRoll,
               });
               await this.employeePayrollHistoryRepository.save(empPayroll);
             }
@@ -448,7 +447,7 @@ export class EmployeesService {
               const empVacationProfile =
                 this.employeeVacationProfileHistoryRepository.create({
                   employee: tableEmployee,
-                  vacationProfile: tableVacationProfile.vacationsProfile,
+                  vacationProfile: tableEmployee.vacationProfile,
                 });
               await this.employeeVacationProfileHistoryRepository.save(
                 empVacationProfile
@@ -459,11 +458,13 @@ export class EmployeesService {
             if (tableEmployee.worker !== tipeEmployee.w.toUpperCase()) {
               const empWorker = this.employeeWorkerHistoryRepository.create({
                 employee: tableEmployee,
-                worker: tipeEmployee.w.toUpperCase(),
+                worker: tableEmployee.worker,
               });
               await this.employeeWorkerHistoryRepository.save(empWorker);
             }
 
+            //se actualiza el empleado
+            this.employeeRepository.update(tableEmployee.id, row);
 
             totalEdit++;
           } catch (error) {
@@ -521,59 +522,12 @@ export class EmployeesService {
               work_term_date != undefined ? work_term_date.w.trim() : null;
             row.worker_status = worker_status.w.trim() === 'A' ? true : false;
             const emp = this.employeeRepository.create(row);
+
             //SE CREA EL EMPLEADO
             await this.employeeRepository.save(emp);
             //createAllemployee.push(row);
 
-            //si el puesto es distinto se crea el historial
-            if (tableEmployee.job.id !== tableJob.id) {
-              const empJob = this.employeeJobHistoryRepository.create({
-                employee: tableEmployee,
-                job: tableJob,
-              });
-              await this.employeeJobHistoryRepository.save(empJob);
-            }
-
-            //si el departamento es distinto se crea el historial
-            if (tableEmployee.department.id !== tableDepartment.dept.id) {
-              const empDepartment = this.employeeDepartmentHistoryRepository.create({
-                employee: tableEmployee,
-                department: tableDepartment.dept,
-              });
-              await this.employeeDepartmentHistoryRepository.save(empDepartment);
-            }
-
-            //si la nomina es distinta se crea el historial
-            if (tableEmployee.payRoll.id !== tablePayRoll.payroll.id) {
-              const empPayroll = this.employeePayrollHistoryRepository.create({
-                employee: tableEmployee,
-                payroll: tablePayRoll.payroll,
-              });
-              await this.employeePayrollHistoryRepository.save(empPayroll);
-            }
-
-            //si el perfil de vacaciones es distinto se crea el historial
-            if (
-              tableEmployee.vacationProfile.id !== tableVacationProfile.vacationsProfile.id
-            ) {
-              const empVacationProfile =
-                this.employeeVacationProfileHistoryRepository.create({
-                  employee: tableEmployee,
-                  vacationProfile: tableVacationProfile.vacationsProfile,
-                });
-              await this.employeeVacationProfileHistoryRepository.save(
-                empVacationProfile
-              );
-            }
-
-            //si el tipo de empleado(CONFIANZA, SINDICALIZADO) es distinto se crea el historial
-            if (tableEmployee.worker !== tipeEmployee.w.toUpperCase()) {
-              const empWorker = this.employeeWorkerHistoryRepository.create({
-                employee: tableEmployee,
-                worker: tipeEmployee.w.toUpperCase(),
-              });
-              await this.employeeWorkerHistoryRepository.save(empWorker);
-            }
+            
 
             totalNew++;
           } catch (error) {
@@ -885,8 +839,19 @@ export class EmployeesService {
       const anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
 
       //se obtiene el perfil del empleado
-      
       const vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
+
+      //se obtiene el ultimo cambio de perfil de vacaciones
+      const lastVacationProfile = await this.employeeVacationProfileHistoryRepository.findOne({
+        where: {
+          employee: {
+            id: emp.id
+          },
+        },
+        order: {
+          created_at: 'DESC',
+        },
+      });
 
       let dayUsedAllYears = 0;
       //se obtiene el ajuste de vacaciones

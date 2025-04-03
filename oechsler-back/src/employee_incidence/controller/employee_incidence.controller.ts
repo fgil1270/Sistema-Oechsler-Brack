@@ -61,10 +61,14 @@ export class EmployeeIncidenceController {
   findIncidencesByStatusDouble(
     @Param('status') status: string,
     @Param('approval') approvalDouble: boolean,
+    @Query() data: ReportEmployeeIncidenceDto,
+    @CurrentUser() user: any,
   ) {
     return this.employeeIncidenceService.findIncidencesByStatusDouble(
+      data,
       status,
       approvalDouble,
+      user
     );
   }
 

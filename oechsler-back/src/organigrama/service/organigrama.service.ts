@@ -392,7 +392,19 @@ export class OrganigramaService {
         idsEmployees.push(employees[index].id);
       }
 
-      const levelTwo = await this.organigramaRepository.find({
+      const levelTwo = await this.organigramaRepository
+      .createQueryBuilder('organigrama')
+      .leftJoinAndSelect('organigrama.employee', 'employee')
+      .leftJoinAndSelect('employee.department', 'department')
+      .leftJoinAndSelect('employee.job', 'job')
+      .leftJoinAndSelect('employee.payRoll', 'payRoll')
+      .leftJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+      .leftJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+      .leftJoinAndSelect('organigrama.leader', 'leader')
+      .where('employee.deleted_at IS NULL')
+      .andWhere('organigrama.leader IN (:...idsEmployees)', { idsEmployees })
+      .getMany();
+      /* await this.organigramaRepository.find({
         relations: {
           employee: {
             department: true,
@@ -409,8 +421,8 @@ export class OrganigramaService {
             deleted_at: IsNull(),
           },
         },
-      });
-
+      }); */
+      
       levelTwo.forEach((element) => {
         employees.push(element.employee);
       });

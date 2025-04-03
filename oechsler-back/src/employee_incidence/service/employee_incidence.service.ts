@@ -756,6 +756,7 @@ export class EmployeeIncidenceService {
 
   //buscar por estatus
   async findIncidencesByStatus(data: ReportEmployeeIncidenceDto, user: any) {
+    
     let whereQuery: any;
     const idsEmployees: any = [];
     //se obtienen los empleados por organigrama
@@ -861,55 +862,50 @@ export class EmployeeIncidenceService {
   }
 
   //buscar incidencias doubles
-  async findIncidencesByStatusDouble(status: string, approvalDouble: boolean) {
+  async findIncidencesByStatusDouble(data: ReportEmployeeIncidenceDto, status: string, approvalDouble: boolean, user: any) {
     let whereQuery: any;
-    if (status == 'Todas') {
-      whereQuery = [
-        {
-          status: 'Pendiente',
-          incidenceCatologue: {
-            approval_double: true,
-          },
-        },
-        {
-          status: 'Autorizada',
-          incidenceCatologue: {
-            approval_double: true,
-          },
-        },
-        {
-          status: 'Rechazada',
-          incidenceCatologue: {
-            approval_double: true,
-          },
-        },
-      ];
-    } else {
-      whereQuery = {
-        status: status,
-        incidenceCatologue: {
-          approval_double: true,
-        },
-      };
+    const idsEmployees: any = [];
+    //se obtienen los empleados por organigrama
+    const organigrama = await this.organigramaService.findJerarquia(
+      {
+        type: data.type,
+      },
+      user
+    );
+    
+    for (let index = 0; index < organigrama.length; index++) {
+      const element = organigrama[index];
+      
+      idsEmployees.push(element.id);
     }
 
-    const incidences = await this.employeeIncidenceRepository.find({
-      relations: {
-        employee: true,
-        incidenceCatologue: true,
-        dateEmployeeIncidence: true,
-        leader: true,
-        createdBy: true,
-        rh: true,
-      },
-      where: whereQuery,
-    });
+    // Construir la consulta con `createQueryBuilder`
+  const queryBuilder = this.employeeIncidenceRepository.createQueryBuilder('employeeIncidence')
+  .innerJoinAndSelect('employeeIncidence.employee', 'employee')
+  .innerJoinAndSelect('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+  .leftJoinAndSelect('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+  .leftJoinAndSelect('employeeIncidence.leader', 'leader')
+  .leftJoinAndSelect('employeeIncidence.createdBy', 'createdBy')
+    .leftJoinAndSelect('employeeIncidence.rh', 'rh')
+    .where('employee.id IN (:...ids)', { ids: idsEmployees })
+    .andWhere('incidenceCatologue.approval_double = :approvalDouble', { approvalDouble });
 
-    const total = await this.employeeIncidenceRepository.count({
-      where: whereQuery,
-    });
+    // Agregar condición para el estado
+    if (status !== 'Todas') {
+      queryBuilder.andWhere('employeeIncidence.status = :status', { status });
+    } else {
+      queryBuilder.andWhere('employeeIncidence.status IN (:...statuses)', {
+        statuses: ['Pendiente', 'Autorizada', 'Rechazada'],
+      });
+    }
 
-    if (!incidences) {
+    // Ejecutar la consulta
+    const incidences = await queryBuilder.getMany();
+
+    // Contar el total de incidencias
+    const total = await queryBuilder.getCount();
+
+    if (!incidences || incidences.length === 0) {
       throw new NotFoundException(
         `Incidencias con estatus ${status} no encontradas`,
       );
