@@ -834,15 +834,33 @@ export class EmployeesService {
       const row = {};
       const ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
       const diaConsulta = moment(new Date(data.startDate)); //dia de consulta del reporte
-      const anoCumplidos = diaConsulta.diff(ingreso, 'years', true); // años cumplidos al dia del reporte
+      let diaCambio: any; //dia de cambio de perfil de vacaciones
+      let anoCumplidoDiaCambio: any; //años cumplidos al dia del cambio de perfil de vacaciones
+      let finAnoCambio: any; //fin de año al dia del cambio de perfil de vacaciones
+      let anoCumplidosFinAnoCambio: any; //años cumplidos a fin de año al dia del cambio de perfil de vacaciones
+      let anoCumplidos: any; // años cumplidos al dia del reporte
       const finAno = moment(new Date(new Date(data.startDate).getFullYear(), 11, 31)); //fin de año
-      const anoCumplidosFinAno = finAno.diff(ingreso, 'years', true); //años cumplidos a fin de año
+      let anoCumplidosFinAno: any; //años cumplidos a fin de año
+      let arrayAno: any; //separar año y dias
+      let arrayAnoHistorial: any; //separar año y dias historial
+      let objDiasByAno: any;
+      let objDiasByAnoHistorial: any;
+      let objDiasBySiguenteAno: any;
+      let totalDiasByAno: any;
+      let sumDiasSiguenteAno: any;
+      let sumaDiasAntiguedad: any;
+      let dayUsedAllYears = 0; //dias usados en todos los años
 
       //se obtiene el perfil del empleado
       const vacationsAno = await this.vacationsProfileService.findOne(emp.vacationProfile.id);
 
       //se obtiene el ultimo cambio de perfil de vacaciones
       const lastVacationProfile = await this.employeeVacationProfileHistoryRepository.findOne({
+        relations: {
+          vacationProfile: {
+            vacationProfileDetail: true
+          }
+        },
         where: {
           employee: {
             id: emp.id
@@ -853,7 +871,7 @@ export class EmployeesService {
         },
       });
 
-      let dayUsedAllYears = 0;
+      
       //se obtiene el ajuste de vacaciones
       const adjustmentVacation = await this.employeeRepository.findOne({
         where: {
@@ -870,15 +888,57 @@ export class EmployeesService {
 
       });
 
-      //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
+      
+      //se obtiene los años cumplidos al dia de consulta
+      anoCumplidos = diaConsulta.diff(ingreso, 'years', true);
+      //se obtiene los años cumplidos a fin de año
+      anoCumplidosFinAno = finAno.diff(ingreso, 'years', true);
 
       //se calculan los dias de vacaciones al dia de la consulta
-      const arrayAno = anoCumplidos.toFixed(2).split('.');
-      const objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
-      const objDiasBysiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
-      const totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
-      const sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBysiguenteAno.day;
-      const sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
+      //se genera array para separar años y dias
+      arrayAno = anoCumplidos.toFixed(2).split('.');
+
+      
+ 
+      //si existe un un historial de vacaciones
+      //se toman los dias de vacaciones del historial
+      if(lastVacationProfile){
+        //se obtiene el dia de cambio de perfil de vacaciones
+        diaCambio = moment(new Date(lastVacationProfile.created_at));
+        //se obtiene los años cumplidos al dia de cambio de perfil de vacaciones
+        anoCumplidoDiaCambio = diaCambio.diff(ingreso, 'years', true);
+        //se genera array para separar años y dias del historial
+        arrayAnoHistorial = anoCumplidoDiaCambio.toFixed(2).split('.');
+
+        //se obtienes los dias que corresponden al año de cambio de perfil de vacaciones
+        objDiasByAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
+        //si el año del cambio de perfil de vacaciones es igual al año de la consulta
+        //
+
+        //se obtiene el total de dias que corresponden al año
+        objDiasByAno = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
+        //se obtiene los dias que corresponden al siguiente año
+        objDiasBySiguenteAno = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
+        //se obtiene el total de dias que corresponden al año
+        totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
+        //se obtiene los dias que corresponden al siguiente año
+        sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
+        sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
+      }else{
+        //si no existe un historial de vacaciones
+        //se toman los dias de vacaciones del perfil actual
+        objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
+        objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
+        totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
+        sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
+        sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
+
+      }
+      objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
+      objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
+      totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
+      sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
+      sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
       //se calculan los dias de vacaciones a fin de año
       const arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
       const objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayFinAno[0]));
@@ -889,46 +949,7 @@ export class EmployeesService {
       let totalDiasVacacionesMedioDia = 0;
       let totalVacacionesPendientes = 0;
 
-      //se obtienen las incidencias de vacaciones
-      /* const incidenciaVacaciones = await this.employeeRepository.findOne({
-        where: {
-          id: emp.id,
-          employeeIncidence: {
-            incidenceCatologue: {
-              code_band: In(['VAC', 'VACA']),
-            },
-            status: In(['Autorizada', 'Pendiente']),
-          },
-        },
-        relations: {
-          employeeIncidence: {
-            incidenceCatologue: true,
-            dateEmployeeIncidence: true,
-          },
-        },
-      }); */
 
-      //se obtinene las incidencias de vacacion medio dia
-      /* const incidenciaVacacionesMedioDia = await this.employeeRepository.count({
-        where: {
-          id: emp.id,
-          employeeIncidence: {
-            incidenceCatologue: {
-              code: In(['VacM']),
-            },
-            status: In(['Autorizada', 'Pendiente']),
-          },
-        },
-        relations: {
-          employeeIncidence: {
-            incidenceCatologue: true,
-            dateEmployeeIncidence: true,
-          },
-        },
-      }); */
-
-      
-      
       //si no existe ajuste
       //se realiza el calculo con las incidencias
       if (!adjustmentVacation) {

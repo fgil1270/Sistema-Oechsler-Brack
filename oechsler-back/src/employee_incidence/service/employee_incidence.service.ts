@@ -1196,7 +1196,7 @@ export class EmployeeIncidenceService {
 
         //validacion si esta inabilitado para crear incidencias y si la fecha de creacion de incidencias es mayor a la fecha inicial de la incidencia
         //no podra cancelar la incidencia y tendra que solicitarlo a RH
-        if(enabledCreateIncidence.enabled == true ){
+        if(enabledCreateIncidence.enabled == true && (enabledCreateIncidence.date > employeeIncidence.dateEmployeeIncidence[0].date)){
           
           status.error = true;
           status.message = 'Dia bloqueado para autorización, favor de contactar a RH';
