@@ -345,6 +345,7 @@ export class ChecadorService {
             if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET') {
               incidenciaTiemExtra = true;
               hrsExtraIncidencias += parseFloat(String(incidenciasNormales[index].total_hour));
+              
             }
 
           
@@ -596,7 +597,9 @@ export class ChecadorService {
                 totalHrsTrabajadas += hourShift;
                 totalMinTrabajados += Number(minShift) % 60;
                 
+                
               }
+              
               //si es turno 1
               if ( employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T1'){
 
@@ -609,6 +612,8 @@ export class ChecadorService {
                   hrEntrada = '18:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
+                }else{
+                  
                 }
               }else if(employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T2'){
                 
@@ -656,7 +661,7 @@ export class ChecadorService {
 
             
           }
-
+          
           //se obtienen los registros del dia
           const registrosChecador = await this.checadorRepository.find({
             where: {
@@ -704,6 +709,8 @@ export class ChecadorService {
             }
           }
 
+          
+
           //se obtiene la diferencia de horas trabajadas
           //de la entra y salida del empleado
           const firstDate = moment(new Date(registrosChecador[0]?.date));
@@ -735,11 +742,11 @@ export class ChecadorService {
           //diffDate >= diffTimeShift 
           if (registrosChecador.length > 0 && employeeShif.events[0]?.nameShift == 'T3' && incidenciasNormales.length <= 0) {
 
-            
+              
               incidenceExtra.push(`${mediaHoraExtra}` + incidenceHrExtra.code_band + '2');
               sumaMediaHrExtra += Number(mediaHoraExtra);
               totalHrsExtra += sumaMediaHrExtra;
-            
+              
             
           }
           
@@ -762,12 +769,13 @@ export class ChecadorService {
           let formatTime = objetHorasMinIncidencia.format('HH:mm');
 
           
+          
           //se valida si calculo de horas extra es mayor a 0 y si existe incidencia de tiempo extra
           if (calculoHrsExtra >= 0 && incidenciaTiemExtra) {
             //se valida si el calculo de horas extra es mayor a las horas extra de las incidencias
             //si las mayor se le ponen las horas de la incidencia
             
-            if (Number(moment().hours(calculoHrsExtra).minutes(calculoMinExtra).format('hh.mm')) > Number(hrsExtraIncidencias)) {
+            if (Number(moment().hours(calculoHrsExtra).minutes(calculoMinExtra).format('HH.mm')) > Number(hrsExtraIncidencias)) {
 
               
               
@@ -782,13 +790,13 @@ export class ChecadorService {
             if (calculoHrsExtra > 3) {
               
               //hrExtraTripe = Number(moment(calculoHrsExtra.toString(),"LT").hours()+'.'+moment(calculoHrsExtra.toString(),"LT").minutes()) - 3;
-              hrExtraTripe = Number(moment().hours(calculoHrsExtra).minutes(calculoMinExtra).format('hh.mm')) - 3;
+              hrExtraTripe = Number(moment().hours(calculoHrsExtra).minutes(calculoMinExtra).format('HH.mm')) - 3;
               hrExtraDoble = 3;
               totalHrsExtra += hrExtraTripe + hrExtraDoble;
               
             } else {
               //hrExtraDoble = Number(moment(calculoHrsExtra.toString(),"LT").hours()+'.'+calculoMinExtra);
-              hrExtraDoble = Number(moment().hours(calculoHrsExtra).minutes(calculoMinExtra).format('hh.mm'));
+              hrExtraDoble = Number(moment().hours(calculoHrsExtra).minutes(calculoMinExtra).format('HH.mm'));
               totalHrsExtra += hrExtraDoble;
             }
 

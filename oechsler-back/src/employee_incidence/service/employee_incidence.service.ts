@@ -1151,11 +1151,13 @@ export class EmployeeIncidenceService {
         relations: {
           employee: {
             payRoll: true,
+            job: true,
           },
           incidenceCatologue: true,
           dateEmployeeIncidence: true,
         },
       });
+      
       
       const userAutoriza = await this.employeeService.findOne(user.idEmployee);
       let isAdmin = user.roles.some((role) => role.name == 'Admin' || role.name == 'RH');
@@ -1188,6 +1190,9 @@ export class EmployeeIncidenceService {
       let mailData: MailData;
   
       const calendar = ical();
+      const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour), 'yyyy-MM-dd'));
+      const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour), 'yyyy-MM-dd'));
+      let dias = diaFin.diff(diaInicio, 'days');
 
       if (updateEmployeeIncidenceDto.status == 'Autorizada') {
         employeeIncidence.date_aproved_leader = new Date();
@@ -1210,17 +1215,15 @@ export class EmployeeIncidenceService {
           employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
           employeeNumber: employeeIncidence.employee.employee_number,
           incidence: employeeIncidence.incidenceCatologue.name,
-          efectivos: 0,
+          efectivos: dias + 1,
           totalHours: employeeIncidence.total_hour,
-          dia: ``,
+          dia: `${format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd')} al ${format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd')}`,
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
         
         calendar.method(ICalCalendarMethod.REQUEST);
         calendar.timezone('America/Mexico_City');
-        const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour), 'yyyy-MM-dd'));
-        const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour), 'yyyy-MM-dd'));
-        let dias = diaFin.diff(diaInicio, 'days');
+        
 
         if(to.length > 0){
           calendar.createEvent({
@@ -1258,12 +1261,26 @@ export class EmployeeIncidenceService {
           // Continuar con el resto del código...
           
           //se envia correo
-          const mail = await this.mailService.sendEmailAutorizaIncidence(
-            subject,
-            mailData,
-            to,
-            calendar,
-          );
+          //si es el campo produccion_visible se envia el correo a produccion
+          //se envia correo solo al empleado
+          if(employeeIncidence.employee.job.produccion_visible){
+            const mail = await this.mailService.sendEmailIncidenceProduction(
+              'Autorizada Incidencia '+ employeeIncidence.incidenceCatologue.name +
+                ` de ${format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd')} al `+
+                `${format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd')}`,
+              mailData,
+              to,
+              'incidencia_production_autorizada',
+            );
+          }else{
+            const mail = await this.mailService.sendEmailAutorizaIncidence(
+              subject,
+              mailData,
+              to,
+              calendar,
+            );
+          }
+          
         }
         
       }else if (updateEmployeeIncidenceDto.status == 'Rechazada') {
@@ -1317,14 +1334,14 @@ export class EmployeeIncidenceService {
         subject = `Incidencia Rechazada: ${employeeIncidence.employee.employee_number} ${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`;
         mailData = {
           employee: `${employeeIncidence.employee.name} ${employeeIncidence.employee.paternal_surname} ${employeeIncidence.employee.maternal_surname}`,
-          employeeNumber: Number(employeeIncidence.employee.employee_number),
+          employeeNumber: employeeIncidence.employee.employee_number,
           incidence: employeeIncidence.incidenceCatologue.name,
-          efectivos: 0,
+          efectivos: dias + 1,
           totalHours: employeeIncidence.total_hour,
-          dia: ``,
+          dia: `${format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd')} al ${format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd')}`,
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
-
+        
         //codigo para cancelar incidencia en outlook
         /* const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
         const jcalData = leerCal.parseICS(icsData);
@@ -1336,14 +1353,26 @@ export class EmployeeIncidenceService {
         
         jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar; */
         
-
         //se envia correo
-        const mail = await this.mailService.sendEmailRechazaIncidence(
-          subject,
-          mailData,
-          to,
-          
-        ); 
+        //si es el campo produccion_visible se envia el correo a produccion
+        //se envia correo solo al empleado
+        if(employeeIncidence.employee.job.produccion_visible){
+          const mail = await this.mailService.sendEmailIncidenceProduction(
+            'Rechazada Incidencia '+ employeeIncidence.incidenceCatologue.name +
+                ` de ${format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd')} al `+
+                `${format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd')}`,
+            mailData,
+            to,
+            'incidencia_production_rechazada',
+          );
+        }else{
+          const mail = await this.mailService.sendEmailRechazaIncidence(
+            subject,
+            mailData,
+            to,
+          );
+        }
+        
       }
       
       

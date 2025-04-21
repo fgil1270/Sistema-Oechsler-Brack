@@ -333,6 +333,9 @@ export class EmployeeObjetiveService {
       let end;
       const arrayObjective = [];
       let totalObjective = 0;
+      let arrayDnc = [];
+      let arrayPerformance = [];
+      let totalPercentagePerformance = 0;
 
       //image
       const logoImg = path.resolve(__dirname, '../../../assets/imgs/logo.png');
@@ -403,7 +406,9 @@ export class EmployeeObjetiveService {
               objectiveEvaluation: true,
             },
             objectiveQuestion: true,
-            dncCourse: true,
+            dncCourse: {
+              course: true,
+            },
             dncCourseManual: true,
             competenceEvaluation: {
               competence: true,
@@ -496,10 +501,54 @@ export class EmployeeObjetiveService {
         await doc.moveDown();
       }
 
-      //tabla de desempeño personal
-      let arrayPerformance = [];
-      let totalPercentagePerformance = 0;
+      //tabla de desarrollo y deteccion de necesidades de capacitacion
+      definitionObjectiveAnnual.dncCourse.forEach((element) => {
+        arrayDnc.push([
+          `${element.course.name}`,
+          `${element.priority}`,
+          `Curso`,
+          `${element.comment}`,
+        ]);
+      });
 
+      definitionObjectiveAnnual.dncCourseManual.forEach((element) => {
+        arrayDnc.push([
+          `${element.goal}`,
+          `${element.priority}`,
+          `Manual`,
+          `${element.comment}`,
+        ]);
+      });
+
+      const table4 = {
+        title: 'Desarrollo y Detección de Necesidades de Capacitación',
+        headers: [
+          'Curso',
+          'Prioridad',
+          'Tipo',
+          'Comentario',
+        ],
+        rows: arrayDnc,
+      };
+
+      await doc.table(table4, {
+        x: 40,
+        width: 550,
+        divider: {
+          horizontal: {
+            width: 2,
+            opacity: 0.5,
+          },
+        },
+      });
+
+      if (doc.y > 630) {
+        await doc.addPage();
+      } else {
+        await doc.moveDown();
+      }
+
+      //tabla de desempeño personal
       definitionObjectiveAnnual.objectiveQuestion.forEach((element) => {
         let percentagePerformance = 0;
         percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
@@ -518,7 +567,7 @@ export class EmployeeObjetiveService {
       });
       /* arrayPerformance.push(['Promedio', '', '', '']);
       arrayPerformance.push(['Procentaje logrado', '', '', `${totalPercentagePerformance}`]); */
-      const table4 = {
+      const table5 = {
         title: 'Desempeño Personal',
         headers: ['Factor', 'Comentarios', 'Detalle', 'Procentaje logrado'],
         rows: arrayPerformance,
@@ -530,7 +579,7 @@ export class EmployeeObjetiveService {
         await doc.moveDown();
       }
 
-      await doc.table(table4, {
+      await doc.table(table5, {
         x: 40,
         width: 550,
         divider: {
@@ -565,13 +614,13 @@ export class EmployeeObjetiveService {
         ['Porcentaje logrado', '', ''],
       ); */
 
-      const table5 = {
+      const table6 = {
         title: 'Competencias',
         headers: ['Competencia/Habilidad', 'Calificación', 'Comentarios'],
         rows: arrayCompetence,
       };
 
-      await doc.table(table5, {
+      await doc.table(table6, {
         x: 40,
         width: 550,
         divider: {
@@ -589,7 +638,7 @@ export class EmployeeObjetiveService {
       }
 
       //evaluacion empleado
-      const table6 = {
+      const table7 = {
         title: 'Evaluación de Empleado',
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
@@ -614,7 +663,7 @@ export class EmployeeObjetiveService {
         await doc.moveDown();
       }
 
-      await doc.table(table6, {
+      await doc.table(table7, {
         x: 40,
         width: 550,
         divider: {
@@ -633,7 +682,7 @@ export class EmployeeObjetiveService {
 
       //evaluacion jefe directo
 
-      const table7 = {
+      const table8 = {
         title: 'Evaluación de Jefe Directo',
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
@@ -653,7 +702,7 @@ export class EmployeeObjetiveService {
         await doc.moveDown();
       }
 
-      await doc.table(table7, {
+      await doc.table(table8, {
         x: 40,
         width: 550,
         divider: {
@@ -671,7 +720,7 @@ export class EmployeeObjetiveService {
       }
 
       //resumen
-      const table8 = {
+      const table9 = {
         title: 'Resumen',
         headers: [
           'Año',
@@ -702,7 +751,7 @@ export class EmployeeObjetiveService {
         ],
       };
 
-      await doc.table(table8, {
+      await doc.table(table9, {
         x: 40,
         width: 550,
         divider: {
@@ -1347,6 +1396,9 @@ export class EmployeeObjetiveService {
     let end;
     const arrayObjective = [];
     let totalObjective = 0;
+    let arrayDnc = [];
+    let arrayPerformance = [];
+    let totalPercentagePerformance = 0;
     const age = moment().diff(employee.emp.date_employment, 'years');
     //image
     const logoImg = path.resolve(__dirname, '../../../assets/imgs/logo.png');
@@ -1417,7 +1469,9 @@ export class EmployeeObjetiveService {
             objectiveEvaluation: true,
           },
           objectiveQuestion: true,
-          dncCourse: true,
+          dncCourse: {
+            course: true
+          },
           dncCourseManual: true,
           competenceEvaluation: {
             competence: true,
@@ -1510,10 +1564,54 @@ export class EmployeeObjetiveService {
       await doc.moveDown();
     }
 
-    //tabla de desempeño personal
-    let arrayPerformance = [];
-    let totalPercentagePerformance = 0;
+    //tabla de desarrollo y deteccion de necesidades de capacitacion
+    definitionObjectiveAnnual.dncCourse.forEach((element) => {
+      arrayDnc.push([
+        `${element.course.name}`,
+        `${element.priority}`,
+        `Curso`,
+        `${element.comment}`,
+      ]);
+    });
 
+    definitionObjectiveAnnual.dncCourseManual.forEach((element) => {
+      arrayDnc.push([
+        `${element.goal}`,
+        `${element.priority}`,
+        `Manual`,
+        `${element.comment}`,
+      ]);
+    });
+
+    const table4 = {
+      title: 'Desarrollo y Detección de Necesidades de Capacitación',
+      headers: [
+        'Curso',
+        'Prioridad',
+        'Tipo',
+        'Comentario',
+      ],
+      rows: arrayDnc,
+    };
+
+    await doc.table(table4, {
+      x: 40,
+      width: 550,
+      divider: {
+        horizontal: {
+          width: 2,
+          opacity: 0.5,
+        },
+      },
+    });
+
+    if (doc.y > 630) {
+      await doc.addPage();
+    } else {
+      await doc.moveDown();
+    }
+
+    //tabla de desempeño personal
     definitionObjectiveAnnual.objectiveQuestion.forEach((element) => {
       let percentagePerformance = 0;
       percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
@@ -1532,7 +1630,7 @@ export class EmployeeObjetiveService {
     });
     /* arrayPerformance.push(['Promedio', '', '', '']);
     arrayPerformance.push(['Procentaje logrado', '', '', `${totalPercentagePerformance}`]); */
-    const table4 = {
+    const table5 = {
       title: 'Desempeño Personal',
       headers: ['Factor', 'Comentarios', 'Detalle', 'Procentaje logrado'],
       rows: arrayPerformance,
@@ -1544,7 +1642,7 @@ export class EmployeeObjetiveService {
       await doc.moveDown();
     }
 
-    await doc.table(table4, {
+    await doc.table(table5, {
       x: 40,
       width: 550,
       divider: {
@@ -1579,13 +1677,13 @@ export class EmployeeObjetiveService {
       ['Porcentaje logrado', '', ''],
     ); */
 
-    const table5 = {
+    const table6 = {
       title: 'Competencias',
       headers: ['Competencia/Habilidad', 'Calificación', 'Comentarios'],
       rows: arrayCompetence,
     };
 
-    await doc.table(table5, {
+    await doc.table(table6, {
       x: 40,
       width: 550,
       divider: {
@@ -1603,7 +1701,7 @@ export class EmployeeObjetiveService {
     }
 
     //evaluacion empleado
-    const table6 = {
+    const table7 = {
       title: 'Evaluación de Empleado',
       headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
       rows: [
@@ -1628,7 +1726,7 @@ export class EmployeeObjetiveService {
       await doc.moveDown();
     }
 
-    await doc.table(table6, {
+    await doc.table(table7, {
       x: 40,
       width: 550,
       divider: {
@@ -1647,7 +1745,7 @@ export class EmployeeObjetiveService {
 
     //evaluacion jefe directo
 
-    const table7 = {
+    const table8 = {
       title: 'Evaluación de Jefe Directo',
       headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
       rows: [
@@ -1667,7 +1765,7 @@ export class EmployeeObjetiveService {
       await doc.moveDown();
     }
 
-    await doc.table(table7, {
+    await doc.table(table8, {
       x: 40,
       width: 550,
       divider: {
@@ -1685,7 +1783,7 @@ export class EmployeeObjetiveService {
     }
 
     //resumen
-    const table8 = {
+    const table9 = {
       title: 'Resumen',
       headers: [
         'Año',
@@ -1722,7 +1820,7 @@ export class EmployeeObjetiveService {
       await doc.moveDown();
     }
 
-    await doc.table(table8, {
+    await doc.table(table9, {
       x: 40,
       width: 550,
       divider: {
