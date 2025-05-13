@@ -9,9 +9,12 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+    Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
+
 
 import { EmployeeIncidenceService } from '../service/employee_incidence.service';
 import {
@@ -186,6 +189,17 @@ export class EmployeeIncidenceController {
     return approverh;
   }
 
+  @ApiOperation({ summary: 'Cancela incidencia multiple' })
+  @Put('cancel/multiple')
+  cancelMultiple(
+    @Body() updateEmployeeIncidenceDto: any,
+    @CurrentUser() user: any,
+  ) {
+    let cancelMultiple = this.employeeIncidenceService.cancelMultipleIncidence(updateEmployeeIncidenceDto, user);
+
+    return cancelMultiple;
+  }
+
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.employeeIncidenceService.remove(id);
@@ -211,6 +225,49 @@ export class ReportEmployeeIncidenceController {
       return true;
     } else {
       return this.employeeIncidenceService.reportCompensatoryTime(report, user);
+    }
+  }
+
+  @ApiOperation({ summary: 'Reporte de Empleados en planta' })
+  @Views('empleado_en_planta')
+  @Get('plant-employee')
+  async reportPlantEmployee(@Res() res: Response, @Query() currData: any) {
+    /* res.writeHead(200, {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=empleados_en_planta.pdf',
+    }); */
+
+    try {
+      const {pdf, data} = await this.employeeIncidenceService.reportPlantEmployee(
+        currData,
+      );
+      /* pdf.pipe(res);
+
+      // Cuando el PDF termine de enviarse, enviar el JSON
+      pdf.on('end', () => {
+        res.json({
+          success: true,
+          message: 'Reporte generado exitosamente',
+          data,
+        });
+      }); */
+
+      const chunks: Buffer[] = [];
+      pdf.on('data', (chunk) => chunks.push(chunk));
+      pdf.on('end', () => {
+        const pdfBase64 = Buffer.concat(chunks as Uint8Array[]).toString('base64');
+
+        // Enviar el JSON con el PDF en base64
+        res.json({
+          success: true,
+          message: 'Reporte generado exitosamente',
+          pdf: pdfBase64,
+          data,
+        });
+      });
+      pdf.resume(); // Resume the stream to ensure it finishes processing
+    } catch (error) {
+      console.error(error);
     }
   }
 }

@@ -1386,12 +1386,7 @@ export class EmployeeObjetiveService {
     const doc = new PDFDocument({
       bufferPages: true,
     });
-    const pdftable = new PDFDocument({
-      bufferPages: true,
-    });
-    const y = 0;
-    const y2 = 0;
-    const datePDF = new Date();
+
     let i;
     let end;
     const arrayObjective = [];

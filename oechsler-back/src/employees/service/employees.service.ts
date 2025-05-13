@@ -928,7 +928,7 @@ export class EmployeesService {
         //si el año del cambio de perfil de vacaciones es igual al año de la consulta
         objDiasBySiguenteAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
         //se obtiene el total de dias que corresponden al año de cambio de perfil de vacaciones
-        totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.day : 0;
+        totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.total : 0;
         //se obtiene los dias que corresponden al siguiente año de cambio de perfil de vacaciones
         sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day;
         //suma de los dias de antiguedad del historial
@@ -954,7 +954,7 @@ export class EmployeesService {
             year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1)
         );
         //se obtiene el total de dias que corresponden al año
-        totalDiasByAno = objDiasByAno ? objDiasByAno.day : 0;
+        totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
         //se obtiene los dias que corresponden al siguiente año
         sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
         //suma de los dias de antiguedad
@@ -965,7 +965,7 @@ export class EmployeesService {
         arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
         objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
         objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.day : 0;
+        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
         sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
         sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
 
@@ -979,7 +979,7 @@ export class EmployeesService {
         //se toman los dias de vacaciones del perfil actual
         objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
         objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
-        totalDiasByAno = objDiasByAno ? objDiasByAno.day : 0;
+        totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
         sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
         sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
 
@@ -989,7 +989,7 @@ export class EmployeesService {
         arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
         objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayFinAno[0]));
         objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.day : 0;
+        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
         sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
         sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
 
@@ -1101,13 +1101,15 @@ export class EmployeesService {
         dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length - 1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
       }
 
+      let totalAnoCumplido = Number(anoCumplidos.toFixed(2)) + Number(anoCumplidoDiaCambio? anoCumplidoDiaCambio.toFixed(2): 0);
+      let totalAnoCumplidoFinAno = Number(anoCumplidoDiaCambio? anoCumplidoDiaCambio.toFixed(2) : 0) + Number(anoCumplidosFinAno.toFixed(2))
       row['id'] = emp.id;
       row['perfil'] = emp.employeeProfile.name;
       row['num_employee'] = emp.employee_number;
       row['nombre'] = emp.name + ' ' + emp.paternal_surname + ' ' + emp.maternal_surname;
       row['ingreso'] = emp.date_employment;
-      row['anos_cumplidos'] = Number(anoCumplidos.toFixed(2)) + Number(anoCumplidoDiaCambio?.toFixed(2)); //años cumplidos
-      row['anos_fin_ano'] = Number(anoCumplidoDiaCambio?.toFixed(2)) + Number(anoCumplidosFinAno.toFixed(2)); //años cumplidos hasta fin de año
+      row['anos_cumplidos'] = totalAnoCumplido.toFixed(2); //años cumplidos
+      row['anos_fin_ano'] = totalAnoCumplidoFinAno.toFixed(2); //años cumplidos hasta fin de año
       row['dias_antiguedad_fin_ano'] = sumaDiasAntiguedadFin.toFixed(2); //dias proporcionales por antiguedad hasta fin de año
       row['dias_antiguedad'] = sumaDiasAntiguedad.toFixed(2); //dias proporcionales por antiguedad
       row['dias_utilizados_all_years'] = dayUsedAllYears.toFixed(2); //dias utilizados(todos los años)
