@@ -4,11 +4,8 @@ import {
   In,
   Not,
   IsNull,
-  Like,
-  MoreThanOrEqual,
   LessThanOrEqual,
   Between,
-  Code,
   DataSource,
   LessThan,
   Brackets
@@ -53,8 +50,7 @@ import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
 import { list, save } from 'pdfkit';
-import { id, is } from 'date-fns/locale';
-import { start } from 'repl';
+
 
 @Injectable()
 export class EmployeeIncidenceService {
@@ -563,7 +559,7 @@ export class EmployeeIncidenceService {
   //se obtienen las incidencias de los empleados por rango de fechas y ids de empleados
   async findAllIncidencesByIdsEmployee(data: any) {
 
-    let startDate = new Date(data.start);
+    //let startDate = new Date(data.start);
     const from = format(new Date(data.start), 'yyyy-MM-dd')
     const to = format(new Date(data.end), 'yyyy-MM-dd')
     const tipo = '';
@@ -776,14 +772,6 @@ export class EmployeeIncidenceService {
       const element = organigrama[index];
 
       idsEmployees.push(element.id);
-    }
-
-    if (data.status == 'Todas') {
-      whereQuery = '';
-    } else {
-      whereQuery = {
-        status: data.status,
-      };
     }
 
     const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
@@ -1537,12 +1525,10 @@ export class EmployeeIncidenceService {
     const to = format(new Date(data.end_date), 'yyyy-MM-dd')
     let isAdmin = false;
     let isLeader = false;
-    let conditions: any;
+    //let conditions: any;
     let employees: any;
-    const dataEmployee = [];
     const registros = [];
     const diasGenerados = [];
-    const letraSemana = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
     userLogin.roles.forEach((role) => {
       if (role.name == 'Admin' || role.name == 'RH') {
@@ -1554,17 +1540,17 @@ export class EmployeeIncidenceService {
     });
 
     if (isAdmin) {
-      conditions = {};
+      //conditions = {};
       employees = await this.employeeService.findAll();
       employees = employees.emps;
     } else if (isLeader) {
       //leader o jefe de turno
-      conditions = {
+      /* conditions = {
         job: {
           shift_leader: true,
         },
         organigramaL: userLogin.idEmployee,
-      };
+      }; */
 
       employees = await this.organigramaService.findJerarquia(
         {
@@ -1599,13 +1585,13 @@ export class EmployeeIncidenceService {
       let totalHrsRequeridas = 0;
       let totalMinRequeridos = 0;
       let totalHrsTrabajadas = 0;
-      let totalMinutisTrabados: number = 0;
+      let totalMinutisTrabados = 0;
       let totalHorasIncidencia = 0;
 
 
       for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
-        let dayLetter;
-        const weekDaysProfile = newArray[i].employeeProfile.work_days;
+        let dayLetter: string;
+        //const weekDaysProfile = newArray[i].employeeProfile.work_days;
         switch (x.getDay()) {
           case 0:
             dayLetter = 'D';
@@ -1680,15 +1666,13 @@ export class EmployeeIncidenceService {
           .andWhere('employee_incidence.status = :status', { status: 'Autorizada' })
           .getMany();
 
-
         let isIncidenciaTiempoExtra = false;
         //se verifica si la incidencia es tiempo extra
-        incidencias.some((incidence) => {
+        /* incidencias.some((incidence) => {
           if (incidence.incidenceCatologue.code_band == 'TxT' || incidence.incidenceCatologue.code_band == 'HE' || incidence.incidenceCatologue.code_band == 'HET') {
             isIncidenciaTiempoExtra = true;
-
           }
-        });
+        }); */
 
         //se obtiene el turno del dia seleccionado
         const shift = await this.employeeShiftService.findMore(
@@ -1708,7 +1692,7 @@ export class EmployeeIncidenceService {
           termianTurno.setDate(termianTurno.getDate() + 1)
         }
         const startTimeShift = moment(iniciaTurno, 'HH:mm');
-        let endTimeShift = moment(termianTurno, 'HH:mm');
+        const endTimeShift = moment(termianTurno, 'HH:mm');
 
         //se obtiene la hora de inicio y fin del turno
         const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
@@ -1741,7 +1725,7 @@ export class EmployeeIncidenceService {
         let hrEntrada = '00:00:00';
         let hrSalida = '23:59:59';
 
-        let diahoy = new Date(dia);
+        const diahoy = new Date(dia);
         let diaAnterior = new Date(dia);
         let diaSiguente = new Date(dia);
         let firstHr;
@@ -2064,10 +2048,10 @@ export class EmployeeIncidenceService {
 
 
           //se obtiene las horas y minutos de la incidencia
-          let horaMinIncidencia = moment(horasIncidencia, 'HH.mm');
+          //const horaMinIncidencia = moment(horasIncidencia, 'HH.mm');
           //se obtiene la diferencia en milisegundos
-          let hrs = horasIncidencia; //horaMinIncidencia.hours();
-          let mins = minsIncidencia; //horaMinIncidencia.minutes();
+          const hrs = horasIncidencia; //horaMinIncidencia.hours();
+          const mins = minsIncidencia; //horaMinIncidencia.minutes();
           let modMin = 0;
           let divMin = 0;
 
@@ -2241,9 +2225,18 @@ export class EmployeeIncidenceService {
           diffMin = secondHr.diff(firstHr, 'minutes');
 
           totalMinDay += Number(diffMin) % 60;
+          if(newArray[i].employee_number == 1270){
+            console.log('totalMinutisTrabados', totalMinutisTrabados);
+            
+          } 
           totalMinutisTrabados += totalMinDay;
 
-
+          if(newArray[i].employee_number == 1270){
+            console.log('totalMinutisTrabados', totalMinutisTrabados);
+            console.log('totalMinDay', totalMinDay);
+            console.log('diffMin', diffMin);
+            console.log('firstHr', firstHr);
+          }
           //si el total de minutos trabajados es mayor a 60 se suman las horas
           if (totalMinutisTrabados >= 60) {
             modMinUno = totalMinutisTrabados % 60;
@@ -2267,7 +2260,7 @@ export class EmployeeIncidenceService {
         totalHrsDay += sumaHrsIncidencias;
 
 
-        let test = Math.round((totalMinDay % 1) * 100) / 100;
+        
         //datos por dia
         eventDays.push({
           date: format(dia, 'yyyy-MM-dd'),
@@ -2284,8 +2277,14 @@ export class EmployeeIncidenceService {
 
       }
 
-
-      var quo = Math.floor(totalMinutisTrabados / 60);
+      
+      const quo = Math.floor(totalMinutisTrabados / 60);
+      if(newArray[i].employee_number == 1270){
+        console.log("termina")
+        console.log('totalHrsTrabajadas', totalHrsTrabajadas);
+        console.log('totalMinutisTrabados', totalMinutisTrabados);
+        console.log('quo', quo);
+      }
       totalHrsTrabajadas += quo;
 
       registros.push({
@@ -2294,8 +2293,8 @@ export class EmployeeIncidenceService {
         nombre: newArray[i].name + ' ' + newArray[i].paternal_surname + ' ' + newArray[i].maternal_surname,
         perfile: newArray[i].employeeProfile.name,
         date: eventDays,
-        horas_objetivo: totalHrsRequeridas + '.' + moment().minutes(totalMinRequeridos).format('mm'),
-        horasTrabajadas: totalHrsTrabajadas + '.' + moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
+        horas_objetivo: totalHrsRequeridas + '.' + String(totalMinRequeridos).padStart(2, '0'),//moment().minutes(totalMinRequeridos).format('mm'),
+        horasTrabajadas: totalHrsTrabajadas + '.' + String(totalMinutisTrabados).padStart(2, '0'),//moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
         totalHorasIncidencia: totalHorasIncidencia,
         colorText: totalHrsTrabajadas >= totalHrsRequeridas ? '#74ad74' : '#ff0000',
         tipo_nomina: newArray[i].payRoll,
