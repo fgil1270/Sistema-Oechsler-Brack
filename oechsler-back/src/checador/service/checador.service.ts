@@ -604,11 +604,11 @@ export class ChecadorService {
               if ( employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T1'){
 
                 
-                if(incidenciasNormales[index].shift == 2 ){
+                if(incidenciasNormales[index].incidenceShift == 2 ){
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
-
-                }else if(incidenciasNormales[index].shift == 3){
+                  diaAnterior = new Date(index);
+                }else if(incidenciasNormales[index].incidenceShift == 3){
                   hrEntrada = '18:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
@@ -617,22 +617,22 @@ export class ChecadorService {
                 }
               }else if(employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T2'){
                 
-                if(incidenciasNormales[index].shift == 1 ){
+                if(incidenciasNormales[index].incidenceShift == 1 ){
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
 
-                }else if(incidenciasNormales[index].shift == 3){
+                }else if(incidenciasNormales[index].incidenceShift == 3){
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente.setDate(diahoy.getDate() + 1);
                 }
               }else if(employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T3'){
                 
-                if(incidenciasNormales[index].shift == 1 ){
+                if(incidenciasNormales[index].incidenceShift == 1 ){
                   hrEntrada = '20:00:00';
                   hrSalida = '14:59:00';
                   diaSiguente.setDate(diahoy.getDate() + 1);
-                }else if(incidenciasNormales[index].shift == 2){
+                }else if(incidenciasNormales[index].incidenceShift == 2){
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente.setDate(diaSiguente.getDate() + 1);
@@ -646,11 +646,11 @@ export class ChecadorService {
                 hrEntrada = '00:30:00';
                 hrSalida = '23:59:00';
               }else if(employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T4'){
-                if(incidenciasNormales[index].shift == 2 ){
+                if(incidenciasNormales[index].incidenceShift == 2 ){
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
 
-                }else if(incidenciasNormales[index].shift == 3){
+                }else if(incidenciasNormales[index].incidenceShift == 3){
                   hrEntrada = '18:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
@@ -689,7 +689,6 @@ export class ChecadorService {
             },
           });
 
-                    
           //si existen checadas
           if(registrosChecador.length>0){
             isIncidenceIncapacidad = false;

@@ -388,7 +388,7 @@ export class EmployeeIncidenceService {
           to.push(mailUser.user.email);
         }
 
-        subject = `${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
+        subject = `CREACIÓN ${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
       }
 
 
@@ -438,6 +438,7 @@ export class EmployeeIncidenceService {
 
       //si el usuario crea incidencia para el mismo
       //envia correo de creacion de incidencia
+      //si es Produccion el user logueado es otro
       if (employeeIncidenceCreate.employee.id == user.idEmployee) {
         //ENVIO DE CORREO
         const mail = await this.mailService.sendEmailCreateIncidence(
@@ -587,10 +588,11 @@ export class EmployeeIncidenceService {
         status: data.status ? In(data.status) : Not(IsNull()),
       },
     }); */
-
+    
     const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employeeIncidence')
       .innerJoinAndSelect('employeeIncidence.employee', 'employee')
       .leftJoinAndSelect('employeeIncidence.leader', 'leader')
+      .leftJoinAndSelect('employeeIncidence.canceledBy', 'canceledBy')
       .innerJoinAndSelect('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
       .innerJoinAndSelect('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
       .innerJoinAndSelect('employee.employeeShift', 'employeeShift')
@@ -640,9 +642,11 @@ export class EmployeeIncidenceService {
             status: incidence.status,
             approve: incidence.leader ? incidence.leader.name + ' ' + incidence.leader.paternal_surname + ' ' + incidence.leader.maternal_surname : '',
             approveEmployeeNumber: incidence.leader ? incidence.leader.employee_number : 0,
+            canceledBy: incidence.canceledBy ? incidence.canceledBy.name + ' ' + incidence.canceledBy.paternal_surname + ' ' + incidence.canceledBy.maternal_surname : '',
             shift: incidence.employee.employeeShift[0].shift,
             type: incidence.type,
             created_at: incidence.created_at,
+            incidenceShift: incidence.shift,
           });
         });
       });
@@ -789,7 +793,7 @@ export class EmployeeIncidenceService {
       .leftJoinAndSelect('employee_incidence.leader', 'leader')
       .leftJoinAndSelect('employee_incidence.createdBy', 'createdBy')
       .leftJoinAndSelect('employee.organigramaL', 'organigramaL')
-      .innerJoinAndSelect('organigramaL.leader', 'organigramaLeader')
+      .leftJoinAndSelect('organigramaL.leader', 'organigramaLeader')
       .where('employee_incidence.employeeId IN (:ids)', { ids: idsEmployees })
       .andWhere('employee_incidence.status IN (:status)', { status: data.status == 'Todas' ? ['Autorizada', 'Pendiente', 'Rechazada'] : [data.status] })
       .andWhere('incidenceCatologue.deleted_at IS NULL')
@@ -1266,7 +1270,7 @@ export class EmployeeIncidenceService {
           //se envia correo solo al empleado
           if (employeeIncidence.employee.job.produccion_visible) {
             const mail = await this.mailService.sendEmailIncidenceProduction(
-              'Autorizada Incidencia ' + employeeIncidence.incidenceCatologue.name +
+              'AUTORIZADA Incidencia ' + employeeIncidence.incidenceCatologue.name +
               ` de ${format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd')} al ` +
               `${format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd')}`,
               mailData,
@@ -1359,7 +1363,7 @@ export class EmployeeIncidenceService {
         //se envia correo solo al empleado
         if (employeeIncidence.employee.job.produccion_visible) {
           const mail = await this.mailService.sendEmailIncidenceProduction(
-            'Rechazada Incidencia ' + employeeIncidence.incidenceCatologue.name +
+            'RECHAZADA Incidencia ' + employeeIncidence.incidenceCatologue.name +
             ` de ${format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd')} al ` +
             `${format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd')}`,
             mailData,
@@ -2125,7 +2129,7 @@ export class EmployeeIncidenceService {
                 if (incidencias[index].shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
-
+                  diaAnterior = new Date(dia);
                 } else if (incidencias[index].shift == 3) {
                   hrEntrada = '20:00:00';
                   hrSalida = '06:59:00';
@@ -2346,7 +2350,6 @@ export class EmployeeIncidenceService {
     } catch (error) {
       console.log(error)
     }
-
 
     let temporalIds = listOrg.map(lider => lider.leaderId);
     idsLider.push(...listOrg.map(lider => lider.leaderId));
