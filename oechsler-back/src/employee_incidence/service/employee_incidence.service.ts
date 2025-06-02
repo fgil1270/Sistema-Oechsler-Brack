@@ -1569,6 +1569,14 @@ export class EmployeeIncidenceService {
       employees = [dataEmployee.emp];
     }
 
+    for (
+      let x = new Date(from);
+      x <= new Date(to);
+      x = new Date(x.setDate(x.getDate() + 1))
+    ) {
+      diasGenerados.push(format(x, 'yyyy-MM-dd'));
+    }
+
     //se filtran los empleados por perfil MIXTO
     const newArray = data.type_nomina == 'Todos' ? employees : employees.filter((e) => e.payRoll.name == data.type_nomina) //.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
 
@@ -1640,15 +1648,16 @@ export class EmployeeIncidenceService {
 
       // Cláusula WHERE para filtrar por IDs de empleado: 
       // Filtra los resultados finales para incluir solo los IDs especificados.
-      .where('e.id IN (:...employeeIds)', { employeeIds: [331, 636] })
+      .where('e.id IN (:...employeeIds)', { employeeIds: [331, 346, 636] })
       .getRawMany(); // Ejecuta la consulta y obtiene los resultados
 
-    const incidenciasPorEmpleado = {};
+    const incidenciasPorEmpleado = [];
     console.log('queryBuilder', queryBuilder);
     for (let dia = new Date(from); dia <= new Date(to); dia = new Date(dia.setDate(dia.getDate() + 1))) {
       for (const row of queryBuilder) {
         const empId = row.e_id; // ID del empleado
-        const empShiftDate = format(new Date(row.es_start_date), 'yyyy-MM-dd'); // Fecha de inicio del turno del empleado
+        const empShiftDate = row.es_start_date; // Fecha de inicio del turno del empleado
+        const shiftName = row.s_code; // Nombre del turno
         const fecha = row.dei_date; // fecha de incidencia
         const eWorker = row.e_worker; // tipo de empleado
         const eNumber = row.e_employee_number; // número de nomina
@@ -1656,6 +1665,7 @@ export class EmployeeIncidenceService {
         const ePaternalSurname = row.e_paternal_surname; // apellido paterno del empleado
         const eMaternalSurname = row.e_maternal_surname; // apellido materno del empleado
         const formatoFecha = format(new Date(fecha), 'yyyy-MM-dd');
+        const eiId = row.ei_id; // ID de la incidencia
 
 
         //datos por dia
@@ -1692,10 +1702,113 @@ export class EmployeeIncidenceService {
           tipo_nomina: newArray[i].payRoll,
         }); */
 
+        //severifica
+
+        console.log('incidenciasPorEmpleado.length ', incidenciasPorEmpleado.length);
+        const newObject = incidenciasPorEmpleado.length > 0 ? incidenciasPorEmpleado.find((emp) => emp.idEmpleado === empId) : null; // Busca si ya existe un objeto para el empleado actual
+        console.log('valor del newObject', newObject)
+        //si el objeto newObject existe, significa que ya hay incidencias para ese empleado
+        if (newObject) {
+          console.log("existe")
+          //si la fecha de consulta es igual a la fecha de inicio del turno del empleado
+
+          if (format(dia, 'yyyy-MM-dd') == format(new Date(empShiftDate), 'yyyy-MM-dd')) {
+            // Si el objeto newObject ya existe, agrega la fecha y la incidencia al arreglo dates
+            // Verifica si ya existe una fecha para ese día
+            const existingDate = newObject.dates.find(dateObj => dateObj.date === format(dia, 'yyyy-MM-dd'));
+            if (existingDate) {
+              // Si ya existe, agrega la incidencia a esa fecha
+              existingDate.incidencia.push({
+                ei_id: eiId,
+                ei_descripcion: row.ei_descripcion,
+                ei_start_hour: row.ei_start_hour,
+                ei_end_hour: row.ei_end_hour,
+                ei_date_aproved_leader: row.ei_date_aproved_leader,
+                ei_hour_approved_leader: row.ei_hour_approved_leader,
+              });
+            } else {
+              // Si no existe, crea un nuevo objeto de fecha y lo agrega al arreglo dates
+              newObject.dates.push({
+                date: format(dia, 'yyyy-MM-dd'),
+                incidencia: !eiId ? [] : [{
+                  ei_id: eiId,
+                  ei_descripcion: row.ei_descripcion,
+                  ei_start_hour: row.ei_start_hour,
+                  ei_end_hour: row.ei_end_hour,
+                  ei_date_aproved_leader: row.ei_date_aproved_leader,
+                  ei_hour_approved_leader: row.ei_hour_approved_leader,
+                }],
+                employeeShift: shiftName || '',
+                entrada: row.ei_start_hour || '',
+                salida: row.ei_end_hour || '',
+                dayHour: 0, // Aquí puedes calcular las horas del día si es necesario
+              });
+            }
+          } else {
+
+            //si la fecha no es igual y la fecha es nula
+            //agrega un nuevo objeto de fecha
+            if (!empShiftDate) {
+              console.log("fecha nula")
+              newObject.dates.push({
+                date: format(dia, 'yyyy-MM-dd'),
+                incidencia: [],
+                employeeShift: shiftName || '',
+                entrada: '',
+                salida: '',
+                dayHour: 0,
+              });
+            }
+
+          }
+
+        } else {
+          console.log("no existe y lo agrega")
+          // Si el objeto newObject no existe, crea uno nuevo por primera vez
+          // y lo agrega al arreglo incidenciasPorEmpleado
+          incidenciasPorEmpleado.push({
+            idEmpleado: empId,
+            numeroNomina: row.e_employee_number,
+            nombre: row.e_name + ' ' + row.e_paternal_surname + ' ' + row.e_maternal_surname,
+            perfile: '',
+            horas_objetivo: 0,//moment().minutes(totalMinRequeridos).format('mm'),
+            horasTrabajadas: 0,//moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
+            totalHorasIncidencia: 0,
+            colorText: '',
+            tipo_nomina: '',
+            worker: eWorker,
+            paternal_surname: ePaternalSurname,
+            maternal_surname: eMaternalSurname,
+            dates: [{
+              date: format(dia, 'yyyy-MM-dd'),
+              incidencia: [{
+                ei_id: eiId,
+                ei_descripcion: row.ei_descripcion,
+                ei_start_hour: row.ei_start_hour,
+                ei_end_hour: row.ei_end_hour,
+                ei_date_aproved_leader: row.ei_date_aproved_leader,
+                ei_hour_approved_leader: row.ei_hour_approved_leader,
+
+              }],
+              employeeShift: shiftName || '',
+              entrada: '',
+              salida: '',
+              dayHour: 0,
+            }],
+
+          });
+        }
+
+
+
+
         // Verifica si la fecha es válida
         // y si el empleado tiene una incidencia para esa fecha
         // Si la fecha es válida, agrega la incidencia al objeto incidenciasPorEmpleado
-        if (format(new Date(dia), 'yyyy-MM-dd') == empShiftDate) {
+        /* if (format(new Date(dia), 'yyyy-MM-dd') == empShiftDate) {
+
+
+
           if (!incidenciasPorEmpleado[empId]) incidenciasPorEmpleado[empId] = {};
           if (!incidenciasPorEmpleado[empId][format(new Date(dia), 'yyyy-MM-dd')]) incidenciasPorEmpleado[empId][format(new Date(dia), 'yyyy-MM-dd')] = [];
           if (fecha && row.dei_date != null) { // Si hay incidencia ese día
@@ -1710,10 +1823,59 @@ export class EmployeeIncidenceService {
           if (!incidenciasPorEmpleado[empId]) incidenciasPorEmpleado[empId] = {};
           incidenciasPorEmpleado[empId][format(new Date(dia), 'yyyy-MM-dd')] = [];
 
-        }
+        } */
 
       }
+
+      // se recorre el arreglo de incidenciasPorEmpleado
+      //para obtener las horas trabajadas y las horas requeridas
+      for (let i = 0; i < incidenciasPorEmpleado.length; i++) {
+        const incidencias = incidenciasPorEmpleado[i].dates;
+        let totalHrsRequeridas = 0;
+        let totalMinRequeridos = 0;
+        let totalHrsTrabajadas = 0;
+        let totalMinutisTrabados = 0;
+        let totalHorasIncidencia = 0;
+
+        //se recorre las incidencias por empleado
+        for (let j = 0; j < incidencias.length; j++) {
+          const incidencia = incidencias[j];
+          //se recorre las incidencias por dia
+          for (let k = 0; k < incidencia.incidencia.length; k++) {
+            const inc = incidencia.incidencia[k];
+            //se suman las horas trabajadas
+            if (inc.ei_start_hour && inc.ei_end_hour) {
+              const startHour = new Date(inc.ei_start_hour);
+              const endHour = new Date(inc.ei_end_hour);
+              const diffInMs = endHour.getTime() - startHour.getTime();
+              const diffInHours = diffInMs / (1000 * 60 * 60); // Convertir a horas
+              totalHrsTrabajadas += Math.floor(diffInHours);
+              totalMinutisTrabados += (diffInHours % 1) * 60; // Obtener los minutos restantes
+            }
+            //se suman las horas requeridas
+            if (inc.ei_total_hour) {
+              const totalHourParts = inc.ei_total_hour.split('.');
+              if (totalHourParts.length === 2) {
+                totalHrsRequeridas += parseInt(totalHourParts[0], 10);
+                totalMinRequeridos += parseInt(totalHourParts[1], 10);
+              }
+            }
+            //se suman las horas de incidencia
+            if (inc.ei_total_hour) {
+              const totalHourParts = inc.ei_total_hour.split('.');
+              if (totalHourParts.length === 2) {
+                totalHorasIncidencia += parseInt(totalHourParts[0], 10);
+                totalHorasIncidencia += parseInt(totalHourParts[1], 10) / 60; // Convertir minutos a horas
+              }
+            }
+          }
+          //se calcula el total de horas trabajadas y requeridas por dia
+          incidencia.dayHour = `${totalHrsTrabajadas + Math.floor(totalMinutisTrabados / 60)}.${String(totalMinutisTrabados % 60).padStart(2, '0')}`;
+        }
+      }
     }
+
+
 
 
 
@@ -1723,10 +1885,12 @@ export class EmployeeIncidenceService {
     console.log('new Date(from)', format(new Date(from), 'yyyy-MM-dd'));
     console.log('new Date(to)', format(new Date(to), 'yyyy-MM-dd'));
     console.log('arrayEmployeeIds', [arrayEmployeeIds]);
-    //console.log("parametros",queryBuilder.getParameters());
-    console.log("incidenciasPorEmpleado", incidenciasPorEmpleado)
-    //console.log(JSON.stringify(queryBuilder.getParameters(), null, 2));
-    return queryBuilder;
+
+
+    return {
+      registros: incidenciasPorEmpleado,
+      diasGenerados,
+    };
     const incidencias = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
       .leftJoinAndSelect('employee.employeeIncidence', 'employeeIncidence')
       .leftJoinAndSelect('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
