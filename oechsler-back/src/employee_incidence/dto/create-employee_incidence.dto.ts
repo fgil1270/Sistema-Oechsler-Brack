@@ -156,4 +156,9 @@ export class ReportEmployeeIncidenceDto {
   @IsString()
   @ApiProperty({ description: 'Tipo de nomina' })
   type_nomina: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Turno de empleado' })
+  shift: string;
 }

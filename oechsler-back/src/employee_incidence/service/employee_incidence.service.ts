@@ -328,7 +328,7 @@ export class EmployeeIncidenceService {
         incidenceCatologue: IncidenceCatologue,
         descripcion: createEmployeeIncidenceDto.description,
         total_hour: datos ? datos.total_hour : createEmployeeIncidenceDto.total_hour,
-        start_hour: datos ? datos.start_hour :  createEmployeeIncidenceDto.start_hour,
+        start_hour: datos ? datos.start_hour : createEmployeeIncidenceDto.start_hour,
         end_hour: datos ? datos.end_hour : createEmployeeIncidenceDto.end_hour,
         date_aproved_leader: isLeader ? dayCreateIncidence : null,
         hour_approved_leader: isLeader ? dayCreateIncidence : null,
@@ -584,7 +584,7 @@ export class EmployeeIncidenceService {
         status: data.status ? In(data.status) : Not(IsNull()),
       },
     }); */
-    
+
     const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employeeIncidence')
       .innerJoinAndSelect('employeeIncidence.employee', 'employee')
       .leftJoinAndSelect('employeeIncidence.leader', 'leader')
@@ -1523,6 +1523,9 @@ export class EmployeeIncidenceService {
 
     const from = format(new Date(data.start_date), 'yyyy-MM-dd')
     const to = format(new Date(data.end_date), 'yyyy-MM-dd')
+
+    const typeNomina = data.type_nomina; //Quincenal, Semanal, o Todos
+
     let isAdmin = false;
     let isLeader = false;
     //let conditions: any;
@@ -1568,7 +1571,180 @@ export class EmployeeIncidenceService {
 
     //se filtran los empleados por perfil MIXTO
     const newArray = data.type_nomina == 'Todos' ? employees : employees.filter((e) => e.payRoll.name == data.type_nomina) //.filter((e) => e.employeeProfile.name == 'PERFIL C - Mixto');
-    //generacion de dias seleccionados
+
+    //agregar los ids de los empleados al arreglo
+    const arrayEmployeeIds = newArray.map((e) => e.id);
+
+    const queryBuilder = await this.dataSource.manager
+      .createQueryBuilder('employee', 'e') // Inicia el query builder seleccionando de la tabla 'employee' con alias 'e'
+
+      // LEFT JOIN para employee_shift:
+      // Incluye todos los empleados, y si hay un turno dentro del rango de fechas especificado, lo une.
+      // Si no hay turno en ese rango, las columnas de 'es' serán NULL.
+      .leftJoinAndSelect(
+        'e.employeeShift', // La propiedad de relación en la entidad Employee
+        'es',               // Alias para la tabla employee_shift
+        'es.start_date BETWEEN :startDate AND :endDate', // Condición ON para el JOIN con rango de fechas
+        { startDate: format(new Date(from), 'yyyy-MM-dd'), endDate: format(new Date(to), 'yyyy-MM-dd') },     // Parámetros para la condición ON
+      )
+
+      // LEFT JOIN para shift:
+      // Une el turno real si existe una relación válida desde employee_shift.
+      // Si 'es' es NULL (empleado sin turno), 's' también será NULL.
+      .leftJoinAndSelect(
+        'es.shift', // La propiedad de relación en la entidad EmployeeShift
+        's',        // Alias para la tabla shift
+      )
+
+      // LEFT JOIN a una subconsulta que pre-filtra las incidencias por estado
+      // y las une con sus fechas de incidencia.
+      .leftJoinAndSelect(
+        qb => qb
+          .from('employee_incidence', 'ei_sub')
+          .innerJoin('date_employee_incidence', 'dei_sub', 'dei_sub.employeeIncidenceId = ei_sub.id')
+          .where('ei_sub.status = :status', { status: 'Autorizada' })
+          .andWhere('dei_sub.date BETWEEN :startDate AND :endDate', { startDate: format(new Date(from), 'yyyy-MM-dd'), endDate: format(new Date(to), 'yyyy-MM-dd') })
+          .select([
+            'ei_sub.id as ei_id',
+            'ei_sub.descripcion as ei_descripcion',
+            'ei_sub.start_hour as ei_start_hour',
+            'ei_sub.end_hour as ei_end_hour',
+            'ei_sub.date_aproved_leader as ei_date_aproved_leader',
+            'ei_sub.hour_approved_leader as ei_hour_approved_leader',
+            'ei_sub.date_aproved_rh as ei_date_aproved_rh',
+            'ei_sub.status as ei_status',
+            'ei_sub.date_canceled as ei_date_canceled',
+            'ei_sub.canceledById as ei_canceledById',
+            'ei_sub.created_at as ei_created_at',
+            'ei_sub.updated_at as ei_updated_at',
+            'ei_sub.deleted_at as ei_deleted_at',
+            'ei_sub.employeeId as ei_employeeId',
+            'ei_sub.incidenceCatologueId as ei_incidenceCatologueId',
+            'ei_sub.leaderId as ei_leaderId',
+            'ei_sub.rhId as ei_rhId',
+            'ei_sub.createdById as ei_createdById',
+            'ei_sub.total_hour as ei_total_hour',
+            'ei_sub.type as ei_type',
+            'ei_sub.shift as ei_shift',
+            'ei_sub.commentCancel as ei_commentCancel',
+            'ei_sub.approveRHComment as ei_approveRHComment',
+            'ei_sub.employee_image as ei_employee_image',
+            'dei_sub.id as dei_id',
+            'dei_sub.date as dei_date',
+            'dei_sub.employeeIncidenceId as dei_employeeIncidenceId',
+          ]) // Selecciona todas las columnas de la subconsultaS
+        ,
+        'ei_sub', // Alias para el resultado de la subconsulta
+        'ei_sub.ei_employeeId = e.id AND ei_sub.dei_date = es.start_date'
+      )
+
+      // Cláusula WHERE para filtrar por IDs de empleado: 
+      // Filtra los resultados finales para incluir solo los IDs especificados.
+      .where('e.id IN (:...employeeIds)', { employeeIds: [331, 636] })
+      .getRawMany(); // Ejecuta la consulta y obtiene los resultados
+
+    const incidenciasPorEmpleado = {};
+    console.log('queryBuilder', queryBuilder);
+    for (let dia = new Date(from); dia <= new Date(to); dia = new Date(dia.setDate(dia.getDate() + 1))) {
+      for (const row of queryBuilder) {
+        const empId = row.e_id; // ID del empleado
+        const empShiftDate = format(new Date(row.es_start_date), 'yyyy-MM-dd'); // Fecha de inicio del turno del empleado
+        const fecha = row.dei_date; // fecha de incidencia
+        const eWorker = row.e_worker; // tipo de empleado
+        const eNumber = row.e_employee_number; // número de nomina
+        const eName = row.e_name; // nombre del empleado
+        const ePaternalSurname = row.e_paternal_surname; // apellido paterno del empleado
+        const eMaternalSurname = row.e_maternal_surname; // apellido materno del empleado
+        const formatoFecha = format(new Date(fecha), 'yyyy-MM-dd');
+
+
+        //datos por dia
+        /*   eventDays.push({
+            date: format(dia, 'yyyy-MM-dd'),
+            incidencia: objIncidencia,
+            employeeShift: shift.events[0]?.nameShift,
+            entrada: registrosChecador.length >= 1 ? format(new Date(firstHr), 'HH:mm:ss') : '',
+            salida: registrosChecador.length >= 2 ? format(new Date(secondHr), 'HH:mm:ss') : '',
+            dayHour: totalHrsDay + '.' + moment().minutes(totalMinDay).format('mm'),
+            //dayHour: (Number(moment(secondHr).format('HH.mm')) - Number(moment(firstHr).format('HH.mm'))).toFixed(2),
+          });
+        }
+
+        const quo = Math.floor(totalMinutisTrabados / 60);
+        if (newArray[i].employee_number == 1270) {
+          console.log("termina")
+          console.log('totalHrsTrabajadas', totalHrsTrabajadas);
+          console.log('totalMinutisTrabados', totalMinutisTrabados);
+          console.log('quo', quo);
+        }
+        totalHrsTrabajadas += quo;
+
+        registros.push({
+          idEmpleado: newArray[i].id,
+          numeroNomina: newArray[i].employee_number,
+          nombre: newArray[i].name + ' ' + newArray[i].paternal_surname + ' ' + newArray[i].maternal_surname,
+          perfile: newArray[i].employeeProfile.name,
+          date: eventDays,
+          horas_objetivo: totalHrsRequeridas + '.' + String(totalMinRequeridos).padStart(2, '0'),//moment().minutes(totalMinRequeridos).format('mm'),
+          horasTrabajadas: totalHrsTrabajadas + '.' + String(totalMinutisTrabados).padStart(2, '0'),//moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
+          totalHorasIncidencia: totalHorasIncidencia,
+          colorText: totalHrsTrabajadas >= totalHrsRequeridas ? '#74ad74' : '#ff0000',
+          tipo_nomina: newArray[i].payRoll,
+        }); */
+
+        // Verifica si la fecha es válida
+        // y si el empleado tiene una incidencia para esa fecha
+        // Si la fecha es válida, agrega la incidencia al objeto incidenciasPorEmpleado
+        if (format(new Date(dia), 'yyyy-MM-dd') == empShiftDate) {
+          if (!incidenciasPorEmpleado[empId]) incidenciasPorEmpleado[empId] = {};
+          if (!incidenciasPorEmpleado[empId][format(new Date(dia), 'yyyy-MM-dd')]) incidenciasPorEmpleado[empId][format(new Date(dia), 'yyyy-MM-dd')] = [];
+          if (fecha && row.dei_date != null) { // Si hay incidencia ese día
+            incidenciasPorEmpleado[empId][format(new Date(dia), 'yyyy-MM-dd')].push({
+              dei_date: row.ei_id,
+
+            });
+          }
+        } else {
+          // Si no hay incidencia para ese día, puedes optar por no hacer nada
+          // o agregar un objeto vacío o un mensaje indicando que no hay incidencia
+          if (!incidenciasPorEmpleado[empId]) incidenciasPorEmpleado[empId] = {};
+          incidenciasPorEmpleado[empId][format(new Date(dia), 'yyyy-MM-dd')] = [];
+
+        }
+
+      }
+    }
+
+
+
+    // Opcional: Para ver el SQL generado y los parámetros (útil para depuración)
+    // console.log(queryBuilder.getSql());
+    // console.log(queryBuilder.getParameters());
+    console.log('new Date(from)', format(new Date(from), 'yyyy-MM-dd'));
+    console.log('new Date(to)', format(new Date(to), 'yyyy-MM-dd'));
+    console.log('arrayEmployeeIds', [arrayEmployeeIds]);
+    //console.log("parametros",queryBuilder.getParameters());
+    console.log("incidenciasPorEmpleado", incidenciasPorEmpleado)
+    //console.log(JSON.stringify(queryBuilder.getParameters(), null, 2));
+    return queryBuilder;
+    const incidencias = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+      .leftJoinAndSelect('employee.employeeIncidence', 'employeeIncidence')
+      .leftJoinAndSelect('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+      .leftJoinAndSelect('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+      .leftJoinAndSelect('employee.employeeShift', 'employeeShift')
+      .leftJoinAndSelect('employeeShift.shift', 'shift')
+      .leftJoinAndSelect('employeeIncidence.leader', 'leader')
+      .leftJoinAndSelect('employeeIncidence.rh', 'rh')
+      .leftJoinAndSelect('employeeIncidence.createdBy', 'createdBy')
+      .leftJoinAndSelect('employeeIncidence.canceledBy', 'canceledBy')
+
+      .where('employee.id IN (:...id)', { id: arrayEmployeeIds })
+      //.andWhere('incidenceCatologue.deleted_at IS NULL')
+      .andWhere('dateEmployeeIncidence.date = :start', {
+        start: format(new Date(from), 'yyyy-MM-dd')
+      })
+      //.andWhere('employeeIncidence.status = :status', { status: 'Autorizada' }) 
+      .getQuery();
 
 
     for (
@@ -1589,7 +1765,7 @@ export class EmployeeIncidenceService {
       let totalHorasIncidencia = 0;
 
 
-      for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
+      /* for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
         let dayLetter: string;
         //const weekDaysProfile = newArray[i].employeeProfile.work_days;
         switch (x.getDay()) {
@@ -1617,7 +1793,7 @@ export class EmployeeIncidenceService {
         }
 
 
-      }
+      } */
 
       //se recorren los dias 
       for (let dia = new Date(from); dia <= new Date(to); dia = new Date(dia.setDate(dia.getDate() + 1))) {
@@ -2225,13 +2401,13 @@ export class EmployeeIncidenceService {
           diffMin = secondHr.diff(firstHr, 'minutes');
 
           totalMinDay += Number(diffMin) % 60;
-          if(newArray[i].employee_number == 1270){
+          if (newArray[i].employee_number == 1270) {
             console.log('totalMinutisTrabados', totalMinutisTrabados);
-            
-          } 
+
+          }
           totalMinutisTrabados += totalMinDay;
 
-          if(newArray[i].employee_number == 1270){
+          if (newArray[i].employee_number == 1270) {
             console.log('totalMinutisTrabados', totalMinutisTrabados);
             console.log('totalMinDay', totalMinDay);
             console.log('diffMin', diffMin);
@@ -2260,7 +2436,7 @@ export class EmployeeIncidenceService {
         totalHrsDay += sumaHrsIncidencias;
 
 
-        
+
         //datos por dia
         eventDays.push({
           date: format(dia, 'yyyy-MM-dd'),
@@ -2277,9 +2453,9 @@ export class EmployeeIncidenceService {
 
       }
 
-      
+
       const quo = Math.floor(totalMinutisTrabados / 60);
-      if(newArray[i].employee_number == 1270){
+      if (newArray[i].employee_number == 1270) {
         console.log("termina")
         console.log('totalHrsTrabajadas', totalHrsTrabajadas);
         console.log('totalMinutisTrabados', totalMinutisTrabados);
@@ -3385,8 +3561,8 @@ export class EmployeeIncidenceService {
   }
 
   //reporte para obtener los empleados en planta
-  async reportPlantEmployee(curdata: any): Promise<{pdf: Readable, data: any}> {
-    try{
+  async reportPlantEmployee(curdata: any): Promise<{ pdf: Readable, data: any }> {
+    try {
       // 1. Convertir la fecha a un objeto Date
       const originalDate = new Date(curdata.start_date);
 
@@ -3400,35 +3576,35 @@ export class EmployeeIncidenceService {
       const formattedDate = format(zonedDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: originalTimeZone } as any);
 
       const employees = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-          .innerJoinAndSelect('employee.employeeShift', 'employeeShift')
-          .innerJoinAndSelect('employee.department', 'department')
-          .innerJoinAndSelect('employee.employeeChecadas', 'employeeChecadas')
-          .innerJoinAndSelect('employeeShift.shift', 'shift')
-          .where('employee.deleted_at IS NULL') 
-          .andWhere('employeeShift.start_date = :start', { start: format(new Date(formattedDate), 'yyyy-MM-dd') })
-          .andWhere(`employeeChecadas.date BETWEEN 
+        .innerJoinAndSelect('employee.employeeShift', 'employeeShift')
+        .innerJoinAndSelect('employee.department', 'department')
+        .innerJoinAndSelect('employee.employeeChecadas', 'employeeChecadas')
+        .innerJoinAndSelect('employeeShift.shift', 'shift')
+        .where('employee.deleted_at IS NULL')
+        .andWhere('employeeShift.start_date = :start', { start: format(new Date(formattedDate), 'yyyy-MM-dd') })
+        .andWhere(`employeeChecadas.date BETWEEN 
             '${format(new Date(`${format(new Date(formattedDate), 'yyyy-MM-dd')} 05:30:00`), 'yyyy-MM-dd HH:mm:ss')}' 
             AND '${format(new Date(`${format(new Date(formattedDate), 'yyyy-MM-dd')} 20:30:59`), 'yyyy-MM-dd HH:mm:ss')}' `)
-          .andWhere(new Brackets((qb) => {
-            if (format(new Date(formattedDate), 'HH:mm:ss') >= '06:00:00' && format(new Date(formattedDate), 'HH:mm:ss') <= '14:30:00') {
-              qb.where("shift.name IN ('Turno 1', 'Mixto')");
-            } else if (format(new Date(formattedDate), 'HH:mm:ss') >= '14:31:00' && format(new Date(formattedDate), 'HH:mm:ss') <= '21:30:00') {
-              qb.where("shift.name IN ('Turno 2', 'Turno 3', 'Mixto')");
-            }
-          }))
-          .orderBy('CASE WHEN shift.name = \'Turno 1\' THEN 1 WHEN shift.name = \'Turno 2\' THEN 2 WHEN shift.name = \'Mixto\' THEN 3 ELSE 4 END') // Ordenar por Turno
-          .addOrderBy('employee.employee_number', 'ASC')
-          .addOrderBy('employeeChecadas.date', 'ASC')
-          .getMany();
+        .andWhere(new Brackets((qb) => {
+          if (format(new Date(formattedDate), 'HH:mm:ss') >= '06:00:00' && format(new Date(formattedDate), 'HH:mm:ss') <= '14:30:00') {
+            qb.where("shift.name IN ('Turno 1', 'Mixto')");
+          } else if (format(new Date(formattedDate), 'HH:mm:ss') >= '14:31:00' && format(new Date(formattedDate), 'HH:mm:ss') <= '21:30:00') {
+            qb.where("shift.name IN ('Turno 2', 'Turno 3', 'Mixto')");
+          }
+        }))
+        .orderBy('CASE WHEN shift.name = \'Turno 1\' THEN 1 WHEN shift.name = \'Turno 2\' THEN 2 WHEN shift.name = \'Mixto\' THEN 3 ELSE 4 END') // Ordenar por Turno
+        .addOrderBy('employee.employee_number', 'ASC')
+        .addOrderBy('employeeChecadas.date', 'ASC')
+        .getMany();
 
       const doc = new PDFDocument({
         bufferPages: true,
       });
-            
+
       let i;
       let end;
       const datos = [];
-      
+
       //image
       const logoImg = path.resolve(__dirname, '../../../assets/imgs/logo.png');
       doc.image(logoImg, 50, 50, {
@@ -3525,12 +3701,12 @@ export class EmployeeIncidenceService {
 
       /* const pdfPath= path.resolve(__dirname, `../../../documents/temp/objetivos/${datePDF.getFullYear()}${datePDF.getMonth()+1}${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`);
           doc.pipe(fs.createWriteStream(pdfPath)); */
- 
+
       //doc.pipe(req);
 
       doc.end();
 
-      return {pdf: doc as unknown as Readable, data: tableRows};
+      return { pdf: doc as unknown as Readable, data: tableRows };
     } catch (error) {
       // Handle errors
       throw new Error(`Error generating report: ${error.message}`);
