@@ -1,0 +1,323 @@
+
+> start
+> nest start
+
+4/6/2025, 8:23:20 a.m. [info]: Starting Nest application...
+4/6/2025, 8:23:20 a.m. [info]: MailerModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: PassportModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: DatabaseModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: FileModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: MailerCoreModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: ConfigHostModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: DiscoveryModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: MailModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: JwtModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: ConfigModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: ScheduleModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: WebsocketModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: AppModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [error]: Error occurred while verifying the transporter}: queryA EBADNAME oe-que-development@oechsler.mx - undefined
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmCoreModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmCoreModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TypeOrmModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: DocumentModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: CalendarModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: PercentageDefinitionModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: AuthModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: JobsModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: DepartmentsModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: PayrollsModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: VacationsProfileModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: EmployeeProfilesModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: RolesModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: ViewsModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: ShiftModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: PatternModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: IncidenceCatologueModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: CompetenceModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: SupplierModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: UsersModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: LogAdjustmentVacationModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: DocumentEmployeeModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: CourseEfficiencyModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: JobDocumentModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: CourseModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: OrganigramaModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: EnabledCreateIncidenceModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: EmployeeShiftModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: EmployeesModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: DocumentClasificationModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: ChecadorModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: RequestCourseModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: TimeCorrectionModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: EmployeeIncidenceModule dependencies initialized
+4/6/2025, 8:23:20 a.m. [info]: EmployeeObjectiveModule dependencies initialized
+4/6/2025, 8:23:21 a.m. [info]: WebsocketGateway subscribed to the "loggin" message
+4/6/2025, 8:23:21 a.m. [info]: AppController {/}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/test, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/nuevo, GET} route
+4/6/2025, 8:23:21 a.m. [info]: JobDocumentController {/job-document}:
+4/6/2025, 8:23:21 a.m. [info]: JobsController {/jobs}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/jobs, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/jobs, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/jobs/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/jobs/:id/competence, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/jobs/:id/files, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/jobs/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/jobs/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: UsersController {/users}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users/deleted, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users/name, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users/password/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users/restore/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/users/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: EmployeesController {/employees}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/upload, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/find, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/empOtherViews, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/findBy, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/findEmployeeProduction, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/findByEmployeeNumber/:ids, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employees/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: VacationsReportController {/vacations-report}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-report, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-report/:id, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-report/status/vacation, POST} route
+4/6/2025, 8:23:21 a.m. [info]: DepartmentsController {/departments}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/departments, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/departments, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/departments/deptOtherViews, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/departments/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/departments/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/departments/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: PayrollsController {/payrolls}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/payrolls, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/payrolls, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/payrolls/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/payrolls/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/payrolls/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: VacationsProfileController {/vacations-profile}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-profile, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-profile, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-profile/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-profile/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/vacations-profile/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: EmployeeProfilesController {/employee-profiles}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-profiles, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-profiles, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-profiles/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-profiles/:id, PATCH} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-profiles/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: OrganigramaController {/organigrama}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama/leaders/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama/leaders/gerarquia/organigrama, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama/leaders/gerarquia/organigrama/:idEmployee, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/organigrama/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: CalendarController {/calendar}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/calendar, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/calendar, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/calendar/date/:date, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/calendar/range-date, GET} route
+4/6/2025, 8:23:21 a.m. [info]: AuthController {/auth}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/auth/login, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/auth/logout, GET} route
+4/6/2025, 8:23:21 a.m. [info]: RolesController {/roles}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/roles, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/roles, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/roles/deleted, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/roles/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/roles/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/roles/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/roles/restore/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: ViewsController {/views}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views/deleted, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views/permission/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/views/restore/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: ShiftController {/shift}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/shift, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/shift, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/shift/shiftsOtherViews, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/shift/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/shift/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/shift/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: PatternController {/pattern}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/pattern, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/pattern, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/pattern/patternsOtherViews, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/pattern/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/pattern/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/pattern/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: EmployeeShiftController {/employee-shift}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift/access, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift/shift-emps, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift/shift-emps/byDept/:idLeader/:idDept/:idUser, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift/:id, PATCH} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-shift/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: IncidenceCatologueController {/incidence-catologue}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/incidence-catologue, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/incidence-catologue, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/incidence-catologue/incidencesOtherViews, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/incidence-catologue/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/incidence-catologue/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/incidence-catologue/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: EmployeeIncidenceController {/employee-incidence}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/:status/:approval, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/incidences/status/:status, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/incidences/jerente/:status, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/incidences, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/incidences/date/:ids/:start/:end, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/view/autorizar-incidencia/access/autorizar/incidencia/leader, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/:id/comment, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/:id/approve, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/cancel/multiple, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-incidence/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: ReportEmployeeIncidenceController {/report/employee-incidence}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/report/employee-incidence, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/report/employee-incidence/plant-employee, GET} route
+4/6/2025, 8:23:21 a.m. [info]: ReportFlexTimeController {/report/flex-time}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/report/flex-time, GET} route
+4/6/2025, 8:23:21 a.m. [info]: ChecadorController {/checador}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador/byIds, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador/byIds, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador/nomipaq, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador/nomipaq/report, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/checador/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: EnabledCreateIncidenceController {/enabled-create-incidence}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/enabled-create-incidence, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/enabled-create-incidence, GET} route
+4/6/2025, 8:23:21 a.m. [info]: TimeCorrectionController {/time-correction}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/time-correction, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/time-correction, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/time-correction/checadas, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/time-correction/report, GET} route
+4/6/2025, 8:23:21 a.m. [info]: LogAdjustmentVacationController {/log_adjustment_vacation}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/log_adjustment_vacation, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/log_adjustment_vacation, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/log_adjustment_vacation/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/log_adjustment_vacation/search/adjustmentVacation, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/log_adjustment_vacation/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/log_adjustment_vacation/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: CompetenceController {/competence}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/competence, GET} route
+4/6/2025, 8:23:21 a.m. [info]: PercentageDefinitionController {/percentage-definition}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/percentage-definition, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/percentage-definition, GET} route
+4/6/2025, 8:23:21 a.m. [info]: EmployeeObjetiveController {/employee-objective}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/partial, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/skipEvaluationMidYear, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/pdf/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/employee/:idEmployee/:year, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/partial, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: EmployeeObjetiveMedioAnoController {/employee-objective/medio-anio}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/medio-anio, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/employee-objective/medio-anio/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: CourseController {/course}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course/upload/:id, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course/acceso, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course/trainin-goal, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course/file/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: RequestCourseController {/request_course}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/request_course, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/request_course, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/request_course/access, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/request_course/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/request_course/find/by, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/request_course/find/by/:status, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/request_course/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: AssignmentCourseController {/assignment_course}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/assignment_course, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/assignment_course, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/assignment_course/access, GET} route
+4/6/2025, 8:23:21 a.m. [info]: SupplierController {/supplier}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/supplier, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/supplier, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/supplier/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/supplier/:id, PUT} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/supplier/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: TeacherController {/teacher}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/teacher, GET} route
+4/6/2025, 8:23:21 a.m. [info]: DocumentController {/}:
+4/6/2025, 8:23:21 a.m. [info]: DocumentClasificationController {/document-clasification}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/document-clasification, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/document-clasification/file/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/document-clasification/employee/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/document-clasification/upload-file, POST} route
+4/6/2025, 8:23:21 a.m. [info]: DocumentEmployeeController {/document-employee}:
+4/6/2025, 8:23:21 a.m. [info]: CourseEfficiencyController {/course-efficiency}:
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course-efficiency, POST} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course-efficiency, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course-efficiency/:id, GET} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course-efficiency/:id, PATCH} route
+4/6/2025, 8:23:21 a.m. [info]: Mapped {/course-efficiency/:id, DELETE} route
+4/6/2025, 8:23:21 a.m. [info]: Nest application successfully started
+Application is running on:  http://[::1]:3501
+Terminate batch job (Y/N)? 
