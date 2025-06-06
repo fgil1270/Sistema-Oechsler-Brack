@@ -1651,6 +1651,8 @@ export class EmployeeIncidenceService {
       // Cláusula WHERE para filtrar por IDs de empleado: 
       // Filtra los resultados finales para incluir solo los IDs especificados.
       .where('e.id IN (:...employeeIds)', { employeeIds: [arrayEmployeeIds] })
+      .orderBy('e.id', 'ASC')
+      .addOrderBy('es.start_date', 'ASC')
       .getRawMany(); // Ejecuta la consulta y obtiene los resultados
 
 
