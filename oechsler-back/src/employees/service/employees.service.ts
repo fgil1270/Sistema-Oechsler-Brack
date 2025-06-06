@@ -48,7 +48,7 @@ export class EmployeesService {
     private employeeProfilesService: EmployeeProfilesService,
     private organigramaService: OrganigramaService,
     @Inject(forwardRef(() => CalendarService)) private calendarService: CalendarService,
-  ) {}
+  ) { }
 
   async readExcel(file) {
     //LEER ARCHIVO TXT
@@ -319,9 +319,9 @@ export class EmployeesService {
             });
           }
         } catch (error) {
-          this.log.error("variable: "+departamento +", error:", error.stack)
+          this.log.error("variable: " + departamento + ", error:", error.stack)
         }
-        
+
         //BUSCAMOS LA NOMINA
 
         const tablePayRoll = await this.payrollsService.findName(nomina.w);
@@ -448,7 +448,7 @@ export class EmployeesService {
               });
               await this.employeePayrollHistoryRepository.save(empPayroll);
             }
-            
+
             //si el perfil de vacaciones es distinto se crea el historial
             if (
               tableEmployee.vacationProfile.id !== tableVacationProfile.vacationsProfile.id
@@ -458,7 +458,7 @@ export class EmployeesService {
                 this.employeeVacationProfileHistoryRepository.create({
                   employee: tableEmployee,
                   vacationProfile: tableEmployee.vacationProfile,
-                  created_at: dateChangeVacationProfile ?new Date(dateChangeVacationProfile.w.trim()) : new Date(),
+                  created_at: dateChangeVacationProfile ? new Date(dateChangeVacationProfile.w.trim()) : new Date(),
                 });
               await this.employeeVacationProfileHistoryRepository.save(
                 empVacationProfile
@@ -479,7 +479,7 @@ export class EmployeesService {
 
             totalEdit++;
           } catch (error) {
-            
+
             totalError++;
             this.log.error('Error al actualizar', error.stack);
             this.log.error('Error al actualizar', JSON.stringify(row));
@@ -540,7 +540,7 @@ export class EmployeesService {
             await this.employeeRepository.save(emp);
             //createAllemployee.push(row);
 
-            
+
 
             totalNew++;
           } catch (error) {
@@ -605,13 +605,15 @@ export class EmployeesService {
     const total = await this.employeeRepository.count();
 
     const emps = await this.employeeRepository.find({
-      relations: [
-        'department',
-        'job',
-        'payRoll',
-        'vacationProfile',
-        'employeeProfile',
-      ],
+      relations: {
+        department: true,
+        job: {
+          competence: true
+        },
+        payRoll: true,
+        vacationProfile: true,
+        employeeProfile: true
+      },
       order: {
         employee_number: 'ASC',
       },
@@ -779,17 +781,17 @@ export class EmployeesService {
   //Buscar empleados de produccion
   async findEmployeeProduction(query: Partial<findEmployeeProduccion>) {
     const queryEmps = await this.employeeRepository.createQueryBuilder('employee')
-    .innerJoinAndSelect('employee.department', 'department')
-    .innerJoinAndSelect('employee.job', 'job')
-    .innerJoinAndSelect('employee.payRoll', 'payRoll')
-    .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-    .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-    .where('employee.employee_number = :employee_number', { employee_number: query.employee_number })
-    .andWhere('job.produccion_visible = :produccion_visible', { produccion_visible: query.produccion_visible })
+      .innerJoinAndSelect('employee.department', 'department')
+      .innerJoinAndSelect('employee.job', 'job')
+      .innerJoinAndSelect('employee.payRoll', 'payRoll')
+      .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+      .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+      .where('employee.employee_number = :employee_number', { employee_number: query.employee_number })
+      .andWhere('job.produccion_visible = :produccion_visible', { produccion_visible: query.produccion_visible })
     if (query.birthdate) {
       queryEmps.andWhere('employee.birthdate = :birthdate', { birthdate: new Date(query.birthdate) });
     }
-    
+
     queryEmps.orderBy('employee.employee_number', 'ASC');
     const [sql, parameters] = queryEmps.getQueryAndParameters();
 
@@ -831,7 +833,7 @@ export class EmployeesService {
 
   //reporte de vacaciones
   async vacationReport(data, user) {
-    
+
     const employee = await this.organigramaService.findJerarquia(
       {
         type: data.type,
@@ -866,7 +868,7 @@ export class EmployeesService {
       let sumaDiasAntiguedadHistorial: any;
       let sumaDiasAntiguedad: any;
       let dayUsedAllYears = 0; //dias usados en todos los años
-      
+
       let arrayFinAno: any;
       let objDiasByAnoFin: any;
       let objDiasBysiguenteAnoFin: any;
@@ -896,7 +898,7 @@ export class EmployeesService {
         },
       });
 
-      
+
       //se obtiene el ajuste de vacaciones
       const adjustmentVacation = await this.employeeRepository.findOne({
         where: {
@@ -909,14 +911,14 @@ export class EmployeesService {
         relations: {
           logAdjustmentVacationEmployee: true,
         }
-        
+
 
       });
 
 
       //si existe un un historial de vacaciones
       //se toman los dias de vacaciones del historial
-      if(lastVacationProfile){
+      if (lastVacationProfile) {
         //se obtiene el dia de cambio de perfil de vacaciones
         diaCambio = moment(new Date(lastVacationProfile.created_at));
         //se obtiene los años cumplidos al dia de cambio de perfil de vacaciones
@@ -940,17 +942,17 @@ export class EmployeesService {
         //se calculan los dias de vacaciones al dia de la consulta
         //se genera array para separar años y dias
         arrayAno = anoCumplidos.toFixed(2).split('.');
-        
-        
+
+
 
         //se obtiene el total de dias que corresponden al año despues del cambio de perfil
         objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) => 
+          (year) =>
             year.year === ((parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) != 0 ? (parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) + 1 : 1)
         );
         //se obtiene los dias que corresponden al siguiente año
         objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) => 
+          (year) =>
             year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1)
         );
         //se obtiene el total de dias que corresponden al año
@@ -958,7 +960,7 @@ export class EmployeesService {
         //se obtiene los dias que corresponden al siguiente año
         sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
         //suma de los dias de antiguedad
-        sumaDiasAntiguedad = (arrayAno[0] == 0 ? 0: totalDiasByAno) + sumDiasSiguenteAno + sumaDiasAntiguedadHistorial;
+        sumaDiasAntiguedad = (arrayAno[0] == 0 ? 0 : totalDiasByAno) + sumDiasSiguenteAno + sumaDiasAntiguedadHistorial;
         //se obtiene los años cumplidos a fin de año
         anoCumplidosFinAno = finAno.diff(diaCambio, 'years', true);
         //se calculan los dias de vacaciones a fin de año
@@ -969,7 +971,7 @@ export class EmployeesService {
         sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
         sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
 
-      }else{
+      } else {
         //se obtiene los años cumplidos al dia de consulta
         anoCumplidos = diaConsulta.diff(ingreso, 'years', true);
         //se calculan los dias de vacaciones al dia de la consulta
@@ -1001,108 +1003,108 @@ export class EmployeesService {
       //se realiza el calculo con las incidencias
       if (!adjustmentVacation) {
         const incidences = await this.employeeRepository.createQueryBuilder('employee')
-        .select('employee.id', 'employee_id')
-        .addSelect('employeeIncidence.id', 'incidence_id')
-        .addSelect('employeeIncidence.status', 'status')
-        .addSelect('incidenceCatologue.code_band', 'code_band')
-        .addSelect('dateEmployeeIncidence.date', 'incidence_date')
-        .addSelect('employeeShift.start_date', 'shift_date')
-        .addSelect('shift.name', 'shift_name')
-        .innerJoin('employee.employeeIncidence', 'employeeIncidence')
-        .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
-        .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-        .innerJoin('employee.employeeShift', 'employeeShift')
-        .innerJoin('employeeShift.shift', 'shift')
-        .where('employee.id = :id', { id: emp.id })
-        .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente']})
-        .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
-        .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
-        .getRawMany();
-  
-  
+          .select('employee.id', 'employee_id')
+          .addSelect('employeeIncidence.id', 'incidence_id')
+          .addSelect('employeeIncidence.status', 'status')
+          .addSelect('incidenceCatologue.code_band', 'code_band')
+          .addSelect('dateEmployeeIncidence.date', 'incidence_date')
+          .addSelect('employeeShift.start_date', 'shift_date')
+          .addSelect('shift.name', 'shift_name')
+          .innerJoin('employee.employeeIncidence', 'employeeIncidence')
+          .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+          .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+          .innerJoin('employee.employeeShift', 'employeeShift')
+          .innerJoin('employeeShift.shift', 'shift')
+          .where('employee.id = :id', { id: emp.id })
+          .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
+          .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
+          .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
+          .getRawMany();
+
+
         //se obtinene el total de vacaciones autorizadas, pendientes
         incidences?.forEach((element) => {
           if (element.status === 'Pendiente') {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
               totalVacacionesPendientes += 1;
-            }else if (element.code_band === 'VacM') {
+            } else if (element.code_band === 'VacM') {
               totalVacacionesPendientes += 0.5;
             }
-          }else{
+          } else {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
               dayUsedAllYears += 1;
-            }else if (element.code_band === 'VacM') {
+            } else if (element.code_band === 'VacM') {
               dayUsedAllYears += 0.5;
             }
           }
-            
+
         });
         //se suman las vacaciones de medio dia
         dayUsedAllYears += Number(totalVacacionesPendientes); //total de vacaciones
-  
+
       } else {
         //si existe ajuste toma el valor del ajuste
         //y toma las incidencias posteriores al dia de ajuste
         //y sumas las cantidades
-  
-        let totalDiasIncidencia = 0;
-  
-        const incidences = await this.employeeRepository.createQueryBuilder('employee')
-        .select('employee.id', 'employee_id')
-        .addSelect('employeeIncidence.id', 'incidence_id')
-        .addSelect('employeeIncidence.status', 'status')
-        .addSelect('incidenceCatologue.code_band', 'code_band')
-        .addSelect('dateEmployeeIncidence.date', 'incidence_date')
-        .addSelect('employeeShift.start_date', 'shift_date')
-        .addSelect('shift.name', 'shift_name')
-        .innerJoin('employee.employeeIncidence', 'employeeIncidence')
-        .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
-        .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-        .innerJoin('employee.employeeShift', 'employeeShift')
-        .innerJoin('employeeShift.shift', 'shift')
-        .where('employee.id = :id', { id: emp.id })
-        .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente']})
-        .andWhere('dateEmployeeIncidence.date >= :date', { date: format(new Date(adjustmentVacation.logAdjustmentVacationEmployee[0].created_at), 'yyyy-MM-dd')})
-        .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
-        .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
-        .getRawMany();
 
-  
+        let totalDiasIncidencia = 0;
+
+        const incidences = await this.employeeRepository.createQueryBuilder('employee')
+          .select('employee.id', 'employee_id')
+          .addSelect('employeeIncidence.id', 'incidence_id')
+          .addSelect('employeeIncidence.status', 'status')
+          .addSelect('incidenceCatologue.code_band', 'code_band')
+          .addSelect('dateEmployeeIncidence.date', 'incidence_date')
+          .addSelect('employeeShift.start_date', 'shift_date')
+          .addSelect('shift.name', 'shift_name')
+          .innerJoin('employee.employeeIncidence', 'employeeIncidence')
+          .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+          .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+          .innerJoin('employee.employeeShift', 'employeeShift')
+          .innerJoin('employeeShift.shift', 'shift')
+          .where('employee.id = :id', { id: emp.id })
+          .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
+          .andWhere('dateEmployeeIncidence.date >= :date', { date: format(new Date(adjustmentVacation.logAdjustmentVacationEmployee[0].created_at), 'yyyy-MM-dd') })
+          .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
+          .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
+          .getRawMany();
+
+
         incidences?.forEach((element) => {
           if (element.status === 'Pendiente') {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-              if(element.shift_name === '12x12-1' || element.shift_name === '12x12-2'){
+              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
                 totalVacacionesPendientes += 1.5;
                 totalDiasIncidencia += 1.5;
-              }else{
+              } else {
                 totalVacacionesPendientes += 1;
                 totalDiasIncidencia += 1;
               }
-              
-            }else if (element.code_band === 'VacM') {
+
+            } else if (element.code_band === 'VacM') {
               totalVacacionesPendientes += 0.5;
               totalDiasIncidencia += Number(0.5);
             }
-          }else{
+          } else {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-              if(element.shift_name === '12x12-1' || element.shift_name === '12x12-2'){
+              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
                 totalDiasIncidencia += 1.5;
-              }else{
+              } else {
                 totalDiasIncidencia += 1;
               }
-              
-            }else if (element.code_band === 'VacM') {
+
+            } else if (element.code_band === 'VacM') {
               totalDiasIncidencia += Number(0.5);
             }
           }
         });
-  
-  
+
+
         dayUsedAllYears = Number(adjustmentVacation.logAdjustmentVacationEmployee[adjustmentVacation.logAdjustmentVacationEmployee.length - 1].new_value) + parseFloat(totalDiasIncidencia.toFixed(2));
       }
 
-      let totalAnoCumplido = Number(anoCumplidos.toFixed(2)) + Number(anoCumplidoDiaCambio? anoCumplidoDiaCambio.toFixed(2): 0);
-      let totalAnoCumplidoFinAno = Number(anoCumplidoDiaCambio? anoCumplidoDiaCambio.toFixed(2) : 0) + Number(anoCumplidosFinAno.toFixed(2))
+      let totalAnoCumplido = Number(anoCumplidos.toFixed(2)) + Number(anoCumplidoDiaCambio ? anoCumplidoDiaCambio.toFixed(2) : 0);
+      let totalAnoCumplidoFinAno = Number(anoCumplidoDiaCambio ? anoCumplidoDiaCambio.toFixed(2) : 0) + Number(anoCumplidosFinAno.toFixed(2))
       row['id'] = emp.id;
       row['perfil'] = emp.employeeProfile.name;
       row['num_employee'] = emp.employee_number;
@@ -1123,7 +1125,7 @@ export class EmployeesService {
   }
 
   //consultar vacaciones por empleado
-  async vacationByEmployee(id: number, data:any){
+  async vacationByEmployee(id: number, data: any) {
 
     const emp = await this.employeeRepository.findOne({
       where: {
@@ -1164,7 +1166,7 @@ export class EmployeesService {
         logAdjustmentVacationEmployee: true,
       },
     });
-    
+
     //let adjustment = await this.logAdjustmentVacationService.findby({id_employee: emp.id}); //log de ajuste de vacaciones
     //se calculan los dias de vacaciones al dia de la consulta
     const arrayAno = anoCumplidos.toFixed(2).split('.');
@@ -1190,23 +1192,23 @@ export class EmployeesService {
     //se realiza el calculo con las incidencias
     if (!adjustmentVacation) {
       const incidences = await this.employeeRepository.createQueryBuilder('employee')
-      .select('employee.id', 'employee_id')
-      .addSelect('employeeIncidence.id', 'incidence_id')
-      .addSelect('employeeIncidence.status', 'status')
-      .addSelect('incidenceCatologue.code_band', 'code_band')
-      .addSelect('dateEmployeeIncidence.date', 'incidence_date')
-      .addSelect('employeeShift.start_date', 'shift_date')
-      .addSelect('shift.name', 'shift_name')
-      .innerJoin('employee.employeeIncidence', 'employeeIncidence')
-      .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
-      .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-      .innerJoin('employee.employeeShift', 'employeeShift')
-      .innerJoin('employeeShift.shift', 'shift')
-      .where('employee.id = :id', { id: emp.id })
-      .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente']})
-      .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
-      .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
-      .getRawMany();
+        .select('employee.id', 'employee_id')
+        .addSelect('employeeIncidence.id', 'incidence_id')
+        .addSelect('employeeIncidence.status', 'status')
+        .addSelect('incidenceCatologue.code_band', 'code_band')
+        .addSelect('dateEmployeeIncidence.date', 'incidence_date')
+        .addSelect('employeeShift.start_date', 'shift_date')
+        .addSelect('shift.name', 'shift_name')
+        .innerJoin('employee.employeeIncidence', 'employeeIncidence')
+        .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+        .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+        .innerJoin('employee.employeeShift', 'employeeShift')
+        .innerJoin('employeeShift.shift', 'shift')
+        .where('employee.id = :id', { id: emp.id })
+        .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
+        .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
+        .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
+        .getRawMany();
 
       dataTest = incidences;
 
@@ -1215,17 +1217,17 @@ export class EmployeesService {
         if (element.status === 'Pendiente') {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
             totalVacacionesPendientes += 1;
-          }else if (element.code_band === 'VacM') {
+          } else if (element.code_band === 'VacM') {
             totalVacacionesPendientes += 0.5;
           }
-        }else{
+        } else {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
             dayUsedAllYears += 1;
-          }else if (element.code_band === 'VacM') {
+          } else if (element.code_band === 'VacM') {
             dayUsedAllYears += 0.5;
           }
         }
-          
+
       });
       //se suman las vacaciones de medio dia
       dayUsedAllYears += Number(totalVacacionesPendientes); //total de vacaciones
@@ -1238,51 +1240,51 @@ export class EmployeesService {
       let totalDiasIncidencia = 0;
 
       const incidences = await this.employeeRepository.createQueryBuilder('employee')
-      .select('employee.id', 'employee_id')
-      .addSelect('employeeIncidence.id', 'incidence_id')
-      .addSelect('employeeIncidence.status', 'status')
-      .addSelect('incidenceCatologue.code_band', 'code_band')
-      .addSelect('dateEmployeeIncidence.date', 'incidence_date')
-      .addSelect('employeeShift.start_date', 'shift_date')
-      .addSelect('shift.name', 'shift_name')
-      .innerJoin('employee.employeeIncidence', 'employeeIncidence')
-      .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
-      .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-      .innerJoin('employee.employeeShift', 'employeeShift')
-      .innerJoin('employeeShift.shift', 'shift')
-      .where('employee.id = :id', { id: emp.id })
-      .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente']})
-      .andWhere('dateEmployeeIncidence.date >= :date', { date: format(new Date(adjustmentVacation.logAdjustmentVacationEmployee[0].created_at), 'yyyy-MM-dd')})
-      .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
-      .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
-      .getRawMany();
+        .select('employee.id', 'employee_id')
+        .addSelect('employeeIncidence.id', 'incidence_id')
+        .addSelect('employeeIncidence.status', 'status')
+        .addSelect('incidenceCatologue.code_band', 'code_band')
+        .addSelect('dateEmployeeIncidence.date', 'incidence_date')
+        .addSelect('employeeShift.start_date', 'shift_date')
+        .addSelect('shift.name', 'shift_name')
+        .innerJoin('employee.employeeIncidence', 'employeeIncidence')
+        .innerJoin('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
+        .innerJoin('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+        .innerJoin('employee.employeeShift', 'employeeShift')
+        .innerJoin('employeeShift.shift', 'shift')
+        .where('employee.id = :id', { id: emp.id })
+        .andWhere('employeeIncidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
+        .andWhere('dateEmployeeIncidence.date >= :date', { date: format(new Date(adjustmentVacation.logAdjustmentVacationEmployee[0].created_at), 'yyyy-MM-dd') })
+        .andWhere('incidenceCatologue.code_band IN (:code)', { code: ['VAC', 'VACA', 'VacM'] })
+        .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
+        .getRawMany();
 
       dataTest = incidences;
 
       incidences?.forEach((element) => {
         if (element.status === 'Pendiente') {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-            if(element.shift_name === '12x12-1' || element.shift_name === '12x12-2'){
+            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
               totalVacacionesPendientes += 1.5;
               totalDiasIncidencia += 1.5;
-            }else{
+            } else {
               totalVacacionesPendientes += 1;
               totalDiasIncidencia += 1;
             }
-            
-          }else if (element.code_band === 'VacM') {
+
+          } else if (element.code_band === 'VacM') {
             totalVacacionesPendientes += 0.5;
             totalDiasIncidencia += Number(0.5);
           }
-        }else{
+        } else {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-            if(element.shift_name === '12x12-1' || element.shift_name === '12x12-2'){
+            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
               totalDiasIncidencia += 1.5;
-            }else{
+            } else {
               totalDiasIncidencia += 1;
             }
-            
-          }else if (element.code_band === 'VacM') {
+
+          } else if (element.code_band === 'VacM') {
             totalDiasIncidencia += Number(0.5);
           }
         }
@@ -1300,8 +1302,8 @@ export class EmployeesService {
       end: finAno
     });
 
-    const totalDiasSugeridos = arrayDiasSugeridos.filter((element) => element.suggest == true ).length;
-    
+    const totalDiasSugeridos = arrayDiasSugeridos.filter((element) => element.suggest == true).length;
+
     row['id'] = emp.id;
     row['perfil'] = emp.employeeProfile.name;
     row['num_employee'] = emp.employee_number;
@@ -1322,19 +1324,19 @@ export class EmployeesService {
   }
 
   //reporte status de vacaiones
-  async statusVacation(data: any, userLogin: any){
+  async statusVacation(data: any, userLogin: any) {
     let response = {
       data: [],
       total: 0,
       error: false,
       message: ''
-    } 
+    }
     const startDate = format(new Date(data.startDate), 'yyyy-MM-dd');
     const endDate = format(new Date(data.endDate), 'yyyy-MM-dd');
     let dataEmployee = [];
-      
+
     try {
-      
+
       const incidencias = await this.employeeRepository.find({
         select: {
           employee_number: true,
@@ -1371,8 +1373,8 @@ export class EmployeesService {
           },
         },
       });
-      
-      
+
+
       response.total = incidencias.length;
       response.data = incidencias;
 
@@ -1381,10 +1383,10 @@ export class EmployeesService {
       response.error = true;
       response.message = error.message;
     }
-    
+
 
   }
 
-    
-    
+
+
 }
