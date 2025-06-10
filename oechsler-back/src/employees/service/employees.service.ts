@@ -171,7 +171,7 @@ export class EmployeesService {
     let totalNew = 0;
     let totalError = 0;
     const errors = [];
-    for (let rowNum = 1; rowNum < range.e.r; rowNum++) {
+    for (let rowNum = 1; rowNum <= range.e.r; rowNum++) {
       //for (let colNum = 0; colNum <= 1; colNum++) {
       const exNoEmployee =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 0 })];
@@ -248,6 +248,13 @@ export class EmployeesService {
 
       //validar email
       //email === undefined ||
+      if (exNoEmployee.w.trim()) {
+        console.log("primera")
+        console.log("numero de empleado", exNoEmployee.w.trim())
+        console.log("row", rowNum)
+        console.log("total", total)
+
+      }
 
       //SE VALIDA QUE NO EXISTAN CAMPOS VACIOS
       if (exNoEmployee === undefined) {
@@ -490,6 +497,7 @@ export class EmployeesService {
           }
         } else {
           //SE CREA EL EMPLEADO
+
           try {
             row.payRoll = tablePayRoll ? tablePayRoll.payroll : {};
             row.department = tableDepartment ? tableDepartment.dept : {};
