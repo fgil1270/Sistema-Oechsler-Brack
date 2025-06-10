@@ -39,7 +39,7 @@ import { el } from 'date-fns/locale';
 @ApiTags('Objetivos de  Empleado')
 @Controller('employee-objective')
 export class EmployeeObjetiveController {
-  constructor(private employeeObjetiveService: EmployeeObjetiveService) {}
+  constructor(private employeeObjetiveService: EmployeeObjetiveService) { }
   status = {
     code: 200,
     message: 'OK',
@@ -57,7 +57,7 @@ export class EmployeeObjetiveController {
     return this.employeeObjetiveService.create(currData, user);
   }
 
-  @ApiOperation({ summary: 'se asignan los objetivos de empleado de manera parcial'})
+  @ApiOperation({ summary: 'se asignan los objetivos de empleado de manera parcial' })
   @Post('partial')
   async createDefinitionObjectiveAnnualPartial(
     @Body() currData: UpdateEmployeeObjectiveDtoPartial,
@@ -69,7 +69,7 @@ export class EmployeeObjetiveController {
     );
   }
 
-  @ApiOperation({ summary: 'Omitir Evaluacion de medio año'})
+  @ApiOperation({ summary: 'Omitir Evaluacion de medio año' })
   @Post('skipEvaluationMidYear')
   async skipEvaluationMidYear(
     @Body() currData: UpdateEmployeeObjectiveDto,
@@ -81,7 +81,7 @@ export class EmployeeObjetiveController {
     );
   }
 
-  @ApiOperation({ summary: 'Acceso a la vista para definir objetivos, ademas se verifica si el empleado tiene objetivos asignados'})
+  @ApiOperation({ summary: 'Acceso a la vista para definir objetivos, ademas se verifica si el empleado tiene objetivos asignados' })
   @Get()
   @Views('definir_objetivo')
   findAll(@Query() currData: any, @CurrentUser() user: any) {
@@ -90,6 +90,15 @@ export class EmployeeObjetiveController {
     } else {
       return this.employeeObjetiveService.findAll(currData, user);
     }
+  }
+
+  @ApiOperation({ summary: "Obtener las calificaciones de las competencias por empleado" })
+  @Get('competence')
+  async findCompetence(
+    @Query() currData: any,
+    @CurrentUser() user: any,
+  ) {
+    return this.employeeObjetiveService.findCompetence(currData, user);
   }
 
   @ApiOperation({
@@ -238,7 +247,7 @@ export class EmployeeObjetiveController {
 @ApiTags('Evaluacion de objetivos medio año')
 @Controller('employee-objective/medio-anio')
 export class EmployeeObjetiveMedioAnoController {
-  constructor(private employeeObjetiveService: EmployeeObjetiveService) {}
+  constructor(private employeeObjetiveService: EmployeeObjetiveService) { }
   status = {
     code: 200,
     message: 'OK',
@@ -247,7 +256,7 @@ export class EmployeeObjetiveMedioAnoController {
     status: 'success',
   };
 
-  @ApiOperation({ summary: 'Acceso a la vista evaluación medio año'})
+  @ApiOperation({ summary: 'Acceso a la vista evaluación medio año' })
   @Get()
   findAll(@Query() currData: any, @CurrentUser() user: any) {
     if (currData.action == 'acceso') {
@@ -260,7 +269,7 @@ export class EmployeeObjetiveMedioAnoController {
   @ApiOperation({ summary: 'Evaluacion de empleado medio y fin de año' })
   @Put(':id')
   async updateObjective(@Param('id', ParseIntPipe) id: number, @Body() currData: any, @CurrentUser() user: any) {
-    
+
     switch (currData.action) {
       //evaluacion medio año empleado
       case 'updateEvaluationEmployee':
@@ -309,7 +318,7 @@ export class EmployeeObjetiveMedioAnoController {
       //evaluacion fin de año empleado
       case 'updateEvaluationEndYearEmployee':
         const dataDefinitionFin: UpdateDefinitionObjectiveAnnualDto = currData.evaluacionEmployee;
-        
+
         const resultFin =
           await this.employeeObjetiveService.evaluationEmployeeEndYear(
             id,
@@ -343,5 +352,5 @@ export class EmployeeObjetiveMedioAnoController {
     return this.status;
   }
 
-  
+
 }

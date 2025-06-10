@@ -14,8 +14,9 @@ import {
   LessThanOrEqual,
   Between,
   QueryRunner,
+  DataSource
 } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import PDFDocument from 'pdfkit-table';
@@ -63,7 +64,8 @@ export class EmployeeObjetiveService {
     private courseService: CourseService,
     private mailerService: MailService,
     private requestCourseService: RequestCourseService,
-  ) {}
+    @InjectDataSource() private dataSource: DataSource,
+  ) { }
 
   async create(currData: CreateEmployeeObjectiveDto, user: any) {
     const status = {
@@ -73,7 +75,7 @@ export class EmployeeObjetiveService {
       data: {},
       status: 'success',
     };
-    
+
     try {
       //si ya existe la asignacion de objetivos solo asigna las competencias por puesto
       let saveDefinitionObjetive: any;
@@ -95,7 +97,7 @@ export class EmployeeObjetiveService {
 
         //si skipMidYearEvaluation es true se asigna el status de evaluado fin de año
         //y se asignan los valores de evaluacion
-        if(currData.skipMidYearEvaluation){
+        if (currData.skipMidYearEvaluation) {
           saveDefinitionObjetive.status = 'Pendiente evaluado fin de año';
           saveDefinitionObjetive.is_evaluated = true;
           saveDefinitionObjetive.half_year_employee_range = 'B - Dentro de las expectativas';
@@ -104,11 +106,11 @@ export class EmployeeObjetiveService {
           saveDefinitionObjetive.half_year_leader_range = 'B - Dentro de las expectativas';
           saveDefinitionObjetive.half_year_leader_value = 100;
           saveDefinitionObjetive.half_year_leader_comment = 'Evaluado por sistema';
-          
-        }else{
+
+        } else {
           saveDefinitionObjetive.status = 'Definido';
         }
-        
+
 
         await this.definitionObjectiveAnnual.save(saveDefinitionObjetive);
 
@@ -453,12 +455,12 @@ export class EmployeeObjetiveService {
         },
       });
 
-      
+
       //tabla de metas y objetivos
       let totalPercentageObjective = 0;
       definitionObjectiveAnnual.objective.forEach((element) => {
         let percentageObjective = 0;
-        percentageObjective = element.objectiveEvaluation[0]?.value_end_year ? (Number(element.percentage) * Number(element.objectiveEvaluation? element.objectiveEvaluation[0].value_end_year : 0)) / 100 : 0;
+        percentageObjective = element.objectiveEvaluation[0]?.value_end_year ? (Number(element.percentage) * Number(element.objectiveEvaluation ? element.objectiveEvaluation[0].value_end_year : 0)) / 100 : 0;
         totalPercentageObjective += percentageObjective;
         arrayObjective.push([
           `${element.goal}`,
@@ -551,17 +553,17 @@ export class EmployeeObjetiveService {
       //tabla de desempeño personal
       definitionObjectiveAnnual.objectiveQuestion.forEach((element) => {
         let percentagePerformance = 0;
-        percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
+        percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length)) * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
         totalPercentagePerformance += percentagePerformance;
-        if(element.question == 'Conocimiento'){
+        if (element.question == 'Conocimiento') {
           arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-        }else if(element.question == 'Trabajo'){
+        } else if (element.question == 'Trabajo') {
           arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-        }else if(element.question == 'Administracion'){
+        } else if (element.question == 'Administracion') {
           arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-        }else if(element.question == 'Compromiso'){
+        } else if (element.question == 'Compromiso') {
           arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-        }else if(element.question == 'Decision'){
+        } else if (element.question == 'Decision') {
           arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
         }
       });
@@ -600,7 +602,7 @@ export class EmployeeObjetiveService {
       const arrayCompetence = [];
       let totalPercentageCompetence = 0;
       definitionObjectiveAnnual.competenceEvaluation.forEach((element) => {
-        totalPercentageCompetence += element.value_end_year ? ((Number(element.value_end_year) / Number(definitionObjectiveAnnual.competenceEvaluation.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_competence)) / 100 : 0;
+        totalPercentageCompetence += element.value_end_year ? ((Number(element.value_end_year) / Number(definitionObjectiveAnnual.competenceEvaluation.length)) * Number(definitionObjectiveAnnual.percentageDefinition.value_competence)) / 100 : 0;
         arrayCompetence.push([
           //`${element.type}`,
           `${element.competence.name}`,
@@ -608,7 +610,7 @@ export class EmployeeObjetiveService {
           `${element.comment_end_year ? element.comment_end_year : ''}`
         ]);
       });
-      
+
       /* arrayCompetence.push(
         ['Promedio Competencias', '', ''],
         ['Porcentaje logrado', '', ''],
@@ -643,20 +645,20 @@ export class EmployeeObjetiveService {
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
           [
-            `Medio Año`, 
-            `${definitionObjectiveAnnual.half_year_employee_value ? definitionObjectiveAnnual.half_year_employee_value : 0}`, 
-            `${definitionObjectiveAnnual.half_year_employee_range ? definitionObjectiveAnnual.half_year_employee_range : ''}`, 
+            `Medio Año`,
+            `${definitionObjectiveAnnual.half_year_employee_value ? definitionObjectiveAnnual.half_year_employee_value : 0}`,
+            `${definitionObjectiveAnnual.half_year_employee_range ? definitionObjectiveAnnual.half_year_employee_range : ''}`,
             `${definitionObjectiveAnnual.half_year_employee_comment ? definitionObjectiveAnnual.half_year_employee_comment : ''}`
           ],
           [
-            `Fin de Año`, 
-            `${definitionObjectiveAnnual.end_year_employee_value ? definitionObjectiveAnnual.end_year_employee_value : 0}`, 
-            `${definitionObjectiveAnnual.end_year_employee_range ? definitionObjectiveAnnual.end_year_employee_range : ''}`, 
+            `Fin de Año`,
+            `${definitionObjectiveAnnual.end_year_employee_value ? definitionObjectiveAnnual.end_year_employee_value : 0}`,
+            `${definitionObjectiveAnnual.end_year_employee_range ? definitionObjectiveAnnual.end_year_employee_range : ''}`,
             `${definitionObjectiveAnnual.end_year_employee_comment ? definitionObjectiveAnnual.end_year_employee_comment : ''}`
           ],
         ],
       };
-      
+
       if (doc.y > 630) {
         await doc.addPage();
       } else {
@@ -687,9 +689,9 @@ export class EmployeeObjetiveService {
         headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
         rows: [
           [
-            `Medio Año`, 
-            `${definitionObjectiveAnnual.half_year_leader_value ? definitionObjectiveAnnual.half_year_leader_value : 0}`, 
-            `${definitionObjectiveAnnual.half_year_leader_range ? definitionObjectiveAnnual.half_year_leader_range : ''}`, 
+            `Medio Año`,
+            `${definitionObjectiveAnnual.half_year_leader_value ? definitionObjectiveAnnual.half_year_leader_value : 0}`,
+            `${definitionObjectiveAnnual.half_year_leader_range ? definitionObjectiveAnnual.half_year_leader_range : ''}`,
             `${definitionObjectiveAnnual.half_year_leader_comment ? definitionObjectiveAnnual.half_year_leader_comment : ''}`
           ],
           [`Fin de Año`, `${definitionObjectiveAnnual.end_year_leader_value}`, `${definitionObjectiveAnnual.end_year_leader_range}`, `${definitionObjectiveAnnual.end_year_leader_comment}`],
@@ -735,19 +737,18 @@ export class EmployeeObjetiveService {
             `${definitionObjectiveAnnual.percentageDefinition.value_objetive}`,
             `${definitionObjectiveAnnual.percentageDefinition.value_performance}`,
             `${definitionObjectiveAnnual.percentageDefinition.value_competence}`,
-            `${
-              Number(
-                definitionObjectiveAnnual.percentageDefinition.value_objetive,
-              ) +
-              Number(
-                definitionObjectiveAnnual.percentageDefinition.value_performance,
-              ) +
-              Number(
-                definitionObjectiveAnnual.percentageDefinition.value_competence,
-              )
+            `${Number(
+              definitionObjectiveAnnual.percentageDefinition.value_objetive,
+            ) +
+            Number(
+              definitionObjectiveAnnual.percentageDefinition.value_performance,
+            ) +
+            Number(
+              definitionObjectiveAnnual.percentageDefinition.value_competence,
+            )
             }`,
           ],
-          [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence).toFixed(1)}`]
+          [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective + totalPercentagePerformance + totalPercentageCompetence).toFixed(1)}`]
         ],
       };
 
@@ -789,8 +790,7 @@ export class EmployeeObjetiveService {
 
       const pdfPath = path.resolve(
         __dirname,
-        `../../../documents/temp/objetivos/${datePDF.getFullYear()}${
-          datePDF.getMonth() + 1
+        `../../../documents/temp/objetivos/${datePDF.getFullYear()}${datePDF.getMonth() + 1
         }${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`,
       );
       doc.pipe(fs.createWriteStream(pdfPath));
@@ -801,8 +801,7 @@ export class EmployeeObjetiveService {
       if (asigmentObjective.employee.userId.length > 0) {
         email = await this.mailerService.sendEmailPDFFile(
           'Objetivos de Empleado',
-          `${datePDF.getFullYear()}${
-            datePDF.getMonth() + 1
+          `${datePDF.getFullYear()}${datePDF.getMonth() + 1
           }${datePDF.getDate()}${datePDF.getHours()}${datePDF.getMinutes()}${datePDF.getSeconds()}.pdf`,
           [
             asigmentObjective.employee.userId
@@ -839,7 +838,7 @@ export class EmployeeObjetiveService {
     };
     let saveDefinitionObjetive = null;
     const evaluatedBy = await this.employeeService.findOne(user.idEmployee);
-    
+
     try {
       //si ya existe la asignacion de objetivos se asignan
       //objetivos
@@ -868,7 +867,7 @@ export class EmployeeObjetiveService {
             definitionObjectiveAnnual: saveDefinitionObjetive,
           });
 
-          
+
           await this.employeeObjective.save(createEmployeeObjective);
 
           status.message = 'Objetivo asignado correctamente';
@@ -886,7 +885,7 @@ export class EmployeeObjetiveService {
             definitionObjectiveAnnual: saveDefinitionObjetive,
             course: course,
           });
-          
+
 
           const dncCourse = await this.dncCourse.save(createDncCourse);
 
@@ -917,7 +916,7 @@ export class EmployeeObjetiveService {
             evaluation_tool: null,
             comment: dncCourse.comment,
           };
-          
+
 
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
@@ -972,7 +971,7 @@ export class EmployeeObjetiveService {
             evaluation_tool: null,
             comment: dncManual.comment,
           };
-          
+
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
             user,
@@ -1197,7 +1196,7 @@ export class EmployeeObjetiveService {
     const percentage = await this.percentageDefinitionService.findOne(
       currdata.idYear,
     );
-    
+
     //se obtienen los empleados por jerarquia
     const employee = await this.organigramaService.findJerarquia(
       {
@@ -1212,16 +1211,16 @@ export class EmployeeObjetiveService {
 
     //se filtran los empleados que no son operadores
     objEmployee = employee.filter((element) => {
-      
-      return element.job.cv_name != 'OPERADOR GENERAL A' && element.job.cv_name != 'OPERADOR GENERAL B' && element.job.cv_name != 'OPERADOR GENERAL C' 
+
+      return element.job.cv_name != 'OPERADOR GENERAL A' && element.job.cv_name != 'OPERADOR GENERAL B' && element.job.cv_name != 'OPERADOR GENERAL C'
         && element.job.cv_name != 'OPERADOR GENERAL D'
     });
 
-      
+
     for (let index = 0; index < objEmployee.length; index++) {
       const element = objEmployee[index];
-      
-      
+
+
       //se busca si el empleado tiene objetivos asignados para el año seleccionado
       const definitionObjectiveAnnual =
         await this.definitionObjectiveAnnual.findOne({
@@ -1511,12 +1510,12 @@ export class EmployeeObjetiveService {
       },
     });
 
-    
+
     //tabla de metas y objetivos
     let totalPercentageObjective = 0;
     definitionObjectiveAnnual.objective.forEach((element) => {
       let percentageObjective = 0;
-      percentageObjective = element.objectiveEvaluation[0]?.value_end_year ? (Number(element.percentage) * Number(element.objectiveEvaluation? element.objectiveEvaluation[0].value_end_year : 0)) / 100 : 0;
+      percentageObjective = element.objectiveEvaluation[0]?.value_end_year ? (Number(element.percentage) * Number(element.objectiveEvaluation ? element.objectiveEvaluation[0].value_end_year : 0)) / 100 : 0;
       totalPercentageObjective += percentageObjective;
       arrayObjective.push([
         `${element.goal}`,
@@ -1609,17 +1608,17 @@ export class EmployeeObjetiveService {
     //tabla de desempeño personal
     definitionObjectiveAnnual.objectiveQuestion.forEach((element) => {
       let percentagePerformance = 0;
-      percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
+      percentagePerformance = element.value ? ((Number(element.value) / Number(definitionObjectiveAnnual.objectiveQuestion.length)) * Number(definitionObjectiveAnnual.percentageDefinition.value_performance)) / 100 : 0;
       totalPercentagePerformance += percentagePerformance;
-      if(element.question == 'Conocimiento'){
+      if (element.question == 'Conocimiento') {
         arrayPerformance.push(['Conocimientos Tecnicos normativos', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-      }else if(element.question == 'Trabajo'){
+      } else if (element.question == 'Trabajo') {
         arrayPerformance.push(['Trabajo bajo presión', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-      }else if(element.question == 'Administracion'){
+      } else if (element.question == 'Administracion') {
         arrayPerformance.push(['Administración del tiempo', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-      }else if(element.question == 'Compromiso'){
+      } else if (element.question == 'Compromiso') {
         arrayPerformance.push(['Compromiso', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
-      }else if(element.question == 'Decision'){
+      } else if (element.question == 'Decision') {
         arrayPerformance.push(['Toma de decisiones', `${element.comment}`, `${element.value}`, `${percentagePerformance.toFixed(1)}`]);
       }
     });
@@ -1658,7 +1657,7 @@ export class EmployeeObjetiveService {
     const arrayCompetence = [];
     let totalPercentageCompetence = 0;
     definitionObjectiveAnnual.competenceEvaluation.forEach((element) => {
-      totalPercentageCompetence += element.value_end_year ? ((Number(element.value_end_year) / Number(definitionObjectiveAnnual.competenceEvaluation.length))  * Number(definitionObjectiveAnnual.percentageDefinition.value_competence)) / 100 : 0;
+      totalPercentageCompetence += element.value_end_year ? ((Number(element.value_end_year) / Number(definitionObjectiveAnnual.competenceEvaluation.length)) * Number(definitionObjectiveAnnual.percentageDefinition.value_competence)) / 100 : 0;
       arrayCompetence.push([
         //`${element.type}`,
         `${element.competence.name}`,
@@ -1666,7 +1665,7 @@ export class EmployeeObjetiveService {
         `${element.comment_end_year ? element.comment_end_year : ''}`
       ]);
     });
-    
+
     /* arrayCompetence.push(
       ['Promedio Competencias', '', ''],
       ['Porcentaje logrado', '', ''],
@@ -1701,20 +1700,20 @@ export class EmployeeObjetiveService {
       headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
       rows: [
         [
-          `Medio Año`, 
-          `${definitionObjectiveAnnual.half_year_employee_value ? definitionObjectiveAnnual.half_year_employee_value : 0}`, 
-          `${definitionObjectiveAnnual.half_year_employee_range ? definitionObjectiveAnnual.half_year_employee_range : ''}`, 
+          `Medio Año`,
+          `${definitionObjectiveAnnual.half_year_employee_value ? definitionObjectiveAnnual.half_year_employee_value : 0}`,
+          `${definitionObjectiveAnnual.half_year_employee_range ? definitionObjectiveAnnual.half_year_employee_range : ''}`,
           `${definitionObjectiveAnnual.half_year_employee_comment ? definitionObjectiveAnnual.half_year_employee_comment : ''}`
         ],
         [
-          `Fin de Año`, 
-          `${definitionObjectiveAnnual.end_year_employee_value ? definitionObjectiveAnnual.end_year_employee_value : 0}`, 
-          `${definitionObjectiveAnnual.end_year_employee_range ? definitionObjectiveAnnual.end_year_employee_range : ''}`, 
+          `Fin de Año`,
+          `${definitionObjectiveAnnual.end_year_employee_value ? definitionObjectiveAnnual.end_year_employee_value : 0}`,
+          `${definitionObjectiveAnnual.end_year_employee_range ? definitionObjectiveAnnual.end_year_employee_range : ''}`,
           `${definitionObjectiveAnnual.end_year_employee_comment ? definitionObjectiveAnnual.end_year_employee_comment : ''}`
         ],
       ],
     };
-    
+
     if (doc.y > 630) {
       await doc.addPage();
     } else {
@@ -1745,9 +1744,9 @@ export class EmployeeObjetiveService {
       headers: ['Tipo', 'Calificación', 'Detalle', 'Comentarios'],
       rows: [
         [
-          `Medio Año`, 
-          `${definitionObjectiveAnnual.half_year_leader_value ? definitionObjectiveAnnual.half_year_leader_value : 0}`, 
-          `${definitionObjectiveAnnual.half_year_leader_range ? definitionObjectiveAnnual.half_year_leader_range : ''}`, 
+          `Medio Año`,
+          `${definitionObjectiveAnnual.half_year_leader_value ? definitionObjectiveAnnual.half_year_leader_value : 0}`,
+          `${definitionObjectiveAnnual.half_year_leader_range ? definitionObjectiveAnnual.half_year_leader_range : ''}`,
           `${definitionObjectiveAnnual.half_year_leader_comment ? definitionObjectiveAnnual.half_year_leader_comment : ''}`
         ],
         [`Fin de Año`, `${definitionObjectiveAnnual.end_year_leader_value}`, `${definitionObjectiveAnnual.end_year_leader_range}`, `${definitionObjectiveAnnual.end_year_leader_comment}`],
@@ -1793,19 +1792,18 @@ export class EmployeeObjetiveService {
           `${definitionObjectiveAnnual.percentageDefinition.value_objetive}`,
           `${definitionObjectiveAnnual.percentageDefinition.value_performance}`,
           `${definitionObjectiveAnnual.percentageDefinition.value_competence}`,
-          `${
-            Number(
-              definitionObjectiveAnnual.percentageDefinition.value_objetive,
-            ) +
-            Number(
-              definitionObjectiveAnnual.percentageDefinition.value_performance,
-            ) +
-            Number(
-              definitionObjectiveAnnual.percentageDefinition.value_competence,
-            )
+          `${Number(
+            definitionObjectiveAnnual.percentageDefinition.value_objetive,
+          ) +
+          Number(
+            definitionObjectiveAnnual.percentageDefinition.value_performance,
+          ) +
+          Number(
+            definitionObjectiveAnnual.percentageDefinition.value_competence,
+          )
           }`,
         ],
-        [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective+totalPercentagePerformance+totalPercentageCompetence).toFixed(1)}`]
+        [`Obtenido`, `${totalPercentageObjective.toFixed(1)}`, `${totalPercentagePerformance.toFixed(1)}`, `${totalPercentageCompetence.toFixed(1)}`, `${(totalPercentageObjective + totalPercentagePerformance + totalPercentageCompetence).toFixed(1)}`]
       ],
     };
 
@@ -2089,7 +2087,7 @@ export class EmployeeObjetiveService {
         },
       });
 
-      if(currData.skipMidYearEvaluation){
+      if (currData.skipMidYearEvaluation) {
         saveDefinitionObjetive.evaluatedBy = evaluatedBy.emp;
         saveDefinitionObjetive.status = 'Pendiente evaluado fin de año';
         saveDefinitionObjetive.is_evaluated = true;
@@ -2099,7 +2097,7 @@ export class EmployeeObjetiveService {
         saveDefinitionObjetive.half_year_leader_range = 'B - Dentro de las expectativas';
         saveDefinitionObjetive.half_year_leader_value = 100;
         saveDefinitionObjetive.half_year_leader_comment = 'Evaluado por sistema';
-        
+
         await this.definitionObjectiveAnnual.save(saveDefinitionObjetive);
       }
     }
@@ -2134,33 +2132,33 @@ export class EmployeeObjetiveService {
           id: id,
         },
       });
-  
-      if(!definitionObjectiveAnnual){
+
+      if (!definitionObjectiveAnnual) {
         status.code = 200;
         status.message = 'No se encontro la definicion de objetivos';
         status.error = true;
         return status;
       }
-  
+
       definitionObjectiveAnnual.status = 'Pendiente evaluador medio año';
       definitionObjectiveAnnual.half_year_employee_range = currData.half_year_employee_range;
       definitionObjectiveAnnual.half_year_employee_value = currData.half_year_employee_value;
       definitionObjectiveAnnual.half_year_employee_comment = currData.half_year_employee_comment;
-  
+
       await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
-  
-      
+
+
       status.message = 'Objetivos de empleado evaluados correctamente';
       return status;
     } catch (error) {
       status.error = true;
       status.message = error;
       status.code = 400;
-  
+
       return status;
     }
 
-    
+
   }
 
   //evaluacion medio año lider
@@ -2183,19 +2181,19 @@ export class EmployeeObjetiveService {
           dncCourse: true,
           dncCourseManual: true,
           competenceEvaluation: true,
-        }, 
+        },
         where: {
           id: id,
         },
       });
-      
-      if(!definitionObjectiveAnnual){
+
+      if (!definitionObjectiveAnnual) {
         status.code = 200;
         status.message = 'No se encontro la definicion de objetivos';
         status.error = true;
         return status;
       }
-  
+
       definitionObjectiveAnnual.status = 'Pendiente evaluado fin de año';
       definitionObjectiveAnnual.half_year_leader_range = currData.half_year_leader_range;
       definitionObjectiveAnnual.half_year_leader_value = currData.half_year_leader_value;
@@ -2222,11 +2220,11 @@ export class EmployeeObjetiveService {
             objective: {
               id: objective.id,
             },
-          } 
+          }
         })
 
 
-        if(!objectiveEvaluation){
+        if (!objectiveEvaluation) {
           //se crea la evaluacion
           const evaluation = this.employeeObjectiveEvaluation.create({
             value_half_year: Number(element.value),
@@ -2243,19 +2241,19 @@ export class EmployeeObjetiveService {
 
         await this.employeeObjectiveEvaluation.save(objectiveEvaluation);
 
-        
-        
+
+
       }
-      
+
       status.message = 'Objetivos de empleado evaluados correctamente';
       return status;
-      
+
     } catch (error) {
       status.error = true;
       status.message = error.message;
       status.code = 400;
       status.status = 'error';
-  
+
       return status;
     }
 
@@ -2286,33 +2284,33 @@ export class EmployeeObjetiveService {
           id: id,
         },
       });
-  
-      if(!definitionObjectiveAnnual){
+
+      if (!definitionObjectiveAnnual) {
         status.code = 200;
         status.message = 'No se encontro la definicion de objetivos';
         status.error = true;
         return status;
       }
-  
+
       definitionObjectiveAnnual.status = 'Pendiente evaluador fin de año';
       definitionObjectiveAnnual.end_year_employee_range = currData.end_year_employee_range;
       definitionObjectiveAnnual.end_year_employee_value = currData.end_year_employee_value;
       definitionObjectiveAnnual.end_year_employee_comment = currData.end_year_employee_comment;
-  
+
       await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
-  
-      
+
+
       status.message = 'Objetivos de empleado evaluados correctamente';
       return status;
     } catch (error) {
       status.error = true;
       status.message = error;
       status.code = 400;
-  
+
       return status;
     }
 
-    
+
   }
 
   //evaluacion fin de año lider
@@ -2335,25 +2333,25 @@ export class EmployeeObjetiveService {
           dncCourse: true,
           dncCourseManual: true,
           competenceEvaluation: true,
-        }, 
+        },
         where: {
           id: id,
         },
       });
-      
-      if(!definitionObjectiveAnnual){
+
+      if (!definitionObjectiveAnnual) {
         status.code = 200;
         status.message = 'No se encontro la definicion de objetivos';
         status.error = true;
         return status;
       }
-  
+
       definitionObjectiveAnnual.status = 'Evaluado';
       definitionObjectiveAnnual.end_year_leader_range = currData.end_year_leader_range;
       definitionObjectiveAnnual.end_year_leader_value = currData.end_year_leader_value;
       definitionObjectiveAnnual.end_year_leader_comment = currData.end_year_leader_comment;
 
-      
+
       await this.definitionObjectiveAnnual.save(definitionObjectiveAnnual);
 
       //se califican los objetivos
@@ -2376,17 +2374,17 @@ export class EmployeeObjetiveService {
             objective: {
               id: objective.id,
             },
-          } 
+          }
         })
 
 
-        if(objectiveEvaluation){
+        if (objectiveEvaluation) {
           //se actualiza la evaluacion
           objectiveEvaluation.value_end_year = Number(element.value);
           objectiveEvaluation.comment_end_year = element.comment;
 
           await this.employeeObjectiveEvaluation.save(objectiveEvaluation);
-        }else{
+        } else {
           //se crea la evaluacion
           const evaluation = this.employeeObjectiveEvaluation.create({
             value_half_year: 100,
@@ -2398,10 +2396,10 @@ export class EmployeeObjetiveService {
 
           await this.employeeObjectiveEvaluation.save(evaluation);
         }
-       
-        
+
+
       }
-      
+
       //se califican las competencias
       for (let index = 0; index < currData.dataCompetence.length; index++) {
         const element = currData.dataCompetence[index];
@@ -2413,21 +2411,21 @@ export class EmployeeObjetiveService {
           },
           where: {
             id: element.id,
-          } 
+          }
         })
 
-        if(competenceEvaluation){
+        if (competenceEvaluation) {
           //se actualiza la evaluacion
           competenceEvaluation.value_end_year = Number(element.value);
           competenceEvaluation.comment_end_year = element.comment;
 
           await this.competenceEvaluation.save(competenceEvaluation);
         }
-        
+
       }
 
       //se califican las competencias asignadas manualmente
-      for (let index = 0; index < currData.dataCompetenceManual.length; index++){
+      for (let index = 0; index < currData.dataCompetenceManual.length; index++) {
         const element = currData.dataCompetenceManual[index];
 
         //se busca si la competencia ya fue evaluada
@@ -2437,10 +2435,10 @@ export class EmployeeObjetiveService {
           },
           where: {
             id: element.id,
-          } 
+          }
         })
 
-        if(competenceEvaluation){
+        if (competenceEvaluation) {
           //se actualiza la evaluacion
           competenceEvaluation.value_end_year = Number(element.value);
           competenceEvaluation.comment_end_year = element.comment;
@@ -2448,7 +2446,7 @@ export class EmployeeObjetiveService {
           await this.competenceEvaluation.save(competenceEvaluation);
         }
       }
-      
+
       //se crean las preguntas
       for (let index = 0; index < currData.createPerformance.length; index++) {
         const element = currData.createPerformance[index];
@@ -2462,9 +2460,9 @@ export class EmployeeObjetiveService {
         });
 
         await this.objectiveQuestion.save(question);
-        
+
       }
-      
+
       //se califican las preguntas
       for (let index = 0; index < currData.dataPerformance.length; index++) {
         const element = currData.dataPerformance[index];
@@ -2473,10 +2471,10 @@ export class EmployeeObjetiveService {
         const questionEvaluation = await this.objectiveQuestion.findOne({
           where: {
             id: element.id,
-          } 
+          }
         })
 
-        if(questionEvaluation){
+        if (questionEvaluation) {
           //se actualiza la evaluacion
           questionEvaluation.value = Number(element.value);
           questionEvaluation.description = element.description;
@@ -2484,22 +2482,118 @@ export class EmployeeObjetiveService {
 
           await this.objectiveQuestion.save(questionEvaluation);
         }
-        
+
       }
-      
+
       status.message = 'Objetivos de empleado evaluados correctamente';
       return status;
-      
+
     } catch (error) {
       status.error = true;
       status.message = error.message;
       status.code = 400;
       status.status = 'error';
-  
+
       return status;
     }
 
-    
+
+  }
+
+  //obtener la evaluacion de competencias
+  //por empleado y año
+  //si el empleado no tiene objetivos, solo se retorna un objeto vacio
+  async findCompetence(
+    currData: any,
+    user: any,
+  ) {
+    const status = {
+      code: 200,
+      message: 'OK',
+      error: false,
+      data: {},
+      status: 'success',
+    };
+
+    // currData: { competencias: [ids], puestos: [ids], empleados: [ids] }
+    const { competence, job, employee, year } = currData;
+
+    const competenceArr = Array.isArray(competence) ? competence : competence ? [competence] : [];
+    const jobArr = Array.isArray(job) ? job : job ? [job] : [];
+    const employeeArr = Array.isArray(employee) ? employee : employee ? [employee] : [];
+    try {
+      const query = this.dataSource.manager
+        .createQueryBuilder('employee', 'e')
+        .leftJoinAndSelect('e.job', 'j')
+        .leftJoinAndSelect('j.competence', 'c')
+        .leftJoinAndSelect(
+          qb => qb
+            .from('definition_objective_annual', 'doa_sub')
+            .innerJoin('percentage_definition', 'pd_sub', 'pd_sub.id = doa_sub.percentageDefinitionId')
+            .innerJoin('competence_evaluation', 'ce_sub', 'ce_sub.definitionObjectiveAnnualId = doa_sub.id')
+            .where('pd_sub.id = :id', { id: year })
+            .select([
+              'doa_sub.id as doa_id',
+              'doa_sub.employeeId as doa_employee_id',
+              'doa_sub.percentageDefinitionID as doa_year_id',
+              'pd_sub.year as pd_year',
+              'pd_sub.value_objetive as pd_value_objetive',
+              'pd_sub.value_performance as pd_value_performance',
+              'pd_sub.value_competence as pd_value_competence',
+              'ce_sub.id as ce_id',
+              'ce_sub.competenceId as ce_competence_id',
+              'ce_sub.value_end_year as ce_value_end_year',
+              'ce_sub.comment_end_year as ce_comment_end_year',
+            ])
+          ,
+          'doa_sub',
+          'doa_sub.doa_employee_id = e.id AND doa_sub.ce_competence_id = c.id')
+        .select([
+          'e.id as employee_id',
+          'e.employee_number as employee_number',
+          'e.name as employee_name',
+          'e.paternal_surname as employee_paternal_surname',
+          'e.maternal_surname as employee_maternal_surname',
+          'j.id as job_id',
+          'j.cv_name as job_name',
+          'c.id as competence_id',
+          'c.name as competence_name',
+          'doa_sub.doa_id as doa_id',
+          'doa_sub.pd_year as pd_year',
+          'doa_sub.pd_value_objetive as pd_value_objetive',
+          'doa_sub.pd_value_performance as pd_value_performance',
+          'doa_sub.pd_value_competence as pd_value_competence',
+          'doa_sub.ce_id as ce_id',
+          'doa_sub.ce_value_end_year as ce_value_end_year',
+          'doa_sub.ce_comment_end_year as ce_comment_end_year'
+        ])
+        .where('e.deleted_at IS NULL')
+
+
+
+      if (employeeArr.length > 0) {
+        query.andWhere('e.id IN (:...employee)', { employee: employeeArr });
+      }
+
+      if (competenceArr.length > 0) {
+        query.andWhere('c.id IN (:...competence)', { competence: competenceArr });
+      }
+
+      if (jobArr.length > 0) {
+        query.andWhere('j.id IN (:...job)', { job: jobArr });
+      }
+
+      query.orderBy('e.employee_number', 'ASC')
+      const result = await query.getRawMany();
+
+      return result;
+    } catch (error) {
+      status.code = 400;
+      status.message = error.message;
+      status.error = true;
+      status.status = 'error';
+      return status;
+    }
   }
 
 

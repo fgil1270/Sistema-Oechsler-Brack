@@ -6,10 +6,6 @@ import {
 import {
   Repository,
   In,
-  Not,
-  IsNull,
-  Like,
-  Between,
   MoreThanOrEqual,
   LessThanOrEqual,
   DataSource,
@@ -86,16 +82,16 @@ export class EmployeeShiftService {
 
             //Se obtiene el perfil del empleado
 
-            const weekDaysProfile = employee.emp.employeeProfile.work_days;
+            //const weekDaysProfile = employee.emp.employeeProfile.work_days;
 
             const dayLetter = weekDays[index.getDay()];
             //se valida que el dia seleccionado exista en el perfil del empleado
-            let dayLetterProfile = await this.employeeProfilesService.findWeekDay(
+            /* let dayLetterProfile = await this.employeeProfilesService.findWeekDay(
                 dayLetter,
                 employee.emp.employeeProfile.id,
-            );
+            ); */
             let dayLetterShift = false;
-            let dayShift: any[] =  shift.shift.day;
+            const dayShift: any[] =  shift.shift.day;
             dayLetterShift = dayShift.includes(dayLetter); //dia del turno
             
             
@@ -174,7 +170,7 @@ export class EmployeeShiftService {
 
                 await this.employeeShiftRepository.save(employeeShiftExist);
               }
-            }else{
+            } else {
               //se busca si existe un turno para el empleado en la fecha seleccionada
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                 relations: {
@@ -190,7 +186,7 @@ export class EmployeeShiftService {
                 },
               });
 
-              if(!employeeShiftExist){
+              if (!employeeShiftExist) {
                 continue;
               }
 
@@ -223,11 +219,11 @@ export class EmployeeShiftService {
             const periodicity = pattern.pattern.periodicity;
             totalSerie = serie_shifts.length;
 
-            const shift = await this.shiftService.findOne(
+            let shift = await this.shiftService.findOne(
               parseInt(serie_shifts[contSemana]),
             );
-            let dias: any;
-            dias = shift.shift.day; //dias del turno
+            
+            const dias = shift.shift.day; //dias del turno
 
             switch (index.getDay()) {
               case 0:
@@ -343,14 +339,14 @@ export class EmployeeShiftService {
               contSemana++;
               //SI EL CONTADOR DE SEMANA ES MENOR AL TOTAL DE SERIES DEL PATRON DE TURNOS
               if (contSemana < totalSerie) {
-                const shift = await this.shiftService.findOne(
+                 shift = await this.shiftService.findOne(
                   parseInt(serie_shifts[contSemana]),
                 );
               } else {
                 //SI EL CONTADOR DE SEMANA IGUAL O MAYOR AL TOTAL DE SERIES DEL PATRON DE TURNOS
                 //REINICIA EL CONTADOR DE SEMANA
                 contSemana = 0;
-                const shift = await this.shiftService.findOne(
+                shift = await this.shiftService.findOne(
                   parseInt(serie_shifts[contSemana]),
                 );
               }
