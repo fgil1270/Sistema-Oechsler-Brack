@@ -9,7 +9,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
-    Res,
+  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -32,7 +32,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 export class EmployeeIncidenceController {
   constructor(
     private readonly employeeIncidenceService: EmployeeIncidenceService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Crear incidencias de empleados' })
   @Post()
@@ -157,7 +157,7 @@ export class EmployeeIncidenceController {
       updateEmployeeIncidenceDto,
       user,
     );
-    
+
     return update;
   }
 
@@ -173,7 +173,7 @@ export class EmployeeIncidenceController {
       updateEmployeeIncidenceDto,
       user,
     );
-    
+
     return update;
   }
 
@@ -212,7 +212,7 @@ export class EmployeeIncidenceController {
 export class ReportEmployeeIncidenceController {
   constructor(
     private readonly employeeIncidenceService: EmployeeIncidenceService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos' })
   @Views('tiempo_compensatorio_repago')
@@ -238,7 +238,7 @@ export class ReportEmployeeIncidenceController {
     }); */
 
     try {
-      const {pdf, data} = await this.employeeIncidenceService.reportPlantEmployee(
+      const { pdf, data } = await this.employeeIncidenceService.reportPlantEmployee(
         currData,
       );
       /* pdf.pipe(res);
@@ -278,7 +278,7 @@ export class ReportEmployeeIncidenceController {
 export class ReportFlexTimeController {
   constructor(
     private readonly employeeIncidenceService: EmployeeIncidenceService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos' })
   @Views('horario_flexible')

@@ -25,7 +25,7 @@ import { Views } from '../../auth/decorators/views.decorator';
 @ApiTags('Solicitud de curso')
 @Controller('request_course')
 export class RequestCourseController {
-  constructor(private requestCourseService: RequestCourseService) {}
+  constructor(private requestCourseService: RequestCourseService) { }
 
   @ApiOperation({ summary: 'Crear solicitud de curso' })
   @Post()
@@ -87,7 +87,7 @@ export class RequestCourseController {
 @ApiTags('Solicitud de curso')
 @Controller('assignment_course')
 export class AssignmentCourseController {
-  constructor(private requestCourseService: RequestCourseService) {}
+  constructor(private requestCourseService: RequestCourseService) { }
 
   @ApiOperation({ summary: 'Crear asignacion de curso' })
   @Post()
@@ -98,7 +98,7 @@ export class AssignmentCourseController {
   @ApiOperation({ summary: 'Buscar Asignación de curso por algun parametro' })
   @Get()
   async getAssignmentBy(@Query() currData: UpdateAssignmentCourseDto, @CurrentUser() user: any) {
-    
+
     return this.requestCourseService.getAssignmentBy(currData);
   }
 
@@ -106,8 +106,18 @@ export class AssignmentCourseController {
   @Views('asignar_curso')
   @Get('access')
   async getAccessAssignmentCourse(@CurrentUser() user: any) {
-    
+
     return true
+  }
+
+  @ApiOperation({ summary: 'Actulizar asignación de curso' })
+  @Put(':id')
+  async updateAssignment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateAssignmentCourseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestCourseService.updateAssignment(id, data, user);
   }
 
 

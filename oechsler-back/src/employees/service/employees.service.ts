@@ -248,13 +248,6 @@ export class EmployeesService {
 
       //validar email
       //email === undefined ||
-      if (exNoEmployee.w.trim()) {
-        console.log("primera")
-        console.log("numero de empleado", exNoEmployee.w.trim())
-        console.log("row", rowNum)
-        console.log("total", total)
-
-      }
 
       //SE VALIDA QUE NO EXISTAN CAMPOS VACIOS
       if (exNoEmployee === undefined) {

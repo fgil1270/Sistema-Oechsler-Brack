@@ -535,5 +535,72 @@ export class RequestCourseService {
     return requestCourseAssignment;
   }
 
+  //actualizar asignacion de curso
+  async updateAssignment(id: number, data: UpdateAssignmentCourseDto, user: any) {
+    try {
+
+      const assignment = await this.requestCourse.findOne({
+        relations: {
+          employee: true,
+          course: true,
+          department: true,
+          requestCourseAssignment: {
+            teacher: true,
+          },
+          leader: true,
+          rh: true,
+          requestBy: true,
+        },
+        where: {
+          id: id,
+        },
+      });
+
+
+
+      if (!assignment) {
+        throw new NotFoundException('Asignación de curso no encontrada');
+      }
+
+      //Object.assign(assignment, data);
+
+      if (data.dateStart && data.dateEnd) {
+        // Convertir a horario de México
+        const requestCourseAssignment = await this.requestCourseAssignment.findOne({
+          relations: {
+            requestCourse: true,
+            teacher: true,
+          },
+          where: {
+            id: assignment.requestCourseAssignment[0].id
+          },
+        });
+        const dateStart = new Date(data.dateStart);
+        const dateEnd = new Date(data.dateEnd);
+        dateStart.setUTCHours(dateStart.getUTCHours() - 6);
+        dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+
+
+        requestCourseAssignment.date_start = dateStart;
+        requestCourseAssignment.date_end = dateEnd;
+        const updateRequestCourseAssignment = await this.requestCourseAssignment.save(requestCourseAssignment);
+      }
+
+      //const updatedAssignment = await this.requestCourse.update(id, assignment);
+
+      return {
+        error: false,
+        msg: 'Asignación de curso actualizada correctamente',
+        //data: updateRequestCourseAssignment,
+      };
+    } catch (error) {
+
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
+
 
 }
