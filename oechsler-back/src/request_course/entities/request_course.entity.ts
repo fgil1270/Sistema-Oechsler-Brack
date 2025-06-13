@@ -17,6 +17,7 @@ import { Employee } from '../../employees/entities/employee.entity';
 import { Competence } from '../../competence/entities/competence.entity';
 import { RequestCourseAssignment } from './request_course_assignment.entity';
 import { CourseEfficiency } from '../../course_efficiency/entities/course_efficiency.entity';
+import { RequestCourseDocument } from './request_course_document.entity';
 
 @Entity()
 export class RequestCourse {
@@ -45,7 +46,7 @@ export class RequestCourse {
   type: string;
 
   @Column({ type: 'varchar', length: 255, default: null })
-  place: string;  
+  place: string;
 
   @Column({ type: 'timestamp', default: null })
   tentative_date_start: Date;
@@ -132,4 +133,7 @@ export class RequestCourse {
 
   @OneToMany(() => CourseEfficiency, (post) => post.requestCourse)
   courseEfficiency: CourseEfficiency[];
+
+  @OneToMany(() => RequestCourseDocument, (post) => post.request_course)
+  documents: RequestCourseDocument[];
 }

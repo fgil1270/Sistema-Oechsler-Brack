@@ -122,3 +122,15 @@ export class AssignmentCourseController {
 
 
 }
+
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Solicitud de curso')
+@Controller('request_course/document')
+export class RequestCourseDocumentController {
+
+  @ApiOperation({ summary: 'Consulta de documentos de la solicitud de curso' })
+  @Get()
+  async document() {
+
+  }
+}
