@@ -93,6 +93,19 @@ export class CreateEmployeeIncidenceDto {
   @IsString()
   @ApiProperty({ description: 'Imagen del empleado que crea la incidencia' })
   image?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({ description: 'Datos para crear la incidencia' })
+  datos: ObjectCreateEmployeeIncidenceDto[];
+
+}
+
+export class ObjectCreateEmployeeIncidenceDto {
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Id del Empleado' })
+  id_employee: number;
 }
 
 export class UpdateEmployeeIncidenceDto extends PartialType(
@@ -143,4 +156,9 @@ export class ReportEmployeeIncidenceDto {
   @IsString()
   @ApiProperty({ description: 'Tipo de nomina' })
   type_nomina: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Turno de empleado' })
+  shift: string;
 }

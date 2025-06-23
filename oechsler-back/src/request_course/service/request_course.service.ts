@@ -17,9 +17,13 @@ import {
   FindOptionsWhere,
 } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { join } from 'path';
+import { mkdirSync, existsSync, writeFileSync } from 'fs';
+import { format } from 'date-fns';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseAssignment } from '../entities/request_course_assignment.entity';
+import { RequestCourseDocument } from '../entities/request_course_document.entity';
 import {
   RequestCourseDto,
   UpdateRequestCourseDto,
@@ -32,15 +36,14 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { CompetenceService } from '../../competence/service/competence.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { SupplierService } from '../../supplier/service/supplier.service';
-import { format } from 'date-fns';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
-
 
 @Injectable()
 export class RequestCourseService {
   constructor(
     @InjectRepository(RequestCourse) private requestCourse: Repository<RequestCourse>,
     @InjectRepository(RequestCourseAssignment) private requestCourseAssignment: Repository<RequestCourseAssignment>,
+    @InjectRepository(RequestCourseDocument) private requestCourseDocument: Repository<RequestCourseDocument>,
     private courseService: CourseService,
     private departmentService: DepartmentsService,
     private employeeService: EmployeesService,
@@ -48,37 +51,37 @@ export class RequestCourseService {
     private organigramaService: OrganigramaService,
     private supplierService: SupplierService,
     private employeeIncidenceService: EmployeeIncidenceService
-  ) {}
+  ) { }
 
   async create(data: RequestCourseDto, user: any) {
     try {
-      
+
       const employee = await this.employeeService.findMore(data.employeeId);
       const requestBy = await this.employeeService.findOne(user.idEmployee);
       let totalCost = 0;
-      
-      
+
+
       let course: any;
       let competence: any;
-      
+
       if (data.courseId) {
-        
+
         course = await this.courseService.findOne(data.courseId);
         competence = await this.competenceService.findOne(course.competence.id);
       } else {
-        
+
         competence = await this.competenceService.findOne(data.competenceId);
       }
 
 
-      
-      totalCost = Number(data.cost)/Number(employee.emps.length);
+
+      totalCost = Number(data.cost) / Number(employee.emps.length);
       for (const emp of employee.emps) {
         const department = await this.departmentService.findOne(
           emp.department.id,
         );
-        
-        
+
+
         const requestCourseCreate = this.requestCourse.create({
           course_name: data.courseName,
           training_reason: data.traininReason,
@@ -145,6 +148,11 @@ export class RequestCourseService {
         courseEfficiency: {
           courseEfficiencyQuestion: true,
         },
+        requestCourseAssignment: {
+          teacher: {
+            supplier: true,
+          },
+        },
       },
       where: {
         id: id,
@@ -153,7 +161,7 @@ export class RequestCourseService {
   }
 
   async findAll(query: Partial<RequestCourse>, user: any) {
-    
+
     const employee = await this.organigramaService.findJerarquia(
       {
         type: 'Normal',
@@ -169,7 +177,7 @@ export class RequestCourseService {
     for (const emp of employee) {
       eployeesIds.push(emp.id);
     }
-    
+
     const requestCourse = await this.requestCourse.find({
       relations: {
         employee: {
@@ -185,6 +193,7 @@ export class RequestCourseService {
         gm: true,
         requestCourseAssignment: true,
         requestBy: true,
+        documents: true,
       },
       where: query as unknown as FindOptionsWhere<RequestCourse>,
     });
@@ -201,7 +210,7 @@ export class RequestCourseService {
         teacher: true,
       },
     });
-    
+
     return dataRequestCourse;
   }
 
@@ -212,22 +221,22 @@ export class RequestCourseService {
       course?: any;
       status?: any;
     } = {};
-   
-    if(query.employeeId){ 
+
+    if (query.employeeId) {
       findOption.employee = {
-        id: In(Array(query.employeeId)) 
+        id: In(Array(query.employeeId))
       };
     }
-    if(query.courseId){
-      findOption.course = { 
+    if (query.courseId) {
+      findOption.course = {
         id: Number(query.courseId)
       };
     }
 
-    if(query.status){
+    if (query.status) {
       findOption.status = query.status;
     }
-    
+
     const requestCourse = this.requestCourse.find({
       relations: {
         employee: {
@@ -244,7 +253,7 @@ export class RequestCourseService {
       },
       where: findOption,
     });
-    
+
     return requestCourse;
   }
 
@@ -278,66 +287,66 @@ export class RequestCourseService {
           id: id,
         },
       });
-      
+
       Object.assign(requestCourse, data);
 
-      if(data.courseId){
+      if (data.courseId) {
         const course = await this.courseService.findOne(data.courseId);
         requestCourse.course = course;
         requestCourse.competence = course.competence;
       }
 
-      if(data.status == 'Autorizado'){
+      if (data.status == 'Autorizado') {
         let isAdmin = false;
-        let isLeader = false; 
+        let isLeader = false;
         let isRh = false;
         let isGm = false;
 
 
         isAdmin = user.roles.some((role) => role.name == 'Admin');
         isRh = user.roles.some((role) => role.name == 'RH');
-       
+
         isLeader = organigrama.some((org) => org.id == requestCourse.employee.id);
 
         //si el usuario logueado es admin
-        if(isAdmin){
+        if (isAdmin) {
           const leader = await this.organigramaService.leaders(requestCourse.employee.id);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
           requestCourse.rh = userEmployee.emp;
           requestCourse.status = 'Autorizado'
-        }else{
-          if(isRh || data.avoidApprove){
+        } else {
+          if (isRh || data.avoidApprove) {
             requestCourse.approved_at_rh = new Date();
             requestCourse.rh = userEmployee.emp;
-  
+
           }
-  
-          if(isLeader){
+
+          if (isLeader) {
             requestCourse.approved_at_leader = new Date();
             requestCourse.leader = userEmployee.emp;
-  
+
           }
-  
-          if(data.avoidApprove){
+
+          if (data.avoidApprove) {
             const userApprove = await this.employeeService.findOne(user.idEmployee);
             const leader = await this.organigramaService.leaders(requestCourse.employee.id);
             requestCourse.approved_at_leader = new Date();
             requestCourse.leader = leader.orgs[0].leader;
             requestCourse.approved_at_rh = new Date();
             requestCourse.rh = userApprove.emp;
-            
+
           }
-  
+
           //si falta el lider por autorizar o rh 
           //el status sera Solicitado
-          if(!requestCourse.leader || !requestCourse.rh){
+          if (!requestCourse.leader || !requestCourse.rh) {
             requestCourse.status = 'Solicitado'
           }
         }
-        
-        
+
+
 
       }
       //si el curso es cancelado y el origen de la solicitud de curso viene de un objetivo
@@ -346,19 +355,19 @@ export class RequestCourseService {
         requestCourse.status = 'Pendiente';
       }
 
-      if(data.requestBy){ 
+      if (data.requestBy) {
         const requestBy = await this.employeeService.findOne(data.requestBy);
         requestCourse.requestBy = requestBy.emp;
       }
 
-      if(data.employeeId){
+      if (data.employeeId) {
         const employee = await this.employeeService.findOne(data.employeeId[0]);
         requestCourse.employee = employee.emp;
       }
 
 
-      if(data.tentativeDateStart){
-      
+      if (data.tentativeDateStart) {
+
         // Convertir a horario de México
         const dateStart = new Date(data.tentativeDateStart);
         const dateEnd = new Date(data.tentativeDateEnd);
@@ -418,13 +427,13 @@ export class RequestCourseService {
   }
 
   //crear asignacion de curso
-  async createAssignmentCourse(currData: RequestCourseAssignmentDto){
+  async createAssignmentCourse(currData: RequestCourseAssignmentDto) {
     //revisar cuando sea el mismo empleado 2 veces
     try {
       const employees = await this.employeeService.findMore(currData.employeeId);
       const course = await this.courseService.findOne(currData.courseId);
       const teacher = await this.supplierService.findTeacherById(currData.teacherId);
-      
+
       // Convertir a horario de México
       const dateStart = new Date(currData.dateStart);
       const dateEnd = new Date(currData.dateEnd);
@@ -442,16 +451,16 @@ export class RequestCourseService {
           employee: {
             id: In(employees.emps.map((emp) => emp.id))
           }
-        } 
+        }
       });
 
       //crear asignacion de curso
-      
+
       const createAssignment = await this.requestCourseAssignment.create({
         date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
         date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
         day: currData.day,
-        requestCourse: requestCourse, 
+        requestCourse: requestCourse,
         teacher: teacher,
 
       });
@@ -481,7 +490,7 @@ export class RequestCourseService {
   }
 
   //buscar asignacion de curso por algun parametro
-  async getAssignmentBy(currdata: UpdateAssignmentCourseDto){
+  async getAssignmentBy(currdata: UpdateAssignmentCourseDto) {
     const mexicoTimeZone = 'America/Mexico_City';
     const formattedStartDate = new Date(currdata.dateStart);
     formattedStartDate.setHours(0, 0, 0, 0);
@@ -502,14 +511,14 @@ export class RequestCourseService {
         status: ''
       }
     };
-    
+
     if (currdata.dateStart && currdata.dateEnd) {
-      
+
       findOption.date_start = MoreThanOrEqual(formattedStartDate);
       findOption.date_end = LessThanOrEqual(formattedEndDate);
     }
 
-    if(currdata.status){
+    if (currdata.status) {
       findOption.requestCourse.status
       findOption.requestCourse.status = currdata.status;
     }
@@ -525,9 +534,175 @@ export class RequestCourseService {
       },
       where: findOption
     });
-    
+
 
     return requestCourseAssignment;
+  }
+
+  //actualizar asignacion de curso
+  async updateAssignment(id: number, data: UpdateAssignmentCourseDto, user: any) {
+    try {
+
+      const assignment = await this.requestCourse.findOne({
+        relations: {
+          employee: true,
+          course: true,
+          department: true,
+          requestCourseAssignment: {
+            teacher: true,
+          },
+          leader: true,
+          rh: true,
+          requestBy: true,
+        },
+        where: {
+          id: id,
+        },
+      });
+
+
+
+      if (!assignment) {
+        throw new NotFoundException('Asignación de curso no encontrada');
+      }
+
+      //Object.assign(assignment, data);
+
+      if (data.dateStart && data.dateEnd) {
+        // Convertir a horario de México
+        const requestCourseAssignment = await this.requestCourseAssignment.findOne({
+          relations: {
+            requestCourse: true,
+            teacher: true,
+          },
+          where: {
+            id: assignment.requestCourseAssignment[0].id
+          },
+        });
+        const dateStart = new Date(data.dateStart);
+        const dateEnd = new Date(data.dateEnd);
+        dateStart.setUTCHours(dateStart.getUTCHours() - 6);
+        dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+
+
+        requestCourseAssignment.date_start = dateStart;
+        requestCourseAssignment.date_end = dateEnd;
+        const updateRequestCourseAssignment = await this.requestCourseAssignment.save(requestCourseAssignment);
+      }
+
+      //const updatedAssignment = await this.requestCourse.update(id, assignment);
+
+      return {
+        error: false,
+        msg: 'Asignación de curso actualizada correctamente',
+        //data: updateRequestCourseAssignment,
+      };
+    } catch (error) {
+
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
+
+  //consulta los documentos de una solicitud de curso
+  async getDocuments(idRequestCourse: number) {
+    const requestCourse = await this.requestCourse.find({
+      relations: {
+        documents: true,
+      },
+      where: {
+        id: idRequestCourse,
+      },
+    });
+    if (requestCourse.length === 0) {
+      throw new NotFoundException('Solicitud de curso no encontrada');
+    }
+    return {
+      error: false,
+      message: 'Documentos obtenidos con éxito',
+      data: requestCourse[0].documents,
+    };
+  }
+
+  async uploadMultipleFiles(idRequestCourse: number, files: Array<Express.Multer.File>, classifications: string[]) {
+
+    const requestCourse = await this.requestCourse.findOne({
+      relations: {
+        employee: true,
+        course: true,
+        department: true,
+        competence: true,
+        leader: true,
+        rh: true,
+        gm: true,
+        requestBy: true,
+      },
+      where: {
+        id: idRequestCourse,
+      },
+    });
+    if (!requestCourse) {
+      throw new NotFoundException('Solicitud de curso no encontrada');
+    }
+    if (files.length !== classifications.length) {
+      throw new Error('El número de archivos y clasificaciones debe coincidir');
+    }
+    // Aquí puedes procesar los archivos y sus clasificaciones
+    const resultFiles = files.map((file, idx) => ({
+      file,
+      classification: classifications[idx],
+    }));
+
+    /* for (let index = 0; index < resultFiles.length; index++) {
+      const archivo = resultFiles[index].file;
+      const name = archivo.originalname;
+      let path: any;
+      let filepath: any;
+
+
+      const createRequestDocument = await this.requestCourseDocument.create({
+        name: name,
+        route: `documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+        type: resultFiles[index].classification,
+        request_course: requestCourse,
+      });
+
+
+      path = join(
+        __dirname,
+        `../../../documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+      );
+      filepath = join(path, name);
+
+      // Verifica si la ruta existe, si no, la crea
+      if (!existsSync(path)) {
+        mkdirSync(path, { recursive: true });
+      }
+
+      // Guarda el archivo en la ruta especificada
+      writeFileSync(filepath, new Uint8Array(archivo.buffer));
+
+      const newDocument = await this.requestCourseDocument.save(createRequestDocument);
+
+    } */
+
+    const resultRequestCourseFiles = await this.requestCourse.find({
+      relations: {
+        documents: true,
+      },
+      where: {
+        id: requestCourse.id,
+      },
+    });
+
+    return {
+      error: false,
+      message: 'Archivos subidos con éxito',
+      data: resultRequestCourseFiles,
+    };
+
   }
 
 
