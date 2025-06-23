@@ -191,4 +191,8 @@ export class UpdateAssignmentCourseDto extends PartialType(RequestCourseAssignme
 
 }
 
+export class UploadFilesDto {
+  classifications: string[];
+}
+
 

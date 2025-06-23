@@ -2230,9 +2230,20 @@ export class EmployeeIncidenceService {
           let horasIncidencia = 0;
           let minsIncidencia = 0;
 
-          horasIncidencia = Number(moment((parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)), 'HH.m').hours());
-          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] ?
-            String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] : 0, 'mm').minutes());
+          const totalHour = parseFloat(String(currentIncidence[0].total_hour));
+          const days = Number(currentIncidence[0].dateEmployeeIncidence.length);
+
+          const horas = Math.floor(totalHour);
+          const minutos = Math.round((totalHour - horas) * 100); // Ojo: *100 porque el usuario puso .60 como minutos
+          const totalEnMinutos = horas * 60 + minutos;
+          const horasPorDia = totalEnMinutos / days;
+
+          /* horasIncidencia = Number(moment((parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)), 'HH.m').hours());
+          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) /
+            Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] ?
+            String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] : 0, 'mm').minutes()); */
+          horasIncidencia = Math.floor(horasPorDia / 60);
+          minsIncidencia = Math.round(horasPorDia % 60);
 
 
           //se obtiene las horas y minutos de la incidencia
@@ -2243,7 +2254,9 @@ export class EmployeeIncidenceService {
           let modMin = 0;
           let divMin = 0;
 
-
+          if (incidenciasPorEmpleado[i].numeroNomina == 224) {
+            console.log("minutos", minsIncidencia)
+          }
           //si la incidencia no es Incapacidad se suman las horas y minutos
           if (incidence.ei_code_band != 'INC') {
 

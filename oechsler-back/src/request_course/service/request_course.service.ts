@@ -17,9 +17,13 @@ import {
   FindOptionsWhere,
 } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { join } from 'path';
+import { mkdirSync, existsSync, writeFileSync } from 'fs';
+import { format } from 'date-fns';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseAssignment } from '../entities/request_course_assignment.entity';
+import { RequestCourseDocument } from '../entities/request_course_document.entity';
 import {
   RequestCourseDto,
   UpdateRequestCourseDto,
@@ -32,15 +36,14 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { CompetenceService } from '../../competence/service/competence.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { SupplierService } from '../../supplier/service/supplier.service';
-import { format } from 'date-fns';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
-
 
 @Injectable()
 export class RequestCourseService {
   constructor(
     @InjectRepository(RequestCourse) private requestCourse: Repository<RequestCourse>,
     @InjectRepository(RequestCourseAssignment) private requestCourseAssignment: Repository<RequestCourseAssignment>,
+    @InjectRepository(RequestCourseDocument) private requestCourseDocument: Repository<RequestCourseDocument>,
     private courseService: CourseService,
     private departmentService: DepartmentsService,
     private employeeService: EmployeesService,
@@ -190,6 +193,7 @@ export class RequestCourseService {
         gm: true,
         requestCourseAssignment: true,
         requestBy: true,
+        documents: true,
       },
       where: query as unknown as FindOptionsWhere<RequestCourse>,
     });
@@ -600,6 +604,105 @@ export class RequestCourseService {
         msg: error.message,
       };
     }
+  }
+
+  //consulta los documentos de una solicitud de curso
+  async getDocuments(idRequestCourse: number) {
+    const requestCourse = await this.requestCourse.find({
+      relations: {
+        documents: true,
+      },
+      where: {
+        id: idRequestCourse,
+      },
+    });
+    if (requestCourse.length === 0) {
+      throw new NotFoundException('Solicitud de curso no encontrada');
+    }
+    return {
+      error: false,
+      message: 'Documentos obtenidos con éxito',
+      data: requestCourse[0].documents,
+    };
+  }
+
+  async uploadMultipleFiles(idRequestCourse: number, files: Array<Express.Multer.File>, classifications: string[]) {
+
+    const requestCourse = await this.requestCourse.findOne({
+      relations: {
+        employee: true,
+        course: true,
+        department: true,
+        competence: true,
+        leader: true,
+        rh: true,
+        gm: true,
+        requestBy: true,
+      },
+      where: {
+        id: idRequestCourse,
+      },
+    });
+    if (!requestCourse) {
+      throw new NotFoundException('Solicitud de curso no encontrada');
+    }
+    if (files.length !== classifications.length) {
+      throw new Error('El número de archivos y clasificaciones debe coincidir');
+    }
+    // Aquí puedes procesar los archivos y sus clasificaciones
+    const resultFiles = files.map((file, idx) => ({
+      file,
+      classification: classifications[idx],
+    }));
+
+    /* for (let index = 0; index < resultFiles.length; index++) {
+      const archivo = resultFiles[index].file;
+      const name = archivo.originalname;
+      let path: any;
+      let filepath: any;
+
+
+      const createRequestDocument = await this.requestCourseDocument.create({
+        name: name,
+        route: `documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+        type: resultFiles[index].classification,
+        request_course: requestCourse,
+      });
+
+
+      path = join(
+        __dirname,
+        `../../../documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+      );
+      filepath = join(path, name);
+
+      // Verifica si la ruta existe, si no, la crea
+      if (!existsSync(path)) {
+        mkdirSync(path, { recursive: true });
+      }
+
+      // Guarda el archivo en la ruta especificada
+      writeFileSync(filepath, new Uint8Array(archivo.buffer));
+
+      const newDocument = await this.requestCourseDocument.save(createRequestDocument);
+
+    } */
+
+    const resultRequestCourseFiles = await this.requestCourse.find({
+      relations: {
+        documents: true,
+      },
+      where: {
+        id: requestCourse.id,
+      },
+    });
+
+    return {
+      error: false,
+      message: 'Archivos subidos con éxito',
+      data: resultRequestCourseFiles,
+    };
+
   }
 
 

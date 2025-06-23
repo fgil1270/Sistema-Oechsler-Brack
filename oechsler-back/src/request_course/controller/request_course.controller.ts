@@ -10,13 +10,18 @@ import {
   ParseIntPipe,
   Query,
   Res,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import * as fs from 'fs';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseService } from '../service/request_course.service';
-import { RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto, UpdateAssignmentCourseDto } from '../dto/create_request_course.dto';
+import { RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto, UpdateAssignmentCourseDto, UploadFilesDto } from '../dto/create_request_course.dto';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Views } from '../../auth/decorators/views.decorator';
@@ -127,10 +132,34 @@ export class AssignmentCourseController {
 @ApiTags('Solicitud de curso')
 @Controller('request_course/document')
 export class RequestCourseDocumentController {
+  constructor(private requestCourseService: RequestCourseService) { }
 
   @ApiOperation({ summary: 'Consulta de documentos de la solicitud de curso' })
-  @Get()
-  async document() {
+  @Get(':idRequestCourse')
+  async getDocuments(@Param('idRequestCourse', ParseIntPipe) idRequestCourse: number) {
+    return this.requestCourseService.getDocuments(idRequestCourse);
+  }
+
+  // POST para subir múltiples archivos
+  @Post('upload-file/:idRequestCourse')
+  @UseInterceptors(
+    FilesInterceptor('files[]')
+  )
+  uploadMultipleFiles(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Body('classifications') classificationsString: string,
+    @Param('idRequestCourse', ParseIntPipe) idRequestCourse: number
+  ) {
+
+    let classifications: any[] = [];
+    classifications = JSON.parse(classificationsString);
+
+    const result = files.map((file, idx) => ({
+      file,
+      classification: classifications[idx],
+    }));
+
+    return this.requestCourseService.uploadMultipleFiles(idRequestCourse, files, classifications);
 
   }
 }

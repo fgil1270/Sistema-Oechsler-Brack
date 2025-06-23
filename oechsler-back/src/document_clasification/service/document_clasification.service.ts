@@ -39,7 +39,7 @@ export class DocumentClasificationService {
     private employeesService: EmployeesService,
     private jobDocumentService: JobDocumentService,
     private jobsService: JobsService,
-  ) {}
+  ) { }
 
   async create(data: DocumentClasificationDto) {
     const createDocumentClasification = this.documentClasificationRepository.create(data);
@@ -54,10 +54,10 @@ export class DocumentClasificationService {
 
   async findById(id: number) {
     const documentClasification = await this.documentClasificationRepository.findOne({
-        where: {
-          id: id,
-        },
-      });
+      where: {
+        id: id,
+      },
+    });
     return documentClasification;
   }
 
@@ -66,23 +66,23 @@ export class DocumentClasificationService {
     const employee = await this.employeesService.findMore(ids);
     const DocumentClasification = await this.documentClasificationRepository.find();
     const documentClasificationFiles = await this.documentClasificationRepository.find({
-        relations: {
-          document: {
-            documentEmployee: {
-              employee: true,
+      relations: {
+        document: {
+          documentEmployee: {
+            employee: true,
+          },
+        },
+      },
+      where: {
+        document: {
+          documentEmployee: {
+            employee: {
+              id: In(ids),
             },
           },
         },
-        where: {
-          document: {
-            documentEmployee: {
-              employee: {
-                id: In(ids),
-              },
-            },
-          },
-        },
-      });
+      },
+    });
     const jobs = await this.jobsService.findOne(employee.emps[0].job.id);
     const jobDocuments = await this.jobDocumentService.findByJobId(jobs.id);
 
@@ -111,11 +111,11 @@ export class DocumentClasificationService {
         let newDocumentClasification: any;
         let newDocument: any;
         let newfile: any;
-        let path:any;
-        let filepath:any;
+        let path: any;
+        let filepath: any;
 
-        if(name[1] == 'DP'){
-          
+        if (name[1] == 'DP') {
+
 
           const job = await this.jobsService.findOne(Number(name[0]));
           path = join(
@@ -131,7 +131,7 @@ export class DocumentClasificationService {
           });
 
 
-        }else{
+        } else {
           const employee = await this.employeesService.findByEmployeeNumber([
             name[0],
           ]);
@@ -141,26 +141,26 @@ export class DocumentClasificationService {
           newDocumentClasification = documentClasification
             ? documentClasification
             : await this.create({ name: name[1] });
-  
-  
+
+
           const document = await this.documentService.findByNameAndClasification(name[2], newDocumentClasification.id);
-  
-          
+
+
           //si no existe el documento
           //crearlo
           const nameDocument = name[2].split('.');
           newDocument = document ? document : await this.documentService.create({
-                name: nameDocument[0],
-                required: true,
-                documentClasificationId: Number(newDocumentClasification.id),
-              });
-  
+            name: nameDocument[0],
+            required: true,
+            documentClasificationId: Number(newDocumentClasification.id),
+          });
+
           path = join(
             __dirname,
             `../../../documents/empleados/${name[0]}/${newDocumentClasification.name}/${newDocument.name}`,
           );
           filepath = join(path, name[2]);
-  
+
           //si el archivo ya existe
           //se actualiza
           const file =
@@ -170,26 +170,26 @@ export class DocumentClasificationService {
               Number(newDocument.id),
               documentClasification.id
             );
-            
+
           if (file) {
-            
+
             file.route = `documents/empleados/${name[0]}/${newDocumentClasification.name}`;
             const updateFile = await this.documentEmployeeService.update(file.id);
-          }else{
+          } else {
             const url = `documents/empleados/${name[0]}/${newDocumentClasification.name}`;
             newfile = file
               ? file
               : await this.documentEmployeeService.create({
-                  name: name[2],
-                  employeeId: employee.emps[0].id,
-                  documentId: newDocument.id,
-                  route: url,
-                });
-            
+                name: name[2],
+                employeeId: employee.emps[0].id,
+                documentId: newDocument.id,
+                route: url,
+              });
+
           }
         }
-        
-        
+
+
 
         // Verifica si la ruta existe, si no, la crea
         if (!existsSync(path)) {
@@ -198,7 +198,7 @@ export class DocumentClasificationService {
 
         // Guarda el archivo en la ruta especificada
         writeFileSync(filepath, new Uint8Array(archivo.buffer));
-        
+
       }
       return {
         error: false,
@@ -216,12 +216,12 @@ export class DocumentClasificationService {
 
     let file: any;
     let ruta: string;
-    if(type == 'Puestos'){
+    if (type == 'Puestos') {
       file = await this.jobDocumentService.findById(idFile);
-    }else{
+    } else {
       file = await this.documentEmployeeService.findById(idFile);
     }
- 
+
     ruta = type == 'Puestos' ? '' : file.document.name;
 
     return {
