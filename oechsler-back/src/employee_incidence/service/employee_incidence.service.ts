@@ -130,6 +130,7 @@ export class EmployeeIncidenceService {
         }
       }
 
+      //recorre los dias de la incidencia
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date + ' 00:00:00');
         index <= new Date(createEmployeeIncidenceDto.end_date);
@@ -240,11 +241,19 @@ export class EmployeeIncidenceService {
                   employee.emps[j].id,
                 ]
                 );
+
+                //si es turno 3 y el dia de hoy es sabado
                 if (employeeShiftAnterior.events[0].nameShift == 'T3' && index.getDay() == 6) {
                   continue;
                 } else {
-                  //si no es incapacidad y no tiene turno y no es domingo
-                  throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+
+                  //si es sabado y turno es Mixto
+                  if (index.getDay() == 6 && employeeShiftAnterior.events[0].nameShift == 'MIX') {
+                    continue;
+                  } else {
+                    throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                  }
+
                 }
 
 
@@ -490,6 +499,8 @@ export class EmployeeIncidenceService {
 
       }
 
+      //recorre los dias de la incidencia
+      //se crea el dia de la incidencia
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date);
         index <= new Date(createEmployeeIncidenceDto.end_date);
@@ -1696,6 +1707,7 @@ export class EmployeeIncidenceService {
                 ei_date_aproved_leader: row.ei_date_aproved_leader,
                 ei_hour_approved_leader: row.ei_hour_approved_leader,
                 ei_type: row.ei_type,
+                ei_shift: row.ei_shift
               });
             } else {
               // Si no existe, crea un nuevo objeto de fecha y lo agrega al arreglo dates
@@ -1723,6 +1735,7 @@ export class EmployeeIncidenceService {
                   ei_date_aproved_leader: row.ei_date_aproved_leader,
                   ei_hour_approved_leader: row.ei_hour_approved_leader,
                   ei_type: row.ei_type,
+                  ei_shift: row.ei_shift
                 }],
                 employeeShift: shiftName ? shiftName : '',
                 entrada: row.ei_start_hour || '',
@@ -1755,10 +1768,6 @@ export class EmployeeIncidenceService {
                 });
               }
             }
-
-
-
-
           }
 
         } else {
@@ -1804,6 +1813,7 @@ export class EmployeeIncidenceService {
                     ei_date_aproved_leader: row.ei_date_aproved_leader,
                     ei_hour_approved_leader: row.ei_hour_approved_leader,
                     ei_type: row.ei_type,
+                    ei_shift: row.ei_shift
                   }
                 ] : [],
                 employeeShift: shiftName ? shiftName : '',
@@ -1956,7 +1966,7 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(diahoy);
                 break;
               case 'T2':
-                hrEntrada = '05:00:00'; //dia Actual
+                hrEntrada = '06:20:00'; //dia Actual
                 hrSalida = '07:00:00'; //dia siguiente
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
@@ -2254,9 +2264,6 @@ export class EmployeeIncidenceService {
           let modMin = 0;
           let divMin = 0;
 
-          if (incidenciasPorEmpleado[i].numeroNomina == 224) {
-            console.log("minutos", minsIncidencia)
-          }
           //si la incidencia no es Incapacidad se suman las horas y minutos
           if (incidence.ei_code_band != 'INC') {
 
@@ -2305,33 +2312,33 @@ export class EmployeeIncidenceService {
               if (turnoActual != '' && turnoActual == 'T1') {
 
 
-                if (incidence.shift == 2) {
+                if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
                   diaAnterior = new Date(diahoy);
-                } else if (incidence.shift == 3) {
+                } else if (incidence.ei_shift == 3) {
                   hrEntrada = '20:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
                 }
               } else if (turnoActual != '' && turnoActual == 'T2') {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
 
-                } else if (incidence.shift == 3) {
+                } else if (incidence.ei_shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 }
               } else if (turnoActual != '' && turnoActual == 'T3') {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '20:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
-                } else if (incidence.shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
 
@@ -2339,24 +2346,24 @@ export class EmployeeIncidenceService {
                 }
               } else if (turnoActual != '' && turnoActual == 'TI') {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '14:59:00';
 
-                } else if (incidence.shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '13:00:00';
                   hrSalida = '21:59:00';
                 }
               } else if (turnoActual != '' && turnoActual == 'MIX') {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
 
-                } else if (incidence.shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
-                } else if (incidence.shift == 3) {
+                } else if (incidence.ei_shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente.setDate(diaSiguente.getDate() + 1);
@@ -2366,8 +2373,6 @@ export class EmployeeIncidenceService {
             }
 
           }
-
-
 
         }
 
@@ -2395,8 +2400,6 @@ export class EmployeeIncidenceService {
           hrEntrada,
           hrSalida,
         );
-
-
 
 
         if (registrosChecador.length > 0) {

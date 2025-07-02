@@ -885,6 +885,7 @@ export class EmployeesService {
       //se obtiene el ultimo cambio de perfil de vacaciones
       const lastVacationProfile = await this.employeeVacationProfileHistoryRepository.findOne({
         relations: {
+          employee: true,
           vacationProfile: {
             vacationProfileDetail: true
           }
@@ -912,65 +913,69 @@ export class EmployeesService {
         relations: {
           logAdjustmentVacationEmployee: true,
         }
-
-
       });
 
 
       //si existe un un historial de vacaciones
       //se toman los dias de vacaciones del historial
       if (lastVacationProfile) {
-        //se obtiene el dia de cambio de perfil de vacaciones
-        diaCambio = moment(new Date(lastVacationProfile.created_at));
-        //se obtiene los años cumplidos al dia de cambio de perfil de vacaciones
-        anoCumplidoDiaCambio = diaCambio.diff(ingreso, 'years', true);
-        //se genera array para separar años y dias del historial
-        arrayAnoHistorial = anoCumplidoDiaCambio.toFixed(2).split('.');
-        //se obtienes los dias que corresponden al año de cambio de perfil de vacaciones
-        objDiasByAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAnoHistorial[0]));
-        //si el año del cambio de perfil de vacaciones es igual al año de la consulta
-        objDiasBySiguenteAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
-        //se obtiene el total de dias que corresponden al año de cambio de perfil de vacaciones
-        totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.total : 0;
-        //se obtiene los dias que corresponden al siguiente año de cambio de perfil de vacaciones
-        sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day;
-        //suma de los dias de antiguedad del historial
-        sumaDiasAntiguedadHistorial = totalDiasByAnoHistorial + sumDiasSiguenteAnoHistorial;
+        try {
+          //se obtiene el dia de cambio de perfil de vacaciones
+          diaCambio = moment(new Date(lastVacationProfile.created_at));
+          //se obtiene los años cumplidos al dia de cambio de perfil de vacaciones
+          anoCumplidoDiaCambio = diaCambio.diff(ingreso, 'years', true);
+          //se genera array para separar años y dias del historial
+          arrayAnoHistorial = anoCumplidoDiaCambio.toFixed(2).split('.');
+          //se obtienes los dias que corresponden al año de cambio de perfil de vacaciones
+          objDiasByAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAnoHistorial[0]));
+          //si el año del cambio de perfil de vacaciones es igual al año de la consulta
+          objDiasBySiguenteAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
+          //se obtiene el total de dias que corresponden al año de cambio de perfil de vacaciones
+          totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.total : 0;
+          //se obtiene los dias que corresponden al siguiente año de cambio de perfil de vacaciones
+          sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day;
+          //suma de los dias de antiguedad del historial
+          sumaDiasAntiguedadHistorial = totalDiasByAnoHistorial + sumDiasSiguenteAnoHistorial;
 
 
-        //se obtiene los años cumplidosde la fecha de cambio de perfil al dia de consulta
-        anoCumplidos = diaConsulta.diff(diaCambio, 'years', true);
-        //se calculan los dias de vacaciones al dia de la consulta
-        //se genera array para separar años y dias
-        arrayAno = anoCumplidos.toFixed(2).split('.');
+          //se obtiene los años cumplidosde la fecha de cambio de perfil al dia de consulta
+          anoCumplidos = diaConsulta.diff(diaCambio, 'years', true);
+          //se calculan los dias de vacaciones al dia de la consulta
+          //se genera array para separar años y dias
+          arrayAno = anoCumplidos.toFixed(2).split('.');
 
 
 
-        //se obtiene el total de dias que corresponden al año despues del cambio de perfil
-        objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) =>
-            year.year === ((parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) != 0 ? (parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) + 1 : 1)
-        );
-        //se obtiene los dias que corresponden al siguiente año
-        objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) =>
-            year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1)
-        );
-        //se obtiene el total de dias que corresponden al año
-        totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
-        //se obtiene los dias que corresponden al siguiente año
-        sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
-        //suma de los dias de antiguedad
-        sumaDiasAntiguedad = (arrayAno[0] == 0 ? 0 : totalDiasByAno) + sumDiasSiguenteAno + sumaDiasAntiguedadHistorial;
-        //se obtiene los años cumplidos a fin de año
-        anoCumplidosFinAno = finAno.diff(diaCambio, 'years', true);
-        //se calculan los dias de vacaciones a fin de año
-        arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
-        objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
-        objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
-        sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
-        sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
+          //se obtiene el total de dias que corresponden al año despues del cambio de perfil
+          objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
+            (year) =>
+              year.year === ((parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) != 0 ? (parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) + 1 : 1)
+          );
+          //se obtiene los dias que corresponden al siguiente año
+          objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
+            (year) =>
+              year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1)
+          );
+          //se obtiene el total de dias que corresponden al año
+          totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
+          //se obtiene los dias que corresponden al siguiente año
+          sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
+          //suma de los dias de antiguedad
+          sumaDiasAntiguedad = (arrayAno[0] == 0 ? 0 : totalDiasByAno) + sumDiasSiguenteAno + sumaDiasAntiguedadHistorial;
+          //se obtiene los años cumplidos a fin de año
+          anoCumplidosFinAno = finAno.diff(diaCambio, 'years', true);
+          //se calculan los dias de vacaciones a fin de año
+          arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
+          objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
+          objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
+          totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
+          sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
+          sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
+        } catch (error) {
+
+          console.error('Error al calcular los dias de vacaciones del historial', error);
+        }
+
 
       } else {
         //se obtiene los años cumplidos al dia de consulta
