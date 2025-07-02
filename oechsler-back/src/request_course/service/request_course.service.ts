@@ -296,7 +296,14 @@ export class RequestCourseService {
         requestCourse.competence = course.competence;
       }
 
-      if (data.status == 'Autorizado') {
+      //si el status es de la solicitud de curso es Autorizado
+      //y se quiere cambiar a cancelado
+      if (requestCourse.status == 'Asignado' && data.status == 'Cancelado') {
+        //el estatus cambia de Asignado a Autorizado
+        requestCourse.status = 'Autorizado';
+
+      } else if (data.status == 'Autorizado') {
+        //si el curso pasa a Autorizado
         let isAdmin = false;
         let isLeader = false;
         let isRh = false;
@@ -349,9 +356,11 @@ export class RequestCourseService {
 
 
       }
+
       //si el curso es cancelado y el origen de la solicitud de curso viene de un objetivo
+      //y la solicitud de curso esta en estatus solicitado
       //se cambia el status a Pendiente
-      if (data.status == 'Cancelado' && requestCourse.origin == 'Objetivo') {
+      if (requestCourse.status == 'Solicitado' && data.status == 'Cancelado' && requestCourse.origin == 'Objetivo') {
         requestCourse.status = 'Pendiente';
       }
 
