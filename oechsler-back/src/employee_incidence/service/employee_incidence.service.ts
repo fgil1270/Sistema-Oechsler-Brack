@@ -243,12 +243,12 @@ export class EmployeeIncidenceService {
                 );
 
                 //si es turno 3 y el dia de hoy es sabado
-                if (employeeShiftAnterior.events[0].nameShift == 'T3' && index.getDay() == 6) {
+                if (employeeShiftAnterior.events[0]?.nameShift == 'T3' && index.getDay() == 6) {
                   continue;
                 } else {
 
                   //si es sabado y turno es Mixto
-                  if (index.getDay() == 6 && employeeShiftAnterior.events[0].nameShift == 'MIX') {
+                  if (index.getDay() == 6 && employeeShiftAnterior.events[0]?.nameShift == 'MIX') {
                     continue;
                   } else {
                     throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
