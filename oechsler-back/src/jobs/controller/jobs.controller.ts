@@ -24,7 +24,7 @@ import { RoleGuard } from '../../auth/guards/role.guard';
 @ApiTags('Puestos')
 @Controller('jobs')
 export class JobsController {
-  constructor(private readonly jobsService: JobsService) {}
+  constructor(private readonly jobsService: JobsService) { }
 
   @ApiOperation({ summary: 'Crear Puesto' })
   @Post()
@@ -36,6 +36,12 @@ export class JobsController {
   @Views('puestos')
   @Get()
   findAll() {
+    return this.jobsService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Listar puestos para otras vistas' })
+  @Get('/jobOtherViews')
+  findAllJobOtherViews() {
     return this.jobsService.findAll();
   }
 
@@ -83,7 +89,7 @@ export class JobsController {
     return this.jobsService.update(id, updateJobDto);
   }
 
-  
+
 
   @ApiOperation({ summary: 'Eliminar Puesto' })
   @Delete(':id')

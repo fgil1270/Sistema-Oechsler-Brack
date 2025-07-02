@@ -9,9 +9,12 @@ import {
   UseGuards,
   ParseIntPipe,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
+
 
 import { EmployeeIncidenceService } from '../service/employee_incidence.service';
 import {
@@ -29,7 +32,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 export class EmployeeIncidenceController {
   constructor(
     private readonly employeeIncidenceService: EmployeeIncidenceService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Crear incidencias de empleados' })
   @Post()
@@ -61,10 +64,14 @@ export class EmployeeIncidenceController {
   findIncidencesByStatusDouble(
     @Param('status') status: string,
     @Param('approval') approvalDouble: boolean,
+    @Query() data: ReportEmployeeIncidenceDto,
+    @CurrentUser() user: any,
   ) {
     return this.employeeIncidenceService.findIncidencesByStatusDouble(
+      data,
       status,
       approvalDouble,
+      user
     );
   }
 
@@ -150,7 +157,7 @@ export class EmployeeIncidenceController {
       updateEmployeeIncidenceDto,
       user,
     );
-    
+
     return update;
   }
 
@@ -166,7 +173,7 @@ export class EmployeeIncidenceController {
       updateEmployeeIncidenceDto,
       user,
     );
-    
+
     return update;
   }
 
@@ -182,6 +189,17 @@ export class EmployeeIncidenceController {
     return approverh;
   }
 
+  @ApiOperation({ summary: 'Cancela incidencia multiple' })
+  @Put('cancel/multiple')
+  cancelMultiple(
+    @Body() updateEmployeeIncidenceDto: any,
+    @CurrentUser() user: any,
+  ) {
+    let cancelMultiple = this.employeeIncidenceService.cancelMultipleIncidence(updateEmployeeIncidenceDto, user);
+
+    return cancelMultiple;
+  }
+
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.employeeIncidenceService.remove(id);
@@ -194,7 +212,7 @@ export class EmployeeIncidenceController {
 export class ReportEmployeeIncidenceController {
   constructor(
     private readonly employeeIncidenceService: EmployeeIncidenceService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos' })
   @Views('tiempo_compensatorio_repago')
@@ -209,6 +227,49 @@ export class ReportEmployeeIncidenceController {
       return this.employeeIncidenceService.reportCompensatoryTime(report, user);
     }
   }
+
+  @ApiOperation({ summary: 'Reporte de Empleados en planta' })
+  @Views('empleado_en_planta')
+  @Get('plant-employee')
+  async reportPlantEmployee(@Res() res: Response, @Query() currData: any) {
+    /* res.writeHead(200, {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=empleados_en_planta.pdf',
+    }); */
+
+    try {
+      const { pdf, data } = await this.employeeIncidenceService.reportPlantEmployee(
+        currData,
+      );
+      /* pdf.pipe(res);
+
+      // Cuando el PDF termine de enviarse, enviar el JSON
+      pdf.on('end', () => {
+        res.json({
+          success: true,
+          message: 'Reporte generado exitosamente',
+          data,
+        });
+      }); */
+
+      const chunks: Buffer[] = [];
+      pdf.on('data', (chunk) => chunks.push(chunk));
+      pdf.on('end', () => {
+        const pdfBase64 = Buffer.concat(chunks as Uint8Array[]).toString('base64');
+
+        // Enviar el JSON con el PDF en base64
+        res.json({
+          success: true,
+          message: 'Reporte generado exitosamente',
+          pdf: pdfBase64,
+          data,
+        });
+      });
+      pdf.resume(); // Resume the stream to ensure it finishes processing
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
@@ -217,7 +278,7 @@ export class ReportEmployeeIncidenceController {
 export class ReportFlexTimeController {
   constructor(
     private readonly employeeIncidenceService: EmployeeIncidenceService,
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos' })
   @Views('horario_flexible')

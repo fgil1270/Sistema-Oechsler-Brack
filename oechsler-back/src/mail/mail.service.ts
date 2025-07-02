@@ -158,7 +158,7 @@ export class MailService {
 
     // Eliminar el archivo después de enviar el email
     try {
-      await fs.unlinkSync(newpath);
+      await fs.promises.unlink(newpath);
     } catch (error) {
       resp.error = true;
       (resp.msg = error.message || 'Error al eliminar el archivo:'), error;
@@ -169,6 +169,25 @@ export class MailService {
     return resp;
   }
 
+  //Envia correo al personal de produccion para notificar que se ha creado una incidencia
+  async sendEmailIncidenceProduction(subject: string, mailData: MailData, to: string[], template: string) {
+    await this.mailerService
+      .sendMail({
+        to: to,
+        from: 'OechslerMX<notificationes@oechsler.mx>',
+        subject: subject,
+        template: template, // `.hbs` extension is appended automatically
+        context: mailData,
+      })
+      .then((success) => {
+        
+        return true;
+      })
+      .catch((err) => {
+        
+        return true;
+      });
+  }
 
   //Enviar correo a los lideres que tengan incidencias con 24 hrs pendientes por autorizar
   async sendEmailPendingIncidence(to: string[], subject: string, mailData: MailDataPendingIncidence) {
