@@ -45,7 +45,7 @@ import { TimeCorrectionModule } from './time_correction/time_correction.module';
 import { UsersModule } from './users/users.module';
 import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import { ViewsModule } from './views/views.module';
-import { FileModule } from './file/file.module';
+import { GeneralModule } from './general/general.module';
 
 
 @Module({
@@ -109,7 +109,7 @@ import { FileModule } from './file/file.module';
     SupplierModule,
     EnabledCreateIncidenceModule,
     CourseEfficiencyModule,
-    FileModule
+    GeneralModule
   ],
   controllers: [
     AppController

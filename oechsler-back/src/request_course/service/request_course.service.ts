@@ -664,7 +664,7 @@ export class RequestCourseService {
       classification: classifications[idx],
     }));
 
-    /* for (let index = 0; index < resultFiles.length; index++) {
+    for (let index = 0; index < resultFiles.length; index++) {
       const archivo = resultFiles[index].file;
       const name = archivo.originalname;
       let path: any;
@@ -673,7 +673,7 @@ export class RequestCourseService {
 
       const createRequestDocument = await this.requestCourseDocument.create({
         name: name,
-        route: `documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+        route: `documents/solicitud-curso/${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
         type: resultFiles[index].classification,
         request_course: requestCourse,
       });
@@ -681,7 +681,7 @@ export class RequestCourseService {
 
       path = join(
         __dirname,
-        `../../../documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+        `../../../documents/solicitud-curso/${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
       );
       filepath = join(path, name);
 
@@ -695,7 +695,7 @@ export class RequestCourseService {
 
       const newDocument = await this.requestCourseDocument.save(createRequestDocument);
 
-    } */
+    }
 
     const resultRequestCourseFiles = await this.requestCourse.find({
       relations: {

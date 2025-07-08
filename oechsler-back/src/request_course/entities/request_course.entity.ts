@@ -10,6 +10,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  OneToOne
 } from 'typeorm';
 import { Course } from '../../course/entities/course.entity';
 import { Department } from '../../departments/entities/department.entity';
@@ -18,6 +19,7 @@ import { Competence } from '../../competence/entities/competence.entity';
 import { RequestCourseAssignment } from './request_course_assignment.entity';
 import { CourseEfficiency } from '../../course_efficiency/entities/course_efficiency.entity';
 import { RequestCourseDocument } from './request_course_document.entity';
+import { RequestCourseAssessmentEmployee } from './request_course_assessment_employee.entity';
 
 @Entity()
 export class RequestCourse {
@@ -136,4 +138,14 @@ export class RequestCourse {
 
   @OneToMany(() => RequestCourseDocument, (post) => post.request_course)
   documents: RequestCourseDocument[];
+
+  @OneToOne(
+    () => RequestCourseAssessmentEmployee,
+    (requestCourseAssessmentEmployee) => requestCourseAssessmentEmployee.request_course,
+    {
+      cascade: true,
+      onDelete: 'CASCADE',
+    },
+  )
+  request_course_assessment_employee: RequestCourseAssessmentEmployee;
 }

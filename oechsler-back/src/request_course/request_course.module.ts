@@ -12,10 +12,11 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { SupplierModule } from '../supplier/supplier.module';
 import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidence.module';
 import { RequestCourseDocument } from './entities/request_course_document.entity';
+import { RequestCourseAssessmentEmployee } from './entities/request_course_assessment_employee.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RequestCourse, RequestCourseAssignment, RequestCourseDocument]),
+    TypeOrmModule.forFeature([RequestCourse, RequestCourseAssignment, RequestCourseDocument, RequestCourseAssessmentEmployee]),
     CourseModule,
     DepartmentsModule,
     EmployeesModule,
