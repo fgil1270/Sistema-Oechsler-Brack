@@ -13,6 +13,7 @@ import {
     OneToOne,
 } from 'typeorm';
 import { RequestCourse } from './request_course.entity';
+import { Employee } from '../../employees/entities/employee.entity';
 
 @Entity()
 export class RequestCourseAssessmentEmployee {
@@ -43,5 +44,9 @@ export class RequestCourseAssessmentEmployee {
     @OneToOne(() => RequestCourse, (requestCourse) => requestCourse.request_course_assessment_employee)
     @JoinColumn()
     request_course: RequestCourse;
+
+    @ManyToOne(() => Employee, (employee) => employee.request_course_assessment_employee)
+    @JoinColumn()
+    employee: Employee;
 
 }

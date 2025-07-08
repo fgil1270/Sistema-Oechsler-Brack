@@ -28,7 +28,8 @@ import {
   RequestCourseDto,
   UpdateRequestCourseDto,
   RequestCourseAssignmentDto,
-  UpdateAssignmentCourseDto
+  UpdateAssignmentCourseDto,
+  RequestCourseAssessmentDto
 } from '../dto/create_request_course.dto';
 import { CourseService } from '../../course/service/course.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
@@ -37,6 +38,7 @@ import { CompetenceService } from '../../competence/service/competence.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { SupplierService } from '../../supplier/service/supplier.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
+import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
 
 @Injectable()
 export class RequestCourseService {
@@ -44,6 +46,7 @@ export class RequestCourseService {
     @InjectRepository(RequestCourse) private requestCourse: Repository<RequestCourse>,
     @InjectRepository(RequestCourseAssignment) private requestCourseAssignment: Repository<RequestCourseAssignment>,
     @InjectRepository(RequestCourseDocument) private requestCourseDocument: Repository<RequestCourseDocument>,
+    @InjectRepository(RequestCourseAssessmentEmployee) private requestCourseAssessmentEmployee: Repository<RequestCourseAssessmentEmployee>,
     private courseService: CourseService,
     private departmentService: DepartmentsService,
     private employeeService: EmployeesService,
@@ -712,6 +715,59 @@ export class RequestCourseService {
       data: resultRequestCourseFiles,
     };
 
+  }
+
+  //Calificar curso por parte del empleado
+  async assessmentCourse(idRequestCourse: number, data: RequestCourseAssessmentDto, user: any) {
+    try {
+      const requestCourse = await this.requestCourse.findOne({
+        relations: {
+          employee: true,
+          course: true,
+          department: true,
+          competence: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+          request_course_assessment_employee: true,
+        },
+        where: {
+          id: idRequestCourse,
+        },
+      });
+
+      if (!requestCourse) {
+        throw new NotFoundException('Solicitud de curso no encontrada');
+      }
+
+      const createAssessment = this.requestCourseAssessmentEmployee.create({
+        request_course: requestCourse,
+        employee: requestCourse.employee,
+        value_uno: data.value_uno,
+        value_dos: data.value_dos,
+        value_tres: data.value_tres,
+        comment: data.comment
+      });
+
+      const assessment = await this.requestCourseAssessmentEmployee.save(createAssessment);
+
+      //actualizar el status de la solicitud de curso a Evaluado
+      requestCourse.status = 'Evaluado';
+
+      await this.requestCourse.save(requestCourse);
+
+      return {
+        error: false,
+        message: 'Curso calificado correctamente',
+        data: assessment,
+      };
+    } catch (error) {
+      return {
+        error: error,
+        mgs: error.message,
+      };
+    }
   }
 
 

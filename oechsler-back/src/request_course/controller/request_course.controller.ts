@@ -21,7 +21,10 @@ import * as fs from 'fs';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseService } from '../service/request_course.service';
-import { RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto, UpdateAssignmentCourseDto, UploadFilesDto } from '../dto/create_request_course.dto';
+import {
+  RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto,
+  UpdateAssignmentCourseDto, UploadFilesDto, RequestCourseAssessmentDto
+} from '../dto/create_request_course.dto';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Views } from '../../auth/decorators/views.decorator';
@@ -31,13 +34,6 @@ import { Views } from '../../auth/decorators/views.decorator';
 @Controller('request_course')
 export class RequestCourseController {
   constructor(private requestCourseService: RequestCourseService) { }
-
-  @ApiOperation({ summary: 'Crear solicitud de curso' })
-  @Post()
-  async create(@Body() currData: RequestCourseDto, @CurrentUser() user: any) {
-    return this.requestCourseService.create(currData, user);
-  }
-
   @ApiOperation({ summary: 'Obtener solicitudes de curso' })
   @Get()
   async findAll(
@@ -75,6 +71,18 @@ export class RequestCourseController {
     @CurrentUser() user: any,
   ) {
     return this.requestCourseService.findRequestCourseApprove(status, user);
+  }
+
+  @ApiOperation({ summary: 'Crear solicitud de curso' })
+  @Post()
+  async create(@Body() currData: RequestCourseDto, @CurrentUser() user: any) {
+    return this.requestCourseService.create(currData, user);
+  }
+
+  @ApiOperation({ summary: 'Calificar curso' })
+  @Post(':id/assessment')
+  async assessmentCourse(@Param('id') id: number, @Body() currData: RequestCourseAssessmentDto, @CurrentUser() user: any) {
+    return this.requestCourseService.assessmentCourse(id, currData, user);
   }
 
   @ApiOperation({ summary: 'Actualizar solicitud de curso' })
