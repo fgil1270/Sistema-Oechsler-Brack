@@ -39,6 +39,7 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { SupplierService } from '../../supplier/service/supplier.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
+import { connected } from 'process';
 
 @Injectable()
 export class RequestCourseService {
@@ -291,7 +292,8 @@ export class RequestCourseService {
         },
       });
 
-      Object.assign(requestCourse, data);
+      const { status, ...dataWithoutStatus } = data;
+      Object.assign(requestCourse, dataWithoutStatus);
 
       if (data.courseId) {
         const course = await this.courseService.findOne(data.courseId);
