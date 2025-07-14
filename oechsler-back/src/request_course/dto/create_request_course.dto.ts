@@ -195,4 +195,22 @@ export class UploadFilesDto {
   classifications: string[];
 }
 
+export class RequestCourseAssessmentDto {
+  @IsNumber()
+  @ApiProperty({ description: 'Calificación pregunta uno' })
+  value_uno: number;
+
+  @IsNumber()
+  @ApiProperty({ description: 'Calificación pregunta dos' })
+  value_dos: number;
+
+  @IsNumber()
+  @ApiProperty({ description: 'Calificación pregunta tres' })
+  value_tres: number;
+
+  @IsString()
+  @ApiProperty({ description: 'Comentarios' })
+  comment: string;
+}
+
 

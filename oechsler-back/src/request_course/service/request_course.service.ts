@@ -15,8 +15,9 @@ import {
   Between,
   QueryRunner,
   FindOptionsWhere,
+  DataSource
 } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { join } from 'path';
 import { mkdirSync, existsSync, writeFileSync } from 'fs';
 import { format } from 'date-fns';
@@ -28,7 +29,8 @@ import {
   RequestCourseDto,
   UpdateRequestCourseDto,
   RequestCourseAssignmentDto,
-  UpdateAssignmentCourseDto
+  UpdateAssignmentCourseDto,
+  RequestCourseAssessmentDto
 } from '../dto/create_request_course.dto';
 import { CourseService } from '../../course/service/course.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
@@ -37,6 +39,8 @@ import { CompetenceService } from '../../competence/service/competence.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { SupplierService } from '../../supplier/service/supplier.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
+import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
+import { connected } from 'process';
 
 @Injectable()
 export class RequestCourseService {
@@ -44,13 +48,15 @@ export class RequestCourseService {
     @InjectRepository(RequestCourse) private requestCourse: Repository<RequestCourse>,
     @InjectRepository(RequestCourseAssignment) private requestCourseAssignment: Repository<RequestCourseAssignment>,
     @InjectRepository(RequestCourseDocument) private requestCourseDocument: Repository<RequestCourseDocument>,
+    @InjectRepository(RequestCourseAssessmentEmployee) private requestCourseAssessmentEmployee: Repository<RequestCourseAssessmentEmployee>,
     private courseService: CourseService,
     private departmentService: DepartmentsService,
     private employeeService: EmployeesService,
     private competenceService: CompetenceService,
     private organigramaService: OrganigramaService,
     private supplierService: SupplierService,
-    private employeeIncidenceService: EmployeeIncidenceService
+    private employeeIncidenceService: EmployeeIncidenceService,
+    @InjectDataSource() private dataSource: DataSource,
   ) { }
 
   async create(data: RequestCourseDto, user: any) {
@@ -288,7 +294,8 @@ export class RequestCourseService {
         },
       });
 
-      Object.assign(requestCourse, data);
+      const { status, ...dataWithoutStatus } = data;
+      Object.assign(requestCourse, dataWithoutStatus);
 
       if (data.courseId) {
         const course = await this.courseService.findOne(data.courseId);
@@ -664,7 +671,7 @@ export class RequestCourseService {
       classification: classifications[idx],
     }));
 
-    /* for (let index = 0; index < resultFiles.length; index++) {
+    for (let index = 0; index < resultFiles.length; index++) {
       const archivo = resultFiles[index].file;
       const name = archivo.originalname;
       let path: any;
@@ -673,7 +680,7 @@ export class RequestCourseService {
 
       const createRequestDocument = await this.requestCourseDocument.create({
         name: name,
-        route: `documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+        route: `documents/solicitud-curso/${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
         type: resultFiles[index].classification,
         request_course: requestCourse,
       });
@@ -681,7 +688,7 @@ export class RequestCourseService {
 
       path = join(
         __dirname,
-        `../../../documents/solicitud-curso/${requestCourse.employee.name}_${requestCourse.employee.paternal_surname}_${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+        `../../../documents/solicitud-curso/${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
       );
       filepath = join(path, name);
 
@@ -695,7 +702,7 @@ export class RequestCourseService {
 
       const newDocument = await this.requestCourseDocument.save(createRequestDocument);
 
-    } */
+    }
 
     const resultRequestCourseFiles = await this.requestCourse.find({
       relations: {
@@ -711,6 +718,303 @@ export class RequestCourseService {
       message: 'Archivos subidos con éxito',
       data: resultRequestCourseFiles,
     };
+
+  }
+
+  //Calificar curso por parte del empleado
+  async assessmentCourse(idRequestCourse: number, data: RequestCourseAssessmentDto, user: any) {
+    try {
+      const requestCourse = await this.requestCourse.findOne({
+        relations: {
+          employee: true,
+          course: true,
+          department: true,
+          competence: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+          request_course_assessment_employee: true,
+        },
+        where: {
+          id: idRequestCourse,
+        },
+      });
+
+      if (!requestCourse) {
+        throw new NotFoundException('Solicitud de curso no encontrada');
+      }
+
+      const createAssessment = this.requestCourseAssessmentEmployee.create({
+        request_course: requestCourse,
+        employee: requestCourse.employee,
+        value_uno: data.value_uno,
+        value_dos: data.value_dos,
+        value_tres: data.value_tres,
+        comment: data.comment
+      });
+
+      const assessment = await this.requestCourseAssessmentEmployee.save(createAssessment);
+
+      //actualizar el status de la solicitud de curso a Evaluado
+      requestCourse.status = 'Evaluado';
+
+      await this.requestCourse.save(requestCourse);
+
+      return {
+        error: false,
+        message: 'Curso calificado correctamente',
+        data: assessment,
+      };
+    } catch (error) {
+      return {
+        error: error,
+        mgs: error.message,
+      };
+    }
+  }
+
+  async updateCronRequestCourse() {
+    let correoLideres: {
+      employeeNumber: number;
+      name: string;
+      paternal_surname: string;
+      maternal_surname: string;
+      email: string;
+      course: {
+        name: string;
+        employee: {
+          employeeNumber: number;
+          name: string;
+          paternal_surname: string;
+          maternal_surname: string;
+        }[];
+      }[];
+
+    }[] = [];
+
+    const request_course = await this.requestCourse.find({
+      relations: {
+        course: true,
+        requestCourseAssignment: true,
+        employee: {
+          job: true,
+          organigramaL: {
+            leader: {
+              userId: true,
+            },
+          },
+        },
+      },
+      where: {
+        status: In(['Asignado', 'Finalizado'])
+      },
+    });
+
+    //se revisa si la fecha de finalizacion de la asignacion de curso es menor a la fecha actual
+    //si es menor el status de la solicitud de curso se cambia a Finalizado
+    console.log("inicia")
+    console.log(correoLideres);
+    for (const request of request_course) {
+
+      if (request.requestCourseAssignment.length > 0) {
+        const dateEnd = new Date(request.requestCourseAssignment[0].date_end);
+        const currentDate = new Date();
+        //si la fecha de finalizacion es menor a la fecha actual
+        // y el status de la solicitud de curso es Asignado
+        //se cambia el status a Finalizado
+        if (dateEnd < currentDate && request.status == 'Asignado') {
+          request.status = 'Finalizado';
+          await this.requestCourse.save(request);
+        }
+
+        //si el status es Finalizado
+        if (request.status == 'Finalizado') {
+          //el periodo de eficiencia se suma con la fecha de finalizacion de la solicitud de curso
+
+          const efficiencyPeriod = request.efficiency_period; //dias
+          const dateEnd = new Date(request.requestCourseAssignment[0].date_end);
+          dateEnd.setDate(dateEnd.getDate() + Number(efficiencyPeriod));
+          //await this.requestCourse.save(request);
+          //si la fecha actual es mayor a la fecha de finalizacion mas el periodo de eficiencia
+          if (currentDate > dateEnd && efficiencyPeriod != null) {
+            request.status = 'Pendiente evaluar eficiencia';
+            console.log("solicitud de curso", request.id)
+            //si el empleado tiene un lider asignado en el organigrama
+            if (request.employee.organigramaL.length > 0) {
+              console.log("tiene lideres")
+              //se envia correo a los lideres de los empleados que tomaron el curso
+              for (const emp of request.employee.organigramaL) {
+                //si el lider tiene usuario y el lider puede evaluar
+                if (emp.leader.userId && emp.evaluar) {
+                  console.log("tiene usuario y puede evaluar")
+                  //recorre el array de correoLideres
+                  if (correoLideres.length > 0) {
+                    console.log("correoLideres tiene datos")
+                    correoLideres.forEach((correo) => {
+                      //si el lider ya existe en el array de correoLideres
+                      if (correo.employeeNumber === emp.leader.employee_number) {
+                        //si el curso ya existe en el array de correoLideres
+                        //agrega el empleado al curso
+                        correo.course.forEach((course) => {
+                          if (course.name === request.course.name) {
+                            course.employee.push({
+                              employeeNumber: request.employee.employee_number,
+                              name: request.employee.name,
+                              paternal_surname: request.employee.paternal_surname,
+                              maternal_surname: request.employee.maternal_surname,
+                            });
+                          } else {
+                            //si el curso no existe en el array de correoLideres
+                            //agrega el curso y el empleado
+                            correo.course.push({
+                              name: request.course.name,
+                              employee: [{
+                                employeeNumber: request.employee.employee_number,
+                                name: request.employee.name,
+                                paternal_surname: request.employee.paternal_surname,
+                                maternal_surname: request.employee.maternal_surname,
+                              }]
+                            });
+                          }
+                        });
+
+                      }
+                    });
+                  } else {
+                    console.log("correoLideres no tiene datos")
+                    //si el lider no existe en el array de correoLideres
+                    //agrega el lider y el curso y el empleado
+                    correoLideres.push({
+                      employeeNumber: emp.leader.employee_number,
+                      name: emp.leader.name,
+                      paternal_surname: emp.leader.paternal_surname,
+                      maternal_surname: emp.leader.maternal_surname,
+                      email: emp.leader.userId[0].email,
+                      course: [{
+                        name: request.course.name,
+                        employee: [{
+                          employeeNumber: request.employee.employee_number,
+                          name: request.employee.name,
+                          paternal_surname: request.employee.paternal_surname,
+                          maternal_surname: request.employee.maternal_surname,
+                        }]
+                      }]
+                    });
+                    console.log("primer dato agregado")
+
+                    console.log("correoLideres", correoLideres);
+                    console.log("correoLideres", correoLideres[0].course);
+
+                  }
+
+
+
+                }
+              }
+            } else {
+              //si el empleado no tiene un lider asignado en el organigrama
+              //se envia correo a los jefes de turno
+              let jefesTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+                .innerJoinAndSelect('employee.userId', 'user')
+                .innerJoinAndSelect('user.roles', 'role')
+                .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+                .orderBy('employee.employee_number', 'ASC')
+                .getMany();
+              for (const jefe of jefesTurno) {
+                //recorreo el array de correoLideres
+                //recorre el array de correoLideres
+                if (correoLideres.length > 0) {
+                  correoLideres.forEach((correo) => {
+                    //si el jefe ya existe en el array de correoLideres
+                    if (correo.employeeNumber === jefe.employee_number) {
+                      //si el curso ya existe en el array de correoLideres
+                      //agrega el empleado al curso
+                      correo.course.forEach((course) => {
+                        //si el curso ya existe en el array de correoLideres
+                        if (course.name === request.course.name) {
+                          course.employee.push({
+                            employeeNumber: request.employee.employee_number,
+                            name: request.employee.name,
+                            paternal_surname: request.employee.paternal_surname,
+                            maternal_surname: request.employee.maternal_surname,
+                          });
+                        } else {
+                          //si el curso no existe en el array de correoLideres
+                          //agrega el curso y el empleado
+                          correo.course.push({
+                            name: request.course.name,
+                            employee: [{
+                              employeeNumber: request.employee.employee_number,
+                              name: request.employee.name,
+                              paternal_surname: request.employee.paternal_surname,
+                              maternal_surname: request.employee.maternal_surname,
+                            }]
+                          });
+                        }
+                      });
+
+                    } else {
+                      //si el jefe no existe en el array de correoLideres
+                      //agrega el jefe y el curso y el empleado
+                      correoLideres.push({
+                        employeeNumber: jefe.employee_number,
+                        name: jefe.name,
+                        paternal_surname: jefe.paternal_surname,
+                        maternal_surname: jefe.maternal_surname,
+                        email: jefe.userId[0].email,
+                        course: [{
+                          name: request.course.name,
+                          employee: [{
+                            employeeNumber: request.employee.employee_number,
+                            name: request.employee.name,
+                            paternal_surname: request.employee.paternal_surname,
+                            maternal_surname: request.employee.maternal_surname,
+                          }]
+                        }]
+                      });
+                    }
+                  });
+                } else {
+                  //si el lider no existe en el array de correoLideres
+                  //agrega el lider y el curso y el empleado
+                  correoLideres.push({
+                    employeeNumber: jefe.employee_number,
+                    name: jefe.name,
+                    paternal_surname: jefe.paternal_surname,
+                    maternal_surname: jefe.maternal_surname,
+                    email: jefe.userId[0].email,
+                    course: [{
+                      name: request.course.name,
+                      employee: [{
+                        employeeNumber: request.employee.employee_number,
+                        name: request.employee.name,
+                        paternal_surname: request.employee.paternal_surname,
+                        maternal_surname: request.employee.maternal_surname,
+                      }]
+                    }]
+                  });
+                }
+
+              }
+
+            }
+
+
+          }
+
+
+        }
+      }
+
+    }
+
+    console.log("termina")
+    console.log(correoLideres);
+    console.log(correoLideres[0].course);
+    console.log(correoLideres[0].course[0].employee);
+
+
 
   }
 

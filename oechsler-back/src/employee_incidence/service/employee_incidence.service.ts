@@ -242,17 +242,36 @@ export class EmployeeIncidenceService {
                 ]
                 );
 
-                //si es turno 3 y el dia de hoy es sabado
-                if (employeeShiftAnterior.events[0]?.nameShift == 'T3' && index.getDay() == 6) {
+                //si es domingo
+                //employeeShiftAnterior.events[0]?.nameShift == 'T3'
+                if ((index.getDay() == 0)) {
                   continue;
                 } else {
+                  //si es sabado
+                  if (index.getDay() == 6) {
+                    //si el dia anterior tiene turno y es seguno o primero
+                    if (employeeShiftAnterior.events[0]?.nameShift == 'MIX' || employeeShiftAnterior.events[0]?.nameShift == 'T3') {
+                      continue;
+                    } else if ((employeeShiftAnterior.events[0]?.nameShift == 'T2' || employeeShiftAnterior.events[0]?.nameShift == 'T1')) {
+                      throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                    }
 
-                  //si es sabado y turno es Mixto
-                  if (index.getDay() == 6 && employeeShiftAnterior.events[0]?.nameShift == 'MIX') {
-                    continue;
                   } else {
-                    throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                    // si es viernes
+                    if (index.getDay() == 5) {
+                      //si el dia anterior tiene turno y es segundo o primero
+                      if (employeeShiftAnterior.events[0]?.nameShift == 'T12-1' || employeeShiftAnterior.events[0]?.nameShift == 'T12-2') {
+                        continue;
+                      } else {
+                        throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                      }
+                    } else {
+                      //de lunes a jueves
+                      throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                    }
+
                   }
+
 
                 }
 
@@ -1978,7 +1997,7 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '02:00:00'; //dia actual
+                hrEntrada = '01:00:00'; //dia actual
                 hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
@@ -2138,8 +2157,8 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '01:00:00'; //dia actual
+                hrSalida = '23:00:00'; //dia siguiente
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
                 break;
