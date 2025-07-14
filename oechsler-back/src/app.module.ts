@@ -46,6 +46,7 @@ import { UsersModule } from './users/users.module';
 import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import { ViewsModule } from './views/views.module';
 import { GeneralModule } from './general/general.module';
+import { CronRequestCourseService } from './request_course/service/cron_request_course.service';
 
 
 @Module({
@@ -117,7 +118,8 @@ import { GeneralModule } from './general/general.module';
   providers: [
     AppService,
     CronSendEmailPendingIncidenceService,
-    CustomLoggerService
+    CustomLoggerService,
+    CronRequestCourseService
   ],
 })
 export class AppModule { }

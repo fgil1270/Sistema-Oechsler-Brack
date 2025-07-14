@@ -15,8 +15,9 @@ import {
   Between,
   QueryRunner,
   FindOptionsWhere,
+  DataSource
 } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { join } from 'path';
 import { mkdirSync, existsSync, writeFileSync } from 'fs';
 import { format } from 'date-fns';
@@ -54,7 +55,8 @@ export class RequestCourseService {
     private competenceService: CompetenceService,
     private organigramaService: OrganigramaService,
     private supplierService: SupplierService,
-    private employeeIncidenceService: EmployeeIncidenceService
+    private employeeIncidenceService: EmployeeIncidenceService,
+    @InjectDataSource() private dataSource: DataSource,
   ) { }
 
   async create(data: RequestCourseDto, user: any) {
@@ -770,6 +772,250 @@ export class RequestCourseService {
         mgs: error.message,
       };
     }
+  }
+
+  async updateCronRequestCourse() {
+    let correoLideres: {
+      employeeNumber: number;
+      name: string;
+      paternal_surname: string;
+      maternal_surname: string;
+      email: string;
+      course: {
+        name: string;
+        employee: {
+          employeeNumber: number;
+          name: string;
+          paternal_surname: string;
+          maternal_surname: string;
+        }[];
+      }[];
+
+    }[] = [];
+
+    const request_course = await this.requestCourse.find({
+      relations: {
+        course: true,
+        requestCourseAssignment: true,
+        employee: {
+          job: true,
+          organigramaL: {
+            leader: {
+              userId: true,
+            },
+          },
+        },
+      },
+      where: {
+        status: In(['Asignado', 'Finalizado'])
+      },
+    });
+
+    //se revisa si la fecha de finalizacion de la asignacion de curso es menor a la fecha actual
+    //si es menor el status de la solicitud de curso se cambia a Finalizado
+    console.log("inicia")
+    console.log(correoLideres);
+    for (const request of request_course) {
+
+      if (request.requestCourseAssignment.length > 0) {
+        const dateEnd = new Date(request.requestCourseAssignment[0].date_end);
+        const currentDate = new Date();
+        //si la fecha de finalizacion es menor a la fecha actual
+        // y el status de la solicitud de curso es Asignado
+        //se cambia el status a Finalizado
+        if (dateEnd < currentDate && request.status == 'Asignado') {
+          request.status = 'Finalizado';
+          await this.requestCourse.save(request);
+        }
+
+        //si el status es Finalizado
+        if (request.status == 'Finalizado') {
+          //el periodo de eficiencia se suma con la fecha de finalizacion de la solicitud de curso
+
+          const efficiencyPeriod = request.efficiency_period; //dias
+          const dateEnd = new Date(request.requestCourseAssignment[0].date_end);
+          dateEnd.setDate(dateEnd.getDate() + Number(efficiencyPeriod));
+          //await this.requestCourse.save(request);
+          //si la fecha actual es mayor a la fecha de finalizacion mas el periodo de eficiencia
+          if (currentDate > dateEnd && efficiencyPeriod != null) {
+            request.status = 'Pendiente evaluar eficiencia';
+            console.log("solicitud de curso", request.id)
+            //si el empleado tiene un lider asignado en el organigrama
+            if (request.employee.organigramaL.length > 0) {
+              console.log("tiene lideres")
+              //se envia correo a los lideres de los empleados que tomaron el curso
+              for (const emp of request.employee.organigramaL) {
+                //si el lider tiene usuario y el lider puede evaluar
+                if (emp.leader.userId && emp.evaluar) {
+                  console.log("tiene usuario y puede evaluar")
+                  //recorre el array de correoLideres
+                  if (correoLideres.length > 0) {
+                    console.log("correoLideres tiene datos")
+                    correoLideres.forEach((correo) => {
+                      //si el lider ya existe en el array de correoLideres
+                      if (correo.employeeNumber === emp.leader.employee_number) {
+                        //si el curso ya existe en el array de correoLideres
+                        //agrega el empleado al curso
+                        correo.course.forEach((course) => {
+                          if (course.name === request.course.name) {
+                            course.employee.push({
+                              employeeNumber: request.employee.employee_number,
+                              name: request.employee.name,
+                              paternal_surname: request.employee.paternal_surname,
+                              maternal_surname: request.employee.maternal_surname,
+                            });
+                          } else {
+                            //si el curso no existe en el array de correoLideres
+                            //agrega el curso y el empleado
+                            correo.course.push({
+                              name: request.course.name,
+                              employee: [{
+                                employeeNumber: request.employee.employee_number,
+                                name: request.employee.name,
+                                paternal_surname: request.employee.paternal_surname,
+                                maternal_surname: request.employee.maternal_surname,
+                              }]
+                            });
+                          }
+                        });
+
+                      }
+                    });
+                  } else {
+                    console.log("correoLideres no tiene datos")
+                    //si el lider no existe en el array de correoLideres
+                    //agrega el lider y el curso y el empleado
+                    correoLideres.push({
+                      employeeNumber: emp.leader.employee_number,
+                      name: emp.leader.name,
+                      paternal_surname: emp.leader.paternal_surname,
+                      maternal_surname: emp.leader.maternal_surname,
+                      email: emp.leader.userId[0].email,
+                      course: [{
+                        name: request.course.name,
+                        employee: [{
+                          employeeNumber: request.employee.employee_number,
+                          name: request.employee.name,
+                          paternal_surname: request.employee.paternal_surname,
+                          maternal_surname: request.employee.maternal_surname,
+                        }]
+                      }]
+                    });
+                    console.log("primer dato agregado")
+
+                    console.log("correoLideres", correoLideres);
+                    console.log("correoLideres", correoLideres[0].course);
+
+                  }
+
+
+
+                }
+              }
+            } else {
+              //si el empleado no tiene un lider asignado en el organigrama
+              //se envia correo a los jefes de turno
+              let jefesTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+                .innerJoinAndSelect('employee.userId', 'user')
+                .innerJoinAndSelect('user.roles', 'role')
+                .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+                .orderBy('employee.employee_number', 'ASC')
+                .getMany();
+              for (const jefe of jefesTurno) {
+                //recorreo el array de correoLideres
+                //recorre el array de correoLideres
+                if (correoLideres.length > 0) {
+                  correoLideres.forEach((correo) => {
+                    //si el jefe ya existe en el array de correoLideres
+                    if (correo.employeeNumber === jefe.employee_number) {
+                      //si el curso ya existe en el array de correoLideres
+                      //agrega el empleado al curso
+                      correo.course.forEach((course) => {
+                        //si el curso ya existe en el array de correoLideres
+                        if (course.name === request.course.name) {
+                          course.employee.push({
+                            employeeNumber: request.employee.employee_number,
+                            name: request.employee.name,
+                            paternal_surname: request.employee.paternal_surname,
+                            maternal_surname: request.employee.maternal_surname,
+                          });
+                        } else {
+                          //si el curso no existe en el array de correoLideres
+                          //agrega el curso y el empleado
+                          correo.course.push({
+                            name: request.course.name,
+                            employee: [{
+                              employeeNumber: request.employee.employee_number,
+                              name: request.employee.name,
+                              paternal_surname: request.employee.paternal_surname,
+                              maternal_surname: request.employee.maternal_surname,
+                            }]
+                          });
+                        }
+                      });
+
+                    } else {
+                      //si el jefe no existe en el array de correoLideres
+                      //agrega el jefe y el curso y el empleado
+                      correoLideres.push({
+                        employeeNumber: jefe.employee_number,
+                        name: jefe.name,
+                        paternal_surname: jefe.paternal_surname,
+                        maternal_surname: jefe.maternal_surname,
+                        email: jefe.userId[0].email,
+                        course: [{
+                          name: request.course.name,
+                          employee: [{
+                            employeeNumber: request.employee.employee_number,
+                            name: request.employee.name,
+                            paternal_surname: request.employee.paternal_surname,
+                            maternal_surname: request.employee.maternal_surname,
+                          }]
+                        }]
+                      });
+                    }
+                  });
+                } else {
+                  //si el lider no existe en el array de correoLideres
+                  //agrega el lider y el curso y el empleado
+                  correoLideres.push({
+                    employeeNumber: jefe.employee_number,
+                    name: jefe.name,
+                    paternal_surname: jefe.paternal_surname,
+                    maternal_surname: jefe.maternal_surname,
+                    email: jefe.userId[0].email,
+                    course: [{
+                      name: request.course.name,
+                      employee: [{
+                        employeeNumber: request.employee.employee_number,
+                        name: request.employee.name,
+                        paternal_surname: request.employee.paternal_surname,
+                        maternal_surname: request.employee.maternal_surname,
+                      }]
+                    }]
+                  });
+                }
+
+              }
+
+            }
+
+
+          }
+
+
+        }
+      }
+
+    }
+
+    console.log("termina")
+    console.log(correoLideres);
+    console.log(correoLideres[0].course);
+    console.log(correoLideres[0].course[0].employee);
+
+
+
   }
 
 
