@@ -23,9 +23,9 @@ import { MailService } from './mail.service';
             pass: process.env.MAIL_PASSWORD, //pass: 'nhic fewe fvxf nbrc', // generated ethereal password
           },
           /* tls: {
-                        // do not fail on invalid certs
-                        rejectUnauthorized: false,
-                    }, */
+            // do not fail on invalid certs
+            rejectUnauthorized: false,
+          }, */
         },
         defaults: {
           from: '"No Reply" <notificationes@oechsler.mx>',
@@ -44,4 +44,4 @@ import { MailService } from './mail.service';
   providers: [MailService],
   exports: [MailService],
 })
-export class MailModule {}
+export class MailModule { }

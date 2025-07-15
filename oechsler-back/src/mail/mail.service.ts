@@ -27,9 +27,40 @@ export interface MailDataPendingIncidence {
 @Injectable()
 export class MailService {
   private log = new CustomLoggerService();
+  private envVariables = {
+    port: process.env.PORT,
+    // Agrega otras variables de entorno que necesites
+  };
+
   constructor(
     private readonly mailerService: MailerService
-  ) {}
+  ) { }
+
+
+  //envio correo 
+  async sendEmail(
+    subject: string,
+    mailData: any,
+    to: string[],
+    template: string
+  ) {
+    await this.mailerService
+      .sendMail({
+        to: to,
+        from: 'OechslerMX<notificationes@oechsler.mx>',
+        subject: subject,
+        template: template, // `.hbs` extension is appended automatically
+        context: { ...mailData, ...this.envVariables },
+      })
+      .then((success) => {
+
+        return true;
+      })
+      .catch((err) => {
+
+        return true;
+      });
+  }
 
   async sendEmailCreateIncidence(
     subject: string,
@@ -45,11 +76,11 @@ export class MailService {
         context: mailData,
       })
       .then((success) => {
-        
+
         return true;
       })
       .catch((err) => {
-        
+
         return true;
       });
   }
@@ -71,7 +102,7 @@ export class MailService {
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
-        context: {...mailData, ...envVariables},
+        context: { ...mailData, ...envVariables },
         /* headers: {
                 'x-invite': {
                   prepared: true,
@@ -99,11 +130,11 @@ export class MailService {
             ], */
       })
       .then((success) => {
-        
+
         return true;
       })
       .catch((err) => {
-        
+
         return true;
       });
   }
@@ -119,11 +150,11 @@ export class MailService {
         context: mailData,
       })
       .then((success) => {
-        
+
         return true;
       })
       .catch((err) => {
-        
+
         return true;
       });
   }
@@ -135,7 +166,7 @@ export class MailService {
       `../../documents/temp/objetivos/${pdfPath}`,
     );
 
-    
+
     try {
       await this.mailerService.sendMail({
         to: to,
@@ -180,11 +211,11 @@ export class MailService {
         context: mailData,
       })
       .then((success) => {
-        
+
         return true;
       })
       .catch((err) => {
-        
+
         return true;
       });
   }
@@ -202,7 +233,7 @@ export class MailService {
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'pending_incidence_authorize', // `.hbs` extension is appended automatically
-        context: {...mailData, ...envVariables},
+        context: { ...mailData, ...envVariables },
       })
       .then((success) => {
         this.log.log('se envio correo de notificacion');
@@ -216,18 +247,15 @@ export class MailService {
 
   //enviar correo a los jefes de los lideres que tengan incidencias con 48 hrs pendientes por autorizar
   async sendEmailPendingIncidenceJefe(to: string[], subject: string, mailData: MailDataPendingIncidence) {
-    const envVariables = {
-      port: process.env.PORT,
-      // Agrega otras variables de entorno que necesites
-    };
-    
+
+
     await this.mailerService
       .sendMail({
         to: to,
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'pending_incidence_authorize_leader', // `.hbs` extension is appended automatically
-        context: {...mailData, ...envVariables},
+        context: { ...mailData, ...this.envVariables },
       })
       .then((success) => {
         this.log.log('se envio correo de notificacion');

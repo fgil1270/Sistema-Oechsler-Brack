@@ -40,7 +40,7 @@ import { OrganigramaService } from '../../organigrama/service/organigrama.servic
 import { SupplierService } from '../../supplier/service/supplier.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
-import { connected } from 'process';
+import { MailService } from '../../mail/mail.service';
 
 @Injectable()
 export class RequestCourseService {
@@ -57,6 +57,7 @@ export class RequestCourseService {
     private supplierService: SupplierService,
     private employeeIncidenceService: EmployeeIncidenceService,
     @InjectDataSource() private dataSource: DataSource,
+    private mailService: MailService,
   ) { }
 
   async create(data: RequestCourseDto, user: any) {
@@ -205,7 +206,7 @@ export class RequestCourseService {
     });
 
     requestCourse.filter((item) => {
-      if (eployeesIds.includes(item.employee.id)) {
+      if (eployeesIds.includes(item.employee?.id)) {
         dataRequestCourse.push(item);
       }
     });
@@ -813,8 +814,8 @@ export class RequestCourseService {
 
     //se revisa si la fecha de finalizacion de la asignacion de curso es menor a la fecha actual
     //si es menor el status de la solicitud de curso se cambia a Finalizado
-    console.log("inicia")
-    console.log(correoLideres);
+
+    let i = 0;
     for (const request of request_course) {
 
       if (request.requestCourseAssignment.length > 0) {
@@ -838,19 +839,20 @@ export class RequestCourseService {
           //await this.requestCourse.save(request);
           //si la fecha actual es mayor a la fecha de finalizacion mas el periodo de eficiencia
           if (currentDate > dateEnd && efficiencyPeriod != null) {
+            i++;
             request.status = 'Pendiente evaluar eficiencia';
-            console.log("solicitud de curso", request.id)
+
             //si el empleado tiene un lider asignado en el organigrama
             if (request.employee.organigramaL.length > 0) {
-              console.log("tiene lideres")
+
               //se envia correo a los lideres de los empleados que tomaron el curso
               for (const emp of request.employee.organigramaL) {
                 //si el lider tiene usuario y el lider puede evaluar
                 if (emp.leader.userId && emp.evaluar) {
-                  console.log("tiene usuario y puede evaluar")
+
                   //recorre el array de correoLideres
                   if (correoLideres.length > 0) {
-                    console.log("correoLideres tiene datos")
+
                     correoLideres.forEach((correo) => {
                       //si el lider ya existe en el array de correoLideres
                       if (correo.employeeNumber === emp.leader.employee_number) {
@@ -882,7 +884,7 @@ export class RequestCourseService {
                       }
                     });
                   } else {
-                    console.log("correoLideres no tiene datos")
+
                     //si el lider no existe en el array de correoLideres
                     //agrega el lider y el curso y el empleado
                     correoLideres.push({
@@ -901,11 +903,6 @@ export class RequestCourseService {
                         }]
                       }]
                     });
-                    console.log("primer dato agregado")
-
-                    console.log("correoLideres", correoLideres);
-                    console.log("correoLideres", correoLideres[0].course);
-
                   }
 
 
@@ -1009,10 +1006,20 @@ export class RequestCourseService {
 
     }
 
-    console.log("termina")
-    console.log(correoLideres);
-    console.log(correoLideres[0].course);
-    console.log(correoLideres[0].course[0].employee);
+    //enviar correo a los lideres
+    for (const correo of correoLideres) {
+
+      correo.course.forEach(async (course) => {
+        let mailData = {
+          curso: course.name,
+          empleados: course.employee.map(emp => `(#${emp.employeeNumber}) ${emp.name} ${emp.paternal_surname} ${emp.maternal_surname} `),
+        }
+
+        await this.mailService.sendEmail('Evaluar Efectividad de Curso', mailData, ['f.gil@oechsler.mx'], 'evaluar_eficiencia_curso');
+      });
+
+
+    }
 
 
 

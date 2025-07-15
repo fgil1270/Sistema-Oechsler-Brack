@@ -13,6 +13,7 @@ import { SupplierModule } from '../supplier/supplier.module';
 import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidence.module';
 import { RequestCourseDocument } from './entities/request_course_document.entity';
 import { RequestCourseAssessmentEmployee } from './entities/request_course_assessment_employee.entity';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RequestCourseAssessmentEmployee } from './entities/request_course_asses
     OrganigramaModule,
     SupplierModule,
     EmployeeIncidenceModule,
+    MailModule,
   ],
   providers: [RequestCourseService],
   controllers: [RequestCourseController, AssignmentCourseController, RequestCourseDocumentController],
