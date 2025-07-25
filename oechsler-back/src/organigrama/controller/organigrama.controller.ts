@@ -18,6 +18,7 @@ import {
   CreateOrganigramaDto,
   UpdateOrganigramaDto,
   OrganigramaGerarquia,
+  SearchOrganigramaDto
 } from '../dto/create-organigrama.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
@@ -27,7 +28,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 @ApiTags('Organigrama')
 @Controller('organigrama')
 export class OrganigramaController {
-  constructor(private readonly organigramaService: OrganigramaService) {}
+  constructor(private readonly organigramaService: OrganigramaService) { }
 
   @ApiOperation({ summary: 'Crear organigrama' })
   @Post()
@@ -40,6 +41,12 @@ export class OrganigramaController {
   @Get()
   findAll(@CurrentUser() user: any) {
     return this.organigramaService.findAll(user);
+  }
+
+  @ApiOperation({ summary: 'Buscar organigrama por ' })
+  @Get('/find')
+  findBy(@Body() body: Partial<SearchOrganigramaDto>, @CurrentUser() user: any) {
+    return this.organigramaService.findBy(body, user);
   }
 
   @ApiOperation({ summary: 'Buscar organigrama' })

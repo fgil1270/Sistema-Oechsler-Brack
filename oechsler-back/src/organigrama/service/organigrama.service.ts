@@ -12,6 +12,7 @@ import {
   CreateOrganigramaDto,
   UpdateOrganigramaDto,
   OrganigramaGerarquia,
+  SearchOrganigramaDto
 } from '../dto/create-organigrama.dto';
 import { Organigrama } from '../entities/organigrama.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
@@ -27,7 +28,7 @@ export class OrganigramaService {
     private employeeService: EmployeesService,
     @Inject(forwardRef(() => UsersService)) private userService: UsersService,
     @InjectDataSource() private dataSource: DataSource,
-  ) {}
+  ) { }
 
   async create(createOrganigramaDto: CreateOrganigramaDto) {
     const orgDTO = {
@@ -186,7 +187,7 @@ export class OrganigramaService {
       ? (isAdmin = true)
       : (isAdmin = false);
     let isJefeTurno = false;
-    isJefeTurno = admin.user.roles.some( (role) => role.name === 'Jefe de Turno');
+    isJefeTurno = admin.user.roles.some((role) => role.name === 'Jefe de Turno');
     /* user.roles.find((role) => {
       role.name === 'Admin' ? isAdmin = true : isAdmin = false;
       role.name === 'RH' ? isRh = true : isRh = false;
@@ -210,10 +211,10 @@ export class OrganigramaService {
               shift_leader: true,
             },
           },
-          
+
         }
       ],
-      
+
     });
 
     const idsEmployees = [];
@@ -271,6 +272,7 @@ export class OrganigramaService {
       );
 
       const employees = [];
+      //si es Admin se obtienen todos los empleados
       if (isAdmin) {
         const levelOne = await this.employeeService.findAll();
         levelOne.emps.forEach((element) => {
@@ -293,7 +295,7 @@ export class OrganigramaService {
         relations: {
           employee: {
             department: true,
-            job: true, 
+            job: true,
             payRoll: true,
             vacationProfile: true,
             employeeProfile: true,
@@ -305,7 +307,7 @@ export class OrganigramaService {
             deleted_at: IsNull(),
           },
           leader: In([user.idEmployee]),
-          
+
         },
         order: {
           employee: {
@@ -314,75 +316,49 @@ export class OrganigramaService {
           },
         },
       });
-      
-      /* let visibleJefeTurno = await this.organigramaRepository.find({
-        relations: {
-          employee: {
-            department: true,
-            job: true,
-            payRoll: true, 
-            vacationProfile: true,
-            employeeProfile: true,
-          },
-          leader: true,
-        },
-        where: {
-          employee: {
-            deleted_at: IsNull(),
-            job: {
-              shift_leader : true
-            }
-          }
-        },
-        order: {
-          employee: {
-            name: 'ASC',
-            employee_number: 'ASC',
-          },
-        },
-      }); */
+
       let visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-      .innerJoinAndSelect('employee.job', 'job')
-      .innerJoinAndSelect('employee.payRoll', 'payRoll')
-      .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-      .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-      .where('job.shift_leader = 1')
-      .orderBy('employee.employee_number', 'ASC')
-      .getMany();
+        .innerJoinAndSelect('employee.job', 'job')
+        .innerJoinAndSelect('employee.payRoll', 'payRoll')
+        .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+        .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+        .where('job.shift_leader = 1')
+        .orderBy('employee.employee_number', 'ASC')
+        .getMany();
 
       levelOne.forEach((element) => {
-        if(element.employee){
+        if (element.employee) {
           employees.push(element.employee);
         }
-        
+
       });
-      
-      
+
+
       //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
-      if(isJefeTurno){
+      if (isJefeTurno) {
         let test: any[] = [];
         let test2: any[] = [];
-        
+
         visibleJefeTurno.forEach((element) => {
           test.push(element);
         });
         test2 = test.filter((element) => !employees.some((emp) => emp.id === element.id));
         employees.push(...test2);
-        
+
       }
 
-      
+
 
       if (data.type == 'Normal') {
         const userLogin = await this.employeeService.findOne(user.idEmployee);
-        
+
         //levelOne.employee.push(...userLogin);
         //si necesita los datos del usuario logueado
-        
-        if(data.needUser){
+
+        if (data.needUser) {
           employees.push(userLogin.emp);
         }
-        
+
         return employees;
       }
 
@@ -393,17 +369,17 @@ export class OrganigramaService {
       }
 
       const levelTwo = await this.organigramaRepository
-      .createQueryBuilder('organigrama')
-      .leftJoinAndSelect('organigrama.employee', 'employee')
-      .leftJoinAndSelect('employee.department', 'department')
-      .leftJoinAndSelect('employee.job', 'job')
-      .leftJoinAndSelect('employee.payRoll', 'payRoll')
-      .leftJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-      .leftJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-      .leftJoinAndSelect('organigrama.leader', 'leader')
-      .where('employee.deleted_at IS NULL')
-      .andWhere('organigrama.leader IN (:...idsEmployees)', { idsEmployees })
-      .getMany();
+        .createQueryBuilder('organigrama')
+        .leftJoinAndSelect('organigrama.employee', 'employee')
+        .leftJoinAndSelect('employee.department', 'department')
+        .leftJoinAndSelect('employee.job', 'job')
+        .leftJoinAndSelect('employee.payRoll', 'payRoll')
+        .leftJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+        .leftJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+        .leftJoinAndSelect('organigrama.leader', 'leader')
+        .where('employee.deleted_at IS NULL')
+        .andWhere('organigrama.leader IN (:...idsEmployees)', { idsEmployees })
+        .getMany();
       /* await this.organigramaRepository.find({
         relations: {
           employee: {
@@ -422,7 +398,7 @@ export class OrganigramaService {
           },
         },
       }); */
-      
+
       levelTwo.forEach((element) => {
         employees.push(element.employee);
       });
@@ -435,6 +411,162 @@ export class OrganigramaService {
     }
   }
 
+  //buscar organigrama por 
+  async findBy(data: Partial<SearchOrganigramaDto>, user: any) {
+    //se verifica si el usuario logueado tiene role de Admin o RH
+    //si es asi se obtienen todos los empleados
+    const isAdmin = user.roles.some(
+      (role) => role.name === 'Admin' || role.name === 'RH',
+    );
+
+    const isJefeTurno = user.roles.some(
+      (role) => role.name === 'Jefe de Turno'
+    );
+
+    const isDirector = user.roles.some(
+      (role) => role.name === 'Direccion',
+    );
+
+    const employees = [];
+
+    try {
+      //si es Admin se obtienen todos los empleados
+      if (isAdmin) {
+        const levelOne = await this.employeeService.findAll();
+        levelOne.emps.forEach((element) => {
+          employees.push(element);
+        });
+        return employees;
+      }
+
+      //buscara los empleados que en la tabla departament tiene el campo director
+      if (isDirector && data.byDepartmentDirector) {
+
+        const levelOne = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+          .innerJoinAndSelect('employee.department', 'department')
+          .leftJoinAndSelect('department.director', 'director')
+          .leftJoinAndSelect('department.manager', 'manager')
+          .innerJoinAndSelect('employee.job', 'job')
+          .innerJoinAndSelect('employee.payRoll', 'payRoll')
+          .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+          .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+          .where('director.id = :directorId', { directorId: user.idEmployee })
+          .andWhere('employee.deleted_at IS NULL')
+          .orderBy('employee.name', 'ASC')
+          .addOrderBy('employee.employee_number', 'ASC')
+          .getMany();
+
+        levelOne.forEach((element) => {
+          employees.push(element);
+        });
+        return employees;
+
+      }
+
+      const levelOne = await this.organigramaRepository.find({
+        relations: {
+          employee: {
+            department: true,
+            job: true,
+            payRoll: true,
+            vacationProfile: true,
+            employeeProfile: true,
+          },
+          leader: true,
+        },
+        where: {
+          employee: {
+            deleted_at: IsNull(),
+          },
+          leader: In([user.idEmployee]),
+
+        },
+        order: {
+          employee: {
+            name: 'ASC',
+            employee_number: 'ASC',
+          },
+        },
+      });
+
+      let visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+        .innerJoinAndSelect('employee.job', 'job')
+        .innerJoinAndSelect('employee.payRoll', 'payRoll')
+        .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+        .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+        .where('job.shift_leader = 1')
+        .orderBy('employee.employee_number', 'ASC')
+        .getMany();
+
+      levelOne.forEach((element) => {
+        if (element.employee) {
+          employees.push(element.employee);
+        }
+
+      });
+
+
+      //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
+      if (isJefeTurno) {
+        let test: any[] = [];
+        let test2: any[] = [];
+
+        visibleJefeTurno.forEach((element) => {
+          test.push(element);
+        });
+        test2 = test.filter((element) => !employees.some((emp) => emp.id === element.id));
+        employees.push(...test2);
+
+      }
+
+
+      //nivel 1 de jerarquia
+      if (data.type == 'Normal') {
+        const userLogin = await this.employeeService.findOne(user.idEmployee);
+
+        //levelOne.employee.push(...userLogin);
+        //si necesita los datos del usuario logueado
+
+        if (data.needUser) {
+          employees.push(userLogin.emp);
+        }
+
+        return employees;
+      }
+
+      const idsEmployees = [];
+
+      for (let index = 0; index < employees.length; index++) {
+        idsEmployees.push(employees[index].id);
+      }
+
+      //nivel 2 de jerarquia
+      const levelTwo = await this.organigramaRepository
+        .createQueryBuilder('organigrama')
+        .leftJoinAndSelect('organigrama.employee', 'employee')
+        .leftJoinAndSelect('employee.department', 'department')
+        .leftJoinAndSelect('employee.job', 'job')
+        .leftJoinAndSelect('employee.payRoll', 'payRoll')
+        .leftJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+        .leftJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+        .leftJoinAndSelect('organigrama.leader', 'leader')
+        .where('employee.deleted_at IS NULL')
+        .andWhere('organigrama.leader IN (:...idsEmployees)', { idsEmployees })
+        .getMany();
+
+
+      levelTwo.forEach((element) => {
+        employees.push(element.employee);
+      });
+
+      return employees;
+    } catch (error) {
+      return error;
+    }
+
+
+  }
+
   async update(id: number, updateOrganigramaDto: UpdateOrganigramaDto) {
     const org = await this.organigramaRepository.findOne({
       where: {
@@ -444,8 +576,8 @@ export class OrganigramaService {
     if (!org) {
       throw new NotFoundException(`Organigrama #${id} not found`);
     }
-    
-    
+
+
     const leader = await this.employeeService.findOne(
       updateOrganigramaDto.leader,
     );
@@ -463,7 +595,7 @@ export class OrganigramaService {
     if (!org) {
       throw new NotFoundException(`Organigrama #${id} not found`);
     }
-    
+
     return await this.organigramaRepository.remove(org);
   }
 }

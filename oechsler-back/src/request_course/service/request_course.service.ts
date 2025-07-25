@@ -41,6 +41,7 @@ import { SupplierService } from '../../supplier/service/supplier.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
 import { MailService } from '../../mail/mail.service';
+import { request } from 'http';
 
 @Injectable()
 export class RequestCourseService {
@@ -134,315 +135,6 @@ export class RequestCourseService {
     }
   }
 
-  findRequestCourseById(id: number) {
-    return this.requestCourse.findOne({
-      relations: {
-        employee: {
-          job: true,
-          organigramaL: {
-            leader: {
-              job: true,
-            },
-          },
-        },
-        department: true,
-        competence: true,
-        course: true,
-        leader: true,
-        rh: true,
-        gm: true,
-        requestBy: true,
-        courseEfficiency: {
-          courseEfficiencyQuestion: true,
-        },
-        requestCourseAssignment: {
-          teacher: {
-            supplier: true,
-          },
-        },
-      },
-      where: {
-        id: id,
-      },
-    });
-  }
-
-  async findAll(query: Partial<RequestCourse>, user: any) {
-
-    const employee = await this.organigramaService.findJerarquia(
-      {
-        type: 'Normal',
-        startDate: '',
-        endDate: '',
-        needUser: true,
-      },
-      user,
-    );
-    const dataRequestCourse = [];
-    const eployeesIds = [];
-
-    for (const emp of employee) {
-      eployeesIds.push(emp.id);
-    }
-
-    const requestCourse = await this.requestCourse.find({
-      relations: {
-        employee: {
-          organigramaL: {
-            leader: true,
-          },
-        },
-        department: true,
-        competence: true,
-        course: true,
-        leader: true,
-        rh: true,
-        gm: true,
-        requestCourseAssignment: true,
-        requestBy: true,
-        documents: true,
-      },
-      where: query as unknown as FindOptionsWhere<RequestCourse>,
-    });
-
-    requestCourse.filter((item) => {
-      if (eployeesIds.includes(item.employee?.id)) {
-        dataRequestCourse.push(item);
-      }
-    });
-
-    const requestCourseAssignment = await this.requestCourseAssignment.find({
-      relations: {
-        requestCourse: true,
-        teacher: true,
-      },
-    });
-
-    return dataRequestCourse;
-  }
-
-  async findRequestCourseBy(query: Partial<UpdateRequestCourseDto>) {
-
-    let findOption: {
-      employee?: any;
-      course?: any;
-      status?: any;
-    } = {};
-
-    if (query.employeeId) {
-      findOption.employee = {
-        id: In(Array(query.employeeId))
-      };
-    }
-    if (query.courseId) {
-      findOption.course = {
-        id: Number(query.courseId)
-      };
-    }
-
-    if (query.status) {
-      findOption.status = query.status;
-    }
-
-    const requestCourse = this.requestCourse.find({
-      relations: {
-        employee: {
-          organigramaL: {
-            leader: true,
-          },
-        },
-        department: true,
-        competence: true,
-        course: true,
-        leader: true,
-        rh: true,
-        gm: true,
-      },
-      where: findOption,
-    });
-
-    return requestCourse;
-  }
-
-  async update(id, data: UpdateRequestCourseDto, user) {
-    try {
-      const userEmployee = await this.employeeService.findOne(user.idEmployee);
-      const organigrama = await this.organigramaService.findJerarquia(
-        {
-          type: 'Normal',
-          startDate: '',
-          endDate: '',
-        },
-        user,
-      );
-      const requestCourse = await this.requestCourse.findOne({
-        relations: {
-          employee: {
-            organigramaL: {
-              leader: true,
-            },
-          },
-          department: true,
-          competence: true,
-          course: true,
-          leader: true,
-          rh: true,
-          gm: true,
-          requestBy: true,
-        },
-        where: {
-          id: id,
-        },
-      });
-
-      const { status, ...dataWithoutStatus } = data;
-      Object.assign(requestCourse, dataWithoutStatus);
-
-      if (data.courseId) {
-        const course = await this.courseService.findOne(data.courseId);
-        requestCourse.course = course;
-        requestCourse.competence = course.competence;
-      }
-
-      //si el status es de la solicitud de curso es Autorizado
-      //y se quiere cambiar a cancelado
-      if (requestCourse.status == 'Asignado' && data.status == 'Cancelado') {
-        //el estatus cambia de Asignado a Autorizado
-        requestCourse.status = 'Autorizado';
-
-      } else if (data.status == 'Autorizado') {
-        //si el curso pasa a Autorizado
-        let isAdmin = false;
-        let isLeader = false;
-        let isRh = false;
-        let isGm = false;
-
-
-        isAdmin = user.roles.some((role) => role.name == 'Admin');
-        isRh = user.roles.some((role) => role.name == 'RH');
-
-        isLeader = organigrama.some((org) => org.id == requestCourse.employee.id);
-
-        //si el usuario logueado es admin
-        if (isAdmin) {
-          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
-          requestCourse.approved_at_leader = new Date();
-          requestCourse.leader = leader.orgs[0].leader;
-          requestCourse.approved_at_rh = new Date();
-          requestCourse.rh = userEmployee.emp;
-          requestCourse.status = 'Autorizado'
-        } else {
-          if (isRh || data.avoidApprove) {
-            requestCourse.approved_at_rh = new Date();
-            requestCourse.rh = userEmployee.emp;
-
-          }
-
-          if (isLeader) {
-            requestCourse.approved_at_leader = new Date();
-            requestCourse.leader = userEmployee.emp;
-
-          }
-
-          if (data.avoidApprove) {
-            const userApprove = await this.employeeService.findOne(user.idEmployee);
-            const leader = await this.organigramaService.leaders(requestCourse.employee.id);
-            requestCourse.approved_at_leader = new Date();
-            requestCourse.leader = leader.orgs[0].leader;
-            requestCourse.approved_at_rh = new Date();
-            requestCourse.rh = userApprove.emp;
-
-          }
-
-          //si falta el lider por autorizar o rh 
-          //el status sera Solicitado
-          if (!requestCourse.leader || !requestCourse.rh) {
-            requestCourse.status = 'Solicitado'
-          }
-        }
-
-
-
-      }
-
-      //si el curso es cancelado y el origen de la solicitud de curso viene de un objetivo
-      //y la solicitud de curso esta en estatus solicitado
-      //se cambia el status a Pendiente
-      if (requestCourse.status == 'Solicitado' && data.status == 'Cancelado' && requestCourse.origin == 'Objetivo') {
-        requestCourse.status = 'Pendiente';
-      }
-
-      if (data.requestBy) {
-        const requestBy = await this.employeeService.findOne(data.requestBy);
-        requestCourse.requestBy = requestBy.emp;
-      }
-
-      if (data.employeeId) {
-        const employee = await this.employeeService.findOne(data.employeeId[0]);
-        requestCourse.employee = employee.emp;
-      }
-
-
-      if (data.tentativeDateStart) {
-
-        // Convertir a horario de México
-        const dateStart = new Date(data.tentativeDateStart);
-        const dateEnd = new Date(data.tentativeDateEnd);
-        dateStart.setUTCHours(dateStart.getUTCHours() - 6);
-        dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
-
-        requestCourse.tentative_date_start = dateStart;
-        requestCourse.tentative_date_end = dateEnd;
-      }
-
-      const save = await this.requestCourse.save(requestCourse);
-
-      return {
-        error: false,
-        msg: 'Solicitud de curso actualizada correctamente',
-        data: data,
-      };
-    } catch (error) {
-      return {
-        error: true,
-        msg: error.message,
-      };
-    }
-  }
-
-  //obteneer el total de solicitudes de curso por status
-  async findRequestCourseApprove(status: string, user: any) {
-    const courseApproved = await this.requestCourse
-      .createQueryBuilder('request_course')
-      .select('request_course.status')
-      //.addSelect('COUNT(request_course.status)', 'total')
-      .addSelect('course.id', 'id_course')
-      .addSelect('course.name', 'course_name')
-      .addSelect('request_course.id', 'id_request_course')
-      .innerJoin('request_course.course', 'course')
-      .where('request_course.status = :status', { status: status })
-      //.groupBy('request_course.status')
-      .getRawMany();
-    const employees = await this.requestCourse
-      .createQueryBuilder('request_course')
-      .select('request_course.status')
-      .addSelect('employee.id', 'id_employee')
-      .addSelect('employee.name', 'name')
-      .addSelect('employee.paternal_surname', 'paternal_surname')
-      .addSelect('employee.maternal_surname', 'maternal_surname')
-      .addSelect('request_course.id', 'id_request_course')
-      .addSelect('request_course.courseId', 'id_course')
-      .addSelect('employee.employee_number', 'employee_number')
-      .innerJoin('request_course.employee', 'employee')
-      .where('request_course.status = :status', { status: status })
-      .getRawMany();
-
-    return {
-      courseApproved,
-      employees,
-    };
-  }
-
   //crear asignacion de curso
   async createAssignmentCourse(currData: RequestCourseAssignmentDto) {
     //revisar cuando sea el mismo empleado 2 veces
@@ -506,6 +198,187 @@ export class RequestCourseService {
     }
   }
 
+  findRequestCourseById(id: number) {
+    return this.requestCourse.findOne({
+      relations: {
+        employee: {
+          job: true,
+          organigramaL: {
+            leader: {
+              job: true,
+            },
+          },
+        },
+        department: true,
+        competence: true,
+        course: true,
+        leader: true,
+        rh: true,
+        gm: true,
+        requestBy: true,
+        courseEfficiency: {
+          courseEfficiencyQuestion: true,
+        },
+        requestCourseAssignment: {
+          teacher: {
+            supplier: true,
+          },
+        },
+        request_course_assessment_employee: true,
+      },
+      where: {
+        id: id,
+      },
+    });
+  }
+
+  async findAll(query: Partial<RequestCourse>, user: any) {
+
+    const employee = await this.organigramaService.findJerarquia(
+      {
+        type: 'Normal',
+        startDate: '',
+        endDate: '',
+        needUser: true,
+      },
+      user,
+    );
+    const dataRequestCourse = [];
+    const eployeesIds = [];
+
+    for (const emp of employee) {
+      eployeesIds.push(emp.id);
+    }
+
+    const requestCourse = await this.requestCourse.find({
+      relations: {
+        employee: {
+          organigramaL: {
+            leader: true,
+          },
+        },
+        department: true,
+        competence: true,
+        course: true,
+        leader: true,
+        rh: true,
+        gm: true,
+        requestCourseAssignment: true,
+        requestBy: true,
+        documents: true,
+      },
+      where: query as unknown as FindOptionsWhere<RequestCourse>,
+    });
+
+    requestCourse.filter((item) => {
+      if (eployeesIds.includes(item.employee?.id)) {
+        dataRequestCourse.push(item);
+      }
+    });
+
+    const requestCourseAssignment = await this.requestCourseAssignment.find({
+      relations: {
+        requestCourse: true,
+        teacher: true,
+      },
+    });
+
+    return dataRequestCourse;
+  }
+
+
+  async findRequestCourseBy(query: Partial<UpdateRequestCourseDto>, user: any) {
+
+    const employee = await this.organigramaService.findBy(
+      {
+        type: 'Normal',
+        byDepartmentDirector: true,
+        needUser: true,
+      },
+      user,
+    );
+
+
+
+    let findOption: {
+      employee?: any;
+      course?: any;
+      status?: any;
+    } = {};
+
+    if (query.employeeId) {
+      findOption.employee = {
+        id: In(Array(query.employeeId))
+      };
+    } else {
+      findOption.employee = {
+        id: In(employee.map((emp) => emp.id)),
+      };
+    }
+
+    if (query.courseId) {
+      findOption.course = {
+        id: Number(query.courseId)
+      };
+    }
+
+    if (query.status) {
+      findOption.status = query.status;
+    }
+
+    const requestCourse = this.requestCourse.find({
+      relations: {
+        employee: {
+          organigramaL: {
+            leader: true,
+          },
+        },
+        department: true,
+        competence: true,
+        course: true,
+        leader: true,
+        rh: true,
+        gm: true,
+      },
+      where: findOption,
+    });
+
+    return requestCourse;
+  }
+
+  //obteneer el total de solicitudes de curso por status
+  async findRequestCourseApprove(status: string, user: any) {
+    const courseApproved = await this.requestCourse
+      .createQueryBuilder('request_course')
+      .select('request_course.status')
+      //.addSelect('COUNT(request_course.status)', 'total')
+      .addSelect('course.id', 'id_course')
+      .addSelect('course.name', 'course_name')
+      .addSelect('request_course.id', 'id_request_course')
+      .innerJoin('request_course.course', 'course')
+      .where('request_course.status = :status', { status: status })
+      //.groupBy('request_course.status')
+      .getRawMany();
+    const employees = await this.requestCourse
+      .createQueryBuilder('request_course')
+      .select('request_course.status')
+      .addSelect('employee.id', 'id_employee')
+      .addSelect('employee.name', 'name')
+      .addSelect('employee.paternal_surname', 'paternal_surname')
+      .addSelect('employee.maternal_surname', 'maternal_surname')
+      .addSelect('request_course.id', 'id_request_course')
+      .addSelect('request_course.courseId', 'id_course')
+      .addSelect('employee.employee_number', 'employee_number')
+      .innerJoin('request_course.employee', 'employee')
+      .where('request_course.status = :status', { status: status })
+      .getRawMany();
+
+    return {
+      courseApproved,
+      employees,
+    };
+  }
+
   //buscar asignacion de curso por algun parametro
   async getAssignmentBy(currdata: UpdateAssignmentCourseDto) {
     const mexicoTimeZone = 'America/Mexico_City';
@@ -515,45 +388,45 @@ export class RequestCourseService {
     const formattedEndDate = new Date(currdata.dateEnd);
     formattedEndDate.setHours(23, 59, 59, 999);
 
-    let findOption: {
-      date_start: any;
-      date_end: any;
-      requestCourse: {
-        status: string
-      }
-    } = {
-      date_start: undefined,
-      date_end: undefined,
-      requestCourse: {
-        status: ''
-      }
-    };
+    const query = this.requestCourseAssignment.createQueryBuilder('rca')
+      .leftJoinAndSelect('rca.requestCourse', 'rc')
+      .leftJoinAndSelect('rc.employee', 'e')
+      .leftJoinAndSelect('rc.course', 'c')
+      .leftJoinAndSelect('rc.department', 'd')
+      .leftJoinAndSelect('rca.teacher', 't');
 
     if (currdata.dateStart && currdata.dateEnd) {
-
-      findOption.date_start = MoreThanOrEqual(formattedStartDate);
-      findOption.date_end = LessThanOrEqual(formattedEndDate);
+      query.andWhere('rca.date_start >= :startDate', { startDate: formattedStartDate })
+        .andWhere('rca.date_end <= :endDate', { endDate: formattedEndDate });
     }
 
     if (currdata.status) {
-      findOption.requestCourse.status
-      findOption.requestCourse.status = currdata.status;
+      query.andWhere('rc.status = :status', { status: currdata.status });
     }
 
-    const requestCourseAssignment = await this.requestCourseAssignment.find({
-      relations: {
-        requestCourse: {
-          employee: true,
-          course: true,
-          department: true,
-        },
-        teacher: true,
-      },
-      where: findOption
-    });
-
+    const requestCourseAssignment = await query.getMany();
 
     return requestCourseAssignment;
+  }
+
+  //consulta los documentos de una solicitud de curso
+  async getDocuments(idRequestCourse: number) {
+    const requestCourse = await this.requestCourse.find({
+      relations: {
+        documents: true,
+      },
+      where: {
+        id: idRequestCourse,
+      },
+    });
+    if (requestCourse.length === 0) {
+      throw new NotFoundException('Solicitud de curso no encontrada');
+    }
+    return {
+      error: false,
+      message: 'Documentos obtenidos con éxito',
+      data: requestCourse[0].documents,
+    };
   }
 
   //actualizar asignacion de curso
@@ -623,24 +496,219 @@ export class RequestCourseService {
     }
   }
 
-  //consulta los documentos de una solicitud de curso
-  async getDocuments(idRequestCourse: number) {
-    const requestCourse = await this.requestCourse.find({
-      relations: {
-        documents: true,
-      },
-      where: {
-        id: idRequestCourse,
-      },
-    });
-    if (requestCourse.length === 0) {
-      throw new NotFoundException('Solicitud de curso no encontrada');
+  async update(id, data: UpdateRequestCourseDto, user) {
+    try {
+      const userEmployee = await this.employeeService.findOne(user.idEmployee);
+      const organigrama = await this.organigramaService.findJerarquia(
+        {
+          type: 'Normal',
+          startDate: '',
+          endDate: '',
+        },
+        user,
+      );
+      const requestCourse = await this.requestCourse.findOne({
+        relations: {
+          employee: {
+            organigramaL: {
+              leader: true,
+            },
+          },
+          department: true,
+          competence: true,
+          course: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+        },
+        where: {
+          id: id,
+        },
+      });
+
+      //se obtiene el departamento de la solicitud de curso
+      let department = await this.departmentService.findOne(requestCourse.department.id);
+      //se obtiene el presupuesto de entrenamiento del departamento
+      let trainingBudget = department.dept.training_budgetId?.find(b => b.year == new Date().getFullYear())?.amount;
+
+      //se obtienen todas las solicitudes de curso que pertenecen al mismo departamento
+      let courseByDepartment = await this.requestCourse.find({
+        relations: {
+          employee: true,
+          course: true,
+          department: {
+            training_budgetId: true,
+          },
+          competence: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+        },
+        where: {
+          department: {
+            id: department.dept.id,
+          },
+          status: Not(In(['Solicitado', 'Cancelado', 'Pendiente'])),
+        },
+      });
+
+      //suma del costo por cada solicitud de curso por departamento
+      const totalTrainingBudget = courseByDepartment.reduce((total, requestCourse) => {
+        total += Number(requestCourse.cost);
+        return total;
+      }, 0);
+
+
+      const { status, ...dataWithoutStatus } = data;
+      Object.assign(requestCourse, dataWithoutStatus);
+
+      if (data.courseId) {
+        const course = await this.courseService.findOne(data.courseId);
+        requestCourse.course = course;
+        requestCourse.competence = course.competence;
+      }
+
+      //si el status pasa a solicitado y el origen de la solicitud de curso es Objetivo
+      //se aprueba automaticamente por el lider
+      if (data.status == 'Solicitado' && requestCourse.origin == 'Objetivo') {
+        //se busca el lider del empleado
+        const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+        requestCourse.status = 'Solicitado';
+        requestCourse.approved_at_leader = new Date();
+        requestCourse.leader = leader.orgs[0].leader;
+
+      } else if (data.status == 'Solicitado' && requestCourse.origin == 'Solicitud') {
+        //se asigna el status de la solicitud
+        requestCourse.status = 'Solicitado';
+
+      }
+
+      //si el curso es cancelado y el origen de la solicitud de curso viene de un objetivo
+      //y la solicitud de curso esta en estatus solicitado
+      //se cambia el status a Pendiente
+      if (requestCourse.status == 'Solicitado' && data.status == 'Cancelado' && requestCourse.origin == 'Objetivo') {
+        requestCourse.status = 'Pendiente';
+      }
+
+
+
+      //si el status de la solicitud de curso es Autorizado
+      //y se quiere cambiar a cancelado
+      if (requestCourse.status == 'Asignado' && data.status == 'Cancelado') {
+        //el estatus cambia de Asignado a Autorizado
+        requestCourse.status = 'Autorizado';
+
+      } else if (data.status == 'Autorizado') {
+        //si el curso pasa a Autorizado
+        let isAdmin = false;
+        let isLeader = false;
+        let isRh = false;
+        let isGm = false;
+
+
+        isAdmin = user.roles.some((role) => role.name == 'Admin');
+        isRh = user.roles.some((role) => role.name == 'RH');
+        isGm = user.roles.some((role) => role.name == 'Gerente');
+
+        isLeader = organigrama.some((org) => org.id == requestCourse.employee.id);
+
+        //si el usuario logueado es admin
+        if (isAdmin) {
+          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          requestCourse.approved_at_leader = new Date();
+          requestCourse.leader = leader.orgs[0].leader;
+          requestCourse.approved_at_rh = new Date();
+          requestCourse.rh = userEmployee.emp;
+          requestCourse.status = 'Autorizado'
+        } else {
+
+
+
+          //si el usuario es Lider
+          if (isLeader) {
+            requestCourse.approved_at_leader = new Date();
+            requestCourse.leader = userEmployee.emp;
+
+          }
+
+          //si el usuario es RH
+          if (isRh) {
+            requestCourse.approved_at_rh = new Date();
+            requestCourse.rh = userEmployee.emp;
+            //se verifica si el presupuesto de entrenamiento del departamento es suficiente
+            if ((trainingBudget - totalTrainingBudget) < 0) {
+              throw new NotFoundException(`El presupuesto de entrenamiento del departamento ${department.dept.cv_description} no es suficiente para autorizar la solicitud de curso`);
+            }
+
+          }
+
+          //si el usuario es Gerente
+          if (isGm) {
+            requestCourse.approved_at_gm = new Date();
+            requestCourse.gm = userEmployee.emp;
+
+            requestCourse.status = 'Autorizado';
+          } else {
+            //si aprobo el lider y RH
+            if ((requestCourse.leader && requestCourse.rh)) {
+
+              requestCourse.status = 'Autorizado';
+            }
+
+          }
+        }
+
+        if (data.avoidApprove) {
+          const userApprove = await this.employeeService.findOne(user.idEmployee);
+          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          requestCourse.approved_at_leader = new Date();
+          requestCourse.leader = leader.orgs[0].leader;
+          requestCourse.approved_at_rh = new Date();
+          requestCourse.rh = userApprove.emp;
+
+        }
+
+
+      }
+
+      if (data.requestBy) {
+        const requestBy = await this.employeeService.findOne(data.requestBy);
+        requestCourse.requestBy = requestBy.emp;
+      }
+
+      if (data.employeeId) {
+        const employee = await this.employeeService.findOne(data.employeeId[0]);
+        requestCourse.employee = employee.emp;
+      }
+
+
+      if (data.tentativeDateStart) {
+
+        // Convertir a horario de México
+        const dateStart = new Date(data.tentativeDateStart);
+        const dateEnd = new Date(data.tentativeDateEnd);
+        dateStart.setUTCHours(dateStart.getUTCHours() - 6);
+        dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+
+        requestCourse.tentative_date_start = dateStart;
+        requestCourse.tentative_date_end = dateEnd;
+      }
+
+      const save = await this.requestCourse.save(requestCourse);
+
+      return {
+        error: false,
+        msg: 'Solicitud de curso actualizada correctamente',
+        data: data,
+      };
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message,
+      };
     }
-    return {
-      error: false,
-      message: 'Documentos obtenidos con éxito',
-      data: requestCourse[0].documents,
-    };
   }
 
   async uploadMultipleFiles(idRequestCourse: number, files: Array<Express.Multer.File>, classifications: string[]) {
@@ -735,7 +803,6 @@ export class RequestCourseService {
           rh: true,
           gm: true,
           requestBy: true,
-          request_course_assessment_employee: true,
         },
         where: {
           id: idRequestCourse,
@@ -758,7 +825,7 @@ export class RequestCourseService {
       const assessment = await this.requestCourseAssessmentEmployee.save(createAssessment);
 
       //actualizar el status de la solicitud de curso a Evaluado
-      requestCourse.status = 'Evaluado';
+      //requestCourse.status = 'Evaluado';
 
       await this.requestCourse.save(requestCourse);
 
@@ -841,6 +908,7 @@ export class RequestCourseService {
           if (currentDate > dateEnd && efficiencyPeriod != null) {
             i++;
             request.status = 'Pendiente evaluar eficiencia';
+            await this.requestCourse.save(request);
 
             //si el empleado tiene un lider asignado en el organigrama
             if (request.employee.organigramaL.length > 0) {
@@ -1015,7 +1083,7 @@ export class RequestCourseService {
           empleados: course.employee.map(emp => `(#${emp.employeeNumber}) ${emp.name} ${emp.paternal_surname} ${emp.maternal_surname} `),
         }
 
-        await this.mailService.sendEmail('Evaluar Efectividad de Curso', mailData, ['f.gil@oechsler.mx'], 'evaluar_eficiencia_curso');
+        await this.mailService.sendEmail(`Evaluar Efectividad de Curso "${course.name}"`, mailData, [correo.email], 'evaluar_eficiencia_curso');
       });
 
 
