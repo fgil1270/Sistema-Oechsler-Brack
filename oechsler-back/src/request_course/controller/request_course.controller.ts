@@ -60,8 +60,8 @@ export class RequestCourseController {
     summary: 'Realizar busqueda por algun campo de solicitud de curso',
   })
   @Get('/find/by')
-  async findRequestCourseBy(@Query() query: Partial<RequestCourseDto>) {
-    return this.requestCourseService.findRequestCourseBy(query);
+  async findRequestCourseBy(@Query() query: Partial<RequestCourseDto>, @CurrentUser() user: any) {
+    return this.requestCourseService.findRequestCourseBy(query, user);
   }
 
   @ApiOperation({ summary: 'Obtener solicitudes de curso por empleado' })

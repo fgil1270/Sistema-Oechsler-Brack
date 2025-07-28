@@ -254,4 +254,10 @@ export class Employee {
   @OneToMany(() => RequestCourseAssessmentEmployee, (post) => post.employee)
   request_course_assessment_employee: RequestCourseAssessmentEmployee[];
 
+  @OneToMany(() => Department, (post) => post.manager)
+  managerDepartments: Department[];
+
+  @OneToMany(() => Department, (post) => post.director)
+  directorDepartments: Department[];
+
 }

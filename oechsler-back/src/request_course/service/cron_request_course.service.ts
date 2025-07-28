@@ -30,8 +30,9 @@ export class CronRequestCourseService {
 
     private log = new CustomLoggerService();
 
-    //cada minuto
-    @Cron('*/1 * * * *', {
+    // todos los dias a las 6 am '0 6 * * *'
+    // cada minuto '*/1 * * * *'
+    @Cron('0 6 * * *', {
         name: 'updateCronRequestCourse',
         timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
         //o si se requiere un offset se puede usar utcOffset

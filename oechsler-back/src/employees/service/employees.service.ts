@@ -644,6 +644,20 @@ export class EmployeesService {
         userId: {
           roles: true,
         },
+        employeeJobHistory: {
+          job: true
+        },
+        employeeDepartmentHistory: {
+          department: true
+        },
+        employeePayrollHistory: {
+          payroll: true
+        },
+        employeeVacationProfileHistory: {
+          vacationProfile: true
+        },
+        employeeWorkerHistory: true,
+
       },
     });
 

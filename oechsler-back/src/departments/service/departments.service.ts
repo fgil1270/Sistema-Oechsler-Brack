@@ -14,7 +14,7 @@ export class DepartmentsService {
   constructor(
     @InjectRepository(Department)
     private departmentRepository: Repository<Department>,
-  ) {}
+  ) { }
 
   async create(createDepartmentDto: CreateDepartmentDto) {
     const deptExist = await this.departmentRepository.findOne({
@@ -51,6 +51,9 @@ export class DepartmentsService {
 
   async findOne(id: number) {
     const dept = await this.departmentRepository.findOne({
+      relations: {
+        training_budgetId: true
+      },
       where: {
         id: id,
       },
