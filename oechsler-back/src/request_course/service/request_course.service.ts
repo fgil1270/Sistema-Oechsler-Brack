@@ -650,13 +650,14 @@ export class RequestCourseService {
             requestCourse.gm = userEmployee.emp;
 
             requestCourse.status = 'Autorizado';
-          } else {
-            //si aprobo el lider y RH
-            if ((requestCourse.leader && requestCourse.rh)) {
+          }
 
-              requestCourse.status = 'Autorizado';
-            }
-
+          //si aprobo el lider
+          //si aprobo RH
+          //si aprobo GM
+          if (requestCourse.leader && requestCourse.rh && requestCourse.gm) {
+            //si aprobo el lider y RH y GM
+            requestCourse.status = 'Autorizado';
           }
         }
 
