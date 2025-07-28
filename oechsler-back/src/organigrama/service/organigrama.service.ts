@@ -140,6 +140,7 @@ export class OrganigramaService {
       where: {
         employee: {
           id: id,
+          created_at: IsNull(),
         },
       },
     });
