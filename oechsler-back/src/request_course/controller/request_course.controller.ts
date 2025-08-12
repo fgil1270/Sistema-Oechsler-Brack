@@ -133,6 +133,16 @@ export class AssignmentCourseController {
     return this.requestCourseService.updateAssignment(id, data, user);
   }
 
+  @ApiOperation({ summary: 'Actulizar empleados de curso' })
+  @Put(':id/change')
+  async updateCourseAssignment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateAssignmentCourseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestCourseService.updateCourseEmployeeAssignment(id, data, user);
+  }
+
 
 }
 

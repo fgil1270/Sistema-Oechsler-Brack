@@ -188,8 +188,39 @@ export class RequestCourseAssignmentDto {
 }
 
 export class UpdateAssignmentCourseDto extends PartialType(RequestCourseAssignmentDto) {
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({
+    description: 'Estatus del curso, no se desea buscar',
+    type: [String],
+  })
+  no_status: string[];
 
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({
+    description: 'Array de empleados a cambiar',
+    type: [String],
+  })
+  changeEmployee: any[];
+
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({
+    description: 'Array de empleados a añadir',
+    type: [String],
+  })
+  addEmployee: any[];
+
+  @IsOptional()
+  @IsObject()
+  @ApiProperty({
+    description: 'Cambio de instructor',
+    type: Object,
+  })
+  changeTeacher: { oldTeacher: number; newTeacher: number };
 }
+
 
 export class UploadFilesDto {
   classifications: string[];
