@@ -672,7 +672,7 @@ export class EmployeeIncidenceService {
             shift: incidence.employee.employeeShift[0].shift,
             type: incidence.type,
             created_at: incidence.created_at,
-            incidenceShift: incidence.shift,
+            incidenceShift: incidence.shift
           });
         });
       });
@@ -1997,7 +1997,7 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '01:00:00'; //dia actual
+                hrEntrada = '00:01:00'; //dia actual
                 hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
@@ -2050,7 +2050,7 @@ export class EmployeeIncidenceService {
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                   break;
                 case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
+                  hrEntrada = '00:01:00'; //dia actual
                   hrSalida = '23:59:00'; //dia siguiente
                   diaAnterior = new Date(diahoy);
                   diaSiguente = new Date(diahoy);
@@ -2101,7 +2101,7 @@ export class EmployeeIncidenceService {
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                   break;
                 case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
+                  hrEntrada = '00:01:00'; //dia actual
                   hrSalida = '23:59:00'; //dia siguiente
                   diaAnterior = new Date(diahoy);
                   diaSiguente = new Date(diahoy);
@@ -2157,7 +2157,7 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '01:00:00'; //dia actual
+                hrEntrada = '00:01:00'; //dia actual
                 hrSalida = '23:00:00'; //dia siguiente
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
@@ -2208,7 +2208,7 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
+                hrEntrada = '00:01:00'; //dia actual
                 hrSalida = '22:00:00'; //dia siguiente
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);

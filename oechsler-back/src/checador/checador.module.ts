@@ -10,6 +10,7 @@ import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidenc
 import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catologue.module';
 import { CalendarModule } from '../calendar/calendar.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
+import { TimeCorrectionModule } from '../time_correction/time_correction.module';
 
 @Module({
   imports: [
@@ -20,9 +21,10 @@ import { OrganigramaModule } from '../organigrama/organigrama.module';
     IncidenceCatologueModule,
     CalendarModule,
     OrganigramaModule,
+    forwardRef(() => TimeCorrectionModule)
   ],
   providers: [ChecadorService],
   controllers: [ChecadorController],
   exports: [ChecadorService],
 })
-export class ChecadorModule {}
+export class ChecadorModule { }
