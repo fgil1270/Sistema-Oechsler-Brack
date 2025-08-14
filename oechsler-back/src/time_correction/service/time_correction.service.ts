@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   BadGatewayException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import {
   Repository,
@@ -41,11 +43,12 @@ export class TimeCorrectionService {
     private readonly employeeIncidenceService: EmployeeIncidenceService,
     private readonly employeeShiftService: EmployeeShiftService,
     private readonly employeesService: EmployeesService,
+    @Inject(forwardRef(() => ChecadorService))
     private readonly checadorService: ChecadorService,
     private readonly incidenceCatalogueService: IncidenceCatologueService,
     private readonly organigramaService: OrganigramaService,
     private readonly calendarService: CalendarService,
-  ) {}
+  ) { }
 
   async create(data: CreateTimeCorrectionDto) {
     const emp = await this.employeesService.findOne(data.id_employee);
@@ -78,9 +81,19 @@ export class TimeCorrectionService {
     return await this.timeCorrectionRepository.save(createCorrection);
   }
 
+  // Buscar corrección de tiempo por fecha y empleado
+  async findTimeCorrection(date: string, employeeId: number) {
+    return await this.timeCorrectionRepository.findOne({
+      where: {
+        date: format(new Date(date), 'yyyy-MM-dd') as any,
+        employee: { id: employeeId },
+      },
+    });
+  }
+
   //reporte correccion de tiempo
   async find(data: any, user: any) {
-    
+
     const tipoNomina = data.tipoEmpleado;
     const isAdmin = user.roles.some(
       (role) => role.name === 'Admin' || role.name === 'RH',
@@ -159,7 +172,7 @@ export class TimeCorrectionService {
       const totalHrsExtra = 0;
 
       //se recorre el arreglo de dias generados
-      for ( let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
+      for (let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
         const dataDate = {
           start: index,
           end: index,
@@ -171,7 +184,7 @@ export class TimeCorrectionService {
               date: format(index, 'yyyy-MM-dd') as any,
               employee: { id: iterator.id },
             },
-        });
+          });
 
 
         //se verifica si el dia es festivo
@@ -232,17 +245,17 @@ export class TimeCorrectionService {
           end: format(index, 'yyyy-MM-dd 23:59:00') as any,
           status: ['Autorizada'],
           ids: [`${iterator.id}`],
-          code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS', 'CAST', 'FINJ', 'HE', 'INC', 
+          code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS', 'CAST', 'FINJ', 'HE', 'INC',
             'DFT', 'VacM', 'Sind', 'PRTC', 'DOM', 'VACA', 'HO', 'HET', 'PSSE'],
         });
-        
+
         if (employeeShif.events.length == 0) {
           continue;
         }
 
         //si existe incidencia no se muestra en el reporte
         if (incidencias.length > 0) {
-          
+
           continue;
         }
 
@@ -417,11 +430,11 @@ export class TimeCorrectionService {
               diaSiguente = new Date(index);
               break;
             case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
+              hrEntrada = '03:00:00'; //dia anterior
+              hrSalida = '22:00:00'; //dia actual
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
+              break;
             case 'T12-2':
               hrEntrada = '14:00:00'; //dia anterior
               hrSalida = '08:00:00'; //dia actual
@@ -438,7 +451,7 @@ export class TimeCorrectionService {
           hrEntrada,
           hrSalida,
         );
-        
+
 
         //se verifica si el dia anterior para el turno 1 es el mismo turno
         //se toman los horarios de entra del segundo Turno pero si son distintos
@@ -490,8 +503,7 @@ export class TimeCorrectionService {
           );
           endTimeShift = moment(
             new Date(
-              `${format(diaSiguente, 'yyyy-MM-dd')} ${
-                employeeShif.events[0]?.endTimeshift
+              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
               }`,
             ),
             'HH:mm',
@@ -515,7 +527,7 @@ export class TimeCorrectionService {
 
         const date = new Date();
         date.setHours(hours);
-        date.setMinutes(minutes); 
+        date.setMinutes(minutes);
 
 
         //si el total de horas registradas es menor al total de horas por dia -3
@@ -596,7 +608,7 @@ export class TimeCorrectionService {
       diasGenerados,
     };
 
-    
+
   }
 
   //Buscar checadas
@@ -926,8 +938,7 @@ export class TimeCorrectionService {
           );
           endTimeShift = moment(
             new Date(
-              `${format(diaSiguente, 'yyyy-MM-dd')} ${
-                employeeShif.events[0]?.endTimeshift
+              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
               }`,
             ),
             'HH:mm',
@@ -1026,7 +1037,7 @@ export class TimeCorrectionService {
     };
   }
 
-  async update() {}
+  async update() { }
 
-  async delete() {}
+  async delete() { }
 }

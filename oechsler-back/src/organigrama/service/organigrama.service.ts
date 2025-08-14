@@ -140,7 +140,7 @@ export class OrganigramaService {
       where: {
         employee: {
           id: id,
-          created_at: IsNull(),
+          deleted_at: IsNull(),
         },
       },
     });
@@ -328,6 +328,7 @@ export class OrganigramaService {
         .getMany();
 
       levelOne.forEach((element) => {
+
         if (element.employee) {
           employees.push(element.employee);
         }
@@ -401,7 +402,9 @@ export class OrganigramaService {
       }); */
 
       levelTwo.forEach((element) => {
-        employees.push(element.employee);
+        if (element.employee) {
+          employees.push(element.employee);
+        }
       });
 
       //levelTwo.push(...levelOne);

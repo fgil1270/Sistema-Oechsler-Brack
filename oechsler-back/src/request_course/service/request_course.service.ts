@@ -381,6 +381,7 @@ export class RequestCourseService {
 
   //buscar asignacion de curso por algun parametro
   async getAssignmentBy(currdata: UpdateAssignmentCourseDto) {
+
     const mexicoTimeZone = 'America/Mexico_City';
     const formattedStartDate = new Date(currdata.dateStart);
     formattedStartDate.setHours(0, 0, 0, 0);
@@ -402,6 +403,8 @@ export class RequestCourseService {
 
     if (currdata.status) {
       query.andWhere('rc.status = :status', { status: currdata.status });
+    } else if (currdata.no_status) {
+      query.andWhere('rc.status NOT IN (:...no_status)', { no_status: currdata.no_status });
     }
 
     const requestCourseAssignment = await query.getMany();
@@ -521,6 +524,9 @@ export class RequestCourseService {
           rh: true,
           gm: true,
           requestBy: true,
+          requestCourseAssignment: {
+            teacher: true,
+          },
         },
         where: {
           id: id,
@@ -599,6 +605,9 @@ export class RequestCourseService {
       if (requestCourse.status == 'Asignado' && data.status == 'Cancelado') {
         //el estatus cambia de Asignado a Autorizado
         requestCourse.status = 'Autorizado';
+        requestCourse.requestCourseAssignment = [];
+        //se elimina la asignacion de curso
+        await this.requestCourse.save(requestCourse);
 
       } else if (data.status == 'Autorizado') {
         //si el curso pasa a Autorizado
@@ -650,13 +659,14 @@ export class RequestCourseService {
             requestCourse.gm = userEmployee.emp;
 
             requestCourse.status = 'Autorizado';
-          } else {
-            //si aprobo el lider y RH
-            if ((requestCourse.leader && requestCourse.rh)) {
+          }
 
-              requestCourse.status = 'Autorizado';
-            }
-
+          //si aprobo el lider
+          //si aprobo RH
+          //si aprobo GM
+          if (requestCourse.leader && requestCourse.rh && requestCourse.gm) {
+            //si aprobo el lider y RH y GM
+            requestCourse.status = 'Autorizado';
           }
         }
 
@@ -671,6 +681,10 @@ export class RequestCourseService {
         }
 
 
+      }
+
+      if (data.status == 'Pendiente Evaluar Empleado') {
+        requestCourse.status = 'Pendiente Evaluar Empleado';
       }
 
       if (data.requestBy) {
@@ -1093,5 +1107,168 @@ export class RequestCourseService {
 
   }
 
+  //actualizar empleados de curso
+  //y teacher
+  async updateCourseEmployeeAssignment(id: number, data: UpdateAssignmentCourseDto, user: any) {
+    // Implement the logic to update the course employee assignment
+
+    const assignment = await this.requestCourseAssignment.findOne({
+      relations: {
+        requestCourse: {
+          employee: true,
+          course: true,
+          competence: true,
+          department: true,
+          leader: true,
+          rh: true,
+          requestBy: true,
+          gm: true
+        },
+        teacher: {
+          supplier: true,
+        },
+
+      },
+      where: { id },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(`Assignment with ID ${id} not found`);
+    }
+
+    //si data.changeEmployee.length es mayor a 0
+    //se cambia al empleado actual por el nuevo empleado
+    //y el empleado anterior se regreso a estatus aprobado
+    if (data.changeEmployee && data.changeEmployee.length > 0) {
+
+      for (let index = 0; index < data.changeEmployee.length; index++) {
+        const element = data.changeEmployee[index];
+        const newEmployee = await this.employeeService.findOne(element.newEmployee);
+        const oldRequestCourse = await this.requestCourse.findOne({
+          relations: {
+            employee: true,
+            course: true,
+            department: true,
+            leader: true,
+            rh: true,
+            requestBy: true,
+            competence: true
+          },
+          where: {
+            id: element.oldIdRequestCourse // id de la solicitud de curso anterior
+          },
+        });
+
+        //se obtiene el lider del empleado nuevo
+        const leader = await this.organigramaService.leaders(newEmployee.emp.id);
+
+        //crear nueva solicitud de curso con el nuevo empleado
+        const createRequestCourse = this.requestCourse.create({
+          course_name: oldRequestCourse.course_name,
+          training_reason: oldRequestCourse.training_reason,
+          priority: oldRequestCourse.priority,
+          efficiency_period: oldRequestCourse.efficiency_period,
+          cost: oldRequestCourse.cost,
+          currency: oldRequestCourse.currency,
+          type: oldRequestCourse.type,
+          place: oldRequestCourse.place,
+          tentative_date_start: oldRequestCourse.tentative_date_start,
+          tentative_date_end: oldRequestCourse.tentative_date_end,
+          approved_at_leader: oldRequestCourse.approved_at_leader,
+          approved_at_rh: oldRequestCourse.approved_at_rh,
+          approved_at_gm: oldRequestCourse.approved_at_gm ? oldRequestCourse.approved_at_gm : null,
+          status: oldRequestCourse.status,
+          employee: newEmployee.emp, //nuevo empleado
+          course: oldRequestCourse.course,
+          department: newEmployee.emp.department, //departamento del nuevo empleado
+          competence: oldRequestCourse.competence, //competencia del curso
+          leader: leader.orgs.filter((org: any) => org.evaluar == true)[0].leader, //lider del nuevo empleado
+          gm: oldRequestCourse.gm ? oldRequestCourse.gm : null, //gerente del curso
+          rh: oldRequestCourse.rh,
+          requestBy: oldRequestCourse.requestBy,
+          origin: 'Solicitud', //origen de la solicitud de curso
+          evaluation_tool: oldRequestCourse.evaluation_tool, //herramienta de evaluación
+        });
+
+        const requestCourse = await this.requestCourse.save(createRequestCourse);
+
+        //se cambia el estatus del empleado antiguo a aprobado
+        oldRequestCourse.status = 'Aprobado';
+        //await this.requestCourse.save(oldRequestCourse);
+
+        //se quita al auntiguo empleado del assignment.requestCourse
+        assignment.requestCourse = assignment.requestCourse.filter((req: any) => req.id !== oldRequestCourse.id);
+
+        //se agrega la nueva solicitud de curso al assignment.requestCourse
+        assignment.requestCourse.push(requestCourse);
+
+
+      }
+
+
+    }
+
+
+    // Agregar nuevos empleados
+    if (data.addEmployee && data.addEmployee.length > 0) {
+      for (const employee of data.addEmployee) {
+        const newEmployee = await this.employeeService.findOne(employee.addEmployee);
+
+        //se obtiene el lider del empleado nuevo
+        const leader = await this.organigramaService.leaders(newEmployee.emp.id);
+
+        //crear nueva solicitud de curso con el nuevo empleado
+        const createRequestCourse = this.requestCourse.create({
+          course_name: assignment.requestCourse[0].course_name,
+          training_reason: assignment.requestCourse[0].training_reason,
+          priority: assignment.requestCourse[0].priority,
+          efficiency_period: assignment.requestCourse[0].efficiency_period,
+          cost: 0,
+          currency: assignment.requestCourse[0].currency,
+          type: assignment.requestCourse[0].type,
+          place: assignment.requestCourse[0].place,
+          tentative_date_start: assignment.requestCourse[0].tentative_date_start,
+          tentative_date_end: assignment.requestCourse[0].tentative_date_end,
+          approved_at_leader: assignment.requestCourse[0].approved_at_leader,
+          approved_at_rh: assignment.requestCourse[0].approved_at_rh,
+          approved_at_gm: assignment.requestCourse[0].approved_at_gm ? assignment.requestCourse[0].approved_at_gm : null,
+          status: assignment.requestCourse[0].status,
+          employee: newEmployee.emp, //nuevo empleado
+          course: assignment.requestCourse[0].course,
+          department: newEmployee.emp.department, //departamento del nuevo empleado
+          competence: assignment.requestCourse[0].competence, //competencia del curso
+          leader: leader.orgs.filter((org: any) => org.evaluar == true)[0].leader, //lider del nuevo empleado
+          gm: assignment.requestCourse[0].gm ? assignment.requestCourse[0].gm : null, //gerente del curso
+          rh: assignment.requestCourse[0].rh,
+          requestBy: assignment.requestCourse[0].requestBy,
+          origin: 'Solicitud', //origen de la solicitud de curso
+          evaluation_tool: assignment.requestCourse[0].evaluation_tool, //herramienta de evaluación
+        });
+
+        const requestCourse = await this.requestCourse.save(createRequestCourse);
+
+        //se agrega la nueva solicitud de curso al assignment.requestCourse
+        assignment.requestCourse.push(requestCourse);
+      }
+    }
+
+    // Cambiar profesor
+    if (data.changeTeacher && data.changeTeacher.newTeacher != 0) {
+
+      //se obtiene el nuevo profesor
+      const newTeacher = await this.supplierService.findTeacherById(data.changeTeacher.newTeacher);
+
+      assignment.teacher = newTeacher;
+    }
+
+    //guardar cambios
+    await this.requestCourseAssignment.save(assignment);
+
+    return {
+      error: false,
+      msg: 'Asignación de curso actualizada correctamente',
+      data: assignment,
+    };
+  }
 
 }

@@ -12,7 +12,7 @@ import { Job } from '../entities/job.entity';
 
 @Injectable()
 export class JobsService {
-  constructor(@InjectRepository(Job) private jobRepository: Repository<Job>) {}
+  constructor(@InjectRepository(Job) private jobRepository: Repository<Job>) { }
 
   async create(createJobDto: CreateJobDto) {
     const jobCodeExist = await this.jobRepository.findOne({
@@ -94,8 +94,8 @@ export class JobsService {
     if (!job) {
       throw new NotFoundException(`Job #${id} not found`);
     }
-    
-    return { 
+
+    return {
       path: join(
         __dirname,
         `../../../${job.jobDocument[0].route}`,
@@ -113,6 +113,7 @@ export class JobsService {
       where: {
         id: id,
       },
+      withDeleted: true,
     });
 
     return job;
@@ -125,9 +126,9 @@ export class JobsService {
       },
     });
 
-    
+
     //si el codigo es distinto verifica que no exista otro codigo igual
-    if(job.cv_code != updateJobDto.cv_code){
+    if (job.cv_code != updateJobDto.cv_code) {
       const jobCodeExist = await this.jobRepository.findOne({
         where: {
           cv_code: Like(`%${updateJobDto.cv_code}%`),
@@ -139,18 +140,18 @@ export class JobsService {
       }
     }
     //si el nombre es distinto verifica que no exista otro nombre igual
-    if(job.cv_name != updateJobDto.cv_name){
+    if (job.cv_name != updateJobDto.cv_name) {
       const jobNameExist = await this.jobRepository.findOne({
         where: {
           cv_name: Like(`%${updateJobDto.cv_name}%`),
         },
       });
-  
+
       if (jobNameExist?.id) {
         throw new BadRequestException(`El Puesto ya existe`);
       }
     }
-    
+
 
     return await this.jobRepository.update({ id }, updateJobDto);
   }

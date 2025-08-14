@@ -30,6 +30,7 @@ import { EmployeeIncidenceService } from '../../employee_incidence/service/emplo
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
+import { TimeCorrectionService } from '../../time_correction/service/time_correction.service';
 
 @Injectable()
 export class ChecadorService {
@@ -42,7 +43,9 @@ export class ChecadorService {
     private employeeIncidenceService: EmployeeIncidenceService,
     private readonly incidenceCatalogueService: IncidenceCatologueService,
     private readonly calendarService: CalendarService,
-    private readonly organigramaService: OrganigramaService
+    private readonly organigramaService: OrganigramaService,
+    @Inject(forwardRef(() => TimeCorrectionService))
+    private timeCorrectionService: TimeCorrectionService,
   ) { }
 
   async create(createChecadaDto: CreateChecadaDto, user: any) {
@@ -231,6 +234,7 @@ export class ChecadorService {
         let hrExtraDoble = 0;
         let hrExtraTripe = 0;
         const incidenceExtra = [];
+        let commentIncidence = [];
         const mediaHoraExtra = 0.06;
         let sumaMediaHrExtra = 0;
         let hrsExtraIncidencias = '';
@@ -285,7 +289,7 @@ export class ChecadorService {
               end: format(index, 'yyyy-MM-dd 23:59:00') as any,
               ids: [iterator.id],
               code_band: ['VAC', 'PCS', 'PSS', 'HDS', 'CAST', 'FINJ', 'INC', 'DFT', 'PRTC', 'DOM', 'VACA', 'HE', 'HET', 'TXT', 'PSSE'],
-              status: ['Autorizada']
+              status: ['Autorizada', 'Pendiente']
             });
 
           const iniciaTurno = new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`);
@@ -319,6 +323,7 @@ export class ChecadorService {
 
           //se recorre el arreglo de incidencias
           for (let index = 0; index < incidenciasNormales.length; index++) {
+            if (incidenciasNormales[index].status == 'Pendiente') continue;
             const findIncidence = await this.employeeIncidenceService.findOne(incidenciasNormales[index].incidenceId);
             if (incidenciasNormales[index].codeBand == 'VAC' || incidenciasNormales[index].codeBand == 'VACA' || incidenciasNormales[index].codeBand == 'VacM') {
               incidenciaVac = true;
@@ -356,9 +361,6 @@ export class ChecadorService {
 
 
           }
-
-
-
 
           //se obtienen las checadas del dia
           let diahoy = new Date(index);
@@ -590,7 +592,7 @@ export class ChecadorService {
 
           //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
           for (let index = 0; index < incidenciasNormales.length; index++) {
-
+            if (incidenciasNormales[index].status == 'Pendiente') continue;
             if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET' || incidenciasNormales[index].codeBand == 'TxT') {
               if (incidenciasNormales[index].type == 'Compensatorio') {
                 isTxtCompensatorio = true;
@@ -693,17 +695,41 @@ export class ChecadorService {
           if (registrosChecador.length > 0) {
             isIncidenceIncapacidad = false;
           }
+
+
           //falta injustificada
           //si no existen checadas
-          //si no existen incidencias
+          // && incidenciasNormales.length == 0
           //si el dia no es festivo
           //si existe turno
-          if (registrosChecador.length == 0 && incidenciasNormales.length == 0 && !dayCalendar && employeeShif.events.length > 0 && !isTxtCompensatorio) {
+          if (registrosChecador.length == 0 && !dayCalendar && employeeShif.events.length > 0 && !isTxtCompensatorio) {
             incidenciaFalta = true;
             isIncidenceIncapacidad = false;
+            //se verifica si no existe correccion de tiempo
+            const timeCorrection = await this.timeCorrectionService.findTimeCorrection(
+              format(index, 'yyyy-MM-dd'),
+              iterator.id
+            );
+
 
             if (format(index, 'yyyy-MM-dd') <= format(new Date(), 'yyyy-MM-dd')) {
-              incidenceExtra.push(`1` + faltaInjustificada.code_band);
+
+              //si no existe incidencia
+              if (incidenciasNormales.length == 0) {
+                incidenceExtra.push(`1` + faltaInjustificada.code_band);
+              }
+
+
+              //si existe correccion de tiempo
+              if (timeCorrection) {
+                commentIncidence.push(timeCorrection.comment);
+                incidenciasNormales.forEach((incidence) => {
+                  if (incidence.status == 'Pendiente') {
+                    commentIncidence.push('Incidencia pendiente de autorización');
+                  }
+                });
+
+              }
 
             }
           }
@@ -743,6 +769,7 @@ export class ChecadorService {
 
 
             incidenceExtra.push(`${mediaHoraExtra}` + incidenceHrExtra.code_band + '2');
+
             sumaMediaHrExtra += Number(mediaHoraExtra);
             totalHrsExtra += sumaMediaHrExtra;
 
@@ -857,6 +884,7 @@ export class ChecadorService {
           date: format(index, 'yyyy-MM-dd'),
           incidencia: { extra: incidenceExtra },
           employeeShift: sinTurno,
+          comment: commentIncidence
         });
 
 

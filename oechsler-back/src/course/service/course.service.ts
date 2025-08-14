@@ -24,7 +24,7 @@ export class CourseService {
     private competenceService: CompetenceService,
     @InjectRepository(TraininGoal) private traininGoalRepository: Repository<TraininGoal>,
     @InjectRepository(CourseFile) private courseFileRepository: Repository<CourseFile>,
-  ) {}
+  ) { }
 
   async create(createCourseDto: CourseDto) {
     const courseNameExist = await this.courseRepository.findOne({
@@ -50,6 +50,9 @@ export class CourseService {
       status: createCourseDto.status,
       competence: competence,
       traininGoal: traininGoal,
+      req_efficiency: createCourseDto.req_efficiency,
+      req_constancy: createCourseDto.req_constancy,
+      req_quiz: createCourseDto.req_quiz,
     });
 
     return await this.courseRepository.save(course);
@@ -79,6 +82,7 @@ export class CourseService {
       order: {
         name: 'ASC',
       },
+      withDeleted: true,
     });
 
     if (!courses) {
@@ -115,7 +119,7 @@ export class CourseService {
   async getFilePath(courseId: number) {
     let file: any;
     let path: any;
-    
+
     const course = await this.courseRepository.findOne({
       relations: {
         courseFile: true,
@@ -169,7 +173,7 @@ export class CourseService {
 
   //actualizar curso
   async update(id: number, updateCourseDto: CourseDto) {
-    
+
     const course = await this.courseRepository.findOne({
       where: {
         id: id,

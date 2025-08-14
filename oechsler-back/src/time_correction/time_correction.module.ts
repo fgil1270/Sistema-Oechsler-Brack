@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { TimeCorrectionController } from './controller/time_correction.controller';
@@ -22,7 +22,7 @@ import { CalendarModule } from '../calendar/calendar.module';
     EmployeeShiftModule,
     IncidenceCatologueModule,
     EmployeesModule,
-    ChecadorModule,
+    forwardRef(() => ChecadorModule),
     OrganigramaModule,
     CalendarModule,
   ],
@@ -30,4 +30,4 @@ import { CalendarModule } from '../calendar/calendar.module';
   controllers: [TimeCorrectionController],
   exports: [TimeCorrectionService],
 })
-export class TimeCorrectionModule {}
+export class TimeCorrectionModule { }
