@@ -50,6 +50,9 @@ export class CourseService {
       status: createCourseDto.status,
       competence: competence,
       traininGoal: traininGoal,
+      req_efficiency: createCourseDto.req_efficiency,
+      req_constancy: createCourseDto.req_constancy,
+      req_quiz: createCourseDto.req_quiz,
     });
 
     return await this.courseRepository.save(course);
