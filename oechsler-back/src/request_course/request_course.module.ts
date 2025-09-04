@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RequestCourseController, AssignmentCourseController, RequestCourseDocumentController } from './controller/request_course.controller';
 import { RequestCourse } from './entities/request_course.entity';
@@ -14,6 +14,7 @@ import { EmployeeIncidenceModule } from '../employee_incidence/employee_incidenc
 import { RequestCourseDocument } from './entities/request_course_document.entity';
 import { RequestCourseAssessmentEmployee } from './entities/request_course_assessment_employee.entity';
 import { MailModule } from '../mail/mail.module';
+import { EmployeeObjectiveModule } from '../employee_objective/employee_objective.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MailModule } from '../mail/mail.module';
     SupplierModule,
     EmployeeIncidenceModule,
     MailModule,
+    forwardRef(() => EmployeeObjectiveModule),
   ],
   providers: [RequestCourseService],
   controllers: [RequestCourseController, AssignmentCourseController, RequestCourseDocumentController],

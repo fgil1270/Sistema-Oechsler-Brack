@@ -54,6 +54,11 @@ export class CourseDto {
   @IsNotEmpty()
   @ApiProperty({ description: 'Requiere Examen', example: 'true' })
   req_quiz: boolean;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Tema del curso', example: 'Programación' })
+  syllabus: string;
 }
 
 export class UpdateCourseDto extends PartialType(CourseDto) { }

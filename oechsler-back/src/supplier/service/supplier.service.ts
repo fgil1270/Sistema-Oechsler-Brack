@@ -20,6 +20,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateSupplierDto } from '../dto/create-supplier.dto';
 import { UpdateSupplierDto } from '../dto/update-supplier.dto';
+import { CreateTeacherDto } from '../dto/create-teacher.dto';
 import { Supplier } from '../entities/supplier.entity';
 import { Teacher } from '../entities/teacher.entity';
 import { es } from 'date-fns/locale';
@@ -29,7 +30,7 @@ export class SupplierService {
   constructor(
     @InjectRepository(Supplier) private supplierRepository: Repository<Supplier>,
     @InjectRepository(Teacher) private teacherRepository: Repository<Teacher>,
-  ) {}
+  ) { }
 
   async create(createSupplierDto: CreateSupplierDto) {
     return 'This action adds a new supplier';
@@ -70,10 +71,10 @@ export class SupplierService {
           supplier: {
             id: supplierId
           },
-        
+
         },
       })
-    }else{
+    } else {
 
       teacher = await this.teacherRepository.find({
         relations: {
@@ -89,7 +90,7 @@ export class SupplierService {
 
   //buscar un instructor por id
   async findTeacherById(id: number) {
- 
+
     const teacher = await this.teacherRepository.findOne({
       relations: {
         supplier: true,
@@ -100,5 +101,23 @@ export class SupplierService {
     });
 
     return teacher;
+  }
+
+
+  //crear un instructor
+  async createTeacher(data: CreateTeacherDto) {
+    const teacher = this.teacherRepository.create(data);
+
+    const supplier = await this.supplierRepository.findOne({
+      where: { id: data.supplierId },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+
+    teacher.supplier = supplier;
+
+    return this.teacherRepository.save(teacher);
   }
 }

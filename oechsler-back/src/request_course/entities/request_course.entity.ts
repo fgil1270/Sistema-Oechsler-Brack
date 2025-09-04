@@ -12,6 +12,8 @@ import {
   OneToMany,
   OneToOne
 } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger'
+
 import { Course } from '../../course/entities/course.entity';
 import { Department } from '../../departments/entities/department.entity';
 import { Employee } from '../../employees/entities/employee.entity';
@@ -20,6 +22,7 @@ import { RequestCourseAssignment } from './request_course_assignment.entity';
 import { CourseEfficiency } from '../../course_efficiency/entities/course_efficiency.entity';
 import { RequestCourseDocument } from './request_course_document.entity';
 import { RequestCourseAssessmentEmployee } from './request_course_assessment_employee.entity';
+import { DefinitionObjectiveAnnual } from '../../employee_objective/entities/definition_objective_annual.entity';
 
 @Entity()
 export class RequestCourse {
@@ -148,4 +151,12 @@ export class RequestCourse {
     },
   )
   request_course_assessment_employee: RequestCourseAssessmentEmployee;
+
+  @Column({ type: 'text', default: null })
+  @ApiProperty({ description: 'Objetivo de capacitación' })
+  training_objective: string;
+
+  @ManyToOne(() => DefinitionObjectiveAnnual, (post) => post.requestCourse)
+  @JoinColumn()
+  definitionObjectiveAnnual: DefinitionObjectiveAnnual;
 }

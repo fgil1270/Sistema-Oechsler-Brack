@@ -23,7 +23,8 @@ import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseService } from '../service/request_course.service';
 import {
   RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto,
-  UpdateAssignmentCourseDto, UploadFilesDto, RequestCourseAssessmentDto
+  UpdateAssignmentCourseDto, UploadFilesDto, RequestCourseAssessmentDto,
+  FindRequestCourseDto
 } from '../dto/create_request_course.dto';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -34,10 +35,11 @@ import { Views } from '../../auth/decorators/views.decorator';
 @Controller('request_course')
 export class RequestCourseController {
   constructor(private requestCourseService: RequestCourseService) { }
+
   @ApiOperation({ summary: 'Obtener solicitudes de curso' })
   @Get()
   async findAll(
-    @Query() query: Partial<RequestCourse>,
+    @Query() query: FindRequestCourseDto,
     @CurrentUser() user: any,
   ) {
     return this.requestCourseService.findAll(query, user);

@@ -9,6 +9,7 @@ import {
   IsPostalCode,
 } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class RequestCourseDto {
   @IsNotEmpty()
@@ -30,6 +31,11 @@ export class RequestCourseDto {
   @IsString()
   @ApiProperty({ description: 'Razon de la capacitación' })
   traininReason: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Objetivo de la capacitación' })
+  trainingObjective: string;
 
   @IsNotEmpty()
   @IsString()
@@ -130,6 +136,30 @@ export class RequestCourseDto {
   @IsString()
   @ApiProperty({ description: 'Comentarios' })
   comment: string;
+
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({ description: 'id de la definición del objetivo anual' })
+  definitionObjetiveAnnualId: number | null;
+}
+
+export class FindRequestCourseDto {
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => {
+    // Si llega como string (query param), convertir a array
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [value]; // Si no es JSON válido, crear array con el string
+      }
+    }
+    return value;
+  })
+  @ApiProperty({ description: 'Array de status' })
+  status: any[];
+
 }
 
 export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {

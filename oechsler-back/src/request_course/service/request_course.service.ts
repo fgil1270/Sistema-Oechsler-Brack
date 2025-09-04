@@ -30,7 +30,8 @@ import {
   UpdateRequestCourseDto,
   RequestCourseAssignmentDto,
   UpdateAssignmentCourseDto,
-  RequestCourseAssessmentDto
+  RequestCourseAssessmentDto,
+  FindRequestCourseDto
 } from '../dto/create_request_course.dto';
 import { CourseService } from '../../course/service/course.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
@@ -41,6 +42,7 @@ import { SupplierService } from '../../supplier/service/supplier.service';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
 import { MailService } from '../../mail/mail.service';
+import { EmployeeObjetiveService } from '../../employee_objective/service/employee_objective.service';
 import { request } from 'http';
 
 @Injectable()
@@ -59,6 +61,7 @@ export class RequestCourseService {
     private employeeIncidenceService: EmployeeIncidenceService,
     @InjectDataSource() private dataSource: DataSource,
     private mailService: MailService,
+    @Inject(forwardRef(() => EmployeeObjetiveService)) private definitionObjectiveAnnualService: EmployeeObjetiveService,
   ) { }
 
   async create(data: RequestCourseDto, user: any) {
@@ -90,9 +93,11 @@ export class RequestCourseService {
         );
 
 
+
         const requestCourseCreate = this.requestCourse.create({
           course_name: data.courseName,
           training_reason: data.traininReason,
+          training_objective: data.trainingObjective,
           efficiency_period: data.efficiencyPeriod,
           priority: data.priority,
           tentative_date_start: data.tentativeDateStart as any,
@@ -115,7 +120,16 @@ export class RequestCourseService {
           place: data.place,
           evaluation_tool: data.evaluation_tool,
           comment: data.comment,
+          definitionObjectiveAnnual: null
         });
+
+        //si data.definitionObjetiveAnnualId existe se busca la definición del objetivo anual
+        if (data.definitionObjetiveAnnualId) {
+          const definitionObjetiveAnnual = await this.definitionObjectiveAnnualService.findObjectiveEmployee(
+            data.definitionObjetiveAnnualId
+          );
+          requestCourseCreate.definitionObjectiveAnnual = definitionObjetiveAnnual.definitionObjectiveAnnual;
+        }
 
         const requestCourse = await this.requestCourse.save(
           requestCourseCreate,
@@ -211,7 +225,9 @@ export class RequestCourseService {
         },
         department: true,
         competence: true,
-        course: true,
+        course: {
+          courseFile: true,
+        },
         leader: true,
         rh: true,
         gm: true,
@@ -232,7 +248,7 @@ export class RequestCourseService {
     });
   }
 
-  async findAll(query: Partial<RequestCourse>, user: any) {
+  async findAll(query: FindRequestCourseDto, user: any) {
 
     const employee = await this.organigramaService.findJerarquia(
       {
@@ -250,6 +266,14 @@ export class RequestCourseService {
       eployeesIds.push(emp.id);
     }
 
+    // Construir el filtro where correctamente
+    const whereConditions: FindOptionsWhere<RequestCourse> = {};
+
+    // Filtrar por status si existe
+    if (query.status && query.status.length > 0) {
+      whereConditions.status = In(query.status);
+    }
+
     const requestCourse = await this.requestCourse.find({
       relations: {
         employee: {
@@ -259,15 +283,18 @@ export class RequestCourseService {
         },
         department: true,
         competence: true,
-        course: true,
+        course: {
+          courseFile: true,
+        },
         leader: true,
         rh: true,
         gm: true,
         requestCourseAssignment: true,
         requestBy: true,
         documents: true,
+        courseEfficiency: true,
       },
-      where: query as unknown as FindOptionsWhere<RequestCourse>,
+      where: whereConditions,
     });
 
     requestCourse.filter((item) => {
@@ -355,6 +382,8 @@ export class RequestCourseService {
       .addSelect('course.id', 'id_course')
       .addSelect('course.name', 'course_name')
       .addSelect('request_course.id', 'id_request_course')
+      .addSelect('request_course.tentative_date_start', 'tentative_date_start')
+      .addSelect('request_course.tentative_date_end', 'tentative_date_end')
       .innerJoin('request_course.course', 'course')
       .where('request_course.status = :status', { status: status })
       //.groupBy('request_course.status')
@@ -510,6 +539,7 @@ export class RequestCourseService {
         },
         user,
       );
+
       const requestCourse = await this.requestCourse.findOne({
         relations: {
           employee: {
@@ -532,6 +562,9 @@ export class RequestCourseService {
           id: id,
         },
       });
+
+      //se obtiene el lider del empleado
+      const leader = await this.organigramaService.leaders(requestCourse.employee.id);
 
       //se obtiene el departamento de la solicitud de curso
       let department = await this.departmentService.findOne(requestCourse.department.id);
@@ -580,7 +613,7 @@ export class RequestCourseService {
       //se aprueba automaticamente por el lider
       if (data.status == 'Solicitado' && requestCourse.origin == 'Objetivo') {
         //se busca el lider del empleado
-        const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+
         requestCourse.status = 'Solicitado';
         requestCourse.approved_at_leader = new Date();
         requestCourse.leader = leader.orgs[0].leader;
@@ -620,8 +653,8 @@ export class RequestCourseService {
         isAdmin = user.roles.some((role) => role.name == 'Admin');
         isRh = user.roles.some((role) => role.name == 'RH');
         isGm = user.roles.some((role) => role.name == 'Gerente');
-
-        isLeader = organigrama.some((org) => org.id == requestCourse.employee.id);
+        //se verifica si el usuario logueado es lider
+        isLeader = leader.orgs.some((org) => org.leader.id == user.idEmployee);
 
         //si el usuario logueado es admin
         if (isAdmin) {
@@ -664,7 +697,7 @@ export class RequestCourseService {
           //si aprobo el lider
           //si aprobo RH
           //si aprobo GM
-          if (requestCourse.leader && requestCourse.rh && requestCourse.gm) {
+          if (requestCourse.leader && requestCourse.rh) {
             //si aprobo el lider y RH y GM
             requestCourse.status = 'Autorizado';
           }
@@ -921,7 +954,7 @@ export class RequestCourseService {
           //si la fecha actual es mayor a la fecha de finalizacion mas el periodo de eficiencia
           if (currentDate > dateEnd && efficiencyPeriod != null) {
             i++;
-            request.status = 'Pendiente evaluar eficiencia';
+            request.status = 'Pendiente Evaluar Eficiencia';
             await this.requestCourse.save(request);
 
             //si el empleado tiene un lider asignado en el organigrama

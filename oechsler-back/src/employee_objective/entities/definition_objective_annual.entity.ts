@@ -16,6 +16,7 @@ import { DncCourse } from './dnc_course.entity';
 import { DncCourseManual } from './dnc_manual.entity';
 import { CompetenceEvaluation } from './competence_evaluation.entity';
 import { ObjectiveQuestion } from './objective_question.entity';
+import { RequestCourse } from '../../request_course/entities/request_course.entity';
 
 @Entity()
 export class DefinitionObjectiveAnnual {
@@ -111,5 +112,8 @@ export class DefinitionObjectiveAnnual {
 
   @Column({ type: 'boolean', nullable: true })
   is_evaluated: boolean;
+
+  @OneToMany(() => RequestCourse, (post) => post.definitionObjectiveAnnual)
+  requestCourse: RequestCourse[];
 
 }
