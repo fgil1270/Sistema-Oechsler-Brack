@@ -28,7 +28,7 @@ export class CalendarService {
     @InjectRepository(Calendar)
     private calendarRepository: Repository<Calendar>,
     @Inject(forwardRef(() => EmployeesService)) private employeService: EmployeesService,
-  ) {}
+  ) { }
 
   async create(createCalendarDto: CreateCalendarDto, user: any) {
     const calendar = await this.calendarRepository.create(createCalendarDto);
@@ -51,6 +51,25 @@ export class CalendarService {
 
     return calendar;
   }
+
+  async findByYear(year: Number) {
+    const calendar = await this.calendarRepository.find({
+      relations: {
+        created_by: true,
+      },
+      where: {
+        date: Between(
+          format(new Date(year as any, 0, 1), 'yyyy-MM-dd') as any,
+          format(new Date(year as any, 11, 31), 'yyyy-MM-dd') as any,
+        ),
+      },
+    });
+
+    if (!calendar) throw new NotFoundException('No hay fechas para este año');
+
+    return calendar;
+  }
+
   async findByDate(date: string) {
     const calendar = await this.calendarRepository.findOne({
       relations: {

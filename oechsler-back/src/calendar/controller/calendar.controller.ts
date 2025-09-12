@@ -20,7 +20,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 @ApiTags('Calendario')
 @Controller('calendar')
 export class CalendarController {
-  constructor(private readonly calendarService: CalendarService) {}
+  constructor(private readonly calendarService: CalendarService) { }
 
   @ApiOperation({ summary: 'Crea fecha para el calendario' })
   @Post()
@@ -37,10 +37,10 @@ export class CalendarController {
     return this.calendarService.findAll();
   }
 
-  @ApiOperation({ summary: 'Buscar fecha por fecha' })
-  @Get('/date/:date')
-  findByDate(@Param('date') date: string) {
-    return this.calendarService.findByDate(date);
+  @ApiOperation({ summary: 'Buscar dias por Año' })
+  @Get(':year')
+  findByYear(@Param('year', ParseIntPipe) year: number) {
+    return this.calendarService.findByYear(year);
   }
 
   @ApiOperation({ summary: 'Buscar fecha por rango de fechas' })
@@ -48,4 +48,14 @@ export class CalendarController {
   findRangeDate(@Query() dataDate: any) {
     return this.calendarService.findRangeDate(dataDate);
   }
+
+
+
+  @ApiOperation({ summary: 'Buscar fecha por fecha' })
+  @Get('/date/:date')
+  findByDate(@Param('date') date: string) {
+    return this.calendarService.findByDate(date);
+  }
+
+
 }

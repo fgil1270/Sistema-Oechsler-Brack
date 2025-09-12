@@ -13,7 +13,7 @@ import { Shift } from '../entities/shift.entity';
 export class ShiftService {
   constructor(
     @InjectRepository(Shift) private shiftRepository: Repository<Shift>,
-  ) {}
+  ) { }
 
   async create(createShiftDto: CreateShiftDto) {
     const shiftExist = await this.shiftRepository.findOne({
@@ -31,16 +31,8 @@ export class ShiftService {
   }
 
   async findAll() {
-    const total = await this.shiftRepository.count({
-      where: {
-        special: false,
-      },
-    });
-    const shifts = await this.shiftRepository.find({
-      where: {
-        special: false,
-      },
-    });
+    const total = await this.shiftRepository.count();
+    const shifts = await this.shiftRepository.find();
 
     if (!shifts) {
       throw new NotFoundException(`Shift not found`);

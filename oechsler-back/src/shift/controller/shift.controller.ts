@@ -21,7 +21,7 @@ import { RoleGuard } from '../../auth/guards/role.guard';
 @ApiTags('Turnos')
 @Controller('shift')
 export class ShiftController {
-  constructor(private readonly shiftService: ShiftService) {}
+  constructor(private readonly shiftService: ShiftService) { }
 
   @ApiOperation({ summary: 'Crear turno' })
   @Post()
@@ -62,4 +62,7 @@ export class ShiftController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.shiftService.remove(id);
   }
+
+
+
 }
