@@ -846,12 +846,29 @@ export class ChecadorService {
           totalHrsTrabajadas += diffDate >= 0 ? Number(horasRealesTurno) : 0;
           totalMinTrabajados += diffDate >= 0 ? Number(minutosRealesTurno) : 0;
 
+          //si el dia es domingo
+          //y tiene registros del checador 
+          //y la incidencia es DFT o tiene turno 4
+          //se agrega 1DOM a las incidencias
+          if (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) == 0) {
+            if (registrosChecador.length > 0) {
+
+              if (incidenciasNormales.find(i => i.codeBand == 'DFT') || employeeShif.events[0].nameShift == 'T4') {
+                incidenceExtra.push(`1DOM`);
+              }
+
+            }
+          }
+
+
         }
 
         let sinTurno = '';
-        //si el empleado no tiene turno se pone S/N
+
+        //se valida si el empleado tiene turno
         if (employeeShif.events.length > 0) {
           sinTurno = employeeShif.events[0].nameShift;
+
         } else {
           //si es de lunes a viernes
           if (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 0 && Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 6) {
@@ -860,6 +877,7 @@ export class ChecadorService {
               if (employeeShifAnterior?.events[0]?.nameShift == 'T12-1' || employeeShifAnterior?.events[0]?.nameShift == 'T12-2') {
                 sinTurno = '';
               } else {
+                //si el empleado no tiene turno se pone S/N
                 sinTurno = 'S/N'
               }
             } else {
