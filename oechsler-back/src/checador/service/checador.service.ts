@@ -305,14 +305,16 @@ export class ChecadorService {
           //se obtiene la hora de inicio y fin del turno
           const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
           let hourShift = endTimeShift.diff(startTimeShift, 'hours');
-          const minShift = Number(endTimeShift.diff(startTimeShift, 'minutes')) % 60;
+          let minShift = Number(endTimeShift.diff(startTimeShift, 'minutes')) % 60;
 
 
           //se valida de el turno es Turno Incidencia
+          //o Turno Incidencia 1, 2, 3
           //se pone el total de horas del turno a 0
           //se calcula las horas trabajadas y hrs extra
-          if (employeeShif.events[0]?.nameShift == 'TI') {
+          if (employeeShif.events[0]?.nameShift == 'TI' || employeeShif.events[0]?.nameShift == 'TI1' || employeeShif.events[0]?.nameShift == 'TI2' || employeeShif.events[0]?.nameShift == 'TI3') {
             hourShift = 0;
+            minShift = 0;
           }
           totalHrsRequeridas += hourShift;
           totalMinRequeridos += Number(minShift) % 60;

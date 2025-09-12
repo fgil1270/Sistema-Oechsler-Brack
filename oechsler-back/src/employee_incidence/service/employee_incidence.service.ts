@@ -1919,7 +1919,8 @@ export class EmployeeIncidenceService {
         const iniciaTurno = new Date(`${diaConsulta} ${dates[j].shift.startTimeshift}`);
         const termianTurno = new Date(`${diaConsulta} ${dates[j].shift.endTimeshift}`);
 
-        if (dates[j].shift.nameShift == 'T3' || dates[j].shift.nameShift == 'T12-2') {
+        //si el turno es de la tarde o noche se le suma un dia a la fecha de salida
+        if (dates[j].shift.nameShift == 'T3' || dates[j].shift.nameShift == 'T12-2' || dates[j].shift.nameShift == 'TI3') {
           termianTurno.setDate(termianTurno.getDate() + 1)
         }
         const startTimeShift = moment(iniciaTurno, 'HH:mm');
@@ -1932,8 +1933,10 @@ export class EmployeeIncidenceService {
 
         //si existe turno se suman las horas requeridas
         if (dates[j].shift) {
-          //si el turno es diferente a TI se suman las horas
-          if (dates[j].shift?.nameShift != 'TI') {
+          //si el turno es diferente a TI
+          //y diferente a TI1, TI2, TI3
+          //se suman las horas
+          if (dates[j].shift?.nameShift != 'TI' && dates[j].shift?.nameShift != 'TI1' && dates[j].shift?.nameShift != 'TI2' && dates[j].shift?.nameShift != 'TI3') {
             totalHrsRequeridas += hourShift;
             totalMinRequeridos += Number(minShift) % 60;
           }
