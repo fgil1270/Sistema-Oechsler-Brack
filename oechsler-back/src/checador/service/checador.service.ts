@@ -323,46 +323,7 @@ export class ChecadorService {
           const faltaInjustificada = await this.incidenceCatalogueService.findByCodeBand('FINJ');
 
 
-          //se recorre el arreglo de incidencias
-          for (let index = 0; index < incidenciasNormales.length; index++) {
-            if (incidenciasNormales[index].status == 'Pendiente') continue;
-            const findIncidence = await this.employeeIncidenceService.findOne(incidenciasNormales[index].incidenceId);
-            if (incidenciasNormales[index].codeBand == 'VAC' || incidenciasNormales[index].codeBand == 'VACA' || incidenciasNormales[index].codeBand == 'VacM') {
-              incidenciaVac = true;
-              totalHrsTrabajadas += hourShift;
-              totalMinTrabajados += Number(minShift) % 60;
 
-            }
-            if (incidenciasNormales[index].codeBand != 'HE' && incidenciasNormales[index].codeBand != 'HET' && incidenciasNormales[index].codeBand != 'TxT') {
-              if (incidenciasNormales[index].codeBand == 'INC') {
-                isIncidenceIncapacidad = true;
-              } else {
-                isIncidenceIncapacidad = false;
-              }
-
-              //si es permiso con descuento de horas
-              if (incidenciasNormales[index].codeBand == 'HDS') {
-                incidenceExtra.push(`${moment.utc(incidenciasNormales[index].total_hour * 60 * 60 * 1000).format('H.mm')}` + incidenciasNormales[index].codeBand);
-              } else {
-                incidenceExtra.push(`1` + incidenciasNormales[index].codeBand);
-              }
-            }
-
-            //validar que exista tiempo extra
-            if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET') {
-              incidenciaTiemExtra = true;
-              hrsExtraIncidencias += parseFloat(String(incidenciasNormales[index].total_hour));
-
-            }
-
-
-            if (incidenciasNormales[index].codeBand == 'PCS' || incidenciasNormales[index].codeBand == 'PSSE') {
-              totalHrsTrabajadas += Number(moment((parseFloat(incidenciasNormales[index].total_hour) / Number(findIncidence.dateEmployeeIncidence.length))).hours());
-              totalMinTrabajados += Number(moment((parseFloat(incidenciasNormales[index].total_hour) / Number(findIncidence.dateEmployeeIncidence.length))).minutes())
-            }
-
-
-          }
 
           //se obtienen las checadas del dia
           let diahoy = new Date(index);
@@ -592,6 +553,94 @@ export class ChecadorService {
 
 
 
+
+
+          //se obtienen los registros del dia
+          const registrosChecador = await this.checadorRepository.find({
+            where: {
+              employee: {
+                id: iterator.id,
+                employeeShift: {
+                  start_date: format(index, 'yyyy-MM-dd') as any,
+                },
+              },
+              date: Between(
+                format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`) as any,
+                format(diaSiguente, `yyyy-MM-dd ${hrSalida}`) as any,
+              ),
+            },
+            relations: {
+              employee: {
+                employeeShift: {
+                  shift: true,
+                },
+                employeeProfile: true,
+              },
+            },
+            order: {
+              date: 'ASC',
+            },
+          });
+
+          //si existen checadas
+          if (registrosChecador.length > 0) {
+            isIncidenceIncapacidad = false;
+          }
+
+          //se recorre el arreglo de incidencias
+          for (let index = 0; index < incidenciasNormales.length; index++) {
+            if (incidenciasNormales[index].status == 'Pendiente') continue;
+            const findIncidence = await this.employeeIncidenceService.findOne(incidenciasNormales[index].incidenceId);
+            if (incidenciasNormales[index].codeBand == 'VAC' || incidenciasNormales[index].codeBand == 'VACA' || incidenciasNormales[index].codeBand == 'VacM') {
+              incidenciaVac = true;
+              totalHrsTrabajadas += hourShift;
+              totalMinTrabajados += Number(minShift) % 60;
+
+            }
+            if (incidenciasNormales[index].codeBand != 'HE' && incidenciasNormales[index].codeBand != 'HET' && incidenciasNormales[index].codeBand != 'TxT') {
+              if (incidenciasNormales[index].codeBand == 'INC') {
+                isIncidenceIncapacidad = true;
+              } else {
+                isIncidenceIncapacidad = false;
+              }
+
+              //si es permiso con descuento de horas
+              if (incidenciasNormales[index].codeBand == 'HDS') {
+                incidenceExtra.push(`${moment.utc(incidenciasNormales[index].total_hour * 60 * 60 * 1000).format('H.mm')}` + incidenciasNormales[index].codeBand);
+              } else {
+
+                //si la incidencia es DFT y existen registros del checador
+                //agrega la incidencia al reporte
+                if (incidenciasNormales[index].codeBand == 'DFT') {
+                  if (registrosChecador.length > 0) {
+                    //si existen registros del checador
+                    //agrega la incidencia al reporte
+                    incidenceExtra.push(`1` + incidenciasNormales[index].codeBand);
+                  }
+                } else {
+                  incidenceExtra.push(`1` + incidenciasNormales[index].codeBand);
+                }
+
+
+              }
+            }
+
+            //validar que exista tiempo extra
+            if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET') {
+              incidenciaTiemExtra = true;
+              hrsExtraIncidencias += parseFloat(String(incidenciasNormales[index].total_hour));
+
+            }
+
+
+            if (incidenciasNormales[index].codeBand == 'PCS' || incidenciasNormales[index].codeBand == 'PSSE') {
+              totalHrsTrabajadas += Number(moment((parseFloat(incidenciasNormales[index].total_hour) / Number(findIncidence.dateEmployeeIncidence.length))).hours());
+              totalMinTrabajados += Number(moment((parseFloat(incidenciasNormales[index].total_hour) / Number(findIncidence.dateEmployeeIncidence.length))).minutes())
+            }
+
+
+          }
+
           //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
           for (let index = 0; index < incidenciasNormales.length; index++) {
             if (incidenciasNormales[index].status == 'Pendiente') continue;
@@ -664,38 +713,6 @@ export class ChecadorService {
             }
 
 
-          }
-
-          //se obtienen los registros del dia
-          const registrosChecador = await this.checadorRepository.find({
-            where: {
-              employee: {
-                id: iterator.id,
-                employeeShift: {
-                  start_date: format(index, 'yyyy-MM-dd') as any,
-                },
-              },
-              date: Between(
-                format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`) as any,
-                format(diaSiguente, `yyyy-MM-dd ${hrSalida}`) as any,
-              ),
-            },
-            relations: {
-              employee: {
-                employeeShift: {
-                  shift: true,
-                },
-                employeeProfile: true,
-              },
-            },
-            order: {
-              date: 'ASC',
-            },
-          });
-
-          //si existen checadas
-          if (registrosChecador.length > 0) {
-            isIncidenceIncapacidad = false;
           }
 
 
