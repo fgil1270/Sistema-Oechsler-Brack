@@ -131,6 +131,7 @@ export class ChecadorService {
 
   //buscar registros de entrada y salida y rango de fechas
   async findbyDateOrganigrama(data: FindChecadaDto, user: any) {
+
     //se obtienen los empleados por organigrama
     const organigrama = await this.organigramaService.findJerarquia(
       {

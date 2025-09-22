@@ -64,6 +64,7 @@ export class RequestCourseService {
     @Inject(forwardRef(() => EmployeeObjetiveService)) private definitionObjectiveAnnualService: EmployeeObjetiveService,
   ) { }
 
+  // Crear solicitud de curso
   async create(data: RequestCourseDto, user: any) {
     try {
 
@@ -212,6 +213,7 @@ export class RequestCourseService {
     }
   }
 
+  // Buscar solicitud de curso por ID
   findRequestCourseById(id: number) {
     return this.requestCourse.findOne({
       relations: {
@@ -248,6 +250,7 @@ export class RequestCourseService {
     });
   }
 
+  // Buscar todas las solicitudes de curso
   async findAll(query: FindRequestCourseDto, user: any) {
 
     const employee = await this.organigramaService.findJerarquia(
@@ -528,6 +531,7 @@ export class RequestCourseService {
     }
   }
 
+  //actualizar solicitud de curso, por id
   async update(id, data: UpdateRequestCourseDto, user) {
     try {
       const userEmployee = await this.employeeService.findOne(user.idEmployee);
@@ -744,6 +748,184 @@ export class RequestCourseService {
       }
 
       const save = await this.requestCourse.save(requestCourse);
+
+      return {
+        error: false,
+        msg: 'Solicitud de curso actualizada correctamente',
+        data: data,
+      };
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
+
+  //actualizar multiples solicitudes de curso
+  async updateMultiple(idRequestCourse: number[], data: UpdateRequestCourseDto, user: any) {
+    try {
+      const userEmployee = await this.employeeService.findOne(user.idEmployee);
+      const organigrama = await this.organigramaService.findJerarquia(
+        {
+          type: 'Normal',
+          startDate: '',
+          endDate: '',
+        },
+        user,
+      );
+
+      //se actualizan todas las solicitudes de curso que se envian en el array de idRequestCourse
+      const requestCourse = await this.requestCourse.find({
+        relations: {
+          employee: true,
+          department: true,
+          competence: true,
+          course: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+          requestCourseAssignment: {
+            teacher: true,
+          },
+        },
+        where: {
+          id: In(idRequestCourse),
+        },
+      });
+
+      //se obtiene el costo dividido entre el total de participantes
+      const cost = Number(data.cost) / (Number(requestCourse.length) + Number(data.newEmployeeIds ? data.newEmployeeIds.length : 0));
+
+      //se recorre cada solicitud de curso
+      for (const request of requestCourse) {
+        //se obtiene el lider del empleado
+        const leader = await this.organigramaService.leaders(request.employee.id);
+
+        //se obtiene el departamento de la solicitud de curso
+        let department = await this.departmentService.findOne(request.department.id);
+        //se obtiene el presupuesto de entrenamiento del departamento
+        let trainingBudget = department.dept.training_budgetId?.find(b => b.year == new Date().getFullYear())?.amount;
+        //se obtienen todas las solicitudes de curso que pertenecen al mismo departamento
+        let courseByDepartment = await this.requestCourse.find({
+          relations: {
+            employee: true,
+            course: true,
+            department: {
+              training_budgetId: true,
+            },
+            competence: true,
+            leader: true,
+            rh: true,
+            gm: true,
+            requestBy: true,
+          },
+          where: {
+            department: {
+              id: department.dept.id,
+            },
+            status: Not(In(['Solicitado', 'Cancelado', 'Pendiente'])),
+          },
+        });
+
+        //se agrega el costo a la solicitud de curso
+        request.cost = cost;
+
+        //suma del costo por cada solicitud de curso por departamento
+        const totalTrainingBudget = courseByDepartment.reduce((total, requestCourse) => {
+          total += Number(requestCourse.cost);
+          return total;
+        }, 0);
+
+        const { status, ...dataWithoutStatus } = data;
+        Object.assign(request, dataWithoutStatus);
+
+        if (data.courseId) {
+          const course = await this.courseService.findOne(data.courseId);
+          request.course = course;
+          request.competence = course.competence;
+        }
+
+        //si el status pasa a solicitado y el origen de la solicitud de curso es Objetivo
+        //se aprueba automaticamente por el lider
+        if (data.status == 'Solicitado' && request.origin == 'Objetivo') {
+          //se busca el lider del empleado
+          if (leader.orgs.length <= 0) {
+            //busca empleados que su usuario tenga rol Jefe de turno
+            const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+              .innerJoinAndSelect('employee.userId', 'user')
+              .innerJoinAndSelect('user.roles', 'role')
+              .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+              .orderBy('employee.employee_number', 'ASC')
+              .getMany();
+            if (jefeTurno.length > 0) {
+              request.leader = jefeTurno[0].employee;
+            }
+
+          } else {
+            request.leader = leader.orgs.length > 0 ? leader.orgs[0].leader : null;
+          }
+          request.status = 'Solicitado';
+          request.approved_at_leader = new Date();
+
+        } else if (data.status == 'Solicitado' && request.origin == 'Solicitud') {
+          //se asigna el status de la solicitud
+          request.status = 'Solicitado';
+
+        }
+
+        // Convertir a horario de México
+        // las fechas tentativas del curso
+        const dateStart = new Date(data.tentativeDateStart);
+        const dateEnd = new Date(data.tentativeDateEnd);
+        dateStart.setUTCHours(dateStart.getUTCHours() - 6);
+        dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+        request.tentative_date_start = dateStart;
+        request.tentative_date_end = dateEnd;
+
+        //actualiza la solicitud de curso
+        const save = await this.requestCourse.save(request);
+
+      }
+
+      //si existe nuevo empleado se le crea una solicitud de curso
+      if (data.newEmployeeIds && data.newEmployeeIds.length > 0) {
+        for (const empId of data.newEmployeeIds) {
+          const employee = await this.employeeService.findOne(empId);
+          const createRequest = this.requestCourse.create({
+            course_name: data.courseName,
+            training_reason: data.traininReason,
+            training_objective: data.trainingObjective,
+            efficiency_period: data.efficiencyPeriod,
+            priority: data.priority,
+            tentative_date_start: data.tentativeDateStart as any,
+            tentative_date_end: data.tentativeDateEnd as any,
+            approved_at_leader: null,
+            canceled_at_leader: null,
+            approved_at_rh: null,
+            canceled_at_rh: null,
+            approved_at_gm: null,
+            canceled_at_gm: null,
+            employee: employee.emp,
+            department: employee.emp.department,
+            competence: requestCourse[0].competence,
+            course: requestCourse[0].course ? requestCourse[0].course : null,
+            cost: cost,
+            origin: 'Solicitud',
+            requestBy: userEmployee.emp,
+            status: data.status,
+            type: null,
+            place: null,
+            evaluation_tool: data.evaluation_tool,
+            comment: data.comment,
+            definitionObjectiveAnnual: null
+          });
+
+          //se crea solicitud de curso
+          const save = await this.requestCourse.save(createRequest);
+        }
+      }
 
       return {
         error: false,
@@ -1020,8 +1202,6 @@ export class RequestCourseService {
                     });
                   }
 
-
-
                 }
               }
             } else {
@@ -1111,7 +1291,6 @@ export class RequestCourseService {
               }
 
             }
-
 
           }
 

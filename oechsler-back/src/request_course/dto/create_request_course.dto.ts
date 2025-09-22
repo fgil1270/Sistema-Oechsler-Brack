@@ -164,9 +164,19 @@ export class FindRequestCourseDto {
 
 export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {
   @IsOptional()
+  @IsArray()
+  @ApiProperty({ description: 'Array de solicitudes de curso' })
+  requestCourseIds: number[];
+
+  @IsOptional()
   @IsBoolean()
   @ApiProperty({ description: 'Evitar Aprobación' })
   avoidApprove: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({ description: 'Array de nuevos empleados, para crear solicitud de curso', type: [Number] })
+  newEmployeeIds: number[];
 }
 
 export class RequestCourseAssignmentDto {

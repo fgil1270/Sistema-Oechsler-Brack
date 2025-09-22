@@ -83,7 +83,9 @@ export class CalendarService {
     return calendar;
   }
 
+  //calendario por rango de dias
   async findRangeDate(dataDate: any) {
+
     const startDate = new Date(dataDate.start);
     const endDate = new Date(dataDate.end);
     const calendar = await this.calendarRepository.find({

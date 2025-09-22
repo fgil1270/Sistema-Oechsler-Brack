@@ -87,6 +87,15 @@ export class RequestCourseController {
     return this.requestCourseService.assessmentCourse(id, currData, user);
   }
 
+  @ApiOperation({ summary: 'Actualizar multiples solicitudes de curso' })
+  @Put()
+  async updateMultiple(
+    @Body() data: UpdateRequestCourseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestCourseService.updateMultiple(data.requestCourseIds, data, user);
+  }
+
   @ApiOperation({ summary: 'Actualizar solicitud de curso' })
   @Put(':id')
   async update(
@@ -96,6 +105,8 @@ export class RequestCourseController {
   ) {
     return this.requestCourseService.update(id, data, user);
   }
+
+
 }
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)

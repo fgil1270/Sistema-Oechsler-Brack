@@ -87,22 +87,10 @@ export class EmployeeShiftService {
 
             const dayLetter = weekDays[index.getDay()];
             //se valida que el dia seleccionado exista en el perfil del empleado
-            /* let dayLetterProfile = await this.employeeProfilesService.findWeekDay(
-                dayLetter,
-                employee.emp.employeeProfile.id,
-            ); */
+
             let dayLetterShift = false;
             const dayShift: any[] = shift.shift.day;
             dayLetterShift = dayShift.includes(dayLetter); //dia del turno
-
-
-            /* if (shift.shift.code == 'TI') {
-              dayLetterProfile = true;
-            }
-            //si el turno es tercero y el dia es sabado
-            if(shift.shift.code == 'T3' && dayLetter == 'S'){
-              dayLetterProfile = false;
-            } */
 
             //SI EL DIA SELECCIONADO EXISTE EN el dia que corresponden al turno
             if (dayLetterShift) {
@@ -132,16 +120,17 @@ export class EmployeeShiftService {
                 });
 
                 await this.employeeShiftRepository.save(employeeShift);
-              } else {
 
-                //si existe turno actualiza el turno
+              } else {//si existe turno actualiza el turno
+
+
                 employeeShiftExist.shift = shift.shift;
 
                 await this.employeeShiftRepository.save(employeeShiftExist);
               }
 
-              //si el turno es de incidencia lo crea aunque no exista en el perfil del empleado
-            } else if (shift.shift.code == 'TI') {
+
+            } else if (shift.shift.code == 'TI') {//si el turno es de incidencia lo crea aunque no exista en el perfil del empleado
 
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                 relations: {
@@ -169,15 +158,15 @@ export class EmployeeShiftService {
 
                 await this.employeeShiftRepository.save(employeeShift);
 
-                //si existe turno actualiza el turno
-              } else {
+
+              } else { //si existe turno actualiza el turno
                 employeeShiftExist.shift = shift.shift;
 
                 await this.employeeShiftRepository.save(employeeShiftExist);
               }
 
-              //si no existe el dia en el perfil del empleado y el turno no es de incidencia
-            } else {
+
+            } else { //si no existe el dia en el perfil del empleado y el turno no es de incidencia
               //se busca si existe un turno para el empleado en la fecha seleccionada
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                 relations: {
@@ -217,8 +206,9 @@ export class EmployeeShiftService {
 
 
             }
-          } else if (createEmployeeShiftDto.patternId != 0) {
-            //SI SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
+          } else if (createEmployeeShiftDto.patternId != 0) {//SI SE SELECCIONO UN PATRON DE TURNOS
+
+            //busca informacion del patron de turno
             const pattern = await this.patternService.findOne(
               createEmployeeShiftDto.patternId,
             );
@@ -257,17 +247,13 @@ export class EmployeeShiftService {
                 diaLetra = 'S';
                 break;
             }
+
             let existeDia = dias.includes(diaLetra);
 
             if (shift.shift.code == 'TI') {
               existeDia = true;
             }
 
-            /* let existeDia = dias.find((element, i) => {
-              if(element == diaLetra){
-                return true;
-              }
-            }); */
 
             // SI EXISTE EL DIA SELECCIONADO EN LOS DIAS DEL TURNO
 
@@ -331,7 +317,7 @@ export class EmployeeShiftService {
                     .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
                     .getMany();
 
-                  if (findIncidence.length <= 0) {
+                  if (findIncidence.length <= 0) { //si no hay incidencias se elimina el turno
                     //elimina el turno
                     await this.employeeShiftRepository.remove(employeeShiftExist);
                   }
@@ -348,6 +334,7 @@ export class EmployeeShiftService {
               contSemana++;
               //SI EL CONTADOR DE SEMANA ES MENOR AL TOTAL DE SERIES DEL PATRON DE TURNOS
               if (contSemana < totalSerie) {
+                //se obtiene el turno
                 shift = await this.shiftService.findOne(
                   parseInt(serie_shifts[contSemana]),
                 );
@@ -359,6 +346,7 @@ export class EmployeeShiftService {
                   parseInt(serie_shifts[contSemana]),
                 );
               }
+
               if (existeDia) {
                 const employeeShiftExist =
                   await this.employeeShiftRepository.findOne({
@@ -415,6 +403,7 @@ export class EmployeeShiftService {
                     .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
                     .getMany();
 
+                  //si no hay incidencias se elimina el turno
                   if (findIncidence.length <= 0) {
                     await this.employeeShiftRepository.remove(employeeShiftExist);
                   }

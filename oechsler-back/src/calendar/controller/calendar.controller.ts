@@ -37,19 +37,17 @@ export class CalendarController {
     return this.calendarService.findAll();
   }
 
-  @ApiOperation({ summary: 'Buscar dias por Año' })
-  @Get(':year')
-  findByYear(@Param('year', ParseIntPipe) year: number) {
-    return this.calendarService.findByYear(year);
-  }
-
   @ApiOperation({ summary: 'Buscar fecha por rango de fechas' })
   @Get('/range-date')
   findRangeDate(@Query() dataDate: any) {
     return this.calendarService.findRangeDate(dataDate);
   }
 
-
+  @ApiOperation({ summary: 'Buscar dias por Año' })
+  @Get(':year')
+  findByYear(@Param('year', ParseIntPipe) year: number) {
+    return this.calendarService.findByYear(year);
+  }
 
   @ApiOperation({ summary: 'Buscar fecha por fecha' })
   @Get('/date/:date')
