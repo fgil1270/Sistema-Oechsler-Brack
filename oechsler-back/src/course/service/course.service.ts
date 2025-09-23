@@ -193,9 +193,13 @@ export class CourseService {
 
     course.name = updateCourseDto.name;
     course.description = updateCourseDto.description;
+    course.syllabus = updateCourseDto.syllabus;
     course.status = updateCourseDto.status;
     course.competence = competence;
     course.traininGoal = traininGoal;
+    course.req_efficiency = updateCourseDto.req_efficiency;
+    course.req_constancy = updateCourseDto.req_constancy;
+    course.req_quiz = updateCourseDto.req_quiz;
 
     return await this.courseRepository.save(course);
   }

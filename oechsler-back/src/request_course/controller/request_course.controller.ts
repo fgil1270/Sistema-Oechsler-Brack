@@ -23,7 +23,8 @@ import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseService } from '../service/request_course.service';
 import {
   RequestCourseDto, RequestCourseAssignmentDto, UpdateRequestCourseDto,
-  UpdateAssignmentCourseDto, UploadFilesDto, RequestCourseAssessmentDto
+  UpdateAssignmentCourseDto, UploadFilesDto, RequestCourseAssessmentDto,
+  FindRequestCourseDto
 } from '../dto/create_request_course.dto';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -34,10 +35,11 @@ import { Views } from '../../auth/decorators/views.decorator';
 @Controller('request_course')
 export class RequestCourseController {
   constructor(private requestCourseService: RequestCourseService) { }
+
   @ApiOperation({ summary: 'Obtener solicitudes de curso' })
   @Get()
   async findAll(
-    @Query() query: Partial<RequestCourse>,
+    @Query() query: FindRequestCourseDto,
     @CurrentUser() user: any,
   ) {
     return this.requestCourseService.findAll(query, user);
@@ -85,6 +87,15 @@ export class RequestCourseController {
     return this.requestCourseService.assessmentCourse(id, currData, user);
   }
 
+  @ApiOperation({ summary: 'Actualizar multiples solicitudes de curso' })
+  @Put()
+  async updateMultiple(
+    @Body() data: UpdateRequestCourseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestCourseService.updateMultiple(data.requestCourseIds, data, user);
+  }
+
   @ApiOperation({ summary: 'Actualizar solicitud de curso' })
   @Put(':id')
   async update(
@@ -94,6 +105,8 @@ export class RequestCourseController {
   ) {
     return this.requestCourseService.update(id, data, user);
   }
+
+
 }
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)

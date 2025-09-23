@@ -95,6 +95,11 @@ export class JobsService {
       throw new NotFoundException(`Job #${id} not found`);
     }
 
+    // Verificar si tiene archivos
+    if (!job.jobDocument || job.jobDocument.length === 0) {
+      throw new NotFoundException(`No files found for Job #${job.cv_name}`);
+    }
+
     return {
       path: join(
         __dirname,

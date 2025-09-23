@@ -76,7 +76,8 @@ export class JobsController {
       );
       res.download(filePath.path, filePath.fileName);
     } catch (error) {
-      console.error(error);
+      res.status(500).send('Error al descargar el archivo, ' + error);
+
     }
   }
 

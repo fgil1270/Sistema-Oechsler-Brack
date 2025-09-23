@@ -1919,7 +1919,8 @@ export class EmployeeIncidenceService {
         const iniciaTurno = new Date(`${diaConsulta} ${dates[j].shift.startTimeshift}`);
         const termianTurno = new Date(`${diaConsulta} ${dates[j].shift.endTimeshift}`);
 
-        if (dates[j].shift.nameShift == 'T3' || dates[j].shift.nameShift == 'T12-2') {
+        //si el turno es de la tarde o noche se le suma un dia a la fecha de salida
+        if (dates[j].shift.nameShift == 'T3' || dates[j].shift.nameShift == 'T12-2' || dates[j].shift.nameShift == 'TI3') {
           termianTurno.setDate(termianTurno.getDate() + 1)
         }
         const startTimeShift = moment(iniciaTurno, 'HH:mm');
@@ -1932,8 +1933,10 @@ export class EmployeeIncidenceService {
 
         //si existe turno se suman las horas requeridas
         if (dates[j].shift) {
-          //si el turno es diferente a TI se suman las horas
-          if (dates[j].shift?.nameShift != 'TI') {
+          //si el turno es diferente a TI
+          //y diferente a TI1, TI2, TI3
+          //se suman las horas
+          if (dates[j].shift?.nameShift != 'TI' && dates[j].shift?.nameShift != 'TI1' && dates[j].shift?.nameShift != 'TI2' && dates[j].shift?.nameShift != 'TI3') {
             totalHrsRequeridas += hourShift;
             totalMinRequeridos += Number(minShift) % 60;
           }
@@ -2026,6 +2029,24 @@ export class EmployeeIncidenceService {
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
+              case 'TI1':
+                hrEntrada = '03:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(diahoy);
+                break;
+              case 'TI2':
+                hrEntrada = '06:20:00'; //dia Actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
+                break;
+              case 'TI3':
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '15:00:00'; //dia siguiente
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
+                break;
             }
           } else {
             //si existe turno siguiente
@@ -2079,6 +2100,24 @@ export class EmployeeIncidenceService {
                   diaAnterior = new Date(diahoy);
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                   break;
+                case 'TI1':
+                  hrEntrada = '21:00:00'; //dia anterior
+                  hrSalida = '15:00:00'; //dia actual
+                  diaAnterior = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() - 1));
+                  diaSiguente = new Date(diahoy);
+                  break;
+                case 'TI2':
+                  hrEntrada = '05:00:00'; //dia Actual
+                  hrSalida = '22:00:00'; //dia siguiente
+                  diaAnterior = new Date(diahoy);
+                  diaSiguente = new Date(diahoy);
+                  break;
+                case 'TI3':
+                  hrEntrada = '13:00:00'; //dia actual
+                  hrSalida = '07:00:00'; //dia siguiente
+                  diaAnterior = new Date(diahoy);
+                  diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
+                  break;
               }
             } else {
               switch (turnoActual) {
@@ -2127,6 +2166,24 @@ export class EmployeeIncidenceService {
                 case 'T12-2':
                   hrEntrada = '12:00:00'; //dia anterior
                   hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(diahoy);
+                  diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
+                  break;
+                case 'TI1':
+                  hrEntrada = '21:00:00'; //dia anterior
+                  hrSalida = '15:00:00'; //dia actual
+                  diaAnterior = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() - 1));
+                  diaSiguente = new Date(diahoy);
+                  break;
+                case 'TI2':
+                  hrEntrada = '05:00:00'; //dia Actual
+                  hrSalida = '22:00:00'; //dia siguiente
+                  diaAnterior = new Date(diahoy);
+                  diaSiguente = new Date(diahoy);
+                  break;
+                case 'TI3':
+                  hrEntrada = '13:00:00'; //dia actual
+                  hrSalida = '07:00:00'; //dia siguiente
                   diaAnterior = new Date(diahoy);
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                   break;
@@ -2186,6 +2243,24 @@ export class EmployeeIncidenceService {
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
+              case 'TI1':
+                hrEntrada = '03:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(diahoy);
+                break;
+              case 'TI2':
+                hrEntrada = '03:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(diahoy);
+                break;
+              case 'TI3':
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '15:00:00'; //dia siguiente
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
+                break;
             }
           } else {
             switch (turnoActual) {
@@ -2237,6 +2312,24 @@ export class EmployeeIncidenceService {
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 break;
+              case 'TI1':
+                hrEntrada = '05:00:00'; //dia anterior
+                hrSalida = '16:00:00'; //dia actual
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(diahoy);
+                break;
+              case 'TI2':
+                hrEntrada = '13:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(diahoy);
+                break;
+              case 'TI3':
+                hrEntrada = '21:00:00'; //dia actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(diahoy);
+                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
+                break;
             }
           }
 
@@ -2283,11 +2376,16 @@ export class EmployeeIncidenceService {
           let modMin = 0;
           let divMin = 0;
 
+
+
           //si la incidencia no es Incapacidad se suman las horas y minutos
           if (incidence.ei_code_band != 'INC') {
-
-            totalMinutisTrabados += Number(mins);
-            totalMinDay += Number(mins);
+            //si el turno actual es diferente a TI, TI1, TI2, TI3
+            if (turnoActual != 'TI1' && turnoActual != 'TI2' && turnoActual != 'TI3') {
+              //si la incidencia es diferente a tiempo compensatorio
+              totalMinutisTrabados += Number(mins);
+              totalMinDay += Number(mins);
+            }
 
             if (totalMinutisTrabados >= 60) {
               modMin = totalMinutisTrabados % 60;
@@ -2314,8 +2412,8 @@ export class EmployeeIncidenceService {
 
             }
           } else {
-            //si el turno actual es diferente a TI se suman las horas de la incidencia
-            if (turnoActual != 'TI') {
+            //si el turno actual es diferente a TI, TI1, TI2, TI3 se suman las horas de la incidencia
+            if (turnoActual != 'TI' && turnoActual != 'TI1' && turnoActual != 'TI2' && turnoActual != 'TI3') {
               totalHorasIncidencia += Number(hrs);
             }
 
@@ -3727,4 +3825,7 @@ export class EmployeeIncidenceService {
     }
 
   }
+
+
+
 }

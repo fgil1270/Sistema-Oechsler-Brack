@@ -309,8 +309,8 @@ export class TimeCorrectionService {
                 diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '00:01:00'; //dia actual
+                hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
                 break;
@@ -360,8 +360,8 @@ export class TimeCorrectionService {
                 diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '00:01:00'; //dia actual
+                hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
                 break;
@@ -412,8 +412,8 @@ export class TimeCorrectionService {
               diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
               break;
             case 'MIX':
-              hrEntrada = '03:00:00'; //dia actual
-              hrSalida = '22:00:00'; //dia siguiente
+              hrEntrada = '00:01:00'; //dia actual
+              hrSalida = '23:59:00'; //dia siguiente
               diaAnterior = new Date(index);
               diaSiguente = new Date(index);
               break;
@@ -440,6 +440,18 @@ export class TimeCorrectionService {
               hrSalida = '08:00:00'; //dia actual
               diaAnterior = new Date(index);
               diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+              break;
+            case 'TI1':
+              hrEntrada = '03:00:00'; //dia anterior
+              hrSalida = '16:00:00'; //dia actual
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
+              break;
+            case 'TI2':
+              hrEntrada = '11:00:00'; //dia Actual
+              hrSalida = '23:00:00'; //dia siguiente
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
               break;
           }
         }
@@ -734,8 +746,8 @@ export class TimeCorrectionService {
                 diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '00:01:00'; //dia actual
+                hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
                 break;
@@ -762,6 +774,24 @@ export class TimeCorrectionService {
                 hrSalida = '08:00:00'; //dia actual
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1': //Turno incidencia 1
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2': //Turno incidencia 2
+                hrEntrada = '05:00:00'; //dia Actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+                break;
+              case 'TI3': //Turno incidencia 3
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '15:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
             }
           } else {
@@ -785,8 +815,8 @@ export class TimeCorrectionService {
                 diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '00:01:00'; //dia actual
+                hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
                 break;
@@ -813,6 +843,24 @@ export class TimeCorrectionService {
                 hrSalida = '08:00:00'; //dia actual
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1': //Turno incidencia 1
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '15:00:00'; //dia actual
+                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2': //Turno incidencia 2
+                hrEntrada = '05:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI3': //Turno incidencia 3
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
             }
           }
@@ -837,8 +885,8 @@ export class TimeCorrectionService {
               diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
               break;
             case 'MIX':
-              hrEntrada = '03:00:00'; //dia actual
-              hrSalida = '22:00:00'; //dia siguiente
+              hrEntrada = '00:01:00'; //dia actual
+              hrSalida = '23:59:00'; //dia siguiente
               diaAnterior = new Date(index);
               diaSiguente = new Date(index);
               break;
@@ -865,6 +913,24 @@ export class TimeCorrectionService {
               hrSalida = '08:00:00'; //dia actual
               diaAnterior = new Date(index);
               diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+              break;
+            case 'TI1': //Turno incidencia 1
+              hrEntrada = '03:00:00'; //dia anterior
+              hrSalida = '16:00:00'; //dia actual
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
+              break;
+            case 'TI2': //Turno incidencia 2
+              hrEntrada = '11:00:00'; //dia Actual
+              hrSalida = '23:00:00'; //dia siguiente
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
+              break;
+            case 'TI3': //Turno incidencia 3
+              hrEntrada = '20:00:00'; //dia actual
+              hrSalida = '08:00:00'; //dia siguiente
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
               break;
           }
         }

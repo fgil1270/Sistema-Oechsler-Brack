@@ -1,7 +1,7 @@
 /*
 https://docs.nestjs.com/modules
 */
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { EmployeeObjetiveController, EmployeeObjetiveMedioAnoController } from './controller/employee_objetive.controller';
@@ -25,7 +25,7 @@ import { RequestCourseModule } from '../request_course/request_course.module';
 import { SupplierModule } from '../supplier/supplier.module';
 
 
-@Module({ 
+@Module({
   imports: [
     TypeOrmModule.forFeature([
       DefinitionObjectiveAnnual,
@@ -44,11 +44,11 @@ import { SupplierModule } from '../supplier/supplier.module';
     EmployeesModule,
     CourseModule,
     MailModule,
-    RequestCourseModule,
+    forwardRef(() => RequestCourseModule),
     SupplierModule,
   ],
   controllers: [EmployeeObjetiveController, EmployeeObjetiveMedioAnoController],
   providers: [EmployeeObjetiveService],
   exports: [EmployeeObjetiveService],
 })
-export class EmployeeObjectiveModule {}
+export class EmployeeObjectiveModule { }

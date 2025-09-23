@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateCalendarDto {
@@ -21,6 +21,11 @@ export class CreateCalendarDto {
   @IsString()
   @ApiProperty({ description: 'Descripción' })
   description: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ description: 'Es sugerido' })
+  suggest: boolean;
 }
 
-export class UpdateCalendarDto extends PartialType(CreateCalendarDto) {}
+export class UpdateCalendarDto extends PartialType(CreateCalendarDto) { }

@@ -38,9 +38,10 @@ export class EmployeeShiftService {
     private readonly departmentsService: DepartmentsService,
     private employeeProfilesService: EmployeeProfilesService,
     @InjectDataSource() private dataSource: DataSource,
-  ) {}
+  ) { }
 
   async create(createEmployeeShiftDto: CreateEmployeeShiftDto) {
+
     try {
       const Inicial = new Date(createEmployeeShiftDto.start_date);
       const Final = new Date(createEmployeeShiftDto.end_date);
@@ -86,61 +87,14 @@ export class EmployeeShiftService {
 
             const dayLetter = weekDays[index.getDay()];
             //se valida que el dia seleccionado exista en el perfil del empleado
-            /* let dayLetterProfile = await this.employeeProfilesService.findWeekDay(
-                dayLetter,
-                employee.emp.employeeProfile.id,
-            ); */
-            let dayLetterShift = false;
-            const dayShift: any[] =  shift.shift.day;
-            dayLetterShift = dayShift.includes(dayLetter); //dia del turno
-            
-            
-            /* if (shift.shift.code == 'TI') {
-              dayLetterProfile = true;
-            }
-            //si el turno es tercero y el dia es sabado
-            if(shift.shift.code == 'T3' && dayLetter == 'S'){
-              dayLetterProfile = false;
-            } */
 
-            //SI EL DIA SELECCIONADO EXISTE EN EL PERFIL DEL EMPLEADO
-            //y el dia seleccionado existe en el turno
+            let dayLetterShift = false;
+            const dayShift: any[] = shift.shift.day;
+            dayLetterShift = dayShift.includes(dayLetter); //dia del turno
+
+            //SI EL DIA SELECCIONADO EXISTE EN el dia que corresponden al turno
             if (dayLetterShift) {
               //VERIFICA SI EXISTE UN TURNO PARA EL EMPLEADO EN ESA FECHA
-              const employeeShiftExist = await this.employeeShiftRepository.findOne({
-                  relations: {
-                    employee: true,
-                    shift: true,
-                    pattern: true,
-                  },
-                  where: {
-                    employee: {
-                      id: employee.emp.id,
-                    },
-                    start_date: format(index, 'yyyy-MM-dd') as any,
-                  },
-                });
-              
-                //si no existe turno crea uno nuevo
-              if (!employeeShiftExist) {
-                const employeeShift = this.employeeShiftRepository.create({
-                  employee: employee.emp,
-                  shift: shift.shift,
-                  start_date: format(index, 'yyyy-MM-dd') as any,
-                  end_date: format(index, 'yyyy-MM-dd') as any,
-                  pattern: null,
-                });
-
-                await this.employeeShiftRepository.save(employeeShift);
-              } else {
-
-                //si existe turno actualiza el turno
-                employeeShiftExist.shift = shift.shift;
-
-                await this.employeeShiftRepository.save(employeeShiftExist);
-              }
-            }else if(shift.shift.code == 'TI'){
-              //si no existe se crea como turno incidencia
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                 relations: {
                   employee: true,
@@ -155,6 +109,7 @@ export class EmployeeShiftService {
                 },
               });
 
+              //si no existe turno crea uno nuevo
               if (!employeeShiftExist) {
                 const employeeShift = this.employeeShiftRepository.create({
                   employee: employee.emp,
@@ -165,12 +120,53 @@ export class EmployeeShiftService {
                 });
 
                 await this.employeeShiftRepository.save(employeeShift);
-              } else {
+
+              } else {//si existe turno actualiza el turno
+
+
                 employeeShiftExist.shift = shift.shift;
 
                 await this.employeeShiftRepository.save(employeeShiftExist);
               }
-            } else {
+
+
+            } else if (shift.shift.code == 'TI') {//si el turno es de incidencia lo crea aunque no exista en el perfil del empleado
+
+              const employeeShiftExist = await this.employeeShiftRepository.findOne({
+                relations: {
+                  employee: true,
+                  shift: true,
+                  pattern: true,
+                },
+                where: {
+                  employee: {
+                    id: employee.emp.id,
+                  },
+                  start_date: format(index, 'yyyy-MM-dd') as any,
+                },
+              });
+
+              //si no existe turno crea uno nuevo
+              if (!employeeShiftExist) {
+                const employeeShift = this.employeeShiftRepository.create({
+                  employee: employee.emp,
+                  shift: shift.shift,
+                  start_date: format(index, 'yyyy-MM-dd') as any,
+                  end_date: format(index, 'yyyy-MM-dd') as any,
+                  pattern: null,
+                });
+
+                await this.employeeShiftRepository.save(employeeShift);
+
+
+              } else { //si existe turno actualiza el turno
+                employeeShiftExist.shift = shift.shift;
+
+                await this.employeeShiftRepository.save(employeeShiftExist);
+              }
+
+
+            } else { //si no existe el dia en el perfil del empleado y el turno no es de incidencia
               //se busca si existe un turno para el empleado en la fecha seleccionada
               const employeeShiftExist = await this.employeeShiftRepository.findOne({
                 relations: {
@@ -186,30 +182,33 @@ export class EmployeeShiftService {
                 },
               });
 
+              //si no existe turno continua con el siguiente dia
               if (!employeeShiftExist) {
                 continue;
               }
 
               //busca incidencias en la fecha del turno
               const findIncidence = await this.dataSource.manager.createQueryBuilder('employee_incidence', 'employee_incidence')
-              .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-              .where('employee_incidence.employee = :idEmployee', { idEmployee: employee.emp.id })
-              .andWhere('dateEmployeeIncidence.date = :date', { date: format(index, 'yyyy-MM-dd') as any })
-              .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
-              .getMany();
+                .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+                .where('employee_incidence.employee = :idEmployee', { idEmployee: employee.emp.id })
+                .andWhere('dateEmployeeIncidence.date = :date', { date: format(index, 'yyyy-MM-dd') as any })
+                .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
+                .getMany();
 
+              //si existe una incidencia continua con el siguiente dia
               if (findIncidence.length > 0) {
                 continue;
               }
-              
+
               //elimina el turno
               await this.employeeShiftRepository.remove(employeeShiftExist);
               continue;
 
-              
+
             }
-          } else if (createEmployeeShiftDto.patternId != 0) {
-            //SI SE SELECCIONO UN PATRON DE TURNOS REALIZA LO SIGUENTE
+          } else if (createEmployeeShiftDto.patternId != 0) {//SI SE SELECCIONO UN PATRON DE TURNOS
+
+            //busca informacion del patron de turno
             const pattern = await this.patternService.findOne(
               createEmployeeShiftDto.patternId,
             );
@@ -222,7 +221,7 @@ export class EmployeeShiftService {
             let shift = await this.shiftService.findOne(
               parseInt(serie_shifts[contSemana]),
             );
-            
+
             const dias = shift.shift.day; //dias del turno
 
             switch (index.getDay()) {
@@ -248,17 +247,13 @@ export class EmployeeShiftService {
                 diaLetra = 'S';
                 break;
             }
+
             let existeDia = dias.includes(diaLetra);
 
             if (shift.shift.code == 'TI') {
               existeDia = true;
             }
 
-            /* let existeDia = dias.find((element, i) => {
-              if(element == diaLetra){
-                return true;
-              }
-            }); */
 
             // SI EXISTE EL DIA SELECCIONADO EN LOS DIAS DEL TURNO
 
@@ -297,7 +292,7 @@ export class EmployeeShiftService {
                   employeeShiftExist.pattern = pattern.pattern;
                   await this.employeeShiftRepository.save(employeeShiftExist);
                 }
-              }else{
+              } else {
                 //se busca si existe un turno para el empleado en la fecha seleccionada
                 const employeeShiftExist = await this.employeeShiftRepository.findOne({
                   relations: {
@@ -312,24 +307,24 @@ export class EmployeeShiftService {
                     start_date: format(index, 'yyyy-MM-dd') as any,
                   },
                 });
-  
-                if(employeeShiftExist){
+
+                if (employeeShiftExist) {
                   //busca incidencias en la fecha del turno
                   const findIncidence = await this.dataSource.manager.createQueryBuilder('employee_incidence', 'employee_incidence')
-                  .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-                  .where('employee_incidence.employee = :idEmployee', { idEmployee: employee.emp.id })
-                  .andWhere('dateEmployeeIncidence.date = :date', { date: format(index, 'yyyy-MM-dd') as any })
-                  .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
-                  .getMany();
-    
-                  if (findIncidence.length <= 0) {
+                    .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+                    .where('employee_incidence.employee = :idEmployee', { idEmployee: employee.emp.id })
+                    .andWhere('dateEmployeeIncidence.date = :date', { date: format(index, 'yyyy-MM-dd') as any })
+                    .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
+                    .getMany();
+
+                  if (findIncidence.length <= 0) { //si no hay incidencias se elimina el turno
                     //elimina el turno
                     await this.employeeShiftRepository.remove(employeeShiftExist);
                   }
-  
+
                 }
 
-                
+
               }
             } else {
               //SI EL CONTADOR DE PERIODICIDAD ES MAYOR A LA PERIODICIDAD DEL PATRON DE TURNOS
@@ -339,7 +334,8 @@ export class EmployeeShiftService {
               contSemana++;
               //SI EL CONTADOR DE SEMANA ES MENOR AL TOTAL DE SERIES DEL PATRON DE TURNOS
               if (contSemana < totalSerie) {
-                 shift = await this.shiftService.findOne(
+                //se obtiene el turno
+                shift = await this.shiftService.findOne(
                   parseInt(serie_shifts[contSemana]),
                 );
               } else {
@@ -350,6 +346,7 @@ export class EmployeeShiftService {
                   parseInt(serie_shifts[contSemana]),
                 );
               }
+
               if (existeDia) {
                 const employeeShiftExist =
                   await this.employeeShiftRepository.findOne({
@@ -381,7 +378,7 @@ export class EmployeeShiftService {
                   employeeShiftExist.pattern = pattern.pattern;
                   await this.employeeShiftRepository.save(employeeShiftExist);
                 }
-              }else{
+              } else {
                 //se busca si existe un turno para el empleado en la fecha seleccionada
                 const employeeShiftExist = await this.employeeShiftRepository.findOne({
                   relations: {
@@ -396,26 +393,27 @@ export class EmployeeShiftService {
                     start_date: format(index, 'yyyy-MM-dd') as any,
                   },
                 });
-  
-                if(employeeShiftExist){
+
+                if (employeeShiftExist) {
                   //busca incidencias en la fecha del turno
                   const findIncidence = await this.dataSource.manager.createQueryBuilder('employee_incidence', 'employee_incidence')
-                  .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-                  .where('employee_incidence.employee = :idEmployee', { idEmployee: employee.emp.id })
-                  .andWhere('dateEmployeeIncidence.date = :date', { date: format(index, 'yyyy-MM-dd') as any })
-                  .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
-                  .getMany();
-    
+                    .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+                    .where('employee_incidence.employee = :idEmployee', { idEmployee: employee.emp.id })
+                    .andWhere('dateEmployeeIncidence.date = :date', { date: format(index, 'yyyy-MM-dd') as any })
+                    .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada', 'Pendiente'] })
+                    .getMany();
+
+                  //si no hay incidencias se elimina el turno
                   if (findIncidence.length <= 0) {
                     await this.employeeShiftRepository.remove(employeeShiftExist);
                   }
-                  
-                 
+
+
                 }
-  
-                
-  
-                
+
+
+
+
               }
             }
 
@@ -437,7 +435,7 @@ export class EmployeeShiftService {
             if (index.getDay() == 4 && shift.shift.name == '12x12-2') {
               contPeriodicidad++;
             }
-            
+
           }
         }
       }
@@ -533,7 +531,7 @@ export class EmployeeShiftService {
     const from = format(new Date(data.start), 'yyyy-MM-dd');
     const to = format(new Date(data.end), 'yyyy-MM-dd');
     //const employees = await this.employeesService.findByEmployeeNumber(ids.split(','));
-    
+
     const employees = await this.employeesService.findMore(ids);
 
     const resource = employees.emps.map((employee: any) => {
@@ -541,7 +539,7 @@ export class EmployeeShiftService {
         id: employee.id,
         employee_number: employee.employee_number,
         title:
-          '#' + 
+          '#' +
           employee.employee_number +
           ' ' +
           employee.name +
@@ -692,7 +690,7 @@ export class EmployeeShiftService {
     if (incidence.length > 0) {
       throw new NotFoundException(`No puede Eliminar el turno, ya que tiene incidencias creadas`);
     }
-    
+
     return await this.employeeShiftRepository.remove(employeeShift);
   }
 }
