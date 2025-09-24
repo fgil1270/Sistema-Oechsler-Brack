@@ -218,6 +218,8 @@ export class ChecadorService {
       let total;
       let totalHrsExtra = 0;
       let isIncidenceIncapacidad = false;
+      let precioComida = 22.63;
+      let totalPagarComida = 0;
 
       //let i = 0;
 
@@ -283,7 +285,6 @@ export class ChecadorService {
 
         } else {
           //se obtienen las incidencias del dia
-          //y que no sean de tiempo extra
           const incidenciasNormales =
             await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
               start: format(index, 'yyyy-MM-dd 00:00:00') as any,
@@ -583,9 +584,31 @@ export class ChecadorService {
             },
           });
 
+          //total registros comedor
+          let totalRegComedor = 0;
+          totalRegComedor = registrosChecador.filter((checador: any) => checador.origin == 'Comedor').length;
+
+
           //si existen checadas
           if (registrosChecador.length > 0) {
             isIncidenceIncapacidad = false;
+
+            //existe incidencia HET, HE
+            let existeIncidenciasHE = incidenciasNormales.some((incidencia) => (incidencia.codeBand == 'HET' || incidencia.codeBand == 'HE') && incidencia.status == 'Autorizada');
+            //exite incidencia DFT
+            let existeDFT = incidenciasNormales.some((incidencia) => incidencia.codeBand == 'DFT' && incidencia.status == 'Autorizada');
+
+            if (existeIncidenciasHE) {
+              //precio de la comida * el total de registros menos 1 por tener tiempo extra
+              totalPagarComida += (totalRegComedor - 1) * precioComida;
+            } else {
+              //si no existe DFT se multiplica precio de comida por total registros comedor
+              if (!existeDFT) {
+                totalPagarComida += totalRegComedor * precioComida;
+              }
+
+            }
+
           }
 
           //se recorre el arreglo de incidencias
@@ -796,7 +819,6 @@ export class ChecadorService {
 
           }
 
-
           horasExtraDia = (horasDia - hourShift) <= 0 ? 0 : (horasDia - hourShift); //horas extra por dia
           minutosExtraDia = (minsDia - minShift) <= 0 ? 0 : (minsDia - minShift); //mins extra por dia
 
@@ -946,6 +968,7 @@ export class ChecadorService {
         horasTrabajadas: totalHrsTrabajadas + '.' + moment().minutes(totalMinTrabajados).format('mm'), //total hrs trabajadas
         horasTrabajadasyExtra: totalHrsTrabajadasyExtra.toFixed(2),
         horasExtra: totalHrsExtra.toFixed(2),
+        totalPagarComida: totalPagarComida,
         //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
       });
 
