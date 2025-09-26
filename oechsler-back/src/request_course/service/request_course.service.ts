@@ -43,7 +43,7 @@ import { EmployeeIncidenceService } from '../../employee_incidence/service/emplo
 import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
 import { MailService } from '../../mail/mail.service';
 import { EmployeeObjetiveService } from '../../employee_objective/service/employee_objective.service';
-import { request } from 'http';
+import { UsersService } from '../../users/service/users.service';
 
 @Injectable()
 export class RequestCourseService {
@@ -62,6 +62,7 @@ export class RequestCourseService {
     @InjectDataSource() private dataSource: DataSource,
     private mailService: MailService,
     @Inject(forwardRef(() => EmployeeObjetiveService)) private definitionObjectiveAnnualService: EmployeeObjetiveService,
+    private userService: UsersService,
   ) { }
 
   // Crear solicitud de curso
@@ -169,41 +170,35 @@ export class RequestCourseService {
       const requestCourse = await this.requestCourse.find({
         where: {
           status: 'Autorizado',
-          course: {
-            id: course.id
-          },
-          employee: {
-            id: In(employees.emps.map((emp) => emp.id))
-          }
+          id: In(currData.requestCourseId)
         }
       });
 
       //crear asignacion de curso
-
-      const createAssignment = await this.requestCourseAssignment.create({
-        date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
-        date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
-        day: currData.day,
-        requestCourse: requestCourse,
-        teacher: teacher,
-
-      });
-
-      const assignment = await this.requestCourseAssignment.save(createAssignment);
-
-      //se actualiza el costo de la solicitud de curso
-      //se actualiza el status de la solicitud de curso
       for (const request of requestCourse) {
+
+        const createAssignment = await this.requestCourseAssignment.create({
+          date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
+          date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
+          day: currData.day,
+          requestCourse: requestCourse,
+          teacher: teacher,
+
+        });
+
+        const assignment = await this.requestCourseAssignment.save(createAssignment);
+
         request.status = 'Asignado';
         request.type = currData.type;
         request.place = currData.place;
         await this.requestCourse.save(request);
       }
 
+
       return {
         error: false,
         msg: 'Asignación de curso creada correctamente',
-        data: assignment
+        data: requestCourse
       };
     } catch (error) {
       return {
@@ -748,6 +743,32 @@ export class RequestCourseService {
       }
 
       const save = await this.requestCourse.save(requestCourse);
+      let leadersMail = [];
+      for (const l of leader.orgs) {
+        //si el lider puede evaluar
+        if (l.evaluar) {
+          const user = await this.userService.findByIdEmployee(l.id);
+          //recorre el arreglo de usuarios que tiene el lider
+          for (const u of user.user) {
+            //si el usuario tiene correo y no esta eliminado
+            if (u.email && u.deleted_at == null) {
+              //se agrega el correo a la lista de correos
+              leadersMail.push(u.email);
+            }
+          }
+        }
+      }
+
+      //se envian los correos
+      await this.mailService.sendEmail(`Actualizacion de Solicitud deCurso "${save.course.name}"`,
+        {
+          curso: save.course.name,
+          status: save.status,
+          empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+        },
+        leadersMail,
+        'solicitud_curso'
+      );
 
       return {
         error: false,
@@ -774,6 +795,7 @@ export class RequestCourseService {
         },
         user,
       );
+      let leadersMail = [];
 
       //se actualizan todas las solicitudes de curso que se envian en el array de idRequestCourse
       const requestCourse = await this.requestCourse.find({
@@ -887,12 +909,42 @@ export class RequestCourseService {
         //actualiza la solicitud de curso
         const save = await this.requestCourse.save(request);
 
+        //recorre el arreglo de lideres
+        for (const l of leader.orgs) {
+          //si el lider puede evaluar
+          if (l.evaluar) {
+            const user = await this.userService.findByIdEmployee(l.leader.id);
+            //recorre el arreglo de usuarios que tiene el lider
+            for (const u of user.user) {
+              //si el usuario tiene correo y no esta eliminado
+              if (u.email && u.deleted_at == null) {
+                //se agrega el correo a la lista de correos
+                leadersMail.push(u.email);
+              }
+            }
+          }
+        }
+
+        //se envian los correos
+        await this.mailService.sendEmail(`Actualizacion de Solicitud deCurso "${save.course.name}"`,
+          {
+            curso: save.course.name,
+            status: save.status,
+            empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+          },
+          leadersMail,
+          'solicitud_curso'
+        );
       }
 
       //si existe nuevo empleado se le crea una solicitud de curso
       if (data.newEmployeeIds && data.newEmployeeIds.length > 0) {
         for (const empId of data.newEmployeeIds) {
+          //reinicia el arreglo de correos
+          leadersMail = [];
           const employee = await this.employeeService.findOne(empId);
+          const leader = await this.organigramaService.leaders(empId);
+
           const createRequest = this.requestCourse.create({
             course_name: data.courseName,
             training_reason: data.traininReason,
@@ -924,6 +976,32 @@ export class RequestCourseService {
 
           //se crea solicitud de curso
           const save = await this.requestCourse.save(createRequest);
+
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              for (const u of user.user) {
+                //si el usuario tiene correo y no esta eliminado
+                if (u.email && u.deleted_at == null) {
+                  //se agrega el correo a la lista de correos
+                  leadersMail.push(u.email);
+                }
+              }
+            }
+          }
+
+          //se envian los correos
+          await this.mailService.sendEmail(`Actualizacion de Solicitud deCurso "${save.course.name}"`,
+            {
+              curso: save.course.name,
+              status: save.status,
+              empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+            },
+            leadersMail,
+            'solicitud_curso'
+          );
         }
       }
 
