@@ -584,10 +584,25 @@ export class ChecadorService {
             },
           });
 
+          //registros comedor 
+          const registrosComedor = await this.checadorRepository.find({
+            where: {
+              employee: {
+                id: iterator.id,
+              },
+              date: Between(
+                format(index, `yyyy-MM-dd 00:00:00`) as any,
+                format(index, `yyyy-MM-dd 23:59:59`) as any,
+              ),
+            },
+            order: {
+              date: 'ASC',
+            },
+          });
+
           //total registros comedor
           let totalRegComedor = 0;
-          totalRegComedor = registrosChecador.filter((checador: any) => checador.origin == 'Comedor').length;
-
+          totalRegComedor = registrosComedor.filter((checador: any) => checador.origin == 'Comedor').length;
 
           //si existen checadas
           if (registrosChecador.length > 0) {

@@ -379,8 +379,13 @@ export class EmployeeIncidenceService {
           const userLider = await this.userService.findByIdEmployee(
             lider.leader.id,
           );
-          if (userLider) {
-            to.push(userLider.user.email);
+          if (userLider.user.length > 0) {
+            userLider.user.forEach((u) => {
+              if (u.deleted_at == null) {
+                to.push(u.email);
+              }
+            });
+
           }
         }
         subject = `Autorizar incidencia: ${employeeIncidenceCreate.employee.employee_number
@@ -404,12 +409,20 @@ export class EmployeeIncidenceService {
           const userLider = await this.userService.findByIdEmployee(
             lider.leader.id,
           );
-          if (userLider) {
-            to.push(userLider.user.email);
+          if (userLider.user.length > 0) {
+            userLider.user.forEach((u) => {
+              if (u.deleted_at == null) {
+                to.push(u.email);
+              }
+            });
           }
         }
-        if (mailUser) {
-          to.push(mailUser.user.email);
+        if (mailUser.user.length > 0) {
+          mailUser.user.forEach((u) => {
+            if (u.deleted_at == null) {
+              to.push(u.email);
+            }
+          });
         }
 
         subject = `CREACIÓN ${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
@@ -1193,20 +1206,30 @@ export class EmployeeIncidenceService {
         throw new NotFoundException('No se encontro la incidencia');
       }
       const to = [];
+      //buscar usuarios del empleado
       const emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
 
       const lideres = await this.organigramaService.leaders(employeeIncidence.employee.id);
       for (let index = 0; index < lideres.orgs.length; index++) {
         const lider = lideres.orgs[index];
+        //buscar usuarios del lider
         const userLider = await this.userService.findByIdEmployee(
           lider.leader.id,
         );
-        if (userLider) {
-          to.push(userLider.user.email);
+        if (userLider.user.length > 0) {
+          userLider.user.forEach((u) => {
+            if (u.deleted_at == null) {
+              to.push(u.email);
+            }
+          });
         }
       }
       if (emailUser) {
-        to.push(emailUser.user.email);
+        emailUser.user.forEach((u) => {
+          if (u.deleted_at == null) {
+            to.push(u.email);
+          }
+        });
       }
 
       let subject = '';

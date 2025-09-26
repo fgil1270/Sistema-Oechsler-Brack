@@ -191,6 +191,11 @@ export class RequestCourseAssignmentDto {
   employeeId: number[];
 
   @IsNotEmpty()
+  @IsArray()
+  @ApiProperty({ description: 'Array solicitudes de curso, para crear Asignación de Curso', type: [Number] })
+  requestCourseId: number[];
+
+  @IsNotEmpty()
   @IsString()
   @ApiProperty({ description: 'Dias de la semana' })
   day: string;
