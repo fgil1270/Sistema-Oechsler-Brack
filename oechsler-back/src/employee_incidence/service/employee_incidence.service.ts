@@ -2005,7 +2005,7 @@ export class EmployeeIncidenceService {
           if (turnoActual == turnoSiguiente) {
             switch (turnoActual) {
               case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
+                hrEntrada = '21:00:00'; //dia anterior
                 hrSalida = '22:00:00'; //dia actual
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
@@ -2035,8 +2035,8 @@ export class EmployeeIncidenceService {
                 diaSiguente = new Date(diahoy);
                 break;
               case 'T4':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
                 break;

@@ -121,12 +121,13 @@ export class TimeCorrectionService {
 
     let query = `SELECT * FROM employee AS e
         INNER JOIN organigrama AS o ON e.id = o.employeeId
-        WHERE o.leaderId = ${user.idEmployee}`;
+        WHERE o.leaderId = ${user.idEmployee} AND e.deleted_at IS NULL`;
 
     //si es administrador
     if (isAdmin) {
       query = `
-            SELECT * FROM employee
+            SELECT * FROM employee AS e
+            WHERE e.deleted_at IS NULL
             `;
     }
 
@@ -293,78 +294,27 @@ export class TimeCorrectionService {
               case 'T1':
                 hrEntrada = '21:00:00'; //dia anterior
                 hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
                 diaSiguente = new Date(index);
                 break;
               case 'T2':
                 hrEntrada = '05:00:00'; //dia Actual
                 hrSalida = '07:00:00'; //dia siguiente
                 diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                 break;
               case 'T3':
                 hrEntrada = '13:00:00'; //dia actual
                 hrSalida = '15:00:00'; //dia siguiente
                 diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                 break;
               case 'MIX':
                 hrEntrada = '00:01:00'; //dia actual
-                hrSalida = '23:59:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T4':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-2':
-                hrEntrada = '09:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-            }
-          } else {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '15:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                diaSiguente = new Date(index);
-                break;
-              case 'T2':
-                hrEntrada = '05:00:00'; //dia Actual
                 hrSalida = '22:00:00'; //dia siguiente
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
                 break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '00:01:00'; //dia actual
-                hrSalida = '23:59:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
               case 'TI':
                 hrEntrada = '02:00:00'; //dia actual
                 hrSalida = '23:00:00'; //dia siguiente
@@ -373,8 +323,8 @@ export class TimeCorrectionService {
                 break;
               case 'T4':
                 hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '15:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
                 diaSiguente = new Date(index);
                 break;
               case 'T12-1':
@@ -387,74 +337,240 @@ export class TimeCorrectionService {
                 hrEntrada = '12:00:00'; //dia anterior
                 hrSalida = '08:00:00'; //dia actual
                 diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1':
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2':
+                hrEntrada = '05:00:00'; //dia Actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI3':
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '15:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+            }
+          } else {
+            switch (turnoActual) {
+              case 'T1':
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '15:00:00'; //dia actual
+                diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'T2':
+                hrEntrada = '05:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T3':
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'MIX':
+                hrEntrada = '03:00:00'; //dia actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI':
+                hrEntrada = '02:00:00'; //dia actual
+                hrSalida = '23:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T4':
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '15:00:00'; //dia actual
+                diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'T12-1':
+                hrEntrada = '03:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T12-2':
+                hrEntrada = '12:00:00'; //dia anterior
+                hrSalida = '08:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1':
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '15:00:00'; //dia actual
+                diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2':
+                hrEntrada = '05:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI3':
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                 break;
             }
           }
         } else {
-          switch (turnoActual) {
-            case 'T1':
-              hrEntrada = '03:00:00'; //dia anterior
-              hrSalida = '16:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T2':
-              hrEntrada = '11:00:00'; //dia Actual
-              hrSalida = '23:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T3':
-              hrEntrada = '20:00:00'; //dia actual
-              hrSalida = '08:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-              break;
-            case 'MIX':
-              hrEntrada = '00:01:00'; //dia actual
-              hrSalida = '23:59:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'TI':
-              hrEntrada = '02:00:00'; //dia actual
-              hrSalida = '23:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T4':
-              hrEntrada = '03:00:00'; //dia anterior
-              hrSalida = '16:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T12-1':
-              hrEntrada = '03:00:00'; //dia anterior
-              hrSalida = '22:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T12-2':
-              hrEntrada = '14:00:00'; //dia anterior
-              hrSalida = '08:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-              break;
-            case 'TI1':
-              hrEntrada = '03:00:00'; //dia anterior
-              hrSalida = '16:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'TI2':
-              hrEntrada = '11:00:00'; //dia Actual
-              hrSalida = '23:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
+          if (turnoActual == turnoSiguiente) {
+            switch (turnoActual) {
+              case 'T1':
+                hrEntrada = '03:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T2':
+                hrEntrada = '03:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'T3':
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '15:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'MIX':
+                hrEntrada = '03:00:00'; //dia actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI':
+                hrEntrada = '02:00:00'; //dia actual
+                hrSalida = '23:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T4':
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'T12-1':
+                hrEntrada = '03:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T12-2':
+                hrEntrada = '12:00:00'; //dia anterior
+                hrSalida = '08:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1':
+                hrEntrada = '03:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2':
+                hrEntrada = '03:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI3':
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '15:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+            }
+          } else {
+            switch (turnoActual) {
+              case 'T1':
+                hrEntrada = '05:00:00'; //dia anterior
+                hrSalida = '16:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T2':
+                hrEntrada = '13:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T3':
+                hrEntrada = '21:00:00'; //dia actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'MIX':
+                hrEntrada = '03:00:00'; //dia actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI':
+                hrEntrada = '02:00:00'; //dia actual
+                hrSalida = '23:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T4':
+                hrEntrada = '06:00:00'; //dia anterior
+                hrSalida = '16:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T12-1':
+                hrEntrada = '03:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'T12-2':
+                hrEntrada = '12:00:00'; //dia anterior
+                hrSalida = '08:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1':
+                hrEntrada = '05:00:00'; //dia anterior
+                hrSalida = '16:00:00'; //dia actual
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2':
+                hrEntrada = '13:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI3':
+                hrEntrada = '21:00:00'; //dia actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+            }
           }
         }
+
+
 
         const registrosChecadorNuevo = await this.checadorService.findbyDate(
           iterator.id,

@@ -365,7 +365,7 @@ export class ChecadorService {
                   diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                   break;
                 case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actindex
+                  hrEntrada = '00:01:00'; //dia actual
                   hrSalida = '22:00:00'; //dia siguiente
                   diaAnterior = new Date(index);
                   diaSiguente = new Date(index);
@@ -391,6 +391,24 @@ export class ChecadorService {
                 case 'T12-2':
                   hrEntrada = '12:00:00'; //dia anterior
                   hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
+                case 'TI1':
+                  hrEntrada = '21:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+                  diaSiguente = new Date(index);
+                  break;
+                case 'TI2':
+                  hrEntrada = '05:00:00'; //dia Actual
+                  hrSalida = '07:00:00'; //dia siguiente
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
+                case 'TI3':
+                  hrEntrada = '13:00:00'; //dia actual
+                  hrSalida = '15:00:00'; //dia siguiente
                   diaAnterior = new Date(index);
                   diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                   break;
@@ -442,6 +460,24 @@ export class ChecadorService {
                 case 'T12-2':
                   hrEntrada = '12:00:00'; //dia anterior
                   hrSalida = '08:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
+                case 'TI1':
+                  hrEntrada = '21:00:00'; //dia anterior
+                  hrSalida = '15:00:00'; //dia actual
+                  diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+                  diaSiguente = new Date(index);
+                  break;
+                case 'TI2':
+                  hrEntrada = '05:00:00'; //dia Actual
+                  hrSalida = '22:00:00'; //dia siguiente
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'TI3':
+                  hrEntrada = '13:00:00'; //dia actual
+                  hrSalida = '07:00:00'; //dia siguiente
                   diaAnterior = new Date(index);
                   diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                   break;
@@ -498,6 +534,24 @@ export class ChecadorService {
                   diaAnterior = new Date(index);
                   diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                   break;
+                case 'TI1':
+                  hrEntrada = '03:00:00'; //dia anterior
+                  hrSalida = '22:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'TI2':
+                  hrEntrada = '03:00:00'; //dia Actual
+                  hrSalida = '22:00:00'; //dia siguiente
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
+                case 'TI3':
+                  hrEntrada = '13:00:00'; //dia actual
+                  hrSalida = '15:00:00'; //dia siguiente
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
               }
             } else {
               switch (turnoActual) {
@@ -549,12 +603,27 @@ export class ChecadorService {
                   diaAnterior = new Date(index);
                   diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
                   break;
+                case 'TI1':
+                  hrEntrada = '05:00:00'; //dia anterior
+                  hrSalida = '16:00:00'; //dia actual
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'TI2':
+                  hrEntrada = '13:00:00'; //dia Actual
+                  hrSalida = '22:00:00'; //dia siguiente
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(index);
+                  break;
+                case 'TI3':
+                  hrEntrada = '21:00:00'; //dia actual
+                  hrSalida = '07:00:00'; //dia siguiente
+                  diaAnterior = new Date(index);
+                  diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                  break;
               }
             }
           }
-
-
-
 
 
           //se obtienen los registros del dia
