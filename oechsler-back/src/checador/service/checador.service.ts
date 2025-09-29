@@ -284,14 +284,14 @@ export class ChecadorService {
           } */
 
         } else {
-          //se obtienen las incidencias del dia
+          //se obtienen las incidencias del dia Autorizadas
           const incidenciasNormales =
             await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
               start: format(index, 'yyyy-MM-dd 00:00:00') as any,
               end: format(index, 'yyyy-MM-dd 23:59:00') as any,
               ids: [iterator.id],
               code_band: ['VAC', 'PCS', 'PSS', 'HDS', 'CAST', 'FINJ', 'INC', 'DFT', 'PRTC', 'DOM', 'VACA', 'HE', 'HET', 'TXT', 'PSSE'],
-              status: ['Autorizada', 'Pendiente']
+              status: ['Autorizada']
             });
 
           const iniciaTurno = new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`);
@@ -347,7 +347,7 @@ export class ChecadorService {
             if (turnoActual == turnoSiguiente) {
               switch (turnoActual) {
                 case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
+                  hrEntrada = '22:00:00'; //dia anterior
                   hrSalida = '22:00:00'; //dia actual
                   diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
                   diaSiguente = new Date(index);
@@ -819,8 +819,6 @@ export class ChecadorService {
               }
 
             }
-
-
           }
 
 

@@ -587,24 +587,6 @@ export class TimeCorrectionService {
 
         //diaSiguente = new Date(index);
 
-        /*  if(iterator.id == 1907){
-                    
-                    let diaUno =moment(new Date('2023-10-09 21:30:00'), 'HH:mm:ss');
-                    let diaUnoFin =moment(new Date('2023-10-10 06:59:59'), 'HH:mm:ss');
-                    let diaDos =moment('2023-10-09T00:00:00', 'HH:mm:ss');
-                    let diaDosFin =moment('2023-10-09T06:00:00', 'HH:mm:ss');
-                   
-                } */
-
-        /*  if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T3') {
-                    hrEntrada = '20:00:00';
-                    hrSalida = '08:59:00';
-                    diaSiguente.setDate(diaSiguente.getDate() + 1);
-                    //let nextDay = format(diaSiguente, 'yyyy-MM-dd');
-                    
-                    //startTimeShift = moment(employeeShif.events[0]?.startTimeshift, 'HH:mm');
-                    endTimeShift = moment(new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`), 'HH:mm').add(1, 'day');
-                } */
 
         //se obtiene la hora de inicio y fin del turno
         let startTimeShift;
