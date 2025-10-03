@@ -382,9 +382,15 @@ export class EmployeesService {
             'employeeProfile',
             'userId'
           ],
+          withDeleted: true,
         });
-        //SI EL EMPLEADO EXISTE SE EDITA Y SI NO SE CREA
 
+        //si el empleado ya existe pero esta eliminado manda un mensaje
+        if (tableEmployee.deleted_at) {
+          throw new NotFoundException(`El empleado #${tableEmployee.employee_number} ya existe, pero esta inactivo`);
+        }
+
+        //SI EL EMPLEADO EXISTE SE EDITA Y SI NO SE CREA
         if (tableEmployee?.id) {
           try {
 
@@ -594,6 +600,7 @@ export class EmployeesService {
       where: {
         employee_number: createEmployeeDto.employee_number,
       },
+      withDeleted: true,
     });
 
     if (empExist?.id) {
@@ -657,6 +664,7 @@ export class EmployeesService {
     const emp = await this.employeeRepository.findOne({
       where: {
         id: id,
+        deleted_at: null
       },
       relations: {
         department: true,

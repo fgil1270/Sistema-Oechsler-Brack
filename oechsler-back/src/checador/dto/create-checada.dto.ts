@@ -42,7 +42,7 @@ export class CreateChecadaDto {
   status: string;
 }
 
-export class UpdateChecadaDto extends PartialType(CreateChecadaDto) {}
+export class UpdateChecadaDto extends PartialType(CreateChecadaDto) { }
 
 export class FindChecadaDto {
   @IsNotEmpty()
@@ -74,4 +74,30 @@ export class FindChecadaDto {
   @IsArray()
   @ApiProperty({ description: 'Estatus de la hora' })
   status: any[];
+}
+
+export class NomipaqDto {
+  @IsString()
+  @ApiProperty({ description: 'Fecha de inicio' })
+  startDate: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Fecha de fin' })
+  endDate: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Fecha de inicio del comedor' })
+  startDateComedor: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Fecha de fin del comedor' })
+  endDateComedor: string;
+
+  @IsString()
+  @ApiProperty({ description: 'tipo de empleado(Semanal, Quincenal)' })
+  tipoEmpleado: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Tipo de jerarquía del empleado (Normal, Jerarquia)' })
+  tipoJerarquia: string;
 }

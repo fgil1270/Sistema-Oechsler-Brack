@@ -1931,9 +1931,8 @@ export class EmployeeIncidenceService {
         let modMinUno = 0;
         let divMinDos = 0;
 
-        if (dates[j].shift) {
-
-        } else {
+        //si no tiene turno continua
+        if (!dates[j].shift) {
           continue;
         }
 
@@ -2005,9 +2004,9 @@ export class EmployeeIncidenceService {
           if (turnoActual == turnoSiguiente) {
             switch (turnoActual) {
               case 'T1':
-                hrEntrada = '21:00:00'; //dia anterior
+                hrEntrada = '22:00:00'; //dia anterior
                 hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
+                diaAnterior = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() - 1));
                 diaSiguente = new Date(diahoy);
                 break;
               case 'T2':
@@ -2076,7 +2075,7 @@ export class EmployeeIncidenceService {
             if (turnoSiguiente) {
               switch (turnoActual) {
                 case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
+                  hrEntrada = '22:00:00'; //dia anterior
                   hrSalida = '15:00:00'; //dia actual
                   diaAnterior = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() - 1));
                   diaSiguente = new Date(diahoy);

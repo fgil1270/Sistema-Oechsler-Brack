@@ -19,7 +19,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 import { ChecadorService } from '../service/checador.service';
-import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto } from '../dto/create-checada.dto';
+import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto, NomipaqDto } from '../dto/create-checada.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -76,7 +76,7 @@ export class ChecadorController {
   })
   @Views('nomipaq')
   @Get('nomipaq/report')
-  reportNomipaq(@Query() data: any, @CurrentUser() user: any) {
+  reportNomipaq(@Query() data: NomipaqDto, @CurrentUser() user: any) {
     return this.checadorService.reportNomipaq(data, user);
   }
 

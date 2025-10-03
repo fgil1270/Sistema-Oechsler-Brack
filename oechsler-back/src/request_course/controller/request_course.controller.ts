@@ -52,6 +52,13 @@ export class RequestCourseController {
     return true;
   }
 
+  @ApiOperation({ summary: 'Acceso a solicitudes de curso' })
+  @Views('efectividad')
+  @Get('/access_efectividad')
+  async accessEfectividad() {
+    return true;
+  }
+
   @ApiOperation({ summary: 'Obtener solicitudes de curso por id' })
   @Get(':id')
   async findRequestCourseById(@Param('id', ParseIntPipe) id: number) {

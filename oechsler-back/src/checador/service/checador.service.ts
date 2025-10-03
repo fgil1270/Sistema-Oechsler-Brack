@@ -22,7 +22,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { format } from 'date-fns';
 import * as moment from 'moment';
 
-import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto } from '../dto/create-checada.dto';
+import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto, NomipaqDto } from '../dto/create-checada.dto';
 import { Checador } from '../entities/checador.entity';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
@@ -176,7 +176,7 @@ export class ChecadorService {
   }
 
   //reporte Nomipaq
-  async reportNomipaq(data: any, user: any) {
+  async reportNomipaq(data: NomipaqDto, user: any) {
     const tipoNomina = data.tipoEmpleado;
     const tipoJerarquia = data.tipoJerarquia;
     const employees = await this.employeesService.findByNomina(tipoNomina);
@@ -217,14 +217,15 @@ export class ChecadorService {
       let totalHrsTrabajadasyExtra = 0;
       let total;
       let totalHrsExtra = 0;
-      let isIncidenceIncapacidad = false;
-      let precioComida = 22.63;
+      let isIncidenceIncapacidad: boolean = false;
+
       let totalPagarComida = 0;
 
       //let i = 0;
 
-      //se recorre el arreglo de dias generados
+      //se recorre el arreglo de dias generados para Nomipaq
       for (let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
+        //dia actual a evaluar
         const dataDate = {
           start: index,
           end: index,
@@ -246,17 +247,21 @@ export class ChecadorService {
         let minutosRealesTurno = 0;
         let employeeShifAnterior: any;
         let employeeShifSiguiente: any;
+        let sinTurno = '';
 
+        //se obtienen los turnos del empleado
         const employeeShif = await this.employeeShiftService.findMore(
           dataDate,
           [iterator.id],
         );
-        const incidenceIncapacidad = await this.incidenceCatalogueService.findByCodeBand('INC');
+        //const incidenceIncapacidad = await this.incidenceCatalogueService.findByCodeBand('INC');
 
+        //dia anterior
         const dataDateAnterior = {
           start: new Date(new Date(index).setDate(new Date(index).getDate() - 1)),
           end: new Date(new Date(index).setDate(new Date(index).getDate() - 1)),
         };
+        //dia siguiente
         const dataDateSiguiente = {
           start: new Date(new Date(index).setDate(new Date(index).getDate() + 1)),
           end: new Date(new Date(index).setDate(new Date(index).getDate() + 1)),
@@ -278,12 +283,35 @@ export class ChecadorService {
 
         //si en la fecha el empleado no tiene turno se continua con el siguiente dia
         if (employeeShif.events.length == 0) {
-          //si es incapacidad tambien se ponen los dias sin turno
-          /* if(isIncidenceIncapacidad){
-            incidenceExtra.push(`1` + incidenceIncapacidad.code_band);
-          } */
+          //si es de lunes a viernes
+          if (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 0 && Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 6) {
+            //si es viernes
+            if (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) == 5) {
+              if (employeeShifAnterior?.events[0]?.nameShift == 'T12-1' || employeeShifAnterior?.events[0]?.nameShift == 'T12-2') {
+                sinTurno = '';
+              } else {
+                //si el empleado no tiene turno se pone S/N
+                sinTurno = 'S/N'
+              }
+            } else {
+              //si es dia festivo
+              if (dayCalendar) {
+                sinTurno = ''
+              } else {
+                sinTurno = 'S/N'
+              }
+
+            }
+
+          } else {
+            sinTurno = '';
+          }
 
         } else {
+
+          //se pone el nombre del turno
+
+          sinTurno = employeeShif.events[0].nameShift;
           //se obtienen las incidencias del dia Autorizadas
           const incidenciasNormales =
             await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
@@ -653,25 +681,7 @@ export class ChecadorService {
             },
           });
 
-          //registros comedor 
-          const registrosComedor = await this.checadorRepository.find({
-            where: {
-              employee: {
-                id: iterator.id,
-              },
-              date: Between(
-                format(index, `yyyy-MM-dd 00:00:00`) as any,
-                format(index, `yyyy-MM-dd 23:59:59`) as any,
-              ),
-            },
-            order: {
-              date: 'ASC',
-            },
-          });
 
-          //total registros comedor
-          let totalRegComedor = 0;
-          totalRegComedor = registrosComedor.filter((checador: any) => checador.origin == 'Comedor').length;
 
           //si existen checadas
           if (registrosChecador.length > 0) {
@@ -681,17 +691,6 @@ export class ChecadorService {
             let existeIncidenciasHE = incidenciasNormales.some((incidencia) => (incidencia.codeBand == 'HET' || incidencia.codeBand == 'HE') && incidencia.status == 'Autorizada');
             //exite incidencia DFT
             let existeDFT = incidenciasNormales.some((incidencia) => incidencia.codeBand == 'DFT' && incidencia.status == 'Autorizada');
-
-            if (existeIncidenciasHE) {
-              //precio de la comida * el total de registros menos 1 por tener tiempo extra
-              totalPagarComida += (totalRegComedor - 1) * precioComida;
-            } else {
-              //si no existe DFT se multiplica precio de comida por total registros comedor
-              if (!existeDFT) {
-                totalPagarComida += totalRegComedor * precioComida;
-              }
-
-            }
 
           }
 
@@ -987,38 +986,6 @@ export class ChecadorService {
 
         }
 
-        let sinTurno = '';
-
-        //se valida si el empleado tiene turno
-        if (employeeShif.events.length > 0) {
-          sinTurno = employeeShif.events[0].nameShift;
-
-        } else {
-          //si es de lunes a viernes
-          if (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 0 && Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) != 6) {
-            //si es viernes
-            if (Number(new Date((format(index, 'yyyy-MM-dd'))).getDay()) == 5) {
-              if (employeeShifAnterior?.events[0]?.nameShift == 'T12-1' || employeeShifAnterior?.events[0]?.nameShift == 'T12-2') {
-                sinTurno = '';
-              } else {
-                //si el empleado no tiene turno se pone S/N
-                sinTurno = 'S/N'
-              }
-            } else {
-              //si es dia festivo
-              if (dayCalendar) {
-                sinTurno = ''
-              } else {
-                sinTurno = 'S/N'
-              }
-
-            }
-
-          } else {
-            sinTurno = '';
-          }
-        }
-
 
         //se agrega el dia al arreglo de dias
 
@@ -1032,6 +999,9 @@ export class ChecadorService {
 
         //i++;
       }
+
+      //total a pagar comedor
+      totalPagarComida = await this.findTotalComedor(iterator.id, data.startDateComedor, data.endDateComedor);
 
       totalHrsRequeridas += Math.floor(totalMinRequeridos / 60);
       totalHrsTrabajadas = totalHrsTrabajadas;
@@ -1062,6 +1032,65 @@ export class ChecadorService {
       registros,
       diasGenerados,
     };
+  }
+
+  //obtener el total de registros del comedor
+  //por rango de fechas
+  async findTotalComedor(idEmployee: number, startDateComedor: string, endDateComedor: string) {
+
+    let totalPagarComida = 0;
+    let precioComida = 22.63;
+
+    //se recorre los dias
+    for (let index = new Date(startDateComedor); index <= new Date(endDateComedor); index = new Date(index.setDate(index.getDate() + 1))) {
+
+      //registros comedor
+      const registrosComedor = await this.checadorRepository.find({
+        where: {
+          employee: {
+            id: idEmployee,
+          },
+          date: Between(
+            format(index, `yyyy-MM-dd 00:00:00`) as any,
+            format(index, `yyyy-MM-dd 23:59:59`) as any,
+          ),
+        },
+        order: {
+          date: 'ASC',
+        },
+      });
+
+      //total registros comedor
+      let totalRegComedor = 0;
+      totalRegComedor = registrosComedor.filter((checador: any) => checador.origin == 'Comedor').length;
+
+      //obtener incidencias tiempo extra por turno(HET) y tiempo extra por horas(HE)
+      const incidenciasNormales =
+        await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
+          start: format(index, 'yyyy-MM-dd 00:00:00') as any,
+          end: format(index, 'yyyy-MM-dd 23:59:00') as any,
+          ids: [idEmployee],
+          code_band: ['HE', 'HET', 'DFT',],
+          status: ['Autorizada']
+        });
+      let existeIncidenciasHE = false;
+      let existeDFT = false;
+      existeIncidenciasHE = incidenciasNormales.some((incidencia) => (incidencia.codeBand == 'HET' || incidencia.codeBand == 'HE') && incidencia.status == 'Autorizada');
+      existeDFT = incidenciasNormales.some((incidencia) => incidencia.codeBand == 'DFT' && incidencia.status == 'Autorizada');
+
+      if (existeIncidenciasHE) {
+        //precio de la comida * el total de registros menos 1 por tener tiempo extra
+        totalPagarComida += ((totalRegComedor == 0 ? 0 : totalRegComedor) - 1) * precioComida;
+      } else {
+        //si no existe DFT se multiplica precio de comida por total registros comedor
+        if (!existeDFT) {
+          totalPagarComida += totalRegComedor * precioComida;
+        }
+
+      }
+    }
+
+    return totalPagarComida;
   }
 
   async update(data: UpdateChecadaDto, id: number) {
