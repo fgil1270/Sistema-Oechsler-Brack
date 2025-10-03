@@ -140,7 +140,7 @@ export class TimeCorrectionService {
             UNION
             SELECT * FROM employee AS e
             INNER JOIN organigrama AS o ON e.id = o.employeeId
-            WHERE o.leaderId = ${user.idEmployee}
+            WHERE o.leaderId = ${user.idEmployee} AND e.deleted_at IS NULL
             `;
     }
 
@@ -250,6 +250,7 @@ export class TimeCorrectionService {
             'DFT', 'VacM', 'Sind', 'PRTC', 'DOM', 'VACA', 'HO', 'HET', 'PSSE'],
         });
 
+        //si no tiene turno no se muestra en el reporte
         if (employeeShif.events.length == 0) {
           continue;
         }
