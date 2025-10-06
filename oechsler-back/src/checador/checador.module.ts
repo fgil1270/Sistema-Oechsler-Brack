@@ -11,10 +11,11 @@ import { IncidenceCatologueModule } from '../incidence_catologue/incidence_catol
 import { CalendarModule } from '../calendar/calendar.module';
 import { OrganigramaModule } from '../organigrama/organigrama.module';
 import { TimeCorrectionModule } from '../time_correction/time_correction.module';
+import { RecordDevice } from './entities/record_device.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Checador]),
+    TypeOrmModule.forFeature([Checador, RecordDevice]),
     EmployeesModule,
     EmployeeShiftModule,
     forwardRef(() => EmployeeIncidenceModule),
