@@ -2218,13 +2218,13 @@ export class EmployeeIncidenceService {
           if (turnoActual == turnoSiguiente) {
             switch (turnoActual) {
               case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
+                hrEntrada = '03:00:00'; //dia actual
                 hrSalida = '22:00:00'; //dia actual
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
                 break;
               case 'T2':
-                hrEntrada = '03:00:00'; //dia Actual
+                hrEntrada = '06:30:00'; //dia Actual
                 hrSalida = '22:00:00'; //dia siguiente
                 diaAnterior = new Date(diahoy);
                 diaSiguente = new Date(diahoy);
