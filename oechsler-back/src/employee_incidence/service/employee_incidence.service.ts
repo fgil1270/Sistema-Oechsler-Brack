@@ -2597,7 +2597,6 @@ export class EmployeeIncidenceService {
         totalHrsDay += sumaHrsIncidencias;
 
 
-
         //datos por dia
 
         dates[j].entrada = registrosChecador.length >= 1 ? format(new Date(firstHr), 'HH:mm:ss') : '',
