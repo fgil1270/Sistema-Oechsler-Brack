@@ -433,7 +433,7 @@ export class TimeCorrectionService {
           if (turnoActual == turnoSiguiente) {
             switch (turnoActual) {
               case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
+                hrEntrada = '03:00:00'; //dia actual
                 hrSalida = '22:00:00'; //dia actual
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
@@ -650,6 +650,9 @@ export class TimeCorrectionService {
 
         const horas_realizadas = date.toTimeString().split(' ')[0].split(':');
 
+        //se buscan los lideres del empleado
+        const lideres = await this.organigramaService.leaders(iterator.id);
+
         registros.push({
           id: i,
           id_empleado: iterator.id,
@@ -667,6 +670,9 @@ export class TimeCorrectionService {
           suma_hrs: diffTimeShift + 2,
           comments: '',
           checadas: registrosChecadorNuevo,
+          lideres: lideres.orgs.map((lider) =>
+            lider.leader.employee_number,
+          ),
 
           /* horasEsperadas: totalHrsRequeridas.toFixed(2),
                     horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas
@@ -788,12 +794,14 @@ export class TimeCorrectionService {
           });
 
         if (employeeShif.events.length == 0) {
-          continue;
+          //continue;
         }
 
         if (incidencias.length > 0) {
           //continue;
         }
+
+        //revisar si existen checadas
 
         const turnoActual = employeeShif.events[0]?.nameShift;
         let hrEntrada = '00:00:00';
