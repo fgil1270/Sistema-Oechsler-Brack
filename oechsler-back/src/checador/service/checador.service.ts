@@ -367,10 +367,17 @@ export class ChecadorService {
           const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
           const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
 
-
+          //obtener el horario de entrada y salida
+          //para consultar el checador
+          ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.entradaSalidaChecador(
+            diahoy,
+            turnoAnterior,
+            turnoActual,
+            turnoSiguiente
+          ))
 
           //turno actual es igual al turno del dia anterior
-          if (turnoActual == turnoAnterior) {
+          /* if (turnoActual == turnoAnterior) {
             //turno actual es igual al turno del dia siguiente
             if (turnoActual == turnoSiguiente) {
               switch (turnoActual) {
@@ -651,8 +658,79 @@ export class ChecadorService {
                   break;
               }
             }
-          }
+          } */
 
+          //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
+          for (let index = 0; index < incidenciasNormales.length; index++) {
+            if (incidenciasNormales[index].status == 'Pendiente') continue;
+            if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET' || incidenciasNormales[index].codeBand == 'TxT') {
+              if (incidenciasNormales[index].type == 'Compensatorio') {
+                isTxtCompensatorio = true;
+                totalHrsTrabajadas += hourShift;
+                totalMinTrabajados += Number(minShift) % 60;
+
+
+              }
+
+              //si es turno 1
+              if (employeeShif.events[0]?.nameShift != '' && (employeeShif.events[0]?.nameShift == 'T1' || employeeShif.events[0]?.nameShift == 'TI1')) {
+
+
+                if (incidenciasNormales[index].incidenceShift == 2) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+                  diaAnterior = new Date(index);
+                } else if (incidenciasNormales[index].incidenceShift == 3) {
+                  hrEntrada = '18:00:00';
+                  hrSalida = '06:59:00';
+                  diahoy.setDate(diahoy.getDate() - 1);
+                } else {
+
+                }
+              } else if (employeeShif.events[0]?.nameShift != '' && (employeeShif.events[0]?.nameShift == 'T2' || employeeShif.events[0]?.nameShift == 'TI2')) {
+
+                if (incidenciasNormales[index].incidenceShift == 1) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+
+                } else if (incidenciasNormales[index].incidenceShift == 3) {
+                  hrEntrada = '13:00:00';
+                  hrSalida = '06:59:00';
+                  diaSiguente.setDate(diahoy.getDate() + 1);
+                }
+              } else if (employeeShif.events[0]?.nameShift != '' && (employeeShif.events[0]?.nameShift == 'T3' || employeeShif.events[0]?.nameShift == 'TI3')) {
+
+                if (incidenciasNormales[index].incidenceShift == 1) {
+                  hrEntrada = '20:00:00';
+                  hrSalida = '14:59:00';
+                  diaSiguente.setDate(diahoy.getDate() + 1);
+                } else if (incidenciasNormales[index].incidenceShift == 2) {
+                  hrEntrada = '13:00:00';
+                  hrSalida = '06:59:00';
+                  diaSiguente.setDate(diaSiguente.getDate() + 1);
+                }
+              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'MIX') {
+
+                hrEntrada = '00:30:00';
+                hrSalida = '23:59:00';
+              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'TI') {
+
+                hrEntrada = '00:30:00';
+                hrSalida = '23:59:00';
+              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T4') {
+                if (incidenciasNormales[index].incidenceShift == 2) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+
+                } else if (incidenciasNormales[index].incidenceShift == 3) {
+                  hrEntrada = '18:00:00';
+                  hrSalida = '06:59:00';
+                  diahoy.setDate(diahoy.getDate() - 1);
+                }
+              }
+
+            }
+          }
 
           //se obtienen los registros del dia
           const registrosChecador = await this.checadorRepository.find({
@@ -680,8 +758,6 @@ export class ChecadorService {
               date: 'ASC',
             },
           });
-
-
 
           //si existen checadas
           if (registrosChecador.length > 0) {
@@ -746,78 +822,6 @@ export class ChecadorService {
             }
 
 
-          }
-
-          //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
-          for (let index = 0; index < incidenciasNormales.length; index++) {
-            if (incidenciasNormales[index].status == 'Pendiente') continue;
-            if (incidenciasNormales[index].codeBand == 'HE' || incidenciasNormales[index].codeBand == 'HET' || incidenciasNormales[index].codeBand == 'TxT') {
-              if (incidenciasNormales[index].type == 'Compensatorio') {
-                isTxtCompensatorio = true;
-                totalHrsTrabajadas += hourShift;
-                totalMinTrabajados += Number(minShift) % 60;
-
-
-              }
-
-              //si es turno 1
-              if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T1') {
-
-
-                if (incidenciasNormales[index].incidenceShift == 2) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-                  diaAnterior = new Date(index);
-                } else if (incidenciasNormales[index].incidenceShift == 3) {
-                  hrEntrada = '18:00:00';
-                  hrSalida = '06:59:00';
-                  diahoy.setDate(diahoy.getDate() - 1);
-                } else {
-
-                }
-              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T2') {
-
-                if (incidenciasNormales[index].incidenceShift == 1) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-
-                } else if (incidenciasNormales[index].incidenceShift == 3) {
-                  hrEntrada = '13:00:00';
-                  hrSalida = '06:59:00';
-                  diaSiguente.setDate(diahoy.getDate() + 1);
-                }
-              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T3') {
-
-                if (incidenciasNormales[index].incidenceShift == 1) {
-                  hrEntrada = '20:00:00';
-                  hrSalida = '14:59:00';
-                  diaSiguente.setDate(diahoy.getDate() + 1);
-                } else if (incidenciasNormales[index].incidenceShift == 2) {
-                  hrEntrada = '13:00:00';
-                  hrSalida = '06:59:00';
-                  diaSiguente.setDate(diaSiguente.getDate() + 1);
-                }
-              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'MIX') {
-
-                hrEntrada = '00:30:00';
-                hrSalida = '23:59:00';
-              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'TI') {
-
-                hrEntrada = '00:30:00';
-                hrSalida = '23:59:00';
-              } else if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T4') {
-                if (incidenciasNormales[index].incidenceShift == 2) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-
-                } else if (incidenciasNormales[index].incidenceShift == 3) {
-                  hrEntrada = '18:00:00';
-                  hrSalida = '06:59:00';
-                  diahoy.setDate(diahoy.getDate() - 1);
-                }
-              }
-
-            }
           }
 
 
@@ -1032,6 +1036,306 @@ export class ChecadorService {
       registros,
       diasGenerados,
     };
+  }
+
+  //definir hora de entrar y salida para el checador
+  async entradaSalidaChecador(diaActual: Date, turnoAnterior: string, turnoActual: string, turnoSiguiente: string) {
+    let index = new Date(diaActual);
+    let hrEntrada = '';
+    let hrSalida = '';
+    let diaAnterior = new Date();
+    let diaSiguente = new Date();
+
+    //turno actual es igual al turno del dia anterior
+    if (turnoActual == turnoAnterior) {
+      //turno actual es igual al turno del dia siguiente
+      if (turnoActual == turnoSiguiente) {
+        switch (turnoActual) {
+          case 'T1':
+            hrEntrada = '22:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+            diaSiguente = new Date(index);
+            break;
+          case 'T2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '07:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'T3':
+            hrEntrada = '13:00:00'; //dia actual
+            hrSalida = '15:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'MIX':
+            hrEntrada = '00:01:00'; //dia actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI':
+            hrEntrada = '02:00:00'; //dia actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T4':
+            hrEntrada = '21:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-1':
+            hrEntrada = '03:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-2':
+            hrEntrada = '12:00:00'; //dia anterior
+            hrSalida = '08:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TI1':
+            hrEntrada = '21:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+            diaSiguente = new Date(index);
+            break;
+          case 'TI2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '07:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TI3':
+            hrEntrada = '13:00:00'; //dia actual
+            hrSalida = '15:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+        }
+      } else {
+        switch (turnoActual) {
+          case 'T1':
+            hrEntrada = '21:00:00'; //dia anterior
+            hrSalida = '15:00:00'; //dia actual
+            diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+            diaSiguente = new Date(index);
+            break;
+          case 'T2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T3':
+            hrEntrada = '13:00:00'; //dia actual
+            hrSalida = '07:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'MIX':
+            hrEntrada = '03:00:00'; //dia actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI':
+            hrEntrada = '02:00:00'; //dia actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T4':
+            hrEntrada = '21:00:00'; //dia anterior
+            hrSalida = '15:00:00'; //dia actual
+            diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-1':
+            hrEntrada = '03:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-2':
+            hrEntrada = '12:00:00'; //dia anterior
+            hrSalida = '08:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TI1':
+            hrEntrada = '21:00:00'; //dia anterior
+            hrSalida = '15:00:00'; //dia actual
+            diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+            diaSiguente = new Date(index);
+            break;
+          case 'TI2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI3':
+            hrEntrada = '13:00:00'; //dia actual
+            hrSalida = '07:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+        }
+      }
+    } else {
+      if (turnoActual == turnoSiguiente) {
+        switch (turnoActual) {
+          case 'T1':
+            hrEntrada = '03:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T2':
+            hrEntrada = '03:00:00'; //dia Actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'T3':
+            hrEntrada = '13:00:00'; //dia actual
+            hrSalida = '15:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'MIX':
+            hrEntrada = '03:00:00'; //dia actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI':
+            hrEntrada = '02:00:00'; //dia actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T4':
+            hrEntrada = '21:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-1':
+            hrEntrada = '03:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-2':
+            hrEntrada = '12:00:00'; //dia anterior
+            hrSalida = '08:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TI1':
+            hrEntrada = '03:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI2':
+            hrEntrada = '03:00:00'; //dia Actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TI3':
+            hrEntrada = '13:00:00'; //dia actual
+            hrSalida = '15:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+        }
+      } else {
+        switch (turnoActual) {
+          case 'T1':
+            hrEntrada = '05:00:00'; //dia anterior
+            hrSalida = '16:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T2':
+            hrEntrada = '13:00:00'; //dia Actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T3':
+            hrEntrada = '21:00:00'; //dia actual
+            hrSalida = '07:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'MIX':
+            hrEntrada = '03:00:00'; //dia actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI':
+            hrEntrada = '02:00:00'; //dia actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T4':
+            hrEntrada = '06:00:00'; //dia anterior
+            hrSalida = '16:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-1':
+            hrEntrada = '03:00:00'; //dia anterior
+            hrSalida = '22:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'T12-2':
+            hrEntrada = '12:00:00'; //dia anterior
+            hrSalida = '08:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TI1':
+            hrEntrada = '05:00:00'; //dia anterior
+            hrSalida = '16:00:00'; //dia actual
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI2':
+            hrEntrada = '13:00:00'; //dia Actual
+            hrSalida = '22:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
+          case 'TI3':
+            hrEntrada = '21:00:00'; //dia actual
+            hrSalida = '07:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+        }
+      }
+    }
+
+    return {
+      hrEntrada,
+      hrSalida,
+      diaAnterior,
+      diaSiguente
+    }
   }
 
   //obtener el total de registros del comedor

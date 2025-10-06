@@ -1997,9 +1997,19 @@ export class EmployeeIncidenceService {
         const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
         const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
 
+
+        //obtener el horario de entrada y salida
+        //para consultar el checador
+        ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.checadorService.entradaSalidaChecador(
+          diahoy,
+          turnoAnterior,
+          turnoActual,
+          turnoSiguiente
+        ))
+
         //se reasignan las horas de entrada y salida dependiendo del turno
         //turno actual es igual al turno del dia anterior
-        if (turnoActual == turnoAnterior) {
+        /* if (turnoActual == turnoAnterior) {
           //turno actual es igual al turno del dia siguiente
           if (turnoActual == turnoSiguiente) {
             switch (turnoActual) {
@@ -2355,7 +2365,7 @@ export class EmployeeIncidenceService {
             }
           }
 
-        }
+        } */
 
         //se realiza la suma o resta de horas de las incidencias
         for (let index = 0; index < dates[j].incidencia.length; index++) {
@@ -2448,7 +2458,7 @@ export class EmployeeIncidenceService {
 
             //si es tiempo extra, tiempo extra por hora
             if (currentIncidence[0].incidenceCatologue.code_band == 'HE' || currentIncidence[0].incidenceCatologue.code_band == 'HET' || currentIncidence[0].incidenceCatologue.code_band == 'TxT') {
-              if (turnoActual != '' && turnoActual == 'T1') {
+              if (turnoActual != '' && (turnoActual == 'T1' || turnoActual == 'TI1')) {
 
 
                 if (incidence.ei_shift == 2) {
@@ -2460,7 +2470,7 @@ export class EmployeeIncidenceService {
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
                 }
-              } else if (turnoActual != '' && turnoActual == 'T2') {
+              } else if (turnoActual != '' && (turnoActual == 'T2' || turnoActual == 'TI2')) {
 
                 if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
@@ -2471,7 +2481,7 @@ export class EmployeeIncidenceService {
                   hrSalida = '06:59:00';
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 }
-              } else if (turnoActual != '' && turnoActual == 'T3') {
+              } else if (turnoActual != '' && (turnoActual == 'T3' || turnoActual == 'TI3')) {
 
                 if (incidence.ei_shift == 1) {
                   hrEntrada = '20:00:00';

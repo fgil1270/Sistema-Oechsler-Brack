@@ -287,8 +287,17 @@ export class TimeCorrectionService {
         const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
         const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
 
+        //obtener el horario de entrada y salida
+        //para consultar el checador
+        ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.checadorService.entradaSalidaChecador(
+          index,
+          turnoAnterior,
+          turnoActual,
+          turnoSiguiente
+        ))
+
         //turno actual es igual al turno del dia anterior
-        if (turnoActual == turnoAnterior) {
+        /* if (turnoActual == turnoAnterior) {
           //turno actual es igual al turno del dia siguiente
           if (turnoActual == turnoSiguiente) {
             switch (turnoActual) {
@@ -569,7 +578,7 @@ export class TimeCorrectionService {
                 break;
             }
           }
-        }
+        } */
 
 
 
