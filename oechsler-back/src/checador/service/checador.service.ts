@@ -345,9 +345,13 @@ export class ChecadorService {
           if (employeeShif.events[0]?.nameShift == 'TI' || employeeShif.events[0]?.nameShift == 'TI1' || employeeShif.events[0]?.nameShift == 'TI2' || employeeShif.events[0]?.nameShift == 'TI3') {
             hourShift = 0;
             minShift = 0;
+            totalHrsRequeridas += hourShift;
+            totalMinRequeridos += Number(minShift) % 60;
+          } else {
+            totalHrsRequeridas += hourShift;
+            totalMinRequeridos += Number(minShift) % 60;
           }
-          totalHrsRequeridas += hourShift;
-          totalMinRequeridos += Number(minShift) % 60;
+
 
           const incidenceHrExtra = await this.incidenceCatalogueService.findByCodeBand('HE');
           const faltaInjustificada = await this.incidenceCatalogueService.findByCodeBand('FINJ');
@@ -795,6 +799,9 @@ export class ChecadorService {
                 //si la incidencia es DFT y existen registros del checador
                 //agrega la incidencia al reporte
                 if (incidenciasNormales[index].codeBand == 'DFT') {
+                  totalHrsTrabajadas += hourShift;
+                  totalMinTrabajados += Number(minShift) % 60;
+
                   if (registrosChecador.length > 0) {
                     //si existen registros del checador
                     //agrega la incidencia al reporte
@@ -1192,16 +1199,16 @@ export class ChecadorService {
       if (turnoActual == turnoSiguiente) {
         switch (turnoActual) {
           case 'T1':
-            hrEntrada = '03:00:00'; //dia anterior
+            hrEntrada = '03:00:00'; //dia actual
             hrSalida = '22:00:00'; //dia actual
             diaAnterior = new Date(index);
             diaSiguente = new Date(index);
             break;
           case 'T2':
             hrEntrada = '03:00:00'; //dia Actual
-            hrSalida = '22:00:00'; //dia siguiente
+            hrSalida = '23:00:00'; //dia siguiente
             diaAnterior = new Date(index);
-            diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            diaSiguente = new Date(index);
             break;
           case 'T3':
             hrEntrada = '13:00:00'; //dia actual
