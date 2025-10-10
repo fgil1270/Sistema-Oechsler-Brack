@@ -120,6 +120,7 @@ export class ChecadorService {
           },
           employeeProfile: true,
         },
+        recordDevice: true,
       },
       order: {
         date: 'ASC',
@@ -737,7 +738,7 @@ export class ChecadorService {
           }
 
           //se obtienen los registros del dia
-          const registrosChecador = await this.checadorRepository.find({
+          let registrosChecador = await this.checadorRepository.find({
             where: {
               employee: {
                 id: iterator.id,
@@ -757,11 +758,20 @@ export class ChecadorService {
                 },
                 employeeProfile: true,
               },
+              recordDevice: true,
             },
             order: {
               date: 'ASC',
             },
           });
+
+          //filtra los registros
+          //solo toma los registros de acceso personal
+          registrosChecador = registrosChecador.filter((registro) =>
+            registro.recordDevice &&
+            registro.recordDevice.description &&
+            registro.recordDevice.description == 'Acceso Personal'
+          );
 
           //si existen checadas
           if (registrosChecador.length > 0) {
