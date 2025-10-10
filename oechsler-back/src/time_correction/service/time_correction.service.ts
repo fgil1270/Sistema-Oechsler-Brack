@@ -18,7 +18,7 @@ import {
 } from 'typeorm';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, fi } from 'date-fns/locale';
 import * as moment from 'moment';
 
 
@@ -383,7 +383,12 @@ export class TimeCorrectionService {
           if (employeeShif.events.length <= 0) {
             incongruencia = 'No tiene turno asignado';
           } else {
-            incongruencia = 'incongruencia de horas';
+            if (turnoActual == 'TI' || turnoActual == 'TI1' || turnoActual == 'TI2' || turnoActual == 'TI3') {
+              incongruencia = 'No tiene incidencia';
+            } else {
+              incongruencia = 'incongruencia de horas';
+            }
+
           }
 
 

@@ -768,9 +768,15 @@ export class ChecadorService {
           //filtra los registros
           //solo toma los registros de acceso personal
           registrosChecador = registrosChecador.filter((registro) =>
-            registro.recordDevice &&
-            registro.recordDevice.description &&
-            registro.recordDevice.description == 'Acceso Personal'
+            (
+              registro.recordDevice &&
+              registro.recordDevice.description &&
+              registro.recordDevice.description == 'Acceso Personal'
+            ) ||
+            (
+              registro.numRegistroChecador == 0 || registro.numRegistroChecador == 1
+
+            )
           );
 
           //si existen checadas

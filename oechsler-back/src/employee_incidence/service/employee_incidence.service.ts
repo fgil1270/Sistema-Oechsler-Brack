@@ -2193,7 +2193,17 @@ export class EmployeeIncidenceService {
 
         //filtra los registros
         //solo toma los registros de acceso personal
-        registrosChecador = registrosChecador.filter((registro) => registro.recordDevice.description == 'Acceso Personal');
+        registrosChecador = registrosChecador.filter((registro) =>
+          (
+            registro.recordDevice &&
+            registro.recordDevice.description &&
+            registro.recordDevice.description == 'Acceso Personal'
+          ) ||
+          (
+            registro.numRegistroChecador == 0 || registro.numRegistroChecador == 1
+
+          )
+        );
 
         if (registrosChecador.length > 0) {
           firstHr = moment(new Date(registrosChecador[0]?.date));
