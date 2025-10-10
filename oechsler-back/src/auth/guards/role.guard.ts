@@ -4,7 +4,7 @@ import { Request } from 'express';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
-  constructor(private readonly _reflector: Reflector) {}
+  constructor(private readonly _reflector: Reflector) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const views: string[] = this._reflector.get<string[]>(
@@ -21,7 +21,10 @@ export class RoleGuard implements CanActivate {
     const { user } = request;
 
     let hasRole = false;
+
+    //roles que tiene el usuario
     user.roles.forEach((element) => {
+      //verifica si el rol tiene acceso a la vista
       const val = element.vistas.some((vista: string) =>
         views.includes(vista['name']),
       );

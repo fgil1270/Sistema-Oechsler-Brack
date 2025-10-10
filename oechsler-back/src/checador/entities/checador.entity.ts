@@ -11,6 +11,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Employee } from '../../employees/entities/employee.entity';
+import { RecordDevice } from './record_device.entity';
 
 @Entity('Checador')
 export class Checador {
@@ -44,4 +45,8 @@ export class Checador {
   @ApiProperty({ description: 'Origen de la checada (Comedor)' })
   @Column({ type: 'varchar', nullable: true })
   origin: string;
+
+  @ManyToOne(() => RecordDevice, (recordDevice) => recordDevice.checadore)
+  @JoinColumn()
+  recordDevice: RecordDevice;
 }

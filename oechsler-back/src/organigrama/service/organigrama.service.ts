@@ -260,6 +260,7 @@ export class OrganigramaService {
     return { org };
   }
 
+  //buscar empleados por jerarquia
   async findJerarquia(data: OrganigramaGerarquia, user: any) {
     try {
       //se verifica si el usuario logueado tiene role de Admin o RH
