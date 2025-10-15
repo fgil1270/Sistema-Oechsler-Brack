@@ -13,7 +13,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Employee } from '../../employees/entities/employee.entity';
 import { RecordDevice } from './record_device.entity';
 
-@Entity('Checador')
+@Entity('checador')
 export class Checador {
   @PrimaryGeneratedColumn()
   id: number;
@@ -49,4 +49,8 @@ export class Checador {
   @ManyToOne(() => RecordDevice, (recordDevice) => recordDevice.checadore)
   @JoinColumn()
   recordDevice: RecordDevice;
+
+  @Column({ type: 'bigint', nullable: true })
+  idHikvision: number;
+
 }
