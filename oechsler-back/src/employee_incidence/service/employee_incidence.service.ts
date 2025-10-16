@@ -2193,17 +2193,31 @@ export class EmployeeIncidenceService {
 
         //filtra los registros
         //solo toma los registros de acceso personal
-        registrosChecador = registrosChecador.filter((registro) =>
-          (
-            registro.recordDevice &&
-            registro.recordDevice.description &&
-            registro.recordDevice.description == 'Acceso Personal'
-          ) ||
-          (
-            registro.numRegistroChecador == 0 || registro.numRegistroChecador == 1
+        //si el dia es <= 2025-10-05 23:59:59 toma todos los registros
+        //y si no los filtra
 
-          )
-        );
+        registrosChecador = registrosChecador.filter((registro) => {
+          if (registro.date <= new Date('2025-10-05 23:59:59')) {
+            return true;
+          } else {
+            if ((
+              registro.recordDevice &&
+              registro.recordDevice.description &&
+              registro.recordDevice.description == 'Acceso Personal'
+            ) ||
+              (
+                registro.numRegistroChecador == 0 || registro.numRegistroChecador == 1
+
+              )
+            ) {
+              // Si el registro es de acceso personal o es un registro manual, se incluye
+              return true;
+            } else {
+              return false;
+            }
+          }
+
+        });
 
         if (registrosChecador.length > 0) {
           firstHr = moment(new Date(registrosChecador[0]?.date));

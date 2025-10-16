@@ -372,6 +372,7 @@ export class TimeCorrectionService {
             '(c.date >= :from AND c.date <= :to)',
             { from: format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`) as any, to: format(diaSiguente, `yyyy-MM-dd ${hrSalida}`) as any }
           )
+          .orderBy('c.date', 'ASC')
           .getMany();
 
 
@@ -393,12 +394,18 @@ export class TimeCorrectionService {
 
 
         } else {
-
+          //tiene checadas
           if (checadas.length > 0) {
 
             incongruencia = 'No tiene turno asignado';
           } else {
-            incongruencia = 'No tiene checadas';
+            //tiene turno
+            if (employeeShif.events.length > 0) {
+              incongruencia = 'No tiene checadas';
+            } else {
+              continue;
+            }
+
 
           }
 

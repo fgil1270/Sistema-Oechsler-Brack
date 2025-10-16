@@ -13,7 +13,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { Employee } from '../../employees/entities/employee.entity';
 
-@Entity('Calendar')
+@Entity('calendar')
 export class Calendar {
   @ApiProperty({ description: 'ID del evento' })
   @PrimaryGeneratedColumn()
