@@ -104,6 +104,24 @@ export class SupplierService {
     return `This action removes a #${id} supplier`;
   }
 
+
+  //crear un instructor
+  async createTeacher(data: CreateTeacherDto) {
+    const teacher = this.teacherRepository.create(data);
+
+    const supplier = await this.supplierRepository.findOne({
+      where: { id: data.supplierId },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+
+    teacher.supplier = supplier;
+
+    return this.teacherRepository.save(teacher);
+  }
+
   //buscar todos los instructores por query
   async findTeacherAll(query: Partial<Teacher>) {
 
@@ -152,21 +170,28 @@ export class SupplierService {
     return teacher;
   }
 
-
-  //crear un instructor
-  async createTeacher(data: CreateTeacherDto) {
-    const teacher = this.teacherRepository.create(data);
-
-    const supplier = await this.supplierRepository.findOne({
-      where: { id: data.supplierId },
+  //actualizar un instructor
+  async updateTeacher(id: number, updateTeacherDto: CreateTeacherDto) {
+    const teacher = await this.teacherRepository.findOne({
+      where: { id: id },
+      relations: {
+        supplier: true,
+      },
+    });
+    if (!teacher) {
+      throw new NotFoundException('Teacher not found');
+    }
+    let supplier = await this.supplierRepository.findOne({
+      where: { id: updateTeacherDto.supplierId },
     });
 
     if (!supplier) {
       throw new NotFoundException('Supplier not found');
     }
-
+    Object.assign(teacher, updateTeacherDto);
     teacher.supplier = supplier;
-
-    return this.teacherRepository.save(teacher);
+    await this.teacherRepository.save(teacher);
+    return teacher;
   }
+
 }

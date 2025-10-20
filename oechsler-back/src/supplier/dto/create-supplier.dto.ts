@@ -37,8 +37,8 @@ export class CreateSupplierDto {
     @ApiProperty({ description: 'Teléfono del proveedor' })
     phone: string;
 
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
     @ApiProperty({ description: 'Calle del proveedor' })
     street: string;
 

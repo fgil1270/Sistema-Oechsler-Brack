@@ -74,4 +74,19 @@ export class TeacherController {
     return this.supplierService.createTeacher(createTeacherDto);
   }
 
+  @ApiOperation({ summary: 'Buscar instructor por ID' })
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.supplierService.findTeacherById(id);
+  }
+
+  @ApiOperation({ summary: 'Actualizar instructor' })
+  @Put(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateTeacherDto: CreateTeacherDto,
+  ) {
+    return this.supplierService.updateTeacher(id, updateTeacherDto);
+  }
+
 }
