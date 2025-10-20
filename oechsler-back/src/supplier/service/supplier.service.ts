@@ -32,8 +32,39 @@ export class SupplierService {
     @InjectRepository(Teacher) private teacherRepository: Repository<Teacher>,
   ) { }
 
+  //crear un proveedor
   async create(createSupplierDto: CreateSupplierDto) {
-    return 'This action adds a new supplier';
+    const createSupplier = this.supplierRepository.create(createSupplierDto);
+
+    //se crea un array de condiciones para la busqueda
+    const whereClauses: FindOptionsWhere<Supplier>[] = [];
+
+    if (createSupplierDto.business_name) {
+      whereClauses.push({ business_name: createSupplierDto.business_name } as FindOptionsWhere<Supplier>);
+    }
+    if (createSupplierDto.name) {
+      whereClauses.push({ name: createSupplierDto.name } as FindOptionsWhere<Supplier>);
+    }
+    if (createSupplierDto.code) {
+      whereClauses.push({ code: createSupplierDto.code } as FindOptionsWhere<Supplier>);
+    }
+
+    let findExisting: Supplier | null = null;
+    if (whereClauses.length) {
+      findExisting = await this.supplierRepository.findOne({
+        where: whereClauses,
+      });
+    }
+
+    if (findExisting) {
+      throw new NotFoundException('El proveedor ya existe');
+    }
+
+    const supplier = await this.supplierRepository.save(createSupplier);
+
+
+
+    return supplier;
   }
 
   //buscar todos los proveedores
@@ -43,12 +74,30 @@ export class SupplierService {
     return supplier;
   }
 
+  //buscar un proveedor por id
   async findSupplierOne(id: number) {
-    return `This action returns a #${id} supplier`;
+    const supplier = await this.supplierRepository.findOne({ where: { id: id } });
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+
+    return supplier;
   }
 
+  //actualizar un proveedor
   async updateSupplier(id: number, updateSupplierDto: UpdateSupplierDto) {
-    return `This action updates a #${id} supplier`;
+
+    //buscar el proveedor por id
+    const supplier = await this.supplierRepository.findOne({ where: { id: id } });
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+
+    Object.assign(supplier, updateSupplierDto);
+
+    await this.supplierRepository.save(supplier);
+
+    return supplier;
   }
 
   async removeSupplier(id: number) {
