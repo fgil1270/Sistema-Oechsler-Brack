@@ -47,6 +47,7 @@ import { VacationsProfileModule } from './vacations-profile/vacations-profile.mo
 import { ViewsModule } from './views/views.module';
 import { GeneralModule } from './general/general.module';
 import { CronRequestCourseService } from './request_course/service/cron_request_course.service';
+import { ProductionAreaModule } from './production_area/production_area.module';
 
 
 @Module({
@@ -110,7 +111,8 @@ import { CronRequestCourseService } from './request_course/service/cron_request_
     SupplierModule,
     EnabledCreateIncidenceModule,
     CourseEfficiencyModule,
-    GeneralModule
+    GeneralModule,
+    ProductionAreaModule
   ],
   controllers: [
     AppController
