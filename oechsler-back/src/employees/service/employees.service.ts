@@ -258,6 +258,12 @@ export class EmployeesService {
       //validar email
       //email === undefined ||
 
+      //si el empleado es inactivo
+      //continuar con el siguiente registro
+      if (worker_status.w.trim() === 'I') {
+        continue;
+      }
+
       //SE VALIDA QUE NO EXISTAN CAMPOS VACIOS
       if (exNoEmployee === undefined) {
         continue;
@@ -332,7 +338,6 @@ export class EmployeesService {
         }
 
         //BUSCAMOS LA NOMINA
-
         const tablePayRoll = await this.payrollsService.findName(nomina.w);
         if (!tablePayRoll) {
           totalError++;
@@ -370,7 +375,8 @@ export class EmployeesService {
         }
 
         //BUSCAMOS EL EMPLEADO
-        const tableEmployee = await this.employeeRepository.findOne({
+        let tableEmployee;
+        const searchTableEmployee = await this.employeeRepository.find({
           where: {
             employee_number: exNoEmployee.w.trim(),
           },
@@ -386,8 +392,12 @@ export class EmployeesService {
         });
 
         //si el empleado ya existe pero esta eliminado manda un mensaje
-        if (tableEmployee.deleted_at) {
-          throw new NotFoundException(`El empleado #${tableEmployee.employee_number} ya existe, pero esta inactivo`);
+        if (searchTableEmployee.length > 0) {
+          if (searchTableEmployee[searchTableEmployee.length - 1].deleted_at && worker_status.w.trim() === 'A') {
+            throw new NotFoundException(`El empleado #${searchTableEmployee[0].employee_number} ya existe, pero esta inactivo`);
+          } else {
+            tableEmployee = searchTableEmployee[searchTableEmployee.length - 1];
+          }
         }
 
         //SI EL EMPLEADO EXISTE SE EDITA Y SI NO SE CREA

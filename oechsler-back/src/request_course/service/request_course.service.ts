@@ -563,7 +563,7 @@ export class RequestCourseService {
       });
 
       //se obtiene el lider del empleado
-      const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+      let leader = await this.organigramaService.leaders(requestCourse.employee.id);
 
       //se obtiene el departamento de la solicitud de curso
       let department = await this.departmentService.findOne(requestCourse.department.id);
@@ -634,7 +634,7 @@ export class RequestCourseService {
 
       //si el status de la solicitud de curso es Autorizado
       //y se quiere cambiar a cancelado
-      if (requestCourse.status == 'Asignado' && data.status == 'Cancelado') {
+      if ((requestCourse.status == 'Asignado' || requestCourse.status == 'Pendiente Evaluar Empleado') && data.status == 'Cancelado') {
         //el estatus cambia de Asignado a Autorizado
         requestCourse.status = 'Autorizado';
         requestCourse.requestCourseAssignment = [];
@@ -657,7 +657,7 @@ export class RequestCourseService {
 
         //si el usuario logueado es admin
         if (isAdmin) {
-          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          leader = await this.organigramaService.leaders(requestCourse.employee.id);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
@@ -704,7 +704,7 @@ export class RequestCourseService {
 
         if (data.avoidApprove) {
           const userApprove = await this.employeeService.findOne(user.idEmployee);
-          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          leader = await this.organigramaService.leaders(requestCourse.employee.id);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
@@ -760,7 +760,7 @@ export class RequestCourseService {
       }
 
       //se envian los correos
-      await this.mailService.sendEmail(`Actualizacion de Solicitud deCurso "${save.course.name}"`,
+      await this.mailService.sendEmail(`Actualizacion de Solicitud de Curso "${save.course.name}"`,
         {
           curso: save.course.name,
           status: save.status,

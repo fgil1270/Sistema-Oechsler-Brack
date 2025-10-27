@@ -120,6 +120,7 @@ export class ChecadorService {
           },
           employeeProfile: true,
         },
+        recordDevice: true,
       },
       order: {
         date: 'ASC',
@@ -737,7 +738,7 @@ export class ChecadorService {
           }
 
           //se obtienen los registros del dia
-          const registrosChecador = await this.checadorRepository.find({
+          let registrosChecador = await this.checadorRepository.find({
             where: {
               employee: {
                 id: iterator.id,
@@ -757,10 +758,36 @@ export class ChecadorService {
                 },
                 employeeProfile: true,
               },
+              recordDevice: true,
             },
             order: {
               date: 'ASC',
             },
+          });
+
+          //filtra los registros
+          //solo toma los registros de acceso personal
+          registrosChecador = registrosChecador.filter((registro) => {
+            if (registro.date <= new Date('2025-10-05 23:59:59')) {
+              return true;
+            } else {
+              if ((
+                registro.recordDevice &&
+                registro.recordDevice.description &&
+                registro.recordDevice.description == 'Acceso Personal'
+              ) ||
+                (
+                  registro.numRegistroChecador == 0 || registro.numRegistroChecador == 1
+
+                )
+              ) {
+                // Si el registro es de acceso personal o es un registro manual, se incluye
+                return true;
+              } else {
+                return false;
+              }
+            }
+
           });
 
           //si existen checadas
@@ -1205,7 +1232,7 @@ export class ChecadorService {
             diaSiguente = new Date(index);
             break;
           case 'T2':
-            hrEntrada = '03:00:00'; //dia Actual
+            hrEntrada = '07:00:00'; //dia Actual
             hrSalida = '23:00:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(index);
@@ -1217,8 +1244,8 @@ export class ChecadorService {
             diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
             break;
           case 'MIX':
-            hrEntrada = '03:00:00'; //dia actual
-            hrSalida = '22:00:00'; //dia siguiente
+            hrEntrada = '02:00:00'; //dia actual
+            hrSalida = '23:00:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(index);
             break;
@@ -1253,7 +1280,7 @@ export class ChecadorService {
             diaSiguente = new Date(index);
             break;
           case 'TI2':
-            hrEntrada = '03:00:00'; //dia Actual
+            hrEntrada = '07:00:00'; //dia Actual
             hrSalida = '22:00:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));

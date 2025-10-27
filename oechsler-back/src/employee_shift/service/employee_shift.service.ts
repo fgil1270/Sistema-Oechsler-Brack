@@ -6,6 +6,7 @@ import {
 import {
   Repository,
   In,
+  Between,
   MoreThanOrEqual,
   LessThanOrEqual,
   DataSource,
@@ -417,13 +418,14 @@ export class EmployeeShiftService {
               }
             }
 
+
             if (index.getDay() == 6 && shift.shift.name == 'Turno 1') {
               contPeriodicidad++;
             }
             if (index.getDay() == 6 && shift.shift.name == 'Turno 2') {
               contPeriodicidad++;
             }
-            if (index.getDay() == 5 && shift.shift.name == 'Turno 3') {
+            if (index.getDay() == 6 && shift.shift.name == 'Turno 3') {
               contPeriodicidad++;
             }
             if (index.getDay() == 5 && shift.shift.name == 'Mixto') {
@@ -560,9 +562,14 @@ export class EmployeeShiftService {
         employee: {
           id: In(ids),
         },
+        /*start_date:  Between(
+          new Date(from + ' 00:00:00'),
+          new Date(to + ' 23:59:59')
+        ) */
+        // Between(index as any, index as any)
         //start_date: MoreThanOrEqual(new Date(data.start)),
-        start_date: MoreThanOrEqual(from as any),
-        end_date: LessThanOrEqual(to as any),
+        start_date: MoreThanOrEqual(new Date(from) as Date),
+        end_date: LessThanOrEqual(new Date(to) as Date),
       },
     });
 

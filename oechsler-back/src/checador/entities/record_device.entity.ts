@@ -19,7 +19,7 @@ export class RecordDevice {
     id: number;
 
     @ApiProperty({ description: 'Nombre del dispositivo' })
-    @Column({ type: 'timestamp' })
+    @Column({ type: 'varchar' })
     device_name: string;
 
     @ApiProperty({ description: 'Descripción del dispositivo' })
