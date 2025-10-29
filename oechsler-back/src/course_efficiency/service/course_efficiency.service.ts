@@ -29,15 +29,15 @@ export class CourseEfficiencyService {
   constructor(
     @InjectRepository(CourseEfficiency) private courseEfficiencyRepository: Repository<CourseEfficiency>,
     @InjectRepository(CourseEfficiencyQuestion) private courseEfficiencyQuestionRepository: Repository<CourseEfficiencyQuestion>,
-    private readonly requestCourse: RequestCourseService,
+    private readonly requestCourseService: RequestCourseService,
     private readonly employeesService: EmployeesService,
-  ) {}
+  ) { }
 
-  async create(createCourseEfficiencyDto: CreateCourseEfficiencyDto) {
-    
+  async create(createCourseEfficiencyDto: CreateCourseEfficiencyDto, user: any) {
+
     const leader = await this.employeesService.findOne(createCourseEfficiencyDto.leaderId);
     const employee = await this.employeesService.findOne(createCourseEfficiencyDto.employeeId);
-    const requestCourse = await this.requestCourse.findRequestCourseById(createCourseEfficiencyDto.requestCourseId);
+    const requestCourse = await this.requestCourseService.findRequestCourseById(createCourseEfficiencyDto.requestCourseId);
     const createCourseEfficiency = this.courseEfficiencyRepository.create({
       date_evaluation: new Date(createCourseEfficiencyDto.evaluationDate),
       comment: createCourseEfficiencyDto.comment,
@@ -61,9 +61,25 @@ export class CourseEfficiencyService {
 
       await this.courseEfficiencyQuestionRepository.save(createQuestion);
     });
-    
+
+    //si no ha sido evaluado el empleado, cambiar estado a pendiente evaluar empleado
+    if (requestCourse.request_course_assessment_employee != null) {
+      requestCourse.status = 'Finalizado';
+    } else {
+      requestCourse.status = 'Pendiente Evaluar Empleado';
+    }
+
+    const updateDto: any = {
+      status: requestCourse.status,
+      requestCourseIds: [],
+      avoidApprove: false,
+      newEmployeeIds: [],
+    };
+
+    let updateRequestCourse = await this.requestCourseService.update(requestCourse.id, updateDto, user);
+
     return courseEfficiency;
-    
+
   }
 
   async findAll() {

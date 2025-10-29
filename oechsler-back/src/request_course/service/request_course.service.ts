@@ -620,6 +620,11 @@ export class RequestCourseService {
       } else if (data.status == 'Solicitado' && requestCourse.origin == 'Solicitud') {
         //se asigna el status de la solicitud
         requestCourse.status = 'Solicitado';
+        if (data.avoidApprove) {
+          let aprueba = await this.employeeService.findOne(user.idEmployee);
+          requestCourse.approved_at_leader = new Date();
+          requestCourse.leader = aprueba.emp;
+        }
 
       }
 
@@ -719,6 +724,11 @@ export class RequestCourseService {
         requestCourse.status = 'Pendiente Evaluar Empleado';
       }
 
+      if (data.status == 'Finalizado') {
+        requestCourse.status = 'Finalizado';
+      }
+
+
       if (data.requestBy) {
         const requestBy = await this.employeeService.findOne(data.requestBy);
         requestCourse.requestBy = requestBy.emp;
@@ -773,7 +783,7 @@ export class RequestCourseService {
       return {
         error: false,
         msg: 'Solicitud de curso actualizada correctamente',
-        data: data,
+        data: save,
       };
     } catch (error) {
       return {
@@ -892,8 +902,17 @@ export class RequestCourseService {
           request.approved_at_leader = new Date();
 
         } else if (data.status == 'Solicitado' && request.origin == 'Solicitud') {
-          //se asigna el status de la solicitud
-          request.status = 'Solicitado';
+          if (data.avoidApprove) {
+            let approveLeader = await this.employeeService.findOne(user.idEmployee);
+            request.approved_at_leader = new Date();
+            request.status = 'Autorizado';
+            request.leader = approveLeader.emp;
+            request.rh = approveLeader.emp;
+            request.approved_at_rh = new Date();
+          } else {
+            //se asigna el status de la solicitud
+            request.status = 'Solicitado';
+          }
 
         }
 
@@ -1018,6 +1037,11 @@ export class RequestCourseService {
     }
   }
 
+  //actualizar multiples status
+  updateStatusMultiple(data: UpdateRequestCourseDto, user: any) {
+
+  }
+
   async uploadMultipleFiles(idRequestCourse: number, files: Array<Express.Multer.File>, classifications: string[]) {
 
     const requestCourse = await this.requestCourse.findOne({
@@ -1110,6 +1134,7 @@ export class RequestCourseService {
           rh: true,
           gm: true,
           requestBy: true,
+          courseEfficiency: true
         },
         where: {
           id: idRequestCourse,
@@ -1131,8 +1156,17 @@ export class RequestCourseService {
 
       const assessment = await this.requestCourseAssessmentEmployee.save(createAssessment);
 
-      //actualizar el status de la solicitud de curso a Evaluado
-      //requestCourse.status = 'Evaluado';
+
+      //si existe evaluacion de eficiencia cambia el status del curso a Finalizado
+      if (requestCourse.courseEfficiency.length > 0) {
+        requestCourse.status = 'Finalizado';
+      } else {
+        if (requestCourse.efficiency_period != null || requestCourse.efficiency_period != '') {
+          requestCourse.status = 'Pendiente Evaluar Eficiencia';
+        } else {
+          requestCourse.status = 'Finalizado';
+        }
+      }
 
       await this.requestCourse.save(requestCourse);
 
