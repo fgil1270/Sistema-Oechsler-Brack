@@ -100,7 +100,7 @@ export class RequestCourseService {
           course_name: data.courseName,
           training_reason: data.traininReason,
           training_objective: data.trainingObjective,
-          efficiency_period: data.efficiencyPeriod,
+          efficiency_period: data.efficiencyPeriod == "" ? null : data.efficiencyPeriod,
           priority: data.priority,
           tentative_date_start: data.tentativeDateStart as any,
           tentative_date_end: data.tentativeDateEnd as any,
