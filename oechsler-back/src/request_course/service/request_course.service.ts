@@ -1161,7 +1161,7 @@ export class RequestCourseService {
       if (requestCourse.courseEfficiency.length > 0) {
         requestCourse.status = 'Finalizado';
       } else {
-        if (requestCourse.efficiency_period != null || requestCourse.efficiency_period != '') {
+        if (requestCourse.efficiency_period != null && requestCourse.efficiency_period != '') {
           requestCourse.status = 'Pendiente Evaluar Eficiencia';
         } else {
           requestCourse.status = 'Finalizado';
