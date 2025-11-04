@@ -125,6 +125,10 @@ export class RequestCourseService {
           definitionObjectiveAnnual: null
         });
 
+
+
+
+
         //si data.definitionObjetiveAnnualId existe se busca la definición del objetivo anual
         if (data.definitionObjetiveAnnualId) {
           const definitionObjetiveAnnual = await this.definitionObjectiveAnnualService.findObjectiveEmployee(
@@ -135,6 +139,58 @@ export class RequestCourseService {
 
         const requestCourse = await this.requestCourse.save(
           requestCourseCreate,
+        );
+
+        //se obtiene el lider del empleado
+        let leader = await this.organigramaService.leaders(emp.id);
+        let leadersMail = [];
+
+        const emailEmployee = await this.userService.findByIdEmployee(emp.id);
+
+        if (emailEmployee) {
+          leadersMail.push(emailEmployee.user[0].email);
+        }
+
+        if (leader.orgs.length > 0) {
+
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.leader.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              for (const u of user.user) {
+                //si el usuario tiene correo y no esta eliminado
+                if (u.email && u.deleted_at == null) {
+                  //se agrega el correo a la lista de correos
+                  leadersMail.push(u.email);
+                }
+              }
+            }
+          }
+        } else {
+          //busca empleados que su usuario tenga rol Jefe de turno
+          const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.userId', 'user')
+            .innerJoinAndSelect('user.roles', 'role')
+            .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          if (jefeTurno.length > 0) {
+            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
+          }
+        }
+
+
+        //se envian los correos
+        await this.mailService.sendEmail(`Creación Solicitud de Curso " ${requestCourse.course.name}"`,
+          {
+            curso: requestCourse.course.name,
+            status: requestCourse.status,
+            empleados: [`#${requestCourse.employee.employee_number}) ${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}`]
+          },
+          leadersMail,
+          'solicitud_curso'
         );
       }
 
@@ -727,7 +783,9 @@ export class RequestCourseService {
       if (data.status == 'Finalizado') {
         requestCourse.status = 'Finalizado';
       }
-
+      if (data.status == 'Cancelado') {
+        requestCourse.status = 'Cancelado';
+      }
 
       if (data.requestBy) {
         const requestBy = await this.employeeService.findOne(data.requestBy);
@@ -753,24 +811,45 @@ export class RequestCourseService {
       }
 
       const save = await this.requestCourse.save(requestCourse);
+
       let leadersMail = [];
-      for (const l of leader.orgs) {
-        //si el lider puede evaluar
-        if (l.evaluar) {
-          const user = await this.userService.findByIdEmployee(l.id);
-          //recorre el arreglo de usuarios que tiene el lider
-          for (const u of user.user) {
-            //si el usuario tiene correo y no esta eliminado
-            if (u.email && u.deleted_at == null) {
-              //se agrega el correo a la lista de correos
-              leadersMail.push(u.email);
+      const emailEmployee = await this.userService.findByIdEmployee(requestCourse.employee.id);
+      if (emailEmployee) {
+        leadersMail.push(emailEmployee.user[0].email);
+      }
+
+      if (leader.orgs.length > 0) {
+
+        for (const l of leader.orgs) {
+          //si el lider puede evaluar
+          if (l.evaluar) {
+            const user = await this.userService.findByIdEmployee(l.leader.id);
+            //recorre el arreglo de usuarios que tiene el lider
+            for (const u of user.user) {
+              //si el usuario tiene correo y no esta eliminado
+              if (u.email && u.deleted_at == null) {
+                //se agrega el correo a la lista de correos
+                leadersMail.push(u.email);
+              }
             }
           }
+        }
+      } else {
+        //busca empleados que su usuario tenga rol Jefe de turno
+        const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+          .innerJoinAndSelect('employee.userId', 'user')
+          .innerJoinAndSelect('user.roles', 'role')
+          .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+          .andWhere('employee.deleted_at IS NULL')
+          .orderBy('employee.employee_number', 'ASC')
+          .getMany();
+        if (jefeTurno.length > 0) {
+          leadersMail.push(...jefeTurno.map(emp => emp.user.email));
         }
       }
 
       //se envian los correos
-      await this.mailService.sendEmail(`Actualizacion de Solicitud de Curso "${save.course.name}"`,
+      await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
         {
           curso: save.course.name,
           status: save.status,
@@ -928,19 +1007,39 @@ export class RequestCourseService {
         //actualiza la solicitud de curso
         const save = await this.requestCourse.save(request);
 
-        //recorre el arreglo de lideres
-        for (const l of leader.orgs) {
-          //si el lider puede evaluar
-          if (l.evaluar) {
-            const user = await this.userService.findByIdEmployee(l.leader.id);
-            //recorre el arreglo de usuarios que tiene el lider
-            for (const u of user.user) {
-              //si el usuario tiene correo y no esta eliminado
-              if (u.email && u.deleted_at == null) {
-                //se agrega el correo a la lista de correos
-                leadersMail.push(u.email);
+
+        const emailEmployee = await this.userService.findByIdEmployee(request.employee.id);
+        if (emailEmployee) {
+          leadersMail.push(emailEmployee.user[0].email);
+        }
+
+        if (leader.orgs.length > 0) {
+
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.leader.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              for (const u of user.user) {
+                //si el usuario tiene correo y no esta eliminado
+                if (u.email && u.deleted_at == null) {
+                  //se agrega el correo a la lista de correos
+                  leadersMail.push(u.email);
+                }
               }
             }
+          }
+        } else {
+          //busca empleados que su usuario tenga rol Jefe de turno
+          const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.userId', 'user')
+            .innerJoinAndSelect('user.roles', 'role')
+            .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          if (jefeTurno.length > 0) {
+            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
           }
         }
 
@@ -996,18 +1095,38 @@ export class RequestCourseService {
           //se crea solicitud de curso
           const save = await this.requestCourse.save(createRequest);
 
-          for (const l of leader.orgs) {
-            //si el lider puede evaluar
-            if (l.evaluar) {
-              const user = await this.userService.findByIdEmployee(l.id);
-              //recorre el arreglo de usuarios que tiene el lider
-              for (const u of user.user) {
-                //si el usuario tiene correo y no esta eliminado
-                if (u.email && u.deleted_at == null) {
-                  //se agrega el correo a la lista de correos
-                  leadersMail.push(u.email);
+          const emailEmployee = await this.userService.findByIdEmployee(save.employee.id);
+          if (emailEmployee) {
+            leadersMail.push(emailEmployee.user[0].email);
+          }
+
+          if (leader.orgs.length > 0) {
+
+            for (const l of leader.orgs) {
+              //si el lider puede evaluar
+              if (l.evaluar) {
+                const user = await this.userService.findByIdEmployee(l.leader.id);
+                //recorre el arreglo de usuarios que tiene el lider
+                for (const u of user.user) {
+                  //si el usuario tiene correo y no esta eliminado
+                  if (u.email && u.deleted_at == null) {
+                    //se agrega el correo a la lista de correos
+                    leadersMail.push(u.email);
+                  }
                 }
               }
+            }
+          } else {
+            //busca empleados que su usuario tenga rol Jefe de turno
+            const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+              .innerJoinAndSelect('employee.userId', 'user')
+              .innerJoinAndSelect('user.roles', 'role')
+              .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+              .andWhere('employee.deleted_at IS NULL')
+              .orderBy('employee.employee_number', 'ASC')
+              .getMany();
+            if (jefeTurno.length > 0) {
+              leadersMail.push(...jefeTurno.map(emp => emp.user.email));
             }
           }
 
@@ -1039,7 +1158,13 @@ export class RequestCourseService {
 
   //actualizar multiples status
   updateStatusMultiple(data: UpdateRequestCourseDto, user: any) {
+    //si es estatus es Autorizado
+    if (data.status == 'Autorizado') {
 
+
+    } else if (data.status == 'Cancelado') {
+
+    }
   }
 
   async uploadMultipleFiles(idRequestCourse: number, files: Array<Express.Multer.File>, classifications: string[]) {
