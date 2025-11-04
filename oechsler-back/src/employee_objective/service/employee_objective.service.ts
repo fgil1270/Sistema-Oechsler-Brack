@@ -63,7 +63,7 @@ export class EmployeeObjetiveService {
     private competenceService: CompetenceService,
     private courseService: CourseService,
     private mailerService: MailService,
-    private requestCourseService: RequestCourseService,
+    @Inject(forwardRef(() => RequestCourseService)) private requestCourseService: RequestCourseService,
     @InjectDataSource() private dataSource: DataSource,
   ) { }
 
@@ -207,6 +207,7 @@ export class EmployeeObjetiveService {
             courseName: course.name,
             employeeId: [employee.emp.id],
             traininReason: dncCourse.train,
+            trainingObjective: null,
             priority: dncCourse.priority,
             efficiencyPeriod: '',
             cost: 0,
@@ -227,6 +228,7 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
             comment: dncCourse.comment,
+            definitionObjetiveAnnualId: saveDefinitionObjetive.id,
           };
           await this.requestCourseService.create(dataRequestCourse, user);
         }
@@ -256,6 +258,7 @@ export class EmployeeObjetiveService {
             courseName: dncCourseManual.goal,
             employeeId: [employee.emp.id],
             traininReason: dncCourseManual.train,
+            trainingObjective: null,
             priority: dncCourseManual.priority,
             efficiencyPeriod: '',
             cost: 0,
@@ -276,6 +279,7 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
             comment: dncCourseManual.comment,
+            definitionObjetiveAnnualId: saveDefinitionObjetive.id,
           };
           await this.requestCourseService.create(dataRequestCourse, user);
         }
@@ -895,6 +899,7 @@ export class EmployeeObjetiveService {
             courseName: course.name,
             employeeId: [saveDefinitionObjetive.employee.id],
             traininReason: dncCourse.train,
+            trainingObjective: null,
             priority: dncCourse.priority,
             efficiencyPeriod: null,
             cost: 0,
@@ -915,6 +920,7 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
             comment: dncCourse.comment,
+            definitionObjetiveAnnualId: saveDefinitionObjetive.id,
           };
 
 
@@ -950,6 +956,7 @@ export class EmployeeObjetiveService {
             courseName: dncManual.goal,
             employeeId: [saveDefinitionObjetive.employee.id],
             traininReason: dncManual.train,
+            trainingObjective: null,
             priority: dncManual.priority,
             efficiencyPeriod: null,
             cost: 0,
@@ -970,8 +977,10 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
             comment: dncManual.comment,
+            definitionObjetiveAnnualId: saveDefinitionObjetive.id,
           };
 
+          //crea la solicitud de curso
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
             user,
@@ -1069,6 +1078,7 @@ export class EmployeeObjetiveService {
             courseName: course.name,
             employeeId: [saveDefinitionObjetive.employee.id],
             traininReason: createDncCourse.train,
+            trainingObjective: null,
             priority: createDncCourse.priority,
             efficiencyPeriod: null,
             cost: 0,
@@ -1089,6 +1099,7 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
             comment: createDncCourse.comment,
+            definitionObjetiveAnnualId: saveDefinitionObjetive.id,
           };
 
           const requestCourse = await this.requestCourseService.create(
@@ -1123,6 +1134,7 @@ export class EmployeeObjetiveService {
             courseName: dncManual.goal,
             employeeId: [saveDefinitionObjetive.employee.id],
             traininReason: dncManual.train,
+            trainingObjective: null,
             priority: dncManual.priority,
             efficiencyPeriod: null,
             cost: 0,
@@ -1143,6 +1155,7 @@ export class EmployeeObjetiveService {
             origin: 'Objetivo',
             evaluation_tool: null,
             comment: dncManual.comment,
+            definitionObjetiveAnnualId: saveDefinitionObjetive.id,
           };
           const requestCourse = await this.requestCourseService.create(
             dataRequestCourse,
@@ -1268,6 +1281,7 @@ export class EmployeeObjetiveService {
     };
   }
 
+  // Buscar una definición de objetivo anual por ID
   async findObjectiveEmployee(id: number) {
     const status = {
       code: 200,
@@ -1298,6 +1312,9 @@ export class EmployeeObjetiveService {
               competence: true,
             },
             objectiveQuestion: true,
+            requestCourse: {
+              course: true,
+            }
           },
           where: {
             id: id,
@@ -1323,6 +1340,7 @@ export class EmployeeObjetiveService {
     }
   }
 
+  // Buscar una definición de objetivo anual por empleado y año
   async findOneByEmployeeAndYear(idEmployee: number, year: number) {
     const status = {
       code: 200,

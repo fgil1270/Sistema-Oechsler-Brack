@@ -63,4 +63,7 @@ export class Job {
 
   @OneToMany(() => EmployeeJobHistory, (post) => post.job)
   employeeJobHistory: EmployeeJobHistory[];
+
+  @Column({ type: 'boolean', default: true })
+  active: boolean;
 }

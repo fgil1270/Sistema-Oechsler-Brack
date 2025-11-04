@@ -9,6 +9,7 @@ import {
   IsPostalCode,
 } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class RequestCourseDto {
   @IsNotEmpty()
@@ -30,6 +31,11 @@ export class RequestCourseDto {
   @IsString()
   @ApiProperty({ description: 'Razon de la capacitación' })
   traininReason: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Objetivo de la capacitación' })
+  trainingObjective: string;
 
   @IsNotEmpty()
   @IsString()
@@ -130,13 +136,47 @@ export class RequestCourseDto {
   @IsString()
   @ApiProperty({ description: 'Comentarios' })
   comment: string;
+
+  @IsOptional()
+  @IsNumber()
+  @ApiProperty({ description: 'id de la definición del objetivo anual' })
+  definitionObjetiveAnnualId: number | null;
+}
+
+export class FindRequestCourseDto {
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => {
+    // Si llega como string (query param), convertir a array
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [value]; // Si no es JSON válido, crear array con el string
+      }
+    }
+    return value;
+  })
+  @ApiProperty({ description: 'Array de status' })
+  status: any[];
+
 }
 
 export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {
   @IsOptional()
+  @IsArray()
+  @ApiProperty({ description: 'Array de solicitudes de curso' })
+  requestCourseIds: number[];
+
+  @IsOptional()
   @IsBoolean()
   @ApiProperty({ description: 'Evitar Aprobación' })
   avoidApprove: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({ description: 'Array de nuevos empleados, para crear solicitud de curso', type: [Number] })
+  newEmployeeIds: number[];
 }
 
 export class RequestCourseAssignmentDto {
@@ -149,6 +189,11 @@ export class RequestCourseAssignmentDto {
   @IsArray()
   @ApiProperty({ description: 'id del empleado' })
   employeeId: number[];
+
+  @IsNotEmpty()
+  @IsArray()
+  @ApiProperty({ description: 'Array solicitudes de curso, para crear Asignación de Curso', type: [Number] })
+  requestCourseId: number[];
 
   @IsNotEmpty()
   @IsString()
@@ -188,7 +233,60 @@ export class RequestCourseAssignmentDto {
 }
 
 export class UpdateAssignmentCourseDto extends PartialType(RequestCourseAssignmentDto) {
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({
+    description: 'Estatus del curso, no se desea buscar',
+    type: [String],
+  })
+  no_status: string[];
 
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({
+    description: 'Array de empleados a cambiar',
+    type: [String],
+  })
+  changeEmployee: any[];
+
+  @IsOptional()
+  @IsArray()
+  @ApiProperty({
+    description: 'Array de empleados a añadir',
+    type: [String],
+  })
+  addEmployee: any[];
+
+  @IsOptional()
+  @IsObject()
+  @ApiProperty({
+    description: 'Cambio de instructor',
+    type: Object,
+  })
+  changeTeacher: { oldTeacher: number; newTeacher: number };
+}
+
+
+export class UploadFilesDto {
+  classifications: string[];
+}
+
+export class RequestCourseAssessmentDto {
+  @IsNumber()
+  @ApiProperty({ description: 'Calificación pregunta uno' })
+  value_uno: number;
+
+  @IsNumber()
+  @ApiProperty({ description: 'Calificación pregunta dos' })
+  value_dos: number;
+
+  @IsNumber()
+  @ApiProperty({ description: 'Calificación pregunta tres' })
+  value_tres: number;
+
+  @IsString()
+  @ApiProperty({ description: 'Comentarios' })
+  comment: string;
 }
 
 

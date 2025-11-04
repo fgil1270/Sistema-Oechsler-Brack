@@ -15,16 +15,23 @@ import {
   Between,
   QueryRunner,
   FindOptionsWhere,
+  DataSource
 } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { join } from 'path';
+import { mkdirSync, existsSync, writeFileSync } from 'fs';
+import { format } from 'date-fns';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseAssignment } from '../entities/request_course_assignment.entity';
+import { RequestCourseDocument } from '../entities/request_course_document.entity';
 import {
   RequestCourseDto,
   UpdateRequestCourseDto,
   RequestCourseAssignmentDto,
-  UpdateAssignmentCourseDto
+  UpdateAssignmentCourseDto,
+  RequestCourseAssessmentDto,
+  FindRequestCourseDto
 } from '../dto/create_request_course.dto';
 import { CourseService } from '../../course/service/course.service';
 import { DepartmentsService } from '../../departments/service/departments.service';
@@ -32,24 +39,33 @@ import { EmployeesService } from '../../employees/service/employees.service';
 import { CompetenceService } from '../../competence/service/competence.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { SupplierService } from '../../supplier/service/supplier.service';
-import { format } from 'date-fns';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
-
+import { RequestCourseAssessmentEmployee } from '../entities/request_course_assessment_employee.entity';
+import { MailService } from '../../mail/mail.service';
+import { EmployeeObjetiveService } from '../../employee_objective/service/employee_objective.service';
+import { UsersService } from '../../users/service/users.service';
 
 @Injectable()
 export class RequestCourseService {
   constructor(
     @InjectRepository(RequestCourse) private requestCourse: Repository<RequestCourse>,
     @InjectRepository(RequestCourseAssignment) private requestCourseAssignment: Repository<RequestCourseAssignment>,
+    @InjectRepository(RequestCourseDocument) private requestCourseDocument: Repository<RequestCourseDocument>,
+    @InjectRepository(RequestCourseAssessmentEmployee) private requestCourseAssessmentEmployee: Repository<RequestCourseAssessmentEmployee>,
     private courseService: CourseService,
     private departmentService: DepartmentsService,
     private employeeService: EmployeesService,
     private competenceService: CompetenceService,
     private organigramaService: OrganigramaService,
     private supplierService: SupplierService,
-    private employeeIncidenceService: EmployeeIncidenceService
+    private employeeIncidenceService: EmployeeIncidenceService,
+    @InjectDataSource() private dataSource: DataSource,
+    private mailService: MailService,
+    @Inject(forwardRef(() => EmployeeObjetiveService)) private definitionObjectiveAnnualService: EmployeeObjetiveService,
+    private userService: UsersService,
   ) { }
 
+  // Crear solicitud de curso
   async create(data: RequestCourseDto, user: any) {
     try {
 
@@ -79,10 +95,12 @@ export class RequestCourseService {
         );
 
 
+
         const requestCourseCreate = this.requestCourse.create({
           course_name: data.courseName,
           training_reason: data.traininReason,
-          efficiency_period: data.efficiencyPeriod,
+          training_objective: data.trainingObjective,
+          efficiency_period: data.efficiencyPeriod == "" ? null : data.efficiencyPeriod,
           priority: data.priority,
           tentative_date_start: data.tentativeDateStart as any,
           tentative_date_end: data.tentativeDateEnd as any,
@@ -104,10 +122,75 @@ export class RequestCourseService {
           place: data.place,
           evaluation_tool: data.evaluation_tool,
           comment: data.comment,
+          definitionObjectiveAnnual: null
         });
+
+
+
+
+
+        //si data.definitionObjetiveAnnualId existe se busca la definición del objetivo anual
+        if (data.definitionObjetiveAnnualId) {
+          const definitionObjetiveAnnual = await this.definitionObjectiveAnnualService.findObjectiveEmployee(
+            data.definitionObjetiveAnnualId
+          );
+          requestCourseCreate.definitionObjectiveAnnual = definitionObjetiveAnnual.definitionObjectiveAnnual;
+        }
 
         const requestCourse = await this.requestCourse.save(
           requestCourseCreate,
+        );
+
+        //se obtiene el lider del empleado
+        let leader = await this.organigramaService.leaders(emp.id);
+        let leadersMail = [];
+
+        const emailEmployee = await this.userService.findByIdEmployee(emp.id);
+
+        if (emailEmployee) {
+          leadersMail.push(emailEmployee.user[0].email);
+        }
+
+        if (leader.orgs.length > 0) {
+
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.leader.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              for (const u of user.user) {
+                //si el usuario tiene correo y no esta eliminado
+                if (u.email && u.deleted_at == null) {
+                  //se agrega el correo a la lista de correos
+                  leadersMail.push(u.email);
+                }
+              }
+            }
+          }
+        } else {
+          //busca empleados que su usuario tenga rol Jefe de turno
+          const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.userId', 'user')
+            .innerJoinAndSelect('user.roles', 'role')
+            .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          if (jefeTurno.length > 0) {
+            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
+          }
+        }
+
+
+        //se envian los correos
+        await this.mailService.sendEmail(`Creación Solicitud de Curso " ${requestCourse.course.name}"`,
+          {
+            curso: requestCourse.course.name,
+            status: requestCourse.status,
+            empleados: [`#${requestCourse.employee.employee_number}) ${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}`]
+          },
+          leadersMail,
+          'solicitud_curso'
         );
       }
 
@@ -124,6 +207,64 @@ export class RequestCourseService {
     }
   }
 
+  //crear asignacion de curso
+  async createAssignmentCourse(currData: RequestCourseAssignmentDto) {
+    //revisar cuando sea el mismo empleado 2 veces
+    try {
+      const employees = await this.employeeService.findMore(currData.employeeId);
+      const course = await this.courseService.findOne(currData.courseId);
+      const teacher = await this.supplierService.findTeacherById(currData.teacherId);
+
+      // Convertir a horario de México
+      const dateStart = new Date(currData.dateStart);
+      const dateEnd = new Date(currData.dateEnd);
+      dateStart.setUTCHours(dateStart.getUTCHours() - 6);
+      dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+
+      //const employeeIncidences = await this.employeeIncidenceService.findEmployeeIncidenceByEmployeeId(employees.emps.map((emp) => emp.id));
+      //buscar solicitud de cursos aprobados de los empleados seleccionados
+      const requestCourse = await this.requestCourse.find({
+        where: {
+          status: 'Autorizado',
+          id: In(currData.requestCourseId)
+        }
+      });
+
+      //crear asignacion de curso
+      for (const request of requestCourse) {
+
+        const createAssignment = await this.requestCourseAssignment.create({
+          date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
+          date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
+          day: currData.day,
+          requestCourse: requestCourse,
+          teacher: teacher,
+
+        });
+
+        const assignment = await this.requestCourseAssignment.save(createAssignment);
+
+        request.status = 'Asignado';
+        request.type = currData.type;
+        request.place = currData.place;
+        await this.requestCourse.save(request);
+      }
+
+
+      return {
+        error: false,
+        msg: 'Asignación de curso creada correctamente',
+        data: requestCourse
+      };
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message
+      };
+    }
+  }
+
+  // Buscar solicitud de curso por ID
   findRequestCourseById(id: number) {
     return this.requestCourse.findOne({
       relations: {
@@ -137,7 +278,9 @@ export class RequestCourseService {
         },
         department: true,
         competence: true,
-        course: true,
+        course: {
+          courseFile: true,
+        },
         leader: true,
         rh: true,
         gm: true,
@@ -150,6 +293,7 @@ export class RequestCourseService {
             supplier: true,
           },
         },
+        request_course_assessment_employee: true,
       },
       where: {
         id: id,
@@ -157,7 +301,8 @@ export class RequestCourseService {
     });
   }
 
-  async findAll(query: Partial<RequestCourse>, user: any) {
+  // Buscar todas las solicitudes de curso
+  async findAll(query: FindRequestCourseDto, user: any) {
 
     const employee = await this.organigramaService.findJerarquia(
       {
@@ -175,6 +320,14 @@ export class RequestCourseService {
       eployeesIds.push(emp.id);
     }
 
+    // Construir el filtro where correctamente
+    const whereConditions: FindOptionsWhere<RequestCourse> = {};
+
+    // Filtrar por status si existe
+    if (query.status && query.status.length > 0) {
+      whereConditions.status = In(query.status);
+    }
+
     const requestCourse = await this.requestCourse.find({
       relations: {
         employee: {
@@ -184,18 +337,22 @@ export class RequestCourseService {
         },
         department: true,
         competence: true,
-        course: true,
+        course: {
+          courseFile: true,
+        },
         leader: true,
         rh: true,
         gm: true,
         requestCourseAssignment: true,
         requestBy: true,
+        documents: true,
+        courseEfficiency: true,
       },
-      where: query as unknown as FindOptionsWhere<RequestCourse>,
+      where: whereConditions,
     });
 
     requestCourse.filter((item) => {
-      if (eployeesIds.includes(item.employee.id)) {
+      if (eployeesIds.includes(item.employee?.id)) {
         dataRequestCourse.push(item);
       }
     });
@@ -210,7 +367,19 @@ export class RequestCourseService {
     return dataRequestCourse;
   }
 
-  async findRequestCourseBy(query: Partial<UpdateRequestCourseDto>) {
+
+  async findRequestCourseBy(query: Partial<UpdateRequestCourseDto>, user: any) {
+
+    const employee = await this.organigramaService.findBy(
+      {
+        type: 'Normal',
+        byDepartmentDirector: true,
+        needUser: true,
+      },
+      user,
+    );
+
+
 
     let findOption: {
       employee?: any;
@@ -222,7 +391,12 @@ export class RequestCourseService {
       findOption.employee = {
         id: In(Array(query.employeeId))
       };
+    } else {
+      findOption.employee = {
+        id: In(employee.map((emp) => emp.id)),
+      };
     }
+
     if (query.courseId) {
       findOption.course = {
         id: Number(query.courseId)
@@ -253,6 +427,162 @@ export class RequestCourseService {
     return requestCourse;
   }
 
+  //obteneer el total de solicitudes de curso por status
+  async findRequestCourseApprove(status: string, user: any) {
+    const courseApproved = await this.requestCourse
+      .createQueryBuilder('request_course')
+      .select('request_course.status')
+      //.addSelect('COUNT(request_course.status)', 'total')
+      .addSelect('course.id', 'id_course')
+      .addSelect('course.name', 'course_name')
+      .addSelect('request_course.id', 'id_request_course')
+      .addSelect('request_course.tentative_date_start', 'tentative_date_start')
+      .addSelect('request_course.tentative_date_end', 'tentative_date_end')
+      .innerJoin('request_course.course', 'course')
+      .where('request_course.status = :status', { status: status })
+      //.groupBy('request_course.status')
+      .getRawMany();
+    const employees = await this.requestCourse
+      .createQueryBuilder('request_course')
+      .select('request_course.status')
+      .addSelect('employee.id', 'id_employee')
+      .addSelect('employee.name', 'name')
+      .addSelect('employee.paternal_surname', 'paternal_surname')
+      .addSelect('employee.maternal_surname', 'maternal_surname')
+      .addSelect('request_course.id', 'id_request_course')
+      .addSelect('request_course.courseId', 'id_course')
+      .addSelect('employee.employee_number', 'employee_number')
+      .innerJoin('request_course.employee', 'employee')
+      .where('request_course.status = :status', { status: status })
+      .getRawMany();
+
+    return {
+      courseApproved,
+      employees,
+    };
+  }
+
+  //buscar asignacion de curso por algun parametro
+  async getAssignmentBy(currdata: UpdateAssignmentCourseDto) {
+
+    const mexicoTimeZone = 'America/Mexico_City';
+    const formattedStartDate = new Date(currdata.dateStart);
+    formattedStartDate.setHours(0, 0, 0, 0);
+
+    const formattedEndDate = new Date(currdata.dateEnd);
+    formattedEndDate.setHours(23, 59, 59, 999);
+
+    const query = this.requestCourseAssignment.createQueryBuilder('rca')
+      .leftJoinAndSelect('rca.requestCourse', 'rc')
+      .leftJoinAndSelect('rc.employee', 'e')
+      .leftJoinAndSelect('rc.course', 'c')
+      .leftJoinAndSelect('rc.department', 'd')
+      .leftJoinAndSelect('rca.teacher', 't');
+
+    if (currdata.dateStart && currdata.dateEnd) {
+      query.andWhere('rca.date_start >= :startDate', { startDate: formattedStartDate })
+        .andWhere('rca.date_end <= :endDate', { endDate: formattedEndDate });
+    }
+
+    if (currdata.status) {
+      query.andWhere('rc.status = :status', { status: currdata.status });
+    } else if (currdata.no_status) {
+      query.andWhere('rc.status NOT IN (:...no_status)', { no_status: currdata.no_status });
+    }
+
+    const requestCourseAssignment = await query.getMany();
+
+    return requestCourseAssignment;
+  }
+
+  //consulta los documentos de una solicitud de curso
+  async getDocuments(idRequestCourse: number) {
+    const requestCourse = await this.requestCourse.find({
+      relations: {
+        documents: true,
+      },
+      where: {
+        id: idRequestCourse,
+      },
+    });
+    if (requestCourse.length === 0) {
+      throw new NotFoundException('Solicitud de curso no encontrada');
+    }
+    return {
+      error: false,
+      message: 'Documentos obtenidos con éxito',
+      data: requestCourse[0].documents,
+    };
+  }
+
+  //actualizar asignacion de curso
+  async updateAssignment(id: number, data: UpdateAssignmentCourseDto, user: any) {
+    try {
+
+      const assignment = await this.requestCourse.findOne({
+        relations: {
+          employee: true,
+          course: true,
+          department: true,
+          requestCourseAssignment: {
+            teacher: true,
+          },
+          leader: true,
+          rh: true,
+          requestBy: true,
+        },
+        where: {
+          id: id,
+        },
+      });
+
+
+
+      if (!assignment) {
+        throw new NotFoundException('Asignación de curso no encontrada');
+      }
+
+      //Object.assign(assignment, data);
+
+      if (data.dateStart && data.dateEnd) {
+        // Convertir a horario de México
+        const requestCourseAssignment = await this.requestCourseAssignment.findOne({
+          relations: {
+            requestCourse: true,
+            teacher: true,
+          },
+          where: {
+            id: assignment.requestCourseAssignment[0].id
+          },
+        });
+        const dateStart = new Date(data.dateStart);
+        const dateEnd = new Date(data.dateEnd);
+        dateStart.setUTCHours(dateStart.getUTCHours() - 6);
+        dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+
+
+        requestCourseAssignment.date_start = dateStart;
+        requestCourseAssignment.date_end = dateEnd;
+        const updateRequestCourseAssignment = await this.requestCourseAssignment.save(requestCourseAssignment);
+      }
+
+      //const updatedAssignment = await this.requestCourse.update(id, assignment);
+
+      return {
+        error: false,
+        msg: 'Asignación de curso actualizada correctamente',
+        //data: updateRequestCourseAssignment,
+      };
+    } catch (error) {
+
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
+
+  //actualizar solicitud de curso, por id
   async update(id, data: UpdateRequestCourseDto, user) {
     try {
       const userEmployee = await this.employeeService.findOne(user.idEmployee);
@@ -264,6 +594,7 @@ export class RequestCourseService {
         },
         user,
       );
+
       const requestCourse = await this.requestCourse.findOne({
         relations: {
           employee: {
@@ -278,13 +609,54 @@ export class RequestCourseService {
           rh: true,
           gm: true,
           requestBy: true,
+          requestCourseAssignment: {
+            teacher: true,
+          },
         },
         where: {
           id: id,
         },
       });
 
-      Object.assign(requestCourse, data);
+      //se obtiene el lider del empleado
+      let leader = await this.organigramaService.leaders(requestCourse.employee.id);
+
+      //se obtiene el departamento de la solicitud de curso
+      let department = await this.departmentService.findOne(requestCourse.department.id);
+      //se obtiene el presupuesto de entrenamiento del departamento
+      let trainingBudget = department.dept.training_budgetId?.find(b => b.year == new Date().getFullYear())?.amount;
+
+      //se obtienen todas las solicitudes de curso que pertenecen al mismo departamento
+      let courseByDepartment = await this.requestCourse.find({
+        relations: {
+          employee: true,
+          course: true,
+          department: {
+            training_budgetId: true,
+          },
+          competence: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+        },
+        where: {
+          department: {
+            id: department.dept.id,
+          },
+          status: Not(In(['Solicitado', 'Cancelado', 'Pendiente'])),
+        },
+      });
+
+      //suma del costo por cada solicitud de curso por departamento
+      const totalTrainingBudget = courseByDepartment.reduce((total, requestCourse) => {
+        total += Number(requestCourse.cost);
+        return total;
+      }, 0);
+
+
+      const { status, ...dataWithoutStatus } = data;
+      Object.assign(requestCourse, dataWithoutStatus);
 
       if (data.courseId) {
         const course = await this.courseService.findOne(data.courseId);
@@ -292,7 +664,46 @@ export class RequestCourseService {
         requestCourse.competence = course.competence;
       }
 
-      if (data.status == 'Autorizado') {
+      //si el status pasa a solicitado y el origen de la solicitud de curso es Objetivo
+      //se aprueba automaticamente por el lider
+      if (data.status == 'Solicitado' && requestCourse.origin == 'Objetivo') {
+        //se busca el lider del empleado
+
+        requestCourse.status = 'Solicitado';
+        requestCourse.approved_at_leader = new Date();
+        requestCourse.leader = leader.orgs[0].leader;
+
+      } else if (data.status == 'Solicitado' && requestCourse.origin == 'Solicitud') {
+        //se asigna el status de la solicitud
+        requestCourse.status = 'Solicitado';
+        if (data.avoidApprove) {
+          let aprueba = await this.employeeService.findOne(user.idEmployee);
+          requestCourse.approved_at_leader = new Date();
+          requestCourse.leader = aprueba.emp;
+        }
+
+      }
+
+      //si el curso es cancelado y el origen de la solicitud de curso viene de un objetivo
+      //y la solicitud de curso esta en estatus solicitado
+      //se cambia el status a Pendiente
+      if (requestCourse.status == 'Solicitado' && data.status == 'Cancelado' && requestCourse.origin == 'Objetivo') {
+        requestCourse.status = 'Pendiente';
+      }
+
+
+
+      //si el status de la solicitud de curso es Autorizado
+      //y se quiere cambiar a cancelado
+      if ((requestCourse.status == 'Asignado' || requestCourse.status == 'Pendiente Evaluar Empleado') && data.status == 'Cancelado') {
+        //el estatus cambia de Asignado a Autorizado
+        requestCourse.status = 'Autorizado';
+        requestCourse.requestCourseAssignment = [];
+        //se elimina la asignacion de curso
+        await this.requestCourse.save(requestCourse);
+
+      } else if (data.status == 'Autorizado') {
+        //si el curso pasa a Autorizado
         let isAdmin = false;
         let isLeader = false;
         let isRh = false;
@@ -301,54 +712,79 @@ export class RequestCourseService {
 
         isAdmin = user.roles.some((role) => role.name == 'Admin');
         isRh = user.roles.some((role) => role.name == 'RH');
-
-        isLeader = organigrama.some((org) => org.id == requestCourse.employee.id);
+        isGm = user.roles.some((role) => role.name == 'Gerente');
+        //se verifica si el usuario logueado es lider
+        isLeader = leader.orgs.some((org) => org.leader.id == user.idEmployee);
 
         //si el usuario logueado es admin
         if (isAdmin) {
-          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          leader = await this.organigramaService.leaders(requestCourse.employee.id);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
           requestCourse.rh = userEmployee.emp;
           requestCourse.status = 'Autorizado'
         } else {
-          if (isRh || data.avoidApprove) {
-            requestCourse.approved_at_rh = new Date();
-            requestCourse.rh = userEmployee.emp;
 
-          }
 
+
+          //si el usuario es Lider
           if (isLeader) {
             requestCourse.approved_at_leader = new Date();
             requestCourse.leader = userEmployee.emp;
 
           }
 
-          if (data.avoidApprove) {
-            const userApprove = await this.employeeService.findOne(user.idEmployee);
-            const leader = await this.organigramaService.leaders(requestCourse.employee.id);
-            requestCourse.approved_at_leader = new Date();
-            requestCourse.leader = leader.orgs[0].leader;
+          //si el usuario es RH
+          if (isRh) {
             requestCourse.approved_at_rh = new Date();
-            requestCourse.rh = userApprove.emp;
+            requestCourse.rh = userEmployee.emp;
+            //se verifica si el presupuesto de entrenamiento del departamento es suficiente
+            if ((trainingBudget - totalTrainingBudget) < 0) {
+              throw new NotFoundException(`El presupuesto de entrenamiento del departamento ${department.dept.cv_description} no es suficiente para autorizar la solicitud de curso`);
+            }
 
           }
 
-          //si falta el lider por autorizar o rh 
-          //el status sera Solicitado
-          if (!requestCourse.leader || !requestCourse.rh) {
-            requestCourse.status = 'Solicitado'
+          //si el usuario es Gerente
+          if (isGm) {
+            requestCourse.approved_at_gm = new Date();
+            requestCourse.gm = userEmployee.emp;
+
+            requestCourse.status = 'Autorizado';
+          }
+
+          //si aprobo el lider
+          //si aprobo RH
+          //si aprobo GM
+          if (requestCourse.leader && requestCourse.rh) {
+            //si aprobo el lider y RH y GM
+            requestCourse.status = 'Autorizado';
           }
         }
 
+        if (data.avoidApprove) {
+          const userApprove = await this.employeeService.findOne(user.idEmployee);
+          leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          requestCourse.approved_at_leader = new Date();
+          requestCourse.leader = leader.orgs[0].leader;
+          requestCourse.approved_at_rh = new Date();
+          requestCourse.rh = userApprove.emp;
+
+        }
 
 
       }
-      //si el curso es cancelado y el origen de la solicitud de curso viene de un objetivo
-      //se cambia el status a Pendiente
-      if (data.status == 'Cancelado' && requestCourse.origin == 'Objetivo') {
-        requestCourse.status = 'Pendiente';
+
+      if (data.status == 'Pendiente Evaluar Empleado') {
+        requestCourse.status = 'Pendiente Evaluar Empleado';
+      }
+
+      if (data.status == 'Finalizado') {
+        requestCourse.status = 'Finalizado';
+      }
+      if (data.status == 'Cancelado') {
+        requestCourse.status = 'Cancelado';
       }
 
       if (data.requestBy) {
@@ -376,6 +812,337 @@ export class RequestCourseService {
 
       const save = await this.requestCourse.save(requestCourse);
 
+      let leadersMail = [];
+      const emailEmployee = await this.userService.findByIdEmployee(requestCourse.employee.id);
+      if (emailEmployee) {
+        leadersMail.push(emailEmployee.user[0].email);
+      }
+
+      if (leader.orgs.length > 0) {
+
+        for (const l of leader.orgs) {
+          //si el lider puede evaluar
+          if (l.evaluar) {
+            const user = await this.userService.findByIdEmployee(l.leader.id);
+            //recorre el arreglo de usuarios que tiene el lider
+            for (const u of user.user) {
+              //si el usuario tiene correo y no esta eliminado
+              if (u.email && u.deleted_at == null) {
+                //se agrega el correo a la lista de correos
+                leadersMail.push(u.email);
+              }
+            }
+          }
+        }
+      } else {
+        //busca empleados que su usuario tenga rol Jefe de turno
+        const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+          .innerJoinAndSelect('employee.userId', 'user')
+          .innerJoinAndSelect('user.roles', 'role')
+          .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+          .andWhere('employee.deleted_at IS NULL')
+          .orderBy('employee.employee_number', 'ASC')
+          .getMany();
+        if (jefeTurno.length > 0) {
+          leadersMail.push(...jefeTurno.map(emp => emp.user.email));
+        }
+      }
+
+      //se envian los correos
+      await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
+        {
+          curso: save.course.name,
+          status: save.status,
+          empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+        },
+        leadersMail,
+        'solicitud_curso'
+      );
+
+      return {
+        error: false,
+        msg: 'Solicitud de curso actualizada correctamente',
+        data: save,
+      };
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
+
+  //actualizar multiples solicitudes de curso
+  async updateMultiple(idRequestCourse: number[], data: UpdateRequestCourseDto, user: any) {
+    try {
+      const userEmployee = await this.employeeService.findOne(user.idEmployee);
+      const organigrama = await this.organigramaService.findJerarquia(
+        {
+          type: 'Normal',
+          startDate: '',
+          endDate: '',
+        },
+        user,
+      );
+      let leadersMail = [];
+
+      //se actualizan todas las solicitudes de curso que se envian en el array de idRequestCourse
+      const requestCourse = await this.requestCourse.find({
+        relations: {
+          employee: true,
+          department: true,
+          competence: true,
+          course: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+          requestCourseAssignment: {
+            teacher: true,
+          },
+        },
+        where: {
+          id: In(idRequestCourse),
+        },
+      });
+
+      //se obtiene el costo dividido entre el total de participantes
+      const cost = Number(data.cost) / (Number(requestCourse.length) + Number(data.newEmployeeIds ? data.newEmployeeIds.length : 0));
+
+      //se recorre cada solicitud de curso
+      for (const request of requestCourse) {
+        //se obtiene el lider del empleado
+        const leader = await this.organigramaService.leaders(request.employee.id);
+
+        //se obtiene el departamento de la solicitud de curso
+        let department = await this.departmentService.findOne(request.department.id);
+        //se obtiene el presupuesto de entrenamiento del departamento
+        let trainingBudget = department.dept.training_budgetId?.find(b => b.year == new Date().getFullYear())?.amount;
+        //se obtienen todas las solicitudes de curso que pertenecen al mismo departamento
+        let courseByDepartment = await this.requestCourse.find({
+          relations: {
+            employee: true,
+            course: true,
+            department: {
+              training_budgetId: true,
+            },
+            competence: true,
+            leader: true,
+            rh: true,
+            gm: true,
+            requestBy: true,
+          },
+          where: {
+            department: {
+              id: department.dept.id,
+            },
+            status: Not(In(['Solicitado', 'Cancelado', 'Pendiente'])),
+          },
+        });
+
+        //se agrega el costo a la solicitud de curso
+        request.cost = cost;
+
+        //suma del costo por cada solicitud de curso por departamento
+        const totalTrainingBudget = courseByDepartment.reduce((total, requestCourse) => {
+          total += Number(requestCourse.cost);
+          return total;
+        }, 0);
+
+        const { status, ...dataWithoutStatus } = data;
+        Object.assign(request, dataWithoutStatus);
+
+        if (data.courseId) {
+          const course = await this.courseService.findOne(data.courseId);
+          request.course = course;
+          request.competence = course.competence;
+        }
+
+        //si el status pasa a solicitado y el origen de la solicitud de curso es Objetivo
+        //se aprueba automaticamente por el lider
+        if (data.status == 'Solicitado' && request.origin == 'Objetivo') {
+          //se busca el lider del empleado
+          if (leader.orgs.length <= 0) {
+            //busca empleados que su usuario tenga rol Jefe de turno
+            const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+              .innerJoinAndSelect('employee.userId', 'user')
+              .innerJoinAndSelect('user.roles', 'role')
+              .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+              .orderBy('employee.employee_number', 'ASC')
+              .getMany();
+            if (jefeTurno.length > 0) {
+              request.leader = jefeTurno[0].employee;
+            }
+
+          } else {
+            request.leader = leader.orgs.length > 0 ? leader.orgs[0].leader : null;
+          }
+          request.status = 'Solicitado';
+          request.approved_at_leader = new Date();
+
+        } else if (data.status == 'Solicitado' && request.origin == 'Solicitud') {
+          if (data.avoidApprove) {
+            let approveLeader = await this.employeeService.findOne(user.idEmployee);
+            request.approved_at_leader = new Date();
+            request.status = 'Autorizado';
+            request.leader = approveLeader.emp;
+            request.rh = approveLeader.emp;
+            request.approved_at_rh = new Date();
+          } else {
+            //se asigna el status de la solicitud
+            request.status = 'Solicitado';
+          }
+
+        }
+
+        // Convertir a horario de México
+        // las fechas tentativas del curso
+        const dateStart = new Date(data.tentativeDateStart);
+        const dateEnd = new Date(data.tentativeDateEnd);
+        dateStart.setUTCHours(dateStart.getUTCHours() - 6);
+        dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+        request.tentative_date_start = dateStart;
+        request.tentative_date_end = dateEnd;
+
+        //actualiza la solicitud de curso
+        const save = await this.requestCourse.save(request);
+
+
+        const emailEmployee = await this.userService.findByIdEmployee(request.employee.id);
+        if (emailEmployee) {
+          leadersMail.push(emailEmployee.user[0].email);
+        }
+
+        if (leader.orgs.length > 0) {
+
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.leader.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              for (const u of user.user) {
+                //si el usuario tiene correo y no esta eliminado
+                if (u.email && u.deleted_at == null) {
+                  //se agrega el correo a la lista de correos
+                  leadersMail.push(u.email);
+                }
+              }
+            }
+          }
+        } else {
+          //busca empleados que su usuario tenga rol Jefe de turno
+          const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.userId', 'user')
+            .innerJoinAndSelect('user.roles', 'role')
+            .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          if (jefeTurno.length > 0) {
+            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
+          }
+        }
+
+        //se envian los correos
+        await this.mailService.sendEmail(`Actualizacion de Solicitud deCurso "${save.course.name}"`,
+          {
+            curso: save.course.name,
+            status: save.status,
+            empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+          },
+          leadersMail,
+          'solicitud_curso'
+        );
+      }
+
+      //si existe nuevo empleado se le crea una solicitud de curso
+      if (data.newEmployeeIds && data.newEmployeeIds.length > 0) {
+        for (const empId of data.newEmployeeIds) {
+          //reinicia el arreglo de correos
+          leadersMail = [];
+          const employee = await this.employeeService.findOne(empId);
+          const leader = await this.organigramaService.leaders(empId);
+
+          const createRequest = this.requestCourse.create({
+            course_name: data.courseName,
+            training_reason: data.traininReason,
+            training_objective: data.trainingObjective,
+            efficiency_period: data.efficiencyPeriod,
+            priority: data.priority,
+            tentative_date_start: data.tentativeDateStart as any,
+            tentative_date_end: data.tentativeDateEnd as any,
+            approved_at_leader: null,
+            canceled_at_leader: null,
+            approved_at_rh: null,
+            canceled_at_rh: null,
+            approved_at_gm: null,
+            canceled_at_gm: null,
+            employee: employee.emp,
+            department: employee.emp.department,
+            competence: requestCourse[0].competence,
+            course: requestCourse[0].course ? requestCourse[0].course : null,
+            cost: cost,
+            origin: 'Solicitud',
+            requestBy: userEmployee.emp,
+            status: data.status,
+            type: null,
+            place: null,
+            evaluation_tool: data.evaluation_tool,
+            comment: data.comment,
+            definitionObjectiveAnnual: null
+          });
+
+          //se crea solicitud de curso
+          const save = await this.requestCourse.save(createRequest);
+
+          const emailEmployee = await this.userService.findByIdEmployee(save.employee.id);
+          if (emailEmployee) {
+            leadersMail.push(emailEmployee.user[0].email);
+          }
+
+          if (leader.orgs.length > 0) {
+
+            for (const l of leader.orgs) {
+              //si el lider puede evaluar
+              if (l.evaluar) {
+                const user = await this.userService.findByIdEmployee(l.leader.id);
+                //recorre el arreglo de usuarios que tiene el lider
+                for (const u of user.user) {
+                  //si el usuario tiene correo y no esta eliminado
+                  if (u.email && u.deleted_at == null) {
+                    //se agrega el correo a la lista de correos
+                    leadersMail.push(u.email);
+                  }
+                }
+              }
+            }
+          } else {
+            //busca empleados que su usuario tenga rol Jefe de turno
+            const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+              .innerJoinAndSelect('employee.userId', 'user')
+              .innerJoinAndSelect('user.roles', 'role')
+              .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+              .andWhere('employee.deleted_at IS NULL')
+              .orderBy('employee.employee_number', 'ASC')
+              .getMany();
+            if (jefeTurno.length > 0) {
+              leadersMail.push(...jefeTurno.map(emp => emp.user.email));
+            }
+          }
+
+          //se envian los correos
+          await this.mailService.sendEmail(`Actualizacion de Solicitud deCurso "${save.course.name}"`,
+            {
+              curso: save.course.name,
+              status: save.status,
+              empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+            },
+            leadersMail,
+            'solicitud_curso'
+          );
+        }
+      }
+
       return {
         error: false,
         msg: 'Solicitud de curso actualizada correctamente',
@@ -389,151 +1156,568 @@ export class RequestCourseService {
     }
   }
 
-  //obteneer el total de solicitudes de curso por status
-  async findRequestCourseApprove(status: string, user: any) {
-    const courseApproved = await this.requestCourse
-      .createQueryBuilder('request_course')
-      .select('request_course.status')
-      //.addSelect('COUNT(request_course.status)', 'total')
-      .addSelect('course.id', 'id_course')
-      .addSelect('course.name', 'course_name')
-      .addSelect('request_course.id', 'id_request_course')
-      .innerJoin('request_course.course', 'course')
-      .where('request_course.status = :status', { status: status })
-      //.groupBy('request_course.status')
-      .getRawMany();
-    const employees = await this.requestCourse
-      .createQueryBuilder('request_course')
-      .select('request_course.status')
-      .addSelect('employee.id', 'id_employee')
-      .addSelect('employee.name', 'name')
-      .addSelect('employee.paternal_surname', 'paternal_surname')
-      .addSelect('employee.maternal_surname', 'maternal_surname')
-      .addSelect('request_course.id', 'id_request_course')
-      .addSelect('request_course.courseId', 'id_course')
-      .addSelect('employee.employee_number', 'employee_number')
-      .innerJoin('request_course.employee', 'employee')
-      .where('request_course.status = :status', { status: status })
-      .getRawMany();
+  //actualizar multiples status
+  updateStatusMultiple(data: UpdateRequestCourseDto, user: any) {
+    //si es estatus es Autorizado
+    if (data.status == 'Autorizado') {
 
-    return {
-      courseApproved,
-      employees,
-    };
+
+    } else if (data.status == 'Cancelado') {
+
+    }
   }
 
-  //crear asignacion de curso
-  async createAssignmentCourse(currData: RequestCourseAssignmentDto) {
-    //revisar cuando sea el mismo empleado 2 veces
-    try {
-      const employees = await this.employeeService.findMore(currData.employeeId);
-      const course = await this.courseService.findOne(currData.courseId);
-      const teacher = await this.supplierService.findTeacherById(currData.teacherId);
+  async uploadMultipleFiles(idRequestCourse: number, files: Array<Express.Multer.File>, classifications: string[]) {
 
-      // Convertir a horario de México
-      const dateStart = new Date(currData.dateStart);
-      const dateEnd = new Date(currData.dateEnd);
-      dateStart.setUTCHours(dateStart.getUTCHours() - 6);
-      dateEnd.setUTCHours(dateEnd.getUTCHours() - 6);
+    const requestCourse = await this.requestCourse.findOne({
+      relations: {
+        employee: true,
+        course: true,
+        department: true,
+        competence: true,
+        leader: true,
+        rh: true,
+        gm: true,
+        requestBy: true,
+      },
+      where: {
+        id: idRequestCourse,
+      },
+    });
+    if (!requestCourse) {
+      throw new NotFoundException('Solicitud de curso no encontrada');
+    }
+    if (files.length !== classifications.length) {
+      throw new Error('El número de archivos y clasificaciones debe coincidir');
+    }
+    // Aquí puedes procesar los archivos y sus clasificaciones
+    const resultFiles = files.map((file, idx) => ({
+      file,
+      classification: classifications[idx],
+    }));
 
-      //const employeeIncidences = await this.employeeIncidenceService.findEmployeeIncidenceByEmployeeId(employees.emps.map((emp) => emp.id));
-      //buscar solicitud de cursos aprobados de los empleados seleccionados
-      const requestCourse = await this.requestCourse.find({
-        where: {
-          status: 'Autorizado',
-          course: {
-            id: course.id
-          },
-          employee: {
-            id: In(employees.emps.map((emp) => emp.id))
-          }
-        }
+    for (let index = 0; index < resultFiles.length; index++) {
+      const archivo = resultFiles[index].file;
+      const name = archivo.originalname;
+      let path: any;
+      let filepath: any;
+
+
+      const createRequestDocument = await this.requestCourseDocument.create({
+        name: name,
+        route: `documents/solicitud-curso/${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+        type: resultFiles[index].classification,
+        request_course: requestCourse,
       });
 
-      //crear asignacion de curso
 
-      const createAssignment = await this.requestCourseAssignment.create({
-        date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
-        date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
-        day: currData.day,
-        requestCourse: requestCourse,
-        teacher: teacher,
+      path = join(
+        __dirname,
+        `../../../documents/solicitud-curso/${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}/${requestCourse.id}/${requestCourse.course.name}`,
+      );
+      filepath = join(path, name);
 
-      });
-
-      const assignment = await this.requestCourseAssignment.save(createAssignment);
-
-      //se actualiza el costo de la solicitud de curso
-      //se actualiza el status de la solicitud de curso
-      for (const request of requestCourse) {
-        request.status = 'Asignado';
-        request.type = currData.type;
-        request.place = currData.place;
-        await this.requestCourse.save(request);
+      // Verifica si la ruta existe, si no, la crea
+      if (!existsSync(path)) {
+        mkdirSync(path, { recursive: true });
       }
+
+      // Guarda el archivo en la ruta especificada
+      writeFileSync(filepath, new Uint8Array(archivo.buffer));
+
+      const newDocument = await this.requestCourseDocument.save(createRequestDocument);
+
+    }
+
+    const resultRequestCourseFiles = await this.requestCourse.find({
+      relations: {
+        documents: true,
+      },
+      where: {
+        id: requestCourse.id,
+      },
+    });
+
+    return {
+      error: false,
+      message: 'Archivos subidos con éxito',
+      data: resultRequestCourseFiles,
+    };
+
+  }
+
+  //Calificar curso por parte del empleado
+  async assessmentCourse(idRequestCourse: number, data: RequestCourseAssessmentDto, user: any) {
+    try {
+      const requestCourse = await this.requestCourse.findOne({
+        relations: {
+          employee: true,
+          course: true,
+          department: true,
+          competence: true,
+          leader: true,
+          rh: true,
+          gm: true,
+          requestBy: true,
+          courseEfficiency: true
+        },
+        where: {
+          id: idRequestCourse,
+        },
+      });
+
+      if (!requestCourse) {
+        throw new NotFoundException('Solicitud de curso no encontrada');
+      }
+
+      const createAssessment = this.requestCourseAssessmentEmployee.create({
+        request_course: requestCourse,
+        employee: requestCourse.employee,
+        value_uno: data.value_uno,
+        value_dos: data.value_dos,
+        value_tres: data.value_tres,
+        comment: data.comment
+      });
+
+      const assessment = await this.requestCourseAssessmentEmployee.save(createAssessment);
+
+
+      //si existe evaluacion de eficiencia cambia el status del curso a Finalizado
+      if (requestCourse.courseEfficiency.length > 0) {
+        requestCourse.status = 'Finalizado';
+      } else {
+        if (requestCourse.efficiency_period != null && requestCourse.efficiency_period != '') {
+          requestCourse.status = 'Pendiente Evaluar Eficiencia';
+        } else {
+          requestCourse.status = 'Finalizado';
+        }
+      }
+
+      await this.requestCourse.save(requestCourse);
 
       return {
         error: false,
-        msg: 'Asignación de curso creada correctamente',
-        data: assignment
+        message: 'Curso calificado correctamente',
+        data: assessment,
       };
     } catch (error) {
       return {
-        error: true,
-        msg: error.message
+        error: error,
+        mgs: error.message,
       };
     }
   }
 
-  //buscar asignacion de curso por algun parametro
-  async getAssignmentBy(currdata: UpdateAssignmentCourseDto) {
-    const mexicoTimeZone = 'America/Mexico_City';
-    const formattedStartDate = new Date(currdata.dateStart);
-    formattedStartDate.setHours(0, 0, 0, 0);
+  async updateCronRequestCourse() {
+    let correoLideres: {
+      employeeNumber: number;
+      name: string;
+      paternal_surname: string;
+      maternal_surname: string;
+      email: string;
+      course: {
+        name: string;
+        employee: {
+          employeeNumber: number;
+          name: string;
+          paternal_surname: string;
+          maternal_surname: string;
+        }[];
+      }[];
 
-    const formattedEndDate = new Date(currdata.dateEnd);
-    formattedEndDate.setHours(23, 59, 59, 999);
+    }[] = [];
 
-    let findOption: {
-      date_start: any;
-      date_end: any;
-      requestCourse: {
-        status: string
+    const request_course = await this.requestCourse.find({
+      relations: {
+        course: true,
+        requestCourseAssignment: true,
+        employee: {
+          job: true,
+          organigramaL: {
+            leader: {
+              userId: true,
+            },
+          },
+        },
+      },
+      where: {
+        status: In(['Asignado', 'Finalizado'])
+      },
+    });
+
+    //se revisa si la fecha de finalizacion de la asignacion de curso es menor a la fecha actual
+    //si es menor el status de la solicitud de curso se cambia a Finalizado
+
+    let i = 0;
+    for (const request of request_course) {
+
+      if (request.requestCourseAssignment.length > 0) {
+        const dateEnd = new Date(request.requestCourseAssignment[0].date_end);
+        const currentDate = new Date();
+        //si la fecha de finalizacion es menor a la fecha actual
+        // y el status de la solicitud de curso es Asignado
+        //se cambia el status a Finalizado
+        if (dateEnd < currentDate && request.status == 'Asignado') {
+          request.status = 'Finalizado';
+          await this.requestCourse.save(request);
+        }
+
+        //si el status es Finalizado
+        if (request.status == 'Finalizado') {
+          //el periodo de eficiencia se suma con la fecha de finalizacion de la solicitud de curso
+
+          const efficiencyPeriod = request.efficiency_period; //dias
+          const dateEnd = new Date(request.requestCourseAssignment[0].date_end);
+          dateEnd.setDate(dateEnd.getDate() + Number(efficiencyPeriod));
+          //await this.requestCourse.save(request);
+          //si la fecha actual es mayor a la fecha de finalizacion mas el periodo de eficiencia
+          if (currentDate > dateEnd && efficiencyPeriod != null) {
+            i++;
+            request.status = 'Pendiente Evaluar Eficiencia';
+            await this.requestCourse.save(request);
+
+            //si el empleado tiene un lider asignado en el organigrama
+            if (request.employee.organigramaL.length > 0) {
+
+              //se envia correo a los lideres de los empleados que tomaron el curso
+              for (const emp of request.employee.organigramaL) {
+                //si el lider tiene usuario y el lider puede evaluar
+                if (emp.leader.userId && emp.evaluar) {
+
+                  //recorre el array de correoLideres
+                  if (correoLideres.length > 0) {
+
+                    correoLideres.forEach((correo) => {
+                      //si el lider ya existe en el array de correoLideres
+                      if (correo.employeeNumber === emp.leader.employee_number) {
+                        //si el curso ya existe en el array de correoLideres
+                        //agrega el empleado al curso
+                        correo.course.forEach((course) => {
+                          if (course.name === request.course.name) {
+                            course.employee.push({
+                              employeeNumber: request.employee.employee_number,
+                              name: request.employee.name,
+                              paternal_surname: request.employee.paternal_surname,
+                              maternal_surname: request.employee.maternal_surname,
+                            });
+                          } else {
+                            //si el curso no existe en el array de correoLideres
+                            //agrega el curso y el empleado
+                            correo.course.push({
+                              name: request.course.name,
+                              employee: [{
+                                employeeNumber: request.employee.employee_number,
+                                name: request.employee.name,
+                                paternal_surname: request.employee.paternal_surname,
+                                maternal_surname: request.employee.maternal_surname,
+                              }]
+                            });
+                          }
+                        });
+
+                      }
+                    });
+                  } else {
+
+                    //si el lider no existe en el array de correoLideres
+                    //agrega el lider y el curso y el empleado
+                    correoLideres.push({
+                      employeeNumber: emp.leader.employee_number,
+                      name: emp.leader.name,
+                      paternal_surname: emp.leader.paternal_surname,
+                      maternal_surname: emp.leader.maternal_surname,
+                      email: emp.leader.userId[0].email,
+                      course: [{
+                        name: request.course.name,
+                        employee: [{
+                          employeeNumber: request.employee.employee_number,
+                          name: request.employee.name,
+                          paternal_surname: request.employee.paternal_surname,
+                          maternal_surname: request.employee.maternal_surname,
+                        }]
+                      }]
+                    });
+                  }
+
+                }
+              }
+            } else {
+              //si el empleado no tiene un lider asignado en el organigrama
+              //se envia correo a los jefes de turno
+              let jefesTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+                .innerJoinAndSelect('employee.userId', 'user')
+                .innerJoinAndSelect('user.roles', 'role')
+                .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+                .orderBy('employee.employee_number', 'ASC')
+                .getMany();
+              for (const jefe of jefesTurno) {
+                //recorreo el array de correoLideres
+                //recorre el array de correoLideres
+                if (correoLideres.length > 0) {
+                  correoLideres.forEach((correo) => {
+                    //si el jefe ya existe en el array de correoLideres
+                    if (correo.employeeNumber === jefe.employee_number) {
+                      //si el curso ya existe en el array de correoLideres
+                      //agrega el empleado al curso
+                      correo.course.forEach((course) => {
+                        //si el curso ya existe en el array de correoLideres
+                        if (course.name === request.course.name) {
+                          course.employee.push({
+                            employeeNumber: request.employee.employee_number,
+                            name: request.employee.name,
+                            paternal_surname: request.employee.paternal_surname,
+                            maternal_surname: request.employee.maternal_surname,
+                          });
+                        } else {
+                          //si el curso no existe en el array de correoLideres
+                          //agrega el curso y el empleado
+                          correo.course.push({
+                            name: request.course.name,
+                            employee: [{
+                              employeeNumber: request.employee.employee_number,
+                              name: request.employee.name,
+                              paternal_surname: request.employee.paternal_surname,
+                              maternal_surname: request.employee.maternal_surname,
+                            }]
+                          });
+                        }
+                      });
+
+                    } else {
+                      //si el jefe no existe en el array de correoLideres
+                      //agrega el jefe y el curso y el empleado
+                      correoLideres.push({
+                        employeeNumber: jefe.employee_number,
+                        name: jefe.name,
+                        paternal_surname: jefe.paternal_surname,
+                        maternal_surname: jefe.maternal_surname,
+                        email: jefe.userId[0].email,
+                        course: [{
+                          name: request.course.name,
+                          employee: [{
+                            employeeNumber: request.employee.employee_number,
+                            name: request.employee.name,
+                            paternal_surname: request.employee.paternal_surname,
+                            maternal_surname: request.employee.maternal_surname,
+                          }]
+                        }]
+                      });
+                    }
+                  });
+                } else {
+                  //si el lider no existe en el array de correoLideres
+                  //agrega el lider y el curso y el empleado
+                  correoLideres.push({
+                    employeeNumber: jefe.employee_number,
+                    name: jefe.name,
+                    paternal_surname: jefe.paternal_surname,
+                    maternal_surname: jefe.maternal_surname,
+                    email: jefe.userId[0].email,
+                    course: [{
+                      name: request.course.name,
+                      employee: [{
+                        employeeNumber: request.employee.employee_number,
+                        name: request.employee.name,
+                        paternal_surname: request.employee.paternal_surname,
+                        maternal_surname: request.employee.maternal_surname,
+                      }]
+                    }]
+                  });
+                }
+
+              }
+
+            }
+
+          }
+
+
+        }
       }
-    } = {
-      date_start: undefined,
-      date_end: undefined,
-      requestCourse: {
-        status: ''
-      }
-    };
 
-    if (currdata.dateStart && currdata.dateEnd) {
-
-      findOption.date_start = MoreThanOrEqual(formattedStartDate);
-      findOption.date_end = LessThanOrEqual(formattedEndDate);
     }
 
-    if (currdata.status) {
-      findOption.requestCourse.status
-      findOption.requestCourse.status = currdata.status;
+    //enviar correo a los lideres
+    for (const correo of correoLideres) {
+
+      correo.course.forEach(async (course) => {
+        let mailData = {
+          curso: course.name,
+          empleados: course.employee.map(emp => `(#${emp.employeeNumber}) ${emp.name} ${emp.paternal_surname} ${emp.maternal_surname} `),
+        }
+
+        await this.mailService.sendEmail(`Evaluar Efectividad de Curso "${course.name}"`, mailData, [correo.email], 'evaluar_eficiencia_curso');
+      });
+
+
     }
 
-    const requestCourseAssignment = await this.requestCourseAssignment.find({
+
+
+  }
+
+  //actualizar empleados de curso
+  //y teacher
+  async updateCourseEmployeeAssignment(id: number, data: UpdateAssignmentCourseDto, user: any) {
+    // Implement the logic to update the course employee assignment
+
+    const assignment = await this.requestCourseAssignment.findOne({
       relations: {
         requestCourse: {
           employee: true,
           course: true,
+          competence: true,
           department: true,
+          leader: true,
+          rh: true,
+          requestBy: true,
+          gm: true
         },
-        teacher: true,
+        teacher: {
+          supplier: true,
+        },
+
       },
-      where: findOption
+      where: { id },
     });
 
+    if (!assignment) {
+      throw new NotFoundException(`Assignment with ID ${id} not found`);
+    }
 
-    return requestCourseAssignment;
+    //si data.changeEmployee.length es mayor a 0
+    //se cambia al empleado actual por el nuevo empleado
+    //y el empleado anterior se regreso a estatus aprobado
+    if (data.changeEmployee && data.changeEmployee.length > 0) {
+
+      for (let index = 0; index < data.changeEmployee.length; index++) {
+        const element = data.changeEmployee[index];
+        const newEmployee = await this.employeeService.findOne(element.newEmployee);
+        const oldRequestCourse = await this.requestCourse.findOne({
+          relations: {
+            employee: true,
+            course: true,
+            department: true,
+            leader: true,
+            rh: true,
+            requestBy: true,
+            competence: true
+          },
+          where: {
+            id: element.oldIdRequestCourse // id de la solicitud de curso anterior
+          },
+        });
+
+        //se obtiene el lider del empleado nuevo
+        const leader = await this.organigramaService.leaders(newEmployee.emp.id);
+
+        //crear nueva solicitud de curso con el nuevo empleado
+        const createRequestCourse = this.requestCourse.create({
+          course_name: oldRequestCourse.course_name,
+          training_reason: oldRequestCourse.training_reason,
+          priority: oldRequestCourse.priority,
+          efficiency_period: oldRequestCourse.efficiency_period,
+          cost: oldRequestCourse.cost,
+          currency: oldRequestCourse.currency,
+          type: oldRequestCourse.type,
+          place: oldRequestCourse.place,
+          tentative_date_start: oldRequestCourse.tentative_date_start,
+          tentative_date_end: oldRequestCourse.tentative_date_end,
+          approved_at_leader: oldRequestCourse.approved_at_leader,
+          approved_at_rh: oldRequestCourse.approved_at_rh,
+          approved_at_gm: oldRequestCourse.approved_at_gm ? oldRequestCourse.approved_at_gm : null,
+          status: oldRequestCourse.status,
+          employee: newEmployee.emp, //nuevo empleado
+          course: oldRequestCourse.course,
+          department: newEmployee.emp.department, //departamento del nuevo empleado
+          competence: oldRequestCourse.competence, //competencia del curso
+          leader: leader.orgs.filter((org: any) => org.evaluar == true)[0].leader, //lider del nuevo empleado
+          gm: oldRequestCourse.gm ? oldRequestCourse.gm : null, //gerente del curso
+          rh: oldRequestCourse.rh,
+          requestBy: oldRequestCourse.requestBy,
+          origin: 'Solicitud', //origen de la solicitud de curso
+          evaluation_tool: oldRequestCourse.evaluation_tool, //herramienta de evaluación
+        });
+
+        const requestCourse = await this.requestCourse.save(createRequestCourse);
+
+        //se cambia el estatus del empleado antiguo a aprobado
+        oldRequestCourse.status = 'Aprobado';
+        //await this.requestCourse.save(oldRequestCourse);
+
+        //se quita al auntiguo empleado del assignment.requestCourse
+        assignment.requestCourse = assignment.requestCourse.filter((req: any) => req.id !== oldRequestCourse.id);
+
+        //se agrega la nueva solicitud de curso al assignment.requestCourse
+        assignment.requestCourse.push(requestCourse);
+
+
+      }
+
+
+    }
+
+
+    // Agregar nuevos empleados
+    if (data.addEmployee && data.addEmployee.length > 0) {
+      for (const employee of data.addEmployee) {
+        const newEmployee = await this.employeeService.findOne(employee.addEmployee);
+
+        //se obtiene el lider del empleado nuevo
+        const leader = await this.organigramaService.leaders(newEmployee.emp.id);
+
+        //crear nueva solicitud de curso con el nuevo empleado
+        const createRequestCourse = this.requestCourse.create({
+          course_name: assignment.requestCourse[0].course_name,
+          training_reason: assignment.requestCourse[0].training_reason,
+          priority: assignment.requestCourse[0].priority,
+          efficiency_period: assignment.requestCourse[0].efficiency_period,
+          cost: 0,
+          currency: assignment.requestCourse[0].currency,
+          type: assignment.requestCourse[0].type,
+          place: assignment.requestCourse[0].place,
+          tentative_date_start: assignment.requestCourse[0].tentative_date_start,
+          tentative_date_end: assignment.requestCourse[0].tentative_date_end,
+          approved_at_leader: assignment.requestCourse[0].approved_at_leader,
+          approved_at_rh: assignment.requestCourse[0].approved_at_rh,
+          approved_at_gm: assignment.requestCourse[0].approved_at_gm ? assignment.requestCourse[0].approved_at_gm : null,
+          status: assignment.requestCourse[0].status,
+          employee: newEmployee.emp, //nuevo empleado
+          course: assignment.requestCourse[0].course,
+          department: newEmployee.emp.department, //departamento del nuevo empleado
+          competence: assignment.requestCourse[0].competence, //competencia del curso
+          leader: leader.orgs.filter((org: any) => org.evaluar == true)[0].leader, //lider del nuevo empleado
+          gm: assignment.requestCourse[0].gm ? assignment.requestCourse[0].gm : null, //gerente del curso
+          rh: assignment.requestCourse[0].rh,
+          requestBy: assignment.requestCourse[0].requestBy,
+          origin: 'Solicitud', //origen de la solicitud de curso
+          evaluation_tool: assignment.requestCourse[0].evaluation_tool, //herramienta de evaluación
+        });
+
+        const requestCourse = await this.requestCourse.save(createRequestCourse);
+
+        //se agrega la nueva solicitud de curso al assignment.requestCourse
+        assignment.requestCourse.push(requestCourse);
+      }
+    }
+
+    // Cambiar profesor
+    if (data.changeTeacher && data.changeTeacher.newTeacher != 0) {
+
+      //se obtiene el nuevo profesor
+      const newTeacher = await this.supplierService.findTeacherById(data.changeTeacher.newTeacher);
+
+      assignment.teacher = newTeacher;
+    }
+
+    //guardar cambios
+    await this.requestCourseAssignment.save(assignment);
+
+    return {
+      error: false,
+      msg: 'Asignación de curso actualizada correctamente',
+      data: assignment,
+    };
   }
-
 
 }

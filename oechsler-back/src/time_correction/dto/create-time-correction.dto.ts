@@ -38,4 +38,22 @@ export class CreateTimeCorrectionDto {
 
 export class UpdateTimeCorrectionDto extends PartialType(
   CreateTimeCorrectionDto,
-) {}
+) { }
+
+export class ReportTimeCorrectionDto {
+  @IsString()
+  @ApiProperty({ description: 'Fecha de inicio' })
+  startDate: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Fecha de fin' })
+  endDate: string;
+
+  @IsString()
+  @ApiProperty({ description: 'tipo de empleado(Semanal, Quincenal)' })
+  tipoEmpleado: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Tipo de jerarquía del empleado (Normal, Jerarquia)' })
+  tipoJerarquia: string;
+}

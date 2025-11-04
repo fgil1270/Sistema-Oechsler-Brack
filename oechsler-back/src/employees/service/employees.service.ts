@@ -30,6 +30,7 @@ import { CalendarService } from '../../calendar/service/calendar.service';
 import { da, tr } from 'date-fns/locale';
 import { EmployeeShift } from 'src/employee_shift/entities/employee_shift.entity';
 import { CustomLoggerService } from '../../logger/logger.service';
+import { UsersService } from '../../users/service/users.service';
 
 @Injectable()
 export class EmployeesService {
@@ -48,6 +49,7 @@ export class EmployeesService {
     private employeeProfilesService: EmployeeProfilesService,
     private organigramaService: OrganigramaService,
     @Inject(forwardRef(() => CalendarService)) private calendarService: CalendarService,
+    @Inject(forwardRef(() => UsersService)) private usersService: UsersService,
   ) { }
 
   async readExcel(file) {
@@ -161,6 +163,7 @@ export class EmployeesService {
       quote: 0,
       type_contract: '',
       worker_status: false,
+      deleted_at: '',
     };
     const listEmp = {};
     const column = 1;
@@ -177,83 +180,88 @@ export class EmployeesService {
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 0 })];
       const idJob =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 2 })];
-      const name =
-        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 7 })];
-      const paternal_surname =
-        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 8 })];
-      const maternal_surname =
-        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 9 })];
       const puesto =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 3 })];
       const departamento =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 4 })];
-      const nomina =
+      const fechaCambio =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 5 })];
-      const tipeEmployee =
+      //
+      const nomina =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 6 })];
-      const profileEmployee =
-        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 36 })];
-      const vacationProfile =
-        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 37 })];
-      const dateChangeVacationProfile =
-        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 38 })];
-      const gender =
+      const tipeEmployee =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 7 })];
+      const name =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 8 })];
+      const paternal_surname =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 9 })];
+      const maternal_surname =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 10 })];
-      const birthdate =
+      const gender =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 11 })];
-      const country =
+      const birthdate =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 12 })];
-      const citizenship =
+      const country =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 13 })];
-      const state =
+      const citizenship =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 14 })];
-      const city =
+      const state =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 15 })];
-      const location =
+      const city =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 16 })];
-      const rfc =
+      const location =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 17 })];
-      const curp =
+      const rfc =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 18 })];
-      const nss =
+      const curp =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 19 })];
+      const nss =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 20 })];
       const email =
-        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 21 })];
-      const phone =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 22 })];
-      const marital_status =
+      const phone =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 23 })];
-      const visa =
+      const marital_status =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 24 })];
-      const fm_two =
+      const visa =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 25 })];
-      const travel =
+      const fm_two =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 26 })];
-      const brigade_member =
+      const travel =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 27 })];
-      const salary =
+      const brigade_member =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 28 })];
-      const type_contract =
+      const salary =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 29 })];
-      const daily_salary =
+      const type_contract =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 30 })];
-      const date_employment =
+      const daily_salary =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 31 })];
-      const work_term_date =
+      const date_employment =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 32 })];
-      const worker_status =
+      const work_term_date =
         workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 33 })];
+      const worker_status =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 34 })];
+      const profileEmployee =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 37 })];
+      const vacationProfile =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 38 })];
+
+
+      const dateChangeVacationProfile =
+        workbook.Sheets['Todos'][utils.encode_cell({ r: rowNum, c: 39 })];
+
 
       const quote = 1;
 
       //validar email
       //email === undefined ||
-      if (exNoEmployee.w.trim()) {
-        console.log("primera")
-        console.log("numero de empleado", exNoEmployee.w.trim())
-        console.log("row", rowNum)
-        console.log("total", total)
 
+      //si el empleado es inactivo
+      //continuar con el siguiente registro
+      if (worker_status.w.trim() === 'I') {
+        continue;
       }
 
       //SE VALIDA QUE NO EXISTAN CAMPOS VACIOS
@@ -330,7 +338,6 @@ export class EmployeesService {
         }
 
         //BUSCAMOS LA NOMINA
-
         const tablePayRoll = await this.payrollsService.findName(nomina.w);
         if (!tablePayRoll) {
           totalError++;
@@ -368,7 +375,8 @@ export class EmployeesService {
         }
 
         //BUSCAMOS EL EMPLEADO
-        const tableEmployee = await this.employeeRepository.findOne({
+        let tableEmployee;
+        const searchTableEmployee = await this.employeeRepository.find({
           where: {
             employee_number: exNoEmployee.w.trim(),
           },
@@ -378,10 +386,21 @@ export class EmployeesService {
             'payRoll',
             'vacationProfile',
             'employeeProfile',
+            'userId'
           ],
+          withDeleted: true,
         });
-        //SI EL EMPLEADO EXISTE SE EDITA Y SI NO SE CREA
 
+        //si el empleado ya existe pero esta eliminado manda un mensaje
+        if (searchTableEmployee.length > 0) {
+          if (searchTableEmployee[searchTableEmployee.length - 1].deleted_at && worker_status.w.trim() === 'A') {
+            throw new NotFoundException(`El empleado #${searchTableEmployee[0].employee_number} ya existe, pero esta inactivo`);
+          } else {
+            tableEmployee = searchTableEmployee[searchTableEmployee.length - 1];
+          }
+        }
+
+        //SI EL EMPLEADO EXISTE SE EDITA Y SI NO SE CREA
         if (tableEmployee?.id) {
           try {
 
@@ -427,6 +446,7 @@ export class EmployeesService {
             row.quote = quote;
             row.work_term_date =
               work_term_date != undefined ? work_term_date.w.trim() : null;
+            row.deleted_at = work_term_date != undefined ? work_term_date.w.trim() : null;
             row.worker_status = worker_status.w.trim() === 'A' ? true : false;
 
             //si el puesto es distinto se crea el historial
@@ -434,6 +454,7 @@ export class EmployeesService {
               const empJob = this.employeeJobHistoryRepository.create({
                 employee: tableEmployee,
                 job: tableEmployee.job,
+                created_at: fechaCambio ? new Date(fechaCambio.w.trim()) : new Date(),
               });
               await this.employeeJobHistoryRepository.save(empJob);
             }
@@ -443,6 +464,7 @@ export class EmployeesService {
               const empDepartment = this.employeeDepartmentHistoryRepository.create({
                 employee: tableEmployee,
                 department: tableEmployee.department,
+                created_at: fechaCambio ? new Date(fechaCambio.w.trim()) : new Date(),
               });
               await this.employeeDepartmentHistoryRepository.save(empDepartment);
             }
@@ -452,6 +474,7 @@ export class EmployeesService {
               const empPayroll = this.employeePayrollHistoryRepository.create({
                 employee: tableEmployee,
                 payroll: tableEmployee.payRoll,
+                created_at: fechaCambio ? new Date(fechaCambio.w.trim()) : new Date(),
               });
               await this.employeePayrollHistoryRepository.save(empPayroll);
             }
@@ -465,7 +488,7 @@ export class EmployeesService {
                 this.employeeVacationProfileHistoryRepository.create({
                   employee: tableEmployee,
                   vacationProfile: tableEmployee.vacationProfile,
-                  created_at: dateChangeVacationProfile ? new Date(dateChangeVacationProfile.w.trim()) : new Date(),
+                  created_at: fechaCambio ? new Date(fechaCambio.w.trim()) : new Date(),
                 });
               await this.employeeVacationProfileHistoryRepository.save(
                 empVacationProfile
@@ -477,10 +500,17 @@ export class EmployeesService {
               const empWorker = this.employeeWorkerHistoryRepository.create({
                 employee: tableEmployee,
                 worker: tableEmployee.worker,
+                created_at: fechaCambio ? new Date(fechaCambio.w.trim()) : new Date(),
               });
               await this.employeeWorkerHistoryRepository.save(empWorker);
             }
 
+            if (work_term_date != undefined) {
+              tableEmployee.userId.forEach(async userId => {
+                await this.usersService.delete(userId.id);
+              });
+
+            }
             //se actualiza el empleado
             this.employeeRepository.update(tableEmployee.id, row);
 
@@ -499,58 +529,60 @@ export class EmployeesService {
           //SE CREA EL EMPLEADO
 
           try {
-            row.payRoll = tablePayRoll ? tablePayRoll.payroll : {};
-            row.department = tableDepartment ? tableDepartment.dept : {};
-            row.vacationProfile = tableVacationProfile
-              ? tableVacationProfile.vacationsProfile
-              : {};
-            row.employeeProfile = tableEmployeeProfile
-              ? tableEmployeeProfile.emp
-              : {};
-            row.job = tableJob ? tableJob : newJob;
-            row.worker = tipeEmployee.w.toUpperCase();
-            row.employee_number = exNoEmployee.w.trim();
-            row.name = name.w.trim();
-            row.paternal_surname = paternal_surname.w.trim();
-            row.maternal_surname = maternal_surname.w.trim();
-            row.gender = gender.w.trim();
-            row.birthdate = new Date(birthdate.w.trim().replace('/', '-'))
-              .toISOString()
-              .split('T')[0];
-            row.country = country.w.trim();
-            row.citizenship = citizenship.w.trim();
-            row.state = state.w.trim();
-            row.city = city.w.trim();
-            row.location = location.w.trim();
-            row.rfc = rfc.w.trim();
-            row.curp = curp.w.trim();
-            row.nss = nss.w.toString().trim();
-            row.email = email ? email.w.trim() : '';
-            row.phone = phone ? phone.w.trim() : '';
-            row.marital_status = marital_status ? marital_status.w.trim() : '';
-            row.visa = visa.w.trim() === 'SI' ? true : false;
-            row.fm_two = fm_two.w.trim() === 'SI' ? true : false;
-            row.travel = travel.w.trim() === 'SI' ? true : false;
-            row.brigade_member =
-              brigade_member.w.trim() === 'SI' ? true : false;
-            row.salary = salary.w.trim();
-            row.daily_salary = daily_salary.w.trim();
-            row.type_contract = type_contract.w.toString().trim();
-            row.salary = salary.w.trim();
-            row.date_employment = date_employment.w.trim();
-            row.quote = quote;
-            row.work_term_date =
-              work_term_date != undefined ? work_term_date.w.trim() : null;
-            row.worker_status = worker_status.w.trim() === 'A' ? true : false;
-            const emp = this.employeeRepository.create(row);
+            //si el work_term_date es undefined se crea al empleado
+            if (work_term_date == undefined) {
+              row.payRoll = tablePayRoll ? tablePayRoll.payroll : {};
+              row.department = tableDepartment ? tableDepartment.dept : {};
+              row.vacationProfile = tableVacationProfile
+                ? tableVacationProfile.vacationsProfile
+                : {};
+              row.employeeProfile = tableEmployeeProfile
+                ? tableEmployeeProfile.emp
+                : {};
+              row.job = tableJob ? tableJob : newJob;
+              row.worker = tipeEmployee.w.toUpperCase();
+              row.employee_number = exNoEmployee.w.trim();
+              row.name = name.w.trim();
+              row.paternal_surname = paternal_surname.w.trim();
+              row.maternal_surname = maternal_surname.w.trim();
+              row.gender = gender.w.trim();
+              row.birthdate = new Date(birthdate.w.trim().replace('/', '-'))
+                .toISOString()
+                .split('T')[0];
+              row.country = country.w.trim();
+              row.citizenship = citizenship.w.trim();
+              row.state = state.w.trim();
+              row.city = city.w.trim();
+              row.location = location.w.trim();
+              row.rfc = rfc.w.trim();
+              row.curp = curp.w.trim();
+              row.nss = nss.w.toString().trim();
+              row.email = email ? email.w.trim() : '';
+              row.phone = phone ? phone.w.trim() : '';
+              row.marital_status = marital_status ? marital_status.w.trim() : '';
+              row.visa = visa.w.trim() === 'SI' ? true : false;
+              row.fm_two = fm_two.w.trim() === 'SI' ? true : false;
+              row.travel = travel.w.trim() === 'SI' ? true : false;
+              row.brigade_member =
+                brigade_member.w.trim() === 'SI' ? true : false;
+              row.salary = salary.w.trim();
+              row.daily_salary = daily_salary.w.trim();
+              row.type_contract = type_contract.w.toString().trim();
+              row.salary = salary.w.trim();
+              row.date_employment = date_employment.w.trim();
+              row.quote = quote;
+              row.work_term_date =
+                work_term_date != undefined ? work_term_date.w.trim() : null;
+              row.worker_status = worker_status.w.trim() === 'A' ? true : false;
+              const emp = this.employeeRepository.create(row);
 
-            //SE CREA EL EMPLEADO
-            await this.employeeRepository.save(emp);
-            //createAllemployee.push(row);
+              //SE CREA EL EMPLEADO
+              await this.employeeRepository.save(emp);
+              //createAllemployee.push(row);
 
+              totalNew++;
+            }
 
-
-            totalNew++;
           } catch (error) {
             totalError++;
             errors.push({
@@ -578,6 +610,7 @@ export class EmployeesService {
       where: {
         employee_number: createEmployeeDto.employee_number,
       },
+      withDeleted: true,
     });
 
     if (empExist?.id) {
@@ -641,6 +674,7 @@ export class EmployeesService {
     const emp = await this.employeeRepository.findOne({
       where: {
         id: id,
+        deleted_at: null
       },
       relations: {
         department: true,
@@ -651,6 +685,20 @@ export class EmployeesService {
         userId: {
           roles: true,
         },
+        employeeJobHistory: {
+          job: true
+        },
+        employeeDepartmentHistory: {
+          department: true
+        },
+        employeePayrollHistory: {
+          payroll: true
+        },
+        employeeVacationProfileHistory: {
+          vacationProfile: true
+        },
+        employeeWorkerHistory: true,
+
       },
     });
 
@@ -892,6 +940,7 @@ export class EmployeesService {
       //se obtiene el ultimo cambio de perfil de vacaciones
       const lastVacationProfile = await this.employeeVacationProfileHistoryRepository.findOne({
         relations: {
+          employee: true,
           vacationProfile: {
             vacationProfileDetail: true
           }
@@ -919,65 +968,69 @@ export class EmployeesService {
         relations: {
           logAdjustmentVacationEmployee: true,
         }
-
-
       });
 
 
       //si existe un un historial de vacaciones
       //se toman los dias de vacaciones del historial
       if (lastVacationProfile) {
-        //se obtiene el dia de cambio de perfil de vacaciones
-        diaCambio = moment(new Date(lastVacationProfile.created_at));
-        //se obtiene los años cumplidos al dia de cambio de perfil de vacaciones
-        anoCumplidoDiaCambio = diaCambio.diff(ingreso, 'years', true);
-        //se genera array para separar años y dias del historial
-        arrayAnoHistorial = anoCumplidoDiaCambio.toFixed(2).split('.');
-        //se obtienes los dias que corresponden al año de cambio de perfil de vacaciones
-        objDiasByAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAnoHistorial[0]));
-        //si el año del cambio de perfil de vacaciones es igual al año de la consulta
-        objDiasBySiguenteAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
-        //se obtiene el total de dias que corresponden al año de cambio de perfil de vacaciones
-        totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.total : 0;
-        //se obtiene los dias que corresponden al siguiente año de cambio de perfil de vacaciones
-        sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day;
-        //suma de los dias de antiguedad del historial
-        sumaDiasAntiguedadHistorial = totalDiasByAnoHistorial + sumDiasSiguenteAnoHistorial;
+        try {
+          //se obtiene el dia de cambio de perfil de vacaciones
+          diaCambio = moment(new Date(lastVacationProfile.created_at));
+          //se obtiene los años cumplidos al dia de cambio de perfil de vacaciones
+          anoCumplidoDiaCambio = diaCambio.diff(ingreso, 'years', true);
+          //se genera array para separar años y dias del historial
+          arrayAnoHistorial = anoCumplidoDiaCambio.toFixed(2).split('.');
+          //se obtienes los dias que corresponden al año de cambio de perfil de vacaciones
+          objDiasByAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAnoHistorial[0]));
+          //si el año del cambio de perfil de vacaciones es igual al año de la consulta
+          objDiasBySiguenteAnoHistorial = lastVacationProfile.vacationProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
+          //se obtiene el total de dias que corresponden al año de cambio de perfil de vacaciones
+          totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.total : 0;
+          //se obtiene los dias que corresponden al siguiente año de cambio de perfil de vacaciones
+          sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day;
+          //suma de los dias de antiguedad del historial
+          sumaDiasAntiguedadHistorial = totalDiasByAnoHistorial + sumDiasSiguenteAnoHistorial;
 
 
-        //se obtiene los años cumplidosde la fecha de cambio de perfil al dia de consulta
-        anoCumplidos = diaConsulta.diff(diaCambio, 'years', true);
-        //se calculan los dias de vacaciones al dia de la consulta
-        //se genera array para separar años y dias
-        arrayAno = anoCumplidos.toFixed(2).split('.');
+          //se obtiene los años cumplidosde la fecha de cambio de perfil al dia de consulta
+          anoCumplidos = diaConsulta.diff(diaCambio, 'years', true);
+          //se calculan los dias de vacaciones al dia de la consulta
+          //se genera array para separar años y dias
+          arrayAno = anoCumplidos.toFixed(2).split('.');
 
 
 
-        //se obtiene el total de dias que corresponden al año despues del cambio de perfil
-        objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) =>
-            year.year === ((parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) != 0 ? (parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) + 1 : 1)
-        );
-        //se obtiene los dias que corresponden al siguiente año
-        objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
-          (year) =>
-            year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1)
-        );
-        //se obtiene el total de dias que corresponden al año
-        totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
-        //se obtiene los dias que corresponden al siguiente año
-        sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
-        //suma de los dias de antiguedad
-        sumaDiasAntiguedad = (arrayAno[0] == 0 ? 0 : totalDiasByAno) + sumDiasSiguenteAno + sumaDiasAntiguedadHistorial;
-        //se obtiene los años cumplidos a fin de año
-        anoCumplidosFinAno = finAno.diff(diaCambio, 'years', true);
-        //se calculan los dias de vacaciones a fin de año
-        arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
-        objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
-        objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
-        sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
-        sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
+          //se obtiene el total de dias que corresponden al año despues del cambio de perfil
+          objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
+            (year) =>
+              year.year === ((parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) != 0 ? (parseInt(arrayAnoHistorial[0]) + parseInt(arrayAno[0])) + 1 : 1)
+          );
+          //se obtiene los dias que corresponden al siguiente año
+          objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
+            (year) =>
+              year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1)
+          );
+          //se obtiene el total de dias que corresponden al año
+          totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
+          //se obtiene los dias que corresponden al siguiente año
+          sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
+          //suma de los dias de antiguedad
+          sumaDiasAntiguedad = (arrayAno[0] == 0 ? 0 : totalDiasByAno) + sumDiasSiguenteAno + sumaDiasAntiguedadHistorial;
+          //se obtiene los años cumplidos a fin de año
+          anoCumplidosFinAno = finAno.diff(diaCambio, 'years', true);
+          //se calculan los dias de vacaciones a fin de año
+          arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
+          objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
+          objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
+          totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
+          sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
+          sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
+        } catch (error) {
+
+          console.error('Error al calcular los dias de vacaciones del historial', error);
+        }
+
 
       } else {
         //se obtiene los años cumplidos al dia de consulta

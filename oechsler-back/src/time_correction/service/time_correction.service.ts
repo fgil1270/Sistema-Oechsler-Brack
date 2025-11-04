@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   BadGatewayException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import {
   Repository,
@@ -12,14 +14,16 @@ import {
   MoreThanOrEqual,
   LessThanOrEqual,
   Between,
+  DataSource
 } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, fi } from 'date-fns/locale';
 import * as moment from 'moment';
 
+
 import { TimeCorrection } from '../entities/time_correction.entity';
-import { CreateTimeCorrectionDto } from '../dto/create-time-correction.dto';
+import { CreateTimeCorrectionDto, ReportTimeCorrectionDto } from '../dto/create-time-correction.dto';
 import { EmployeeIncidence } from '../../employee_incidence/entities/employee_incidence.entity';
 import { EmployeeIncidenceService } from '../../employee_incidence/service/employee_incidence.service';
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
@@ -31,6 +35,7 @@ import { CalendarService } from '../../calendar/service/calendar.service';
 
 import { read } from 'xlsx';
 
+
 @Injectable()
 export class TimeCorrectionService {
   constructor(
@@ -41,11 +46,13 @@ export class TimeCorrectionService {
     private readonly employeeIncidenceService: EmployeeIncidenceService,
     private readonly employeeShiftService: EmployeeShiftService,
     private readonly employeesService: EmployeesService,
+    @Inject(forwardRef(() => ChecadorService))
     private readonly checadorService: ChecadorService,
     private readonly incidenceCatalogueService: IncidenceCatologueService,
     private readonly organigramaService: OrganigramaService,
     private readonly calendarService: CalendarService,
-  ) {}
+    @InjectDataSource() private dataSource: DataSource,
+  ) { }
 
   async create(data: CreateTimeCorrectionDto) {
     const emp = await this.employeesService.findOne(data.id_employee);
@@ -78,9 +85,19 @@ export class TimeCorrectionService {
     return await this.timeCorrectionRepository.save(createCorrection);
   }
 
+  // Buscar corrección de tiempo por fecha y empleado
+  async findTimeCorrection(date: string, employeeId: number) {
+    return await this.timeCorrectionRepository.findOne({
+      where: {
+        date: format(new Date(date), 'yyyy-MM-dd') as any,
+        employee: { id: employeeId },
+      },
+    });
+  }
+
   //reporte correccion de tiempo
-  async find(data: any, user: any) {
-    
+  async find(data: ReportTimeCorrectionDto, user: any) {
+
     const tipoNomina = data.tipoEmpleado;
     const isAdmin = user.roles.some(
       (role) => role.name === 'Admin' || role.name === 'RH',
@@ -92,7 +109,7 @@ export class TimeCorrectionService {
 
     let organigrama = await this.organigramaService.findJerarquia(
       {
-        type: data.type,
+        type: data.tipoJerarquia,
         startDate: '',
         endDate: '',
       },
@@ -103,17 +120,19 @@ export class TimeCorrectionService {
     if (!isAdmin) {
       organigrama = organigrama.filter((item) => item.id != user.idEmployee);
     }
-
+    //se filtran los empleados por tipo de nomina
+    organigrama = tipoNomina == 'Todas' ? organigrama : organigrama.filter((emp) => emp.payRoll.name == tipoNomina);
     //return organigrama;
 
     let query = `SELECT * FROM employee AS e
         INNER JOIN organigrama AS o ON e.id = o.employeeId
-        WHERE o.leaderId = ${user.idEmployee}`;
+        WHERE o.leaderId = ${user.idEmployee} AND e.deleted_at IS NULL`;
 
     //si es administrador
     if (isAdmin) {
       query = `
-            SELECT * FROM employee
+            SELECT * FROM employee AS e
+            WHERE e.deleted_at IS NULL
             `;
     }
 
@@ -126,7 +145,7 @@ export class TimeCorrectionService {
             UNION
             SELECT * FROM employee AS e
             INNER JOIN organigrama AS o ON e.id = o.employeeId
-            WHERE o.leaderId = ${user.idEmployee}
+            WHERE o.leaderId = ${user.idEmployee} AND e.deleted_at IS NULL
             `;
     }
 
@@ -141,8 +160,8 @@ export class TimeCorrectionService {
     // Combine the results into a single array
     empleados = [...empleados, ...results];
 
-    const from = format(new Date(data.fecha_inicio), 'yyyy-MM-dd 00:00:00');
-    const to = format(new Date(data.fecha_fin), 'yyyy-MM-dd 23:59:59');
+    const from = format(new Date(data.startDate), 'yyyy-MM-dd 00:00:00');
+    const to = format(new Date(data.endDate), 'yyyy-MM-dd 23:59:59');
 
     //se genera un arreglo con los dias entre el rango de fechas
     for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
@@ -159,7 +178,8 @@ export class TimeCorrectionService {
       const totalHrsExtra = 0;
 
       //se recorre el arreglo de dias generados
-      for ( let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
+      for (let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
+        let incongruencia = "";
         const dataDate = {
           start: index,
           end: index,
@@ -171,7 +191,7 @@ export class TimeCorrectionService {
               date: format(index, 'yyyy-MM-dd') as any,
               employee: { id: iterator.id },
             },
-        });
+          });
 
 
         //se verifica si el dia es festivo
@@ -183,11 +203,15 @@ export class TimeCorrectionService {
           }
         }
 
+        //si ya existe una correccion de tiempo para ese dia
+        //continua al siguiente dia
         if (searchTimeCorrection) {
           continue;
         }
 
         const nowDate = new Date(index);
+
+        //obtener turno del empleado
         const employeeShif = await this.employeeShiftService.findMore(
           dataDate,
           [iterator.id],
@@ -232,17 +256,20 @@ export class TimeCorrectionService {
           end: format(index, 'yyyy-MM-dd 23:59:00') as any,
           status: ['Autorizada'],
           ids: [`${iterator.id}`],
-          code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS', 'CAST', 'FINJ', 'HE', 'INC', 
+          code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS', 'CAST', 'FINJ', 'HE', 'INC',
             'DFT', 'VacM', 'Sind', 'PRTC', 'DOM', 'VACA', 'HO', 'HET', 'PSSE'],
         });
-        
-        if (employeeShif.events.length == 0) {
-          continue;
-        }
+
+        /*  / Revisar, si no tiene turno, y tiene checadas 
+           revisar el dia anterior el tipo de turnoActual, o el dia sigueinte el tipo de turnoActual
+             si no concuerdan con las checadas del dia turnoActual, se muestra en correccion de tiemposs
+           / */
+
+
 
         //si existe incidencia no se muestra en el reporte
         if (incidencias.length > 0) {
-          
+
           continue;
         }
 
@@ -252,193 +279,138 @@ export class TimeCorrectionService {
         let diaAnterior;
         let diaSiguente;
 
+        let diaResta = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
+        let diaSuma = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
         const dataDateAnterior = {
-          start: new Date(nowDate.setDate(nowDate.getDate() - 1)),
-          end: new Date(nowDate.setDate(nowDate.getDate() - 1)),
+          start: diaResta,
+          end: diaResta,
         };
+
         const dataDateSiguiente = {
-          start: new Date(nowDate.setDate(nowDate.getDate() + 1)),
-          end: new Date(nowDate.setDate(nowDate.getDate() + 1)),
+          start: diaSuma,
+          end: diaSuma,
         };
+
 
         const employeeShifAnterior = await this.employeeShiftService.findMore(
           dataDateAnterior,
-          `${iterator.id}`,
+          [iterator.id],
         );
         const employeeShifSiguiente = await this.employeeShiftService.findMore(
           dataDateSiguiente,
-          `${iterator.id}`,
+          [iterator.id],
         );
         const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
         const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
 
-        //turno actual es igual al turno del dia anterior
-        if (turnoActual == turnoAnterior) {
-          //turno actual es igual al turno del dia siguiente
-          if (turnoActual == turnoSiguiente) {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                diaSiguente = new Date(index);
-                break;
-              case 'T2':
-                hrEntrada = '05:00:00'; //dia Actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '15:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T4':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-2':
-                hrEntrada = '09:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
+        //obtener el horario de entrada y salida
+        //para consultar el checador
+        ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.checadorService.entradaSalidaChecador(
+          index,
+          turnoAnterior,
+          turnoActual,
+          turnoSiguiente
+        ))
+
+
+
+        let checadas = [];
+        //si no tiene turno el dia Actual
+        if (employeeShif.events.length == 0) {
+
+          //continue;
+          //revisa que turno tiene el dia anterior
+          if (turnoAnterior == 'T2' || turnoAnterior == 'TI2' || turnoAnterior == 'T3' || turnoAnterior == 'TI3') {
+            //revisa si existen incidencias el dia anterior
+            const incidencias = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
+              start: format(diaResta, 'yyyy-MM-dd 00:00:00') as any,
+              end: format(diaResta, 'yyyy-MM-dd 23:59:00') as any,
+              status: ['Autorizada'],
+              ids: [`${iterator.id}`],
+              code_band: ['HE', 'HET', 'TxT'],
+            });
+
+            //si existe incidencias 
+            //continua con el siguiente dia
+            if (incidencias.length > 0) {
+              continue;
             }
           } else {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '15:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                diaSiguente = new Date(index);
-                break;
-              case 'T2':
-                hrEntrada = '05:00:00'; //dia Actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T4':
-                hrEntrada = '21:00:00'; //dia anterior
-                hrSalida = '15:00:00'; //dia actual
-                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
+            //revisa que turno tiene el dia siguiente
+            checadas = await this.dataSource.manager
+              .createQueryBuilder('Checador', 'c')
+              .leftJoinAndSelect('c.employee', 'employee')
+              .where('employee.id IN (:...ids)', { ids: [iterator.id] })
+              .andWhere(
+                // Overlapping condition: busca checadas con el rango
+                '(c.date >= :from AND c.date <= :to)',
+                { from: format(index, 'yyyy-MM-dd 00:00:00') as any, to: format(index, 'yyyy-MM-dd 23:59:00') as any }
+              )
+              .getMany();
+
+
+            //si no tiene checadas continua con el siguiente dia
+            if (checadas.length <= 0) {
+              continue;
+            } else {
+
+              //se busca el horario de entrada y salida
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
+              hrEntrada = '00:01:00';
+              hrSalida = '23:59:00';
             }
           }
-        } else {
-          switch (turnoActual) {
-            case 'T1':
-              hrEntrada = '03:00:00'; //dia anterior
-              hrSalida = '16:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T2':
-              hrEntrada = '11:00:00'; //dia Actual
-              hrSalida = '23:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T3':
-              hrEntrada = '20:00:00'; //dia actual
-              hrSalida = '08:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-              break;
-            case 'MIX':
-              hrEntrada = '03:00:00'; //dia actual
-              hrSalida = '22:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'TI':
-              hrEntrada = '02:00:00'; //dia actual
-              hrSalida = '23:00:00'; //dia siguiente
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T4':
-              hrEntrada = '03:00:00'; //dia anterior
-              hrSalida = '16:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
-              break;
-            case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-            case 'T12-2':
-              hrEntrada = '14:00:00'; //dia anterior
-              hrSalida = '08:00:00'; //dia actual
-              diaAnterior = new Date(index);
-              diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-              break;
+
+        }
+        const registrosChecadorNuevo = await this.dataSource.manager
+          .createQueryBuilder('Checador', 'c')
+          .leftJoinAndSelect('c.employee', 'employee')
+          .where('employee.id IN (:...ids)', { ids: [iterator.id] })
+          .andWhere(
+            // Overlapping condition: busca checadas con el rango
+            '(c.date >= :from AND c.date <= :to)',
+            { from: format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`) as any, to: format(diaSiguente, `yyyy-MM-dd ${hrSalida}`) as any }
+          )
+          .orderBy('c.date', 'ASC')
+          .getMany();
+
+
+
+
+        //si tiene checadas
+        if (registrosChecadorNuevo.length > 0) {
+          //y no tiene turno asignado
+          if (employeeShif.events.length <= 0) {
+            incongruencia = 'No tiene turno asignado';
+          } else {
+            if (turnoActual == 'TI' || turnoActual == 'TI1' || turnoActual == 'TI2' || turnoActual == 'TI3') {
+              incongruencia = 'No tiene incidencia';
+            } else {
+              incongruencia = 'incongruencia de horas';
+            }
+
           }
+
+
+        } else {
+          //tiene checadas
+          if (checadas.length > 0) {
+
+            incongruencia = 'No tiene turno asignado';
+          } else {
+            //tiene turno
+            if (employeeShif.events.length > 0) {
+              incongruencia = 'No tiene checadas';
+            } else {
+              continue;
+            }
+
+
+          }
+
         }
 
-        const registrosChecadorNuevo = await this.checadorService.findbyDate(
-          iterator.id,
-          diaAnterior,
-          diaSiguente,
-          hrEntrada,
-          hrSalida,
-        );
-        
 
         //se verifica si el dia anterior para el turno 1 es el mismo turno
         //se toman los horarios de entra del segundo Turno pero si son distintos
@@ -446,24 +418,6 @@ export class TimeCorrectionService {
 
         //diaSiguente = new Date(index);
 
-        /*  if(iterator.id == 1907){
-                    
-                    let diaUno =moment(new Date('2023-10-09 21:30:00'), 'HH:mm:ss');
-                    let diaUnoFin =moment(new Date('2023-10-10 06:59:59'), 'HH:mm:ss');
-                    let diaDos =moment('2023-10-09T00:00:00', 'HH:mm:ss');
-                    let diaDosFin =moment('2023-10-09T06:00:00', 'HH:mm:ss');
-                   
-                } */
-
-        /*  if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T3') {
-                    hrEntrada = '20:00:00';
-                    hrSalida = '08:59:00';
-                    diaSiguente.setDate(diaSiguente.getDate() + 1);
-                    //let nextDay = format(diaSiguente, 'yyyy-MM-dd');
-                    
-                    //startTimeShift = moment(employeeShif.events[0]?.startTimeshift, 'HH:mm');
-                    endTimeShift = moment(new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`), 'HH:mm').add(1, 'day');
-                } */
 
         //se obtiene la hora de inicio y fin del turno
         let startTimeShift;
@@ -490,8 +444,7 @@ export class TimeCorrectionService {
           );
           endTimeShift = moment(
             new Date(
-              `${format(diaSiguente, 'yyyy-MM-dd')} ${
-                employeeShif.events[0]?.endTimeshift
+              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
               }`,
             ),
             'HH:mm',
@@ -515,7 +468,7 @@ export class TimeCorrectionService {
 
         const date = new Date();
         date.setHours(hours);
-        date.setMinutes(minutes); 
+        date.setMinutes(minutes);
 
 
         //si el total de horas registradas es menor al total de horas por dia -3
@@ -526,6 +479,14 @@ export class TimeCorrectionService {
         }
 
         const horas_realizadas = date.toTimeString().split(' ')[0].split(':');
+
+        //se buscan los lideres del empleado
+        const lideres = await this.organigramaService.leaders(iterator.id);
+
+        const hoursConvert = Math.floor(diffTimeShift);
+        const minutesConvert = Math.round((diffTimeShift - hoursConvert) * 60);
+
+
 
         registros.push({
           id: i,
@@ -538,18 +499,18 @@ export class TimeCorrectionService {
           hora_fin: endTimeShift.format('HH:mm'),
           hora_inicio_reloj: firstDate.format('HH:mm'),
           hora_fin_reloj: secondDate.format('HH:mm'),
-          horas_esperadas: moment(diffTimeShift, 'HH:mm').format('HH:mm'),
+          horas_esperadas: `${hoursConvert.toString().padStart(2, '0')}:${minutesConvert.toString().padStart(2, '0')}`,//moment(diffTimeShift, 'HH:mm').format('HH:mm'),
+          incongruencia: incongruencia,
           horas_realizadas:
             diffDate >= 0 ? horas_realizadas[0] + ':' + horas_realizadas[1] : 0,
           suma_hrs: diffTimeShift + 2,
           comments: '',
           checadas: registrosChecadorNuevo,
+          lideres: lideres.orgs.map((lider) =>
+            lider.leader.employee_number,
+          ),
 
-          /* horasEsperadas: totalHrsRequeridas.toFixed(2),
-                    horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas
-                    convertir: moment.utc(totalHrsTrabajadas*168*24*60*60*1000).format('HH:mm'),
-                    horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('H.mm'), */
-          //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
+
         });
 
         //si existe incidencia de vacaciones se toma como hrs trabajadas
@@ -563,32 +524,12 @@ export class TimeCorrectionService {
 
         totalHrsTrabajadas += diffDate >= 0 ? diffDate : 0;
 
-        /* eventDays.push({
-                    date: format(index, 'yyyy-MM-dd'),
-                    incidencia: {extra: incidenceExtra, incidencias: incidencias},
-                    employeeShift: employeeShif.events[0]?.nameShift,
-                }); */
-
         i++;
       }
 
       totalHrsTrabajadas = totalHrsTrabajadas - totalHrsExtra;
 
-      /* registros.push({
-                idEmpleado: iterator.id,
-                numeroNomina: iterator.employee_number,
-                nombre: iterator.name+' '+iterator.paternal_surname+' '+iterator.maternal_surname,
-                tipo_nomina: iterator.payRoll.name,
-                perfile: iterator.employeeProfile.name,
-                date: eventDays,
-                horasEsperadas: totalHrsRequeridas.toFixed(2),
-                horasTrabajadas: totalHrsTrabajadas.toFixed(2), //total hrs trabajadas
-                convertir: moment.utc(totalHrsTrabajadas*168*24*60*60*1000).format('HH:mm'),
-                horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('H.mm'),
-                //horasExtra: moment.utc(totalHrsExtra*60*60*1000).format('HH:mm')
-            });
-            
-            registros.concat(eventDays); */
+
     }
 
     return {
@@ -596,7 +537,7 @@ export class TimeCorrectionService {
       diasGenerados,
     };
 
-    
+
   }
 
   //Buscar checadas
@@ -665,12 +606,14 @@ export class TimeCorrectionService {
           });
 
         if (employeeShif.events.length == 0) {
-          continue;
+          //continue;
         }
 
         if (incidencias.length > 0) {
           //continue;
         }
+
+        //revisar si existen checadas
 
         const turnoActual = employeeShif.events[0]?.nameShift;
         let hrEntrada = '00:00:00';
@@ -722,8 +665,8 @@ export class TimeCorrectionService {
                 diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '00:01:00'; //dia actual
+                hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
                 break;
@@ -750,6 +693,24 @@ export class TimeCorrectionService {
                 hrSalida = '08:00:00'; //dia actual
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1': //Turno incidencia 1
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '22:00:00'; //dia actual
+                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2': //Turno incidencia 2
+                hrEntrada = '05:00:00'; //dia Actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+                break;
+              case 'TI3': //Turno incidencia 3
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '15:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
             }
           } else {
@@ -773,8 +734,8 @@ export class TimeCorrectionService {
                 diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
               case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
+                hrEntrada = '00:01:00'; //dia actual
+                hrSalida = '23:59:00'; //dia siguiente
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(index);
                 break;
@@ -801,6 +762,24 @@ export class TimeCorrectionService {
                 hrSalida = '08:00:00'; //dia actual
                 diaAnterior = new Date(index);
                 diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+                break;
+              case 'TI1': //Turno incidencia 1
+                hrEntrada = '21:00:00'; //dia anterior
+                hrSalida = '15:00:00'; //dia actual
+                diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
+                diaSiguente = new Date(index);
+                break;
+              case 'TI2': //Turno incidencia 2
+                hrEntrada = '05:00:00'; //dia Actual
+                hrSalida = '22:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(index);
+                break;
+              case 'TI3': //Turno incidencia 3
+                hrEntrada = '13:00:00'; //dia actual
+                hrSalida = '07:00:00'; //dia siguiente
+                diaAnterior = new Date(index);
+                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
                 break;
             }
           }
@@ -825,8 +804,8 @@ export class TimeCorrectionService {
               diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
               break;
             case 'MIX':
-              hrEntrada = '03:00:00'; //dia actual
-              hrSalida = '22:00:00'; //dia siguiente
+              hrEntrada = '00:01:00'; //dia actual
+              hrSalida = '23:59:00'; //dia siguiente
               diaAnterior = new Date(index);
               diaSiguente = new Date(index);
               break;
@@ -854,6 +833,24 @@ export class TimeCorrectionService {
               diaAnterior = new Date(index);
               diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
               break;
+            case 'TI1': //Turno incidencia 1
+              hrEntrada = '03:00:00'; //dia anterior
+              hrSalida = '16:00:00'; //dia actual
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
+              break;
+            case 'TI2': //Turno incidencia 2
+              hrEntrada = '11:00:00'; //dia Actual
+              hrSalida = '23:00:00'; //dia siguiente
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(index);
+              break;
+            case 'TI3': //Turno incidencia 3
+              hrEntrada = '20:00:00'; //dia actual
+              hrSalida = '08:00:00'; //dia siguiente
+              diaAnterior = new Date(index);
+              diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
+              break;
           }
         }
 
@@ -879,27 +876,7 @@ export class TimeCorrectionService {
         //se toman los horarios de entra del segundo Turno pero si son distintos
         //se toma el horario del primer turno
 
-        //diaSiguente = new Date(index);
 
-        /*  if(iterator.id == 1907){
-                    
-                    let diaUno =moment(new Date('2023-10-09 21:30:00'), 'HH:mm:ss');
-                    let diaUnoFin =moment(new Date('2023-10-10 06:59:59'), 'HH:mm:ss');
-                    let diaDos =moment('2023-10-09T00:00:00', 'HH:mm:ss');
-                    let diaDosFin =moment('2023-10-09T06:00:00', 'HH:mm:ss');
-                    
-                    
-                } */
-
-        /*  if (employeeShif.events[0]?.nameShift != '' && employeeShif.events[0]?.nameShift == 'T3') {
-                    hrEntrada = '20:00:00';
-                    hrSalida = '08:59:00';
-                    diaSiguente.setDate(diaSiguente.getDate() + 1);
-                    //let nextDay = format(diaSiguente, 'yyyy-MM-dd');
-                    
-                    //startTimeShift = moment(employeeShif.events[0]?.startTimeshift, 'HH:mm');
-                    endTimeShift = moment(new Date(`${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`), 'HH:mm').add(1, 'day');
-                } */
 
         //se obtiene la hora de inicio y fin del turno
         let startTimeShift;
@@ -926,8 +903,7 @@ export class TimeCorrectionService {
           );
           endTimeShift = moment(
             new Date(
-              `${format(diaSiguente, 'yyyy-MM-dd')} ${
-                employeeShif.events[0]?.endTimeshift
+              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
               }`,
             ),
             'HH:mm',
@@ -1026,7 +1002,7 @@ export class TimeCorrectionService {
     };
   }
 
-  async update() {}
+  async update() { }
 
-  async delete() {}
+  async delete() { }
 }

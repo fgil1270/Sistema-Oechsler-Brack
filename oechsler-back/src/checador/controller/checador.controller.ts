@@ -19,7 +19,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 import { ChecadorService } from '../service/checador.service';
-import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto } from '../dto/create-checada.dto';
+import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto, NomipaqDto } from '../dto/create-checada.dto';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -30,11 +30,11 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 export class ChecadorController {
   constructor(
     private readonly checadorService: ChecadorService
-  ) {}
+  ) { }
 
   @ApiOperation({ summary: 'Crear registro de entrada o salida del empleado' })
   @Post()
-  create(@Body() createChecadaDto: CreateChecadaDto, @CurrentUser() user: any){
+  create(@Body() createChecadaDto: CreateChecadaDto, @CurrentUser() user: any) {
     return this.checadorService.create(createChecadaDto, user);
   }
 
@@ -52,7 +52,7 @@ export class ChecadorController {
 
   @ApiOperation({ summary: 'Acceso a la vista de Autorizar Checada' })
   @Views('autorizar_checada')
-  @Get('byIds')
+  @Get('access')
   accesViewAutorizedChecadas() {
     return true;
   }
@@ -76,7 +76,7 @@ export class ChecadorController {
   })
   @Views('nomipaq')
   @Get('nomipaq/report')
-  reportNomipaq(@Query() data: any, @CurrentUser() user: any){
+  reportNomipaq(@Query() data: NomipaqDto, @CurrentUser() user: any) {
     return this.checadorService.reportNomipaq(data, user);
   }
 

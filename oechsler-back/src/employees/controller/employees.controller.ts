@@ -30,14 +30,45 @@ import { HttpStatus } from '@nestjs/common';
 @ApiTags('Empleados')
 @Controller('employees')
 export class EmployeesController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) { }
+
+  @ApiOperation({ summary: 'Listar empleados' })
+  @Views('empleados')
+  @Get()
+  findAll() {
+    return this.employeesService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Listar empleados para otras vistas' })
+  @Get('/empOtherViews')
+  findAllEmpotherViews(@CurrentUser() user: User) {
+    return this.employeesService.findAll();
+  }
+
+  @ApiOperation({ summary: 'Buscar por argumento' })
+  @Get('/findBy')
+  findBy(@Query() query: Partial<CreateEmployeeDto>) {
+    return this.employeesService.findBy(query);
+  }
+
+  @ApiOperation({ summary: 'Buscar empleado' })
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.employeesService.findOne(id);
+  }
+
+  @ApiOperation({ summary: 'Buscar por array de numero de empleados' })
+  @Get('/findByEmployeeNumber/:ids')
+  findByEmployeeNumber(@Param('ids') ids: any) {
+    return this.employeesService.findByEmployeeNumber(ids.split(','));
+  }
 
   @ApiOperation({ summary: 'Crear empleado' })
   @Post()
   create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeesService.create(createEmployeeDto);
   }
- 
+
   @ApiOperation({ summary: 'Cargar archivo de empleados' })
   @Post('/upload')
   //CODIGO PARA SUBIR ARCHIVOS
@@ -51,8 +82,7 @@ export class EmployeesController {
           const fecha: Date = new Date();
           cb(
             null,
-            `${filename} ${fecha.getFullYear()}${
-              fecha.getMonth() + 1
+            `${filename} ${fecha.getFullYear()}${fecha.getMonth() + 1
             }${fecha.getDate()}${fecha.getMinutes()}${fecha.getSeconds()}.${extension}`,
           );
         },
@@ -77,46 +107,11 @@ export class EmployeesController {
     return this.employeesService.findMore(ids);
   }
 
-  @ApiOperation({ summary: 'Listar empleados' })
-  @Views('empleados')
-  @Get()
-  findAll() {
-    return this.employeesService.findAll();
-  }
-
-  @ApiOperation({ summary: 'Listar empleados para otras vistas' })
-  @Get('/empOtherViews')
-  findAllEmpotherViews(@CurrentUser() user: User) {
-    return this.employeesService.findAll();
-  }
-
-  @ApiOperation({ summary: 'Buscar por argumento' })
-  @Get('/findBy')
-  findBy(@Query() query: Partial<CreateEmployeeDto>) {
-    return this.employeesService.findBy(query);
-  }
-
   @ApiOperation({ summary: 'Buscar por argumento' })
   @Post('/findEmployeeProduction')
   findEmployeeProduction(@Body() query: Partial<findEmployeeProduccion>) {
     return this.employeesService.findEmployeeProduction(query);
   }
-
-
-
-  @ApiOperation({ summary: 'Buscar empleado' })
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.employeesService.findOne(id);
-  }
-
-  @ApiOperation({ summary: 'Buscar por array de numero de empleados' })
-  @Get('/findByEmployeeNumber/:ids')
-  findByEmployeeNumber(@Param('ids') ids: any) {
-    return this.employeesService.findByEmployeeNumber(ids.split(','));
-  }
-
-  
 
   @ApiOperation({ summary: 'Actualizar empleado' })
   @Put(':id')
@@ -138,7 +133,7 @@ export class EmployeesController {
 @ApiTags('Reportes de Vacaciones')
 @Controller('vacations-report')
 export class VacationsReportController {
-  constructor(private readonly employeesService: EmployeesService) {}
+  constructor(private readonly employeesService: EmployeesService) { }
 
   @ApiOperation({ summary: 'Reporte de Vacaciones' })
   @Views('vacaciones')
@@ -153,16 +148,16 @@ export class VacationsReportController {
 
   @ApiOperation({ summary: 'Vacaciones por empleado y rango de fechas' })
   @Post(':id')
-  vacationByEmployee(@Param('id', ParseIntPipe) id: number, @Body() dataVacation:any,  @CurrentUser() user: any) {
-   
+  vacationByEmployee(@Param('id', ParseIntPipe) id: number, @Body() dataVacation: any, @CurrentUser() user: any) {
+
     return this.employeesService.vacationByEmployee(id, dataVacation);
-    
+
   }
 
   @ApiOperation({ summary: 'Reporte status de vacaciones' })
   @Views('status_vacaciones')
   @Post('status/vacation')
   statusVacation(@Body() data: any, @CurrentUser() user: any) {
-      return this.employeesService.statusVacation(data, user);
+    return this.employeesService.statusVacation(data, user);
   }
 }

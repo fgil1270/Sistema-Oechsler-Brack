@@ -32,6 +32,7 @@ import { EmployeeDepartmentHistory } from './employee_department_history.entity'
 import { EmployeePayrollHistory } from './employee_payroll_history.entity';
 import { EmployeeVacationProfileHistory } from './employee_vacation_profile_history.entity';
 import { EmployeeWorkerHistory } from './employee_worker_history.entity';
+import { RequestCourseAssessmentEmployee } from '../../request_course/entities/request_course_assessment_employee.entity';
 
 @Entity()
 export class Employee {
@@ -249,5 +250,14 @@ export class Employee {
 
   @OneToMany(() => EmployeeWorkerHistory, (post) => post.employee)
   employeeWorkerHistory: EmployeeWorkerHistory[];
+
+  @OneToMany(() => RequestCourseAssessmentEmployee, (post) => post.employee)
+  request_course_assessment_employee: RequestCourseAssessmentEmployee[];
+
+  @OneToMany(() => Department, (post) => post.manager)
+  managerDepartments: Department[];
+
+  @OneToMany(() => Department, (post) => post.director)
+  directorDepartments: Department[];
 
 }

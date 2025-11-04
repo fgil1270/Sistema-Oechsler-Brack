@@ -29,7 +29,7 @@ export class UsersService {
     @InjectRepository(Role) private roleRepository: Repository<Role>,
     private configService: ConfigService,
     private employeeService: EmployeesService,
-  ) {}
+  ) { }
 
   async create(user: CreateUserDto) {
     const userSearch = await this.userRepository.findOneBy({
@@ -105,8 +105,9 @@ export class UsersService {
     };
   }
 
+  //buscar por id de empleado
   async findByIdEmployee(id: number) {
-    const user = await this.userRepository.findOne({
+    const user = await this.userRepository.find({
       relations: {
         roles: true,
         employee: true,

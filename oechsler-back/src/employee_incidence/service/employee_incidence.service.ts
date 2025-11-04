@@ -130,6 +130,7 @@ export class EmployeeIncidenceService {
         }
       }
 
+      //recorre los dias de la incidencia
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date + ' 00:00:00');
         index <= new Date(createEmployeeIncidenceDto.end_date);
@@ -240,11 +241,38 @@ export class EmployeeIncidenceService {
                   employee.emps[j].id,
                 ]
                 );
-                if (employeeShiftAnterior.events[0].nameShift == 'T3' && index.getDay() == 6) {
+
+                //si es domingo
+                //employeeShiftAnterior.events[0]?.nameShift == 'T3'
+                if ((index.getDay() == 0)) {
                   continue;
                 } else {
-                  //si no es incapacidad y no tiene turno y no es domingo
-                  throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                  //si es sabado
+                  if (index.getDay() == 6) {
+                    //si el dia anterior tiene turno y es seguno o primero
+                    if (employeeShiftAnterior.events[0]?.nameShift == 'MIX' || employeeShiftAnterior.events[0]?.nameShift == 'T3') {
+                      continue;
+                    } else if ((employeeShiftAnterior.events[0]?.nameShift == 'T2' || employeeShiftAnterior.events[0]?.nameShift == 'T1')) {
+                      throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                    }
+
+                  } else {
+                    // si es viernes
+                    if (index.getDay() == 5) {
+                      //si el dia anterior tiene turno y es segundo o primero
+                      if (employeeShiftAnterior.events[0]?.nameShift == 'T12-1' || employeeShiftAnterior.events[0]?.nameShift == 'T12-2') {
+                        continue;
+                      } else {
+                        throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                      }
+                    } else {
+                      //de lunes a jueves
+                      throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
+                    }
+
+                  }
+
+
                 }
 
 
@@ -351,8 +379,13 @@ export class EmployeeIncidenceService {
           const userLider = await this.userService.findByIdEmployee(
             lider.leader.id,
           );
-          if (userLider) {
-            to.push(userLider.user.email);
+          if (userLider.user.length > 0) {
+            userLider.user.forEach((u) => {
+              if (u.deleted_at == null) {
+                to.push(u.email);
+              }
+            });
+
           }
         }
         subject = `Autorizar incidencia: ${employeeIncidenceCreate.employee.employee_number
@@ -376,12 +409,20 @@ export class EmployeeIncidenceService {
           const userLider = await this.userService.findByIdEmployee(
             lider.leader.id,
           );
-          if (userLider) {
-            to.push(userLider.user.email);
+          if (userLider.user.length > 0) {
+            userLider.user.forEach((u) => {
+              if (u.deleted_at == null) {
+                to.push(u.email);
+              }
+            });
           }
         }
-        if (mailUser) {
-          to.push(mailUser.user.email);
+        if (mailUser.user.length > 0) {
+          mailUser.user.forEach((u) => {
+            if (u.deleted_at == null) {
+              to.push(u.email);
+            }
+          });
         }
 
         subject = `CREACIÓN ${employeeIncidenceCreate.incidenceCatologue.name} / ${employeeIncidenceCreate.employee.employee_number}, ${employeeIncidenceCreate.employee.name} ${employeeIncidenceCreate.employee.paternal_surname} ${employeeIncidenceCreate.employee.maternal_surname} / (-)`;
@@ -490,6 +531,8 @@ export class EmployeeIncidenceService {
 
       }
 
+      //recorre los dias de la incidencia
+      //se crea el dia de la incidencia
       for (
         let index = new Date(createEmployeeIncidenceDto.start_date);
         index <= new Date(createEmployeeIncidenceDto.end_date);
@@ -642,7 +685,7 @@ export class EmployeeIncidenceService {
             shift: incidence.employee.employeeShift[0].shift,
             type: incidence.type,
             created_at: incidence.created_at,
-            incidenceShift: incidence.shift,
+            incidenceShift: incidence.shift
           });
         });
       });
@@ -1163,20 +1206,30 @@ export class EmployeeIncidenceService {
         throw new NotFoundException('No se encontro la incidencia');
       }
       const to = [];
+      //buscar usuarios del empleado
       const emailUser = await this.userService.findByIdEmployee(employeeIncidence.employee.id);
 
       const lideres = await this.organigramaService.leaders(employeeIncidence.employee.id);
       for (let index = 0; index < lideres.orgs.length; index++) {
         const lider = lideres.orgs[index];
+        //buscar usuarios del lider
         const userLider = await this.userService.findByIdEmployee(
           lider.leader.id,
         );
-        if (userLider) {
-          to.push(userLider.user.email);
+        if (userLider.user.length > 0) {
+          userLider.user.forEach((u) => {
+            if (u.deleted_at == null) {
+              to.push(u.email);
+            }
+          });
         }
       }
       if (emailUser) {
-        to.push(emailUser.user.email);
+        emailUser.user.forEach((u) => {
+          if (u.deleted_at == null) {
+            to.push(u.email);
+          }
+        });
       }
 
       let subject = '';
@@ -1660,6 +1713,7 @@ export class EmployeeIncidenceService {
 
     for (let dia = new Date(from); dia <= new Date(to); dia = new Date(dia.setDate(dia.getDate() + 1))) {
       for (const row of queryBuilder) {
+
         const empId = row.e_id; // ID del empleado
         const empShiftDate = row.es_start_date; // Fecha de inicio del turno del empleado
         const shiftName = row.s_code; // Nombre del turno
@@ -1674,7 +1728,6 @@ export class EmployeeIncidenceService {
 
 
         const newObject = incidenciasPorEmpleado.length > 0 ? incidenciasPorEmpleado.find((emp) => emp.idEmpleado === empId) : null; // Busca si ya existe un objeto para el empleado actual
-
 
         //si el objeto newObject existe, significa que ya hay incidencias para ese empleado
         if (newObject) {
@@ -1696,6 +1749,7 @@ export class EmployeeIncidenceService {
                 ei_date_aproved_leader: row.ei_date_aproved_leader,
                 ei_hour_approved_leader: row.ei_hour_approved_leader,
                 ei_type: row.ei_type,
+                ei_shift: row.ei_shift
               });
             } else {
               // Si no existe, crea un nuevo objeto de fecha y lo agrega al arreglo dates
@@ -1723,33 +1777,60 @@ export class EmployeeIncidenceService {
                   ei_date_aproved_leader: row.ei_date_aproved_leader,
                   ei_hour_approved_leader: row.ei_hour_approved_leader,
                   ei_type: row.ei_type,
+                  ei_shift: row.ei_shift
                 }],
-                employeeShift: shiftName || '',
+                employeeShift: shiftName ? shiftName : '',
                 entrada: row.ei_start_hour || '',
                 salida: row.ei_end_hour || '',
                 dayHour: 0, // Aquí puedes calcular las horas del día si es necesario
               });
             }
           } else {
-            const existingDate = newObject.dates.find(dateObj => dateObj.date === format(dia, 'yyyy-MM-dd'));
+            //buscamos si ya existe un objeto de fecha del checador
+            const existingDate = newObject.dates.find(dateObj => dateObj.date === format(new Date(empShiftDate), 'yyyy-MM-dd'));
             //la fecha no es igual
             //si la fecha es nula,
             //agrega un nuevo objeto de fecha
-            if (!empShiftDate) {
+            if (existingDate) {
 
-              newObject.dates.push({
-                date: format(dia, 'yyyy-MM-dd'),
-                shift: null,
-                incidencia: [],
-                employeeShift: shiftName || '',
-                entrada: '',
-                salida: '',
-                dayHour: 0,
-              });
-            } else if (!existingDate) {
-              //si no existe fecha
-              //si no existe turno
-              /* newObject.dates.push({
+            } else {
+              //si no existe fecha del checador
+              //buscamos si existe un objeto de fecha con la fecha del dia de consulta
+              const existDateNewObject = newObject.dates.find(dateObj => dateObj.date === format(dia, 'yyyy-MM-dd'));
+              //si no existe crea un nuevo objeto de fecha
+              if (!existDateNewObject) {
+                newObject.dates.push({
+                  date: format(dia, 'yyyy-MM-dd'),
+                  shift: null,
+                  incidencia: [],
+                  employeeShift: '',
+                  entrada: '',
+                  salida: '',
+                  dayHour: 0,
+                });
+              }
+            }
+          }
+
+        } else {
+
+          // Si el objeto newObject no existe, crea uno nuevo por primera vez
+          // y lo agrega al arreglo incidenciasPorEmpleado
+          if (format(dia, 'yyyy-MM-dd') == format(new Date(empShiftDate), 'yyyy-MM-dd')) {
+            incidenciasPorEmpleado.push({
+              idEmpleado: empId,
+              numeroNomina: row.e_employee_number,
+              nombre: row.e_name + ' ' + row.e_paternal_surname + ' ' + row.e_maternal_surname,
+              perfile: '',
+              horas_objetivo: 0,//moment().minutes(totalMinRequeridos).format('mm'),
+              horasTrabajadas: 0,//moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
+              totalHorasIncidencia: 0,
+              colorText: '',
+              tipo_nomina: '',
+              worker: eWorker,
+              paternal_surname: ePaternalSurname,
+              maternal_surname: eMaternalSurname,
+              dates: [{
                 date: format(dia, 'yyyy-MM-dd'),
                 shift: shiftName ? {
                   id: row.es_id, // ID del employee_shift
@@ -1764,68 +1845,55 @@ export class EmployeeIncidenceService {
                   borderColor: row.s_color,
                   textColor: '#74ad74',
                 } : null,
-                incidencia: [],
+                incidencia: row.ei_id ? [
+                  {
+                    ei_id: eiId,
+                    ei_code_band: row.ic_code_band,
+                    ei_descripcion: row.ei_descripcion,
+                    ei_start_hour: row.ei_start_hour,
+                    ei_end_hour: row.ei_end_hour,
+                    ei_date_aproved_leader: row.ei_date_aproved_leader,
+                    ei_hour_approved_leader: row.ei_hour_approved_leader,
+                    ei_type: row.ei_type,
+                    ei_shift: row.ei_shift
+                  }
+                ] : [],
                 employeeShift: shiftName ? shiftName : '',
                 entrada: '',
                 salida: '',
                 dayHour: 0,
-              }); */
-            }
+              }],
+
+            });
+          } else {
+            //si el dia no es igual
+            //valida si el dia ya esta en el registro
+            incidenciasPorEmpleado.push({
+              idEmpleado: empId,
+              numeroNomina: row.e_employee_number,
+              nombre: row.e_name + ' ' + row.e_paternal_surname + ' ' + row.e_maternal_surname,
+              perfile: '',
+              horas_objetivo: 0,//moment().minutes(totalMinRequeridos).format('mm'),
+              horasTrabajadas: 0,//moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
+              totalHorasIncidencia: 0,
+              colorText: '',
+              tipo_nomina: '',
+              worker: eWorker,
+              paternal_surname: ePaternalSurname,
+              maternal_surname: eMaternalSurname,
+              dates: [{
+                date: format(dia, 'yyyy-MM-dd'),
+                shift: null,
+                incidencia: [],
+                employeeShift: shiftName || '',
+                entrada: '',
+                salida: '',
+                dayHour: 0,
+              }],
+
+            });
 
           }
-
-        } else {
-
-          // Si el objeto newObject no existe, crea uno nuevo por primera vez
-          // y lo agrega al arreglo incidenciasPorEmpleado
-          incidenciasPorEmpleado.push({
-            idEmpleado: empId,
-            numeroNomina: row.e_employee_number,
-            nombre: row.e_name + ' ' + row.e_paternal_surname + ' ' + row.e_maternal_surname,
-            perfile: '',
-            horas_objetivo: 0,//moment().minutes(totalMinRequeridos).format('mm'),
-            horasTrabajadas: 0,//moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
-            totalHorasIncidencia: 0,
-            colorText: '',
-            tipo_nomina: '',
-            worker: eWorker,
-            paternal_surname: ePaternalSurname,
-            maternal_surname: eMaternalSurname,
-            dates: [{
-              date: format(dia, 'yyyy-MM-dd'),
-              shift: shiftName ? {
-                id: row.es_id, // ID del employee_shift
-                nameShift: shiftName, // codigo del turno
-                title: row.s_name, //nombre del turno
-                start: row.es_start_date,
-                end: row.es_end_date,
-                idTurno: row.s_id,
-                startTimeshift: row.s_start_time,
-                endTimeshift: row.s_end_time,
-                backgroundColor: row.s_color,
-                borderColor: row.s_color,
-                textColor: '#74ad74',
-              } : null,
-              incidencia: row.ei_id ? [
-                {
-                  ei_id: eiId,
-                  ei_code_band: row.ic_code_band,
-                  ei_descripcion: row.ei_descripcion,
-                  ei_start_hour: row.ei_start_hour,
-                  ei_end_hour: row.ei_end_hour,
-                  ei_date_aproved_leader: row.ei_date_aproved_leader,
-                  ei_hour_approved_leader: row.ei_hour_approved_leader,
-                  ei_type: row.ei_type,
-                }
-              ] : [],
-              employeeShift: shiftName ? shiftName : '',
-              entrada: '',
-              salida: '',
-              dayHour: 0,
-            }],
-
-          });
-
 
         }
 
@@ -1863,9 +1931,8 @@ export class EmployeeIncidenceService {
         let modMinUno = 0;
         let divMinDos = 0;
 
-        if (dates[j].shift) {
-
-        } else {
+        //si no tiene turno continua
+        if (!dates[j].shift) {
           continue;
         }
 
@@ -1874,7 +1941,8 @@ export class EmployeeIncidenceService {
         const iniciaTurno = new Date(`${diaConsulta} ${dates[j].shift.startTimeshift}`);
         const termianTurno = new Date(`${diaConsulta} ${dates[j].shift.endTimeshift}`);
 
-        if (dates[j].shift.nameShift == 'T3' || dates[j].shift.nameShift == 'T12-2') {
+        //si el turno es de la tarde o noche se le suma un dia a la fecha de salida
+        if (dates[j].shift.nameShift == 'T3' || dates[j].shift.nameShift == 'T12-2' || dates[j].shift.nameShift == 'TI3') {
           termianTurno.setDate(termianTurno.getDate() + 1)
         }
         const startTimeShift = moment(iniciaTurno, 'HH:mm');
@@ -1887,8 +1955,10 @@ export class EmployeeIncidenceService {
 
         //si existe turno se suman las horas requeridas
         if (dates[j].shift) {
-          //si el turno es diferente a TI se suman las horas
-          if (dates[j].shift?.nameShift != 'TI') {
+          //si el turno es diferente a TI
+          //y diferente a TI1, TI2, TI3
+          //se suman las horas
+          if (dates[j].shift?.nameShift != 'TI' && dates[j].shift?.nameShift != 'TI1' && dates[j].shift?.nameShift != 'TI2' && dates[j].shift?.nameShift != 'TI3') {
             totalHrsRequeridas += hourShift;
             totalMinRequeridos += Number(minShift) % 60;
           }
@@ -1904,7 +1974,7 @@ export class EmployeeIncidenceService {
         }
 
         //se obtiene el code del turno actual
-        const turnoActual = diaConsulta.shift?.nameShift; //nombre del turno actual
+        const turnoActual = dates[j].shift?.nameShift; //nombre del turno actual
         //object dia anterior
         const dataDateAnterior = {
           start: new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() - 1)),
@@ -1927,275 +1997,16 @@ export class EmployeeIncidenceService {
         const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
         const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
 
-        //se reasignan las horas de entrada y salida dependiendo del turno
-        //turno actual es igual al turno del dia anterior
-        if (turnoActual == turnoAnterior) {
-          //turno actual es igual al turno del dia siguiente
-          if (turnoActual == turnoSiguiente) {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T2':
-                hrEntrada = '05:00:00'; //dia Actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '15:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:59:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T4':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                break;
-            }
-          } else {
-            //si existe turno siguiente
-            if (turnoSiguiente) {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() - 1));
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '23:59:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T4':
-                  hrEntrada = '05:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '12:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                  break;
-              }
-            } else {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() - 1));
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '23:59:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T4':
-                  hrEntrada = '05:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(diahoy);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '12:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(diahoy);
-                  diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                  break;
-              }
-            }
 
-          }
-        } else {
-          //turno actual es igual al turno del dia siguiente
-          if (turnoActual == turnoSiguiente) {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T2':
-                hrEntrada = '03:00:00'; //dia Actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '15:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T4':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                break;
-            }
-          } else {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T2':
-                hrEntrada = '13:00:00'; //dia Actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T3':
-                hrEntrada = '21:00:00'; //dia actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T4':
-                hrEntrada = '06:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(diahoy);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(diahoy);
-                diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
-                break;
-            }
-          }
+        //obtener el horario de entrada y salida
+        //para consultar el checador
+        ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.checadorService.entradaSalidaChecador(
+          diahoy,
+          turnoAnterior,
+          turnoActual,
+          turnoSiguiente
+        ))
 
-        }
 
         //se realiza la suma o resta de horas de las incidencias
         for (let index = 0; index < dates[j].incidencia.length; index++) {
@@ -2214,9 +2025,20 @@ export class EmployeeIncidenceService {
           let horasIncidencia = 0;
           let minsIncidencia = 0;
 
-          horasIncidencia = Number(moment((parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)), 'HH.m').hours());
-          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] ?
-            String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] : 0, 'mm').minutes());
+          const totalHour = parseFloat(String(currentIncidence[0].total_hour));
+          const days = Number(currentIncidence[0].dateEmployeeIncidence.length);
+
+          const horas = Math.floor(totalHour);
+          const minutos = Math.round((totalHour - horas) * 100); // Ojo: *100 porque el usuario puso .60 como minutos
+          const totalEnMinutos = horas * 60 + minutos;
+          const horasPorDia = totalEnMinutos / days;
+
+          /* horasIncidencia = Number(moment((parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)), 'HH.m').hours());
+          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) /
+            Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] ?
+            String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] : 0, 'mm').minutes()); */
+          horasIncidencia = Math.floor(horasPorDia / 60);
+          minsIncidencia = Math.round(horasPorDia % 60);
 
 
           //se obtiene las horas y minutos de la incidencia
@@ -2228,11 +2050,15 @@ export class EmployeeIncidenceService {
           let divMin = 0;
 
 
+
           //si la incidencia no es Incapacidad se suman las horas y minutos
           if (incidence.ei_code_band != 'INC') {
-
-            totalMinutisTrabados += Number(mins);
-            totalMinDay += Number(mins);
+            //si el turno actual es diferente a TI, TI1, TI2, TI3
+            if (turnoActual != 'TI1' && turnoActual != 'TI2' && turnoActual != 'TI3') {
+              //si la incidencia es diferente a tiempo compensatorio
+              totalMinutisTrabados += Number(mins);
+              totalMinDay += Number(mins);
+            }
 
             if (totalMinutisTrabados >= 60) {
               modMin = totalMinutisTrabados % 60;
@@ -2259,8 +2085,8 @@ export class EmployeeIncidenceService {
 
             }
           } else {
-            //si el turno actual es diferente a TI se suman las horas de la incidencia
-            if (turnoActual != 'TI') {
+            //si el turno actual es diferente a TI, TI1, TI2, TI3 se suman las horas de la incidencia
+            if (turnoActual != 'TI' && turnoActual != 'TI1' && turnoActual != 'TI2' && turnoActual != 'TI3') {
               totalHorasIncidencia += Number(hrs);
             }
 
@@ -2273,36 +2099,36 @@ export class EmployeeIncidenceService {
 
             //si es tiempo extra, tiempo extra por hora
             if (currentIncidence[0].incidenceCatologue.code_band == 'HE' || currentIncidence[0].incidenceCatologue.code_band == 'HET' || currentIncidence[0].incidenceCatologue.code_band == 'TxT') {
-              if (turnoActual != '' && turnoActual == 'T1') {
+              if (turnoActual != '' && (turnoActual == 'T1' || turnoActual == 'TI1')) {
 
 
-                if (incidence.shift == 2) {
+                if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
                   diaAnterior = new Date(diahoy);
-                } else if (incidence.shift == 3) {
+                } else if (incidence.ei_shift == 3) {
                   hrEntrada = '20:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
                 }
-              } else if (turnoActual != '' && turnoActual == 'T2') {
+              } else if (turnoActual != '' && (turnoActual == 'T2' || turnoActual == 'TI2')) {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-
-                } else if (incidence.shift == 3) {
+                  hrSalida = '22:10:00';
+                  diaSiguente = new Date(diahoy);
+                } else if (incidence.ei_shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 }
-              } else if (turnoActual != '' && turnoActual == 'T3') {
+              } else if (turnoActual != '' && (turnoActual == 'T3' || turnoActual == 'TI3')) {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '20:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
-                } else if (incidence.shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
 
@@ -2310,24 +2136,24 @@ export class EmployeeIncidenceService {
                 }
               } else if (turnoActual != '' && turnoActual == 'TI') {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '14:59:00';
 
-                } else if (incidence.shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '13:00:00';
                   hrSalida = '21:59:00';
                 }
               } else if (turnoActual != '' && turnoActual == 'MIX') {
 
-                if (incidence.shift == 1) {
+                if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
 
-                } else if (incidence.shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
-                } else if (incidence.shift == 3) {
+                } else if (incidence.ei_shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente.setDate(diaSiguente.getDate() + 1);
@@ -2337,8 +2163,6 @@ export class EmployeeIncidenceService {
             }
 
           }
-
-
 
         }
 
@@ -2359,7 +2183,7 @@ export class EmployeeIncidenceService {
 
         //********* agregar dato dia del turno */
         //se obtienen los registros del checador
-        const registrosChecador = await this.checadorService.findbyDate(
+        let registrosChecador = await this.checadorService.findbyDate(
           parseInt(incidenciasPorEmpleado[i].idEmpleado),
           diaAnterior,
           diaSiguente,
@@ -2367,8 +2191,33 @@ export class EmployeeIncidenceService {
           hrSalida,
         );
 
+        //filtra los registros
+        //solo toma los registros de acceso personal
+        //si el dia es <= 2025-10-05 23:59:59 toma todos los registros
+        //y si no los filtra
 
+        registrosChecador = registrosChecador.filter((registro) => {
+          if (registro.date <= new Date('2025-10-05 23:59:59')) {
+            return true;
+          } else {
+            if ((
+              registro.recordDevice &&
+              registro.recordDevice.description &&
+              registro.recordDevice.description == 'Acceso Personal'
+            ) ||
+              (
+                registro.numRegistroChecador == 0 || registro.numRegistroChecador == 1
 
+              )
+            ) {
+              // Si el registro es de acceso personal o es un registro manual, se incluye
+              return true;
+            } else {
+              return false;
+            }
+          }
+
+        });
 
         if (registrosChecador.length > 0) {
           firstHr = moment(new Date(registrosChecador[0]?.date));
@@ -2414,7 +2263,6 @@ export class EmployeeIncidenceService {
 
         //al total de horas por dia se le suman las horas de las incidencias
         totalHrsDay += sumaHrsIncidencias;
-
 
 
         //datos por dia
@@ -2446,752 +2294,7 @@ export class EmployeeIncidenceService {
       registros: incidenciasPorEmpleado,
       diasGenerados,
     };
-    const incidencias = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-      .leftJoinAndSelect('employee.employeeIncidence', 'employeeIncidence')
-      .leftJoinAndSelect('employeeIncidence.incidenceCatologue', 'incidenceCatologue')
-      .leftJoinAndSelect('employeeIncidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-      .leftJoinAndSelect('employee.employeeShift', 'employeeShift')
-      .leftJoinAndSelect('employeeShift.shift', 'shift')
-      .leftJoinAndSelect('employeeIncidence.leader', 'leader')
-      .leftJoinAndSelect('employeeIncidence.rh', 'rh')
-      .leftJoinAndSelect('employeeIncidence.createdBy', 'createdBy')
-      .leftJoinAndSelect('employeeIncidence.canceledBy', 'canceledBy')
 
-      .where('employee.id IN (:...id)', { id: arrayEmployeeIds })
-      //.andWhere('incidenceCatologue.deleted_at IS NULL')
-      .andWhere('dateEmployeeIncidence.date = :start', {
-        start: format(new Date(from), 'yyyy-MM-dd')
-      })
-      //.andWhere('employeeIncidence.status = :status', { status: 'Autorizada' }) 
-      .getQuery();
-
-
-    for (
-      let x = new Date(from);
-      x <= new Date(to);
-      x = new Date(x.setDate(x.getDate() + 1))
-    ) {
-      diasGenerados.push(format(x, 'yyyy-MM-dd'));
-    }
-
-    //se recorre el arreglo de empleados
-    for (let i = 0; i < newArray.length; i++) {
-      const eventDays = [];
-      let totalHrsRequeridas = 0;
-      let totalMinRequeridos = 0;
-      let totalHrsTrabajadas = 0;
-      let totalMinutisTrabados = 0;
-      let totalHorasIncidencia = 0;
-
-
-      /* for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
-        let dayLetter: string;
-        //const weekDaysProfile = newArray[i].employeeProfile.work_days;
-        switch (x.getDay()) {
-          case 0:
-            dayLetter = 'D';
-            break;
-          case 1:
-            dayLetter = 'L';
-            break;
-          case 2:
-            dayLetter = 'M';
-            break;
-          case 3:
-            dayLetter = 'X';
-            break;
-          case 4:
-            dayLetter = 'J';
-            break;
-          case 5:
-            dayLetter = 'V';
-            break;
-          case 6:
-            dayLetter = 'S';
-            break;
-        }
-
-
-      } */
-
-      //se recorren los dias 
-      for (let dia = new Date(from); dia <= new Date(to); dia = new Date(dia.setDate(dia.getDate() + 1))) {
-        //se realiza la busqueda de incidencias de tiempo compensatorio por empleado y por rango de fechas
-        //y que esten autorizadas
-        let totalHrsDay = 0;
-        let totalMinDay = 0;
-        let sumaHrsIncidencias = 0;
-        //se buscan las incidencias por dia, con status Autorizada
-        /* const incidencias = await this.employeeIncidenceRepository.find({
-          relations: {
-            employee: true,
-            incidenceCatologue: true,
-            dateEmployeeIncidence: true,
-          },
-          where: {
-            employee: {
-              id: newArray[i].id,
-            },
-            dateEmployeeIncidence: {
-              date: dia as any,
-            },
-            status: 'Autorizada',
-          },
-          order: {
-            employee: {
-              id: 'ASC',
-            },
-            type: 'ASC',
-          },
-        }); */
-
-        const incidencias = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
-          .innerJoinAndSelect('employee_incidence.employee', 'employee')
-          .innerJoinAndSelect('employee_incidence.incidenceCatologue', 'incidenceCatologue')
-          .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-          .leftJoinAndSelect('employee_incidence.leader', 'leader')
-          .leftJoinAndSelect('employee_incidence.rh', 'rh')
-          .leftJoinAndSelect('employee_incidence.createdBy', 'createdBy')
-          .leftJoinAndSelect('employee_incidence.canceledBy', 'canceledBy')
-          .where('employee_incidence.employeeId = :id', { id: newArray[i].id })
-          .andWhere('incidenceCatologue.deleted_at IS NULL')
-          .andWhere('dateEmployeeIncidence.date = :start', {
-            start: format(new Date(dia), 'yyyy-MM-dd')
-          })
-          .andWhere('employee_incidence.status = :status', { status: 'Autorizada' })
-          .getMany();
-
-        let isIncidenciaTiempoExtra = false;
-        //se verifica si la incidencia es tiempo extra
-        /* incidencias.some((incidence) => {
-          if (incidence.incidenceCatologue.code_band == 'TxT' || incidence.incidenceCatologue.code_band == 'HE' || incidence.incidenceCatologue.code_band == 'HET') {
-            isIncidenciaTiempoExtra = true;
-          }
-        }); */
-
-        //se obtiene el turno del dia seleccionado
-        const shift = await this.employeeShiftService.findMore(
-          {
-            start: format(dia, 'yyyy-MM-dd'),
-            end: format(dia, 'yyyy-MM-dd'),
-          },
-          [newArray[i].id],
-        );
-
-        //horario del turno
-        const iniciaTurno = new Date(`${shift.events[0]?.start} ${shift.events[0]?.startTimeshift}`);
-        const termianTurno = new Date(`${shift.events[0]?.start} ${shift.events[0]?.endTimeshift}`);
-
-
-
-        if (shift.events[0]?.nameShift == 'T3' || shift.events[0]?.nameShift == 'T12-2') {
-          termianTurno.setDate(termianTurno.getDate() + 1)
-        }
-        const startTimeShift = moment(iniciaTurno, 'HH:mm');
-        const endTimeShift = moment(termianTurno, 'HH:mm');
-
-        //se obtiene la hora de inicio y fin del turno
-        const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
-        const hourShift = endTimeShift.diff(startTimeShift, 'hours');
-        const minShift = endTimeShift.diff(startTimeShift, 'minutes');
-
-        //si existe turno se suman las horas requeridas
-        if (shift.events.length >= 1) {
-          //si el turno es diferente a TI se suman las horas
-          if (shift.events[0]?.nameShift != 'TI') {
-            totalHrsRequeridas += hourShift;
-            totalMinRequeridos += Number(minShift) % 60;
-          }
-        }
-
-        //si el total de minutos requeridos es mayor a 60 se suman las horas
-        //a horas requeridas
-        if (totalMinRequeridos >= 60) {
-
-          totalMinRequeridos = totalMinRequeridos - 60;
-          totalHrsRequeridas += 1
-
-        }
-
-        let hrEntrada = '00:00:00';
-        let hrSalida = '23:59:59';
-
-        const diahoy = new Date(dia);
-        let diaAnterior = new Date(dia);
-        let diaSiguente = new Date(dia);
-        let firstHr;
-        let secondHr;
-        let diffHr = 0;
-        let diffMin = 0;
-        let modMinUno = 0;
-        let divMinDos = 0;
-
-
-
-        const turnoActual = shift.events[0]?.nameShift;
-        const dataDateAnterior = {
-          start: new Date(new Date(dia).setDate(new Date(dia).getDate() - 1)),
-          end: new Date(new Date(dia).setDate(new Date(dia).getDate() - 1)),
-        };
-        const dataDateSiguiente = {
-          start: new Date(new Date(dia).setDate(new Date(dia).getDate() + 1)),
-          end: new Date(new Date(dia).setDate(new Date(dia).getDate() + 1)),
-        };
-
-        const employeeShifAnterior = await this.employeeShiftService.findMore(
-          dataDateAnterior,
-          [Number(newArray[i].id)],
-        );
-        const employeeShifSiguiente = await this.employeeShiftService.findMore(
-          dataDateSiguiente,
-          [Number(newArray[i].id)],
-        );
-        const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
-        const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
-
-
-        //turno actual es igual al turno del dia anterior
-        if (turnoActual == turnoAnterior) {
-          //turno actual es igual al turno del dia siguiente
-          if (turnoActual == turnoSiguiente) {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T2':
-                hrEntrada = '05:00:00'; //dia Actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '15:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:59:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T4':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-            }
-          } else {
-            //si existe turno siguiente
-            if (turnoSiguiente) {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '23:59:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T4':
-                  hrEntrada = '05:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '12:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                  break;
-              }
-            } else {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(new Date(dia).setDate(new Date(dia).getDate() - 1));
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '23:59:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T4':
-                  hrEntrada = '05:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(dia);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '12:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(dia);
-                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                  break;
-              }
-            }
-
-          }
-        } else {
-          //turno actual es igual al turno del dia siguiente
-          if (turnoActual == turnoSiguiente) {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T2':
-                hrEntrada = '03:00:00'; //dia Actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T3':
-                hrEntrada = '13:00:00'; //dia actual
-                hrSalida = '15:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T4':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-            }
-          } else {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '05:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T2':
-                hrEntrada = '13:00:00'; //dia Actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T3':
-                hrEntrada = '21:00:00'; //dia actual
-                hrSalida = '07:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T4':
-                hrEntrada = '06:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(dia);
-                break;
-              case 'T12-2':
-                hrEntrada = '12:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(dia);
-                diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                break;
-            }
-          }
-
-        }
-
-        //se realiza la suma o resta de horas de las incidencias
-        for (let index = 0; index < incidencias.length; index++) {
-          const incidence = incidencias[index];
-
-          const currentIncidence = await this.employeeIncidenceRepository.find({
-            relations: {
-              employee: true,
-              incidenceCatologue: true,
-              dateEmployeeIncidence: true,
-            },
-            where: {
-              id: incidence.id
-            }
-          });
-          let horasIncidencia = 0;
-          let minsIncidencia = 0;
-
-          horasIncidencia = Number(moment((parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)), 'HH.m').hours());
-          minsIncidencia = Number(moment(String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] ?
-            String(parseFloat(String(currentIncidence[0].total_hour)) / Number(currentIncidence[0].dateEmployeeIncidence.length)).split('.')[1] : 0, 'mm').minutes());
-
-
-          //se obtiene las horas y minutos de la incidencia
-          //const horaMinIncidencia = moment(horasIncidencia, 'HH.mm');
-          //se obtiene la diferencia en milisegundos
-          const hrs = horasIncidencia; //horaMinIncidencia.hours();
-          const mins = minsIncidencia; //horaMinIncidencia.minutes();
-          let modMin = 0;
-          let divMin = 0;
-
-          //si la incidencia no es Incapacidad se suman las horas y minutos
-          if (incidence.incidenceCatologue.code_band != 'INC') {
-
-            totalMinutisTrabados += Number(mins);
-            totalMinDay += Number(mins);
-
-            if (totalMinutisTrabados >= 60) {
-              modMin = totalMinutisTrabados % 60;
-              divMin = totalMinutisTrabados / 60;
-              totalHrsTrabajadas += Math.floor(divMin);
-              totalMinutisTrabados = modMin;
-              /* totalHrsDay += Math.floor(divMin);
-              totalMinDay += modMin; */
-            }
-            //si la incidencia es tiempo compensatorio
-
-            if (incidence.incidenceCatologue.code_band == 'TxT') {
-              if (incidence.type == 'Compensatorio') {
-                sumaHrsIncidencias += Number(hrs);
-              }
-            } else {
-              if (incidence.incidenceCatologue.affected_type == 'Sumar horas') {
-                sumaHrsIncidencias += Number(hrs);
-              }
-              if (incidence.incidenceCatologue.affected_type == 'Restar horas') {
-                sumaHrsIncidencias -= Number(hrs);
-              }
-
-
-            }
-          } else {
-            //si el turno actual es diferente a TI se suman las horas de la incidencia
-            if (turnoActual != 'TI') {
-              totalHorasIncidencia += Number(hrs);
-            }
-
-          }
-
-          //se suman las horas de las incidencias al total de horas por dia
-          //totalHrsDay += Number(sumaHrsIncidencias);
-
-        }
-
-
-        //se recorre el arreglo de incidencias para verificar si existe un tiempo extra
-        //y asignar las horas de entrada y salida
-        for (let index = 0; index < incidencias.length; index++) {
-          //si es tiempo extra, tiempo extra por hora o tiempo compensatorio
-          if (incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT') {
-
-            //si es tiempo extra, tiempo extra por hora
-            if (incidencias[index].incidenceCatologue.code_band == 'HE' || incidencias[index].incidenceCatologue.code_band == 'HET' || incidencias[index].incidenceCatologue.code_band == 'TxT') {
-              if (shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T1') {
-
-
-                if (incidencias[index].shift == 2) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-                  diaAnterior = new Date(dia);
-                } else if (incidencias[index].shift == 3) {
-                  hrEntrada = '20:00:00';
-                  hrSalida = '06:59:00';
-                  diahoy.setDate(diahoy.getDate() - 1);
-                }
-              } else if (shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T2') {
-
-                if (incidencias[index].shift == 1) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-
-                } else if (incidencias[index].shift == 3) {
-                  hrEntrada = '13:00:00';
-                  hrSalida = '06:59:00';
-                  diaSiguente = new Date(new Date(dia).setDate(new Date(dia).getDate() + 1));
-                }
-              } else if (shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'T3') {
-
-                if (incidencias[index].shift == 1) {
-                  hrEntrada = '20:00:00';
-                  hrSalida = '06:59:00';
-                  diahoy.setDate(diahoy.getDate() - 1);
-                } else if (incidencias[index].shift == 2) {
-                  hrEntrada = '13:00:00';
-                  hrSalida = '06:59:00';
-
-                  //diaSiguente.setDate(diahoy.getDate() + 1);
-                }
-              } else if (shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'TI') {
-
-                if (incidencias[index].shift == 1) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '14:59:00';
-
-                } else if (incidencias[index].shift == 2) {
-                  hrEntrada = '13:00:00';
-                  hrSalida = '21:59:00';
-                }
-              } else if (shift.events[0]?.nameShift != '' && shift.events[0]?.nameShift == 'MIX') {
-
-                if (incidencias[index].shift == 1) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-
-                } else if (incidencias[index].shift == 2) {
-                  hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-                } else if (incidencias[index].shift == 3) {
-                  hrEntrada = '13:00:00';
-                  hrSalida = '06:59:00';
-                  diaSiguente.setDate(diaSiguente.getDate() + 1);
-                }
-              }
-              //si es tiempo compensatorio
-            }
-
-          }
-
-
-        }
-
-
-
-
-        //se verifica si el dia seleccionado es festivo
-        const dayCalendar = await this.calendarService.findByDate(dia as any);
-        const objIncidencia = [];
-
-        if (dayCalendar) {
-          if (dayCalendar.holiday) {
-            const holiday = await this.incidenceCatologueService.findName(
-              'Dia festivo / Descanso trabajo',
-            );
-            objIncidencia.push({
-              code: holiday.code,
-            });
-            sumaHrsIncidencias += hourShift;
-          }
-        }
-        incidencias.forEach((incidence) => {
-          objIncidencia.push({
-            code: incidence.incidenceCatologue.code,
-          });
-        });
-
-        //********* agregar dato dia del turno */
-        //se obtienen los registros del checador
-        const registrosChecador = await this.checadorService.findbyDate(
-          parseInt(newArray[i].id),
-          diaAnterior,
-          diaSiguente,
-          hrEntrada,
-          hrSalida,
-        );
-
-
-        if (registrosChecador.length > 0) {
-          firstHr = moment(new Date(registrosChecador[0]?.date));
-          secondHr =
-            registrosChecador.length > 1
-              ? moment(
-                new Date(
-                  registrosChecador[registrosChecador.length - 1]?.date,
-                ),
-              )
-              : moment(new Date(registrosChecador[0]?.date));
-
-          //se obtiene la diferencia en milisegundos
-
-          diffHr = secondHr.diff(firstHr, 'hours');
-          diffMin = secondHr.diff(firstHr, 'minutes');
-
-          totalMinDay += Number(diffMin) % 60;
-
-          totalMinutisTrabados += totalMinDay;
-
-
-          //si el total de minutos trabajados es mayor a 60 se suman las horas
-          if (totalMinutisTrabados >= 60) {
-            modMinUno = totalMinutisTrabados % 60;
-            divMinDos = totalMinutisTrabados / 60;
-
-            totalHrsTrabajadas += Math.floor(divMinDos);
-            totalMinutisTrabados = modMinUno;
-
-          }
-
-        }
-
-
-
-        totalHrsDay += Number(diffHr) > 0 ? Number(diffHr) : 0;
-        //se suma el total de horas por dia al total de horas trabajadas
-        totalHrsTrabajadas += totalHrsDay;
-        //se suma el total de horas de las incidencias
-        totalHorasIncidencia += sumaHrsIncidencias;
-
-        //al total de horas por dia se le suman las horas de las incidencias
-        totalHrsDay += sumaHrsIncidencias;
-
-
-
-        //datos por dia
-        eventDays.push({
-          date: format(dia, 'yyyy-MM-dd'),
-          incidencia: objIncidencia,
-          employeeShift: shift.events[0]?.nameShift,
-          entrada: registrosChecador.length >= 1 ? format(new Date(firstHr), 'HH:mm:ss') : '',
-          salida: registrosChecador.length >= 2 ? format(new Date(secondHr), 'HH:mm:ss') : '',
-          dayHour: totalHrsDay + '.' + moment().minutes(totalMinDay).format('mm'),
-          //dayHour: (Number(moment(secondHr).format('HH.mm')) - Number(moment(firstHr).format('HH.mm'))).toFixed(2),
-        });
-
-
-        //aqui voy
-
-      }
-
-
-      const quo = Math.floor(totalMinutisTrabados / 60);
-
-      totalHrsTrabajadas += quo;
-
-      registros.push({
-        idEmpleado: newArray[i].id,
-        numeroNomina: newArray[i].employee_number,
-        nombre: newArray[i].name + ' ' + newArray[i].paternal_surname + ' ' + newArray[i].maternal_surname,
-        perfile: newArray[i].employeeProfile.name,
-        date: eventDays,
-        horas_objetivo: totalHrsRequeridas + '.' + String(totalMinRequeridos).padStart(2, '0'),//moment().minutes(totalMinRequeridos).format('mm'),
-        horasTrabajadas: totalHrsTrabajadas + '.' + String(totalMinutisTrabados).padStart(2, '0'),//moment().minutes(totalMinutisTrabados).format('mm'), //total hrs trabajadas
-        totalHorasIncidencia: totalHorasIncidencia,
-        colorText: totalHrsTrabajadas >= totalHrsRequeridas ? '#74ad74' : '#ff0000',
-        tipo_nomina: newArray[i].payRoll,
-      });
-
-
-      //registros.concat(eventDays);
-    }
-
-    return {
-      registros,
-      diasGenerados,
-    };
   }
 
   //obtener los lideres que tienen empleados a su cargo
@@ -4421,4 +3524,7 @@ export class EmployeeIncidenceService {
     }
 
   }
+
+
+
 }

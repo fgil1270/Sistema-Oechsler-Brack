@@ -44,6 +44,21 @@ export class CourseDto {
   @IsNotEmpty()
   @ApiProperty({ description: 'Id del objetivo de entrenamiento', example: 1 })
   traininGoal: number;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Requiere documento Constancia', example: 'true' })
+  req_constancy: boolean;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Requiere Examen', example: 'true' })
+  req_quiz: boolean;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Tema del curso', example: 'Programación' })
+  syllabus: string;
 }
 
-export class UpdateCourseDto extends PartialType(CourseDto) {}
+export class UpdateCourseDto extends PartialType(CourseDto) { }

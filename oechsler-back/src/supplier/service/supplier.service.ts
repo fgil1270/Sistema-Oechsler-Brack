@@ -20,6 +20,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateSupplierDto } from '../dto/create-supplier.dto';
 import { UpdateSupplierDto } from '../dto/update-supplier.dto';
+import { CreateTeacherDto } from '../dto/create-teacher.dto';
 import { Supplier } from '../entities/supplier.entity';
 import { Teacher } from '../entities/teacher.entity';
 import { es } from 'date-fns/locale';
@@ -29,10 +30,41 @@ export class SupplierService {
   constructor(
     @InjectRepository(Supplier) private supplierRepository: Repository<Supplier>,
     @InjectRepository(Teacher) private teacherRepository: Repository<Teacher>,
-  ) {}
+  ) { }
 
+  //crear un proveedor
   async create(createSupplierDto: CreateSupplierDto) {
-    return 'This action adds a new supplier';
+    const createSupplier = this.supplierRepository.create(createSupplierDto);
+
+    //se crea un array de condiciones para la busqueda
+    const whereClauses: FindOptionsWhere<Supplier>[] = [];
+
+    if (createSupplierDto.business_name) {
+      whereClauses.push({ business_name: createSupplierDto.business_name } as FindOptionsWhere<Supplier>);
+    }
+    if (createSupplierDto.name) {
+      whereClauses.push({ name: createSupplierDto.name } as FindOptionsWhere<Supplier>);
+    }
+    if (createSupplierDto.code) {
+      whereClauses.push({ code: createSupplierDto.code } as FindOptionsWhere<Supplier>);
+    }
+
+    let findExisting: Supplier | null = null;
+    if (whereClauses.length) {
+      findExisting = await this.supplierRepository.findOne({
+        where: whereClauses,
+      });
+    }
+
+    if (findExisting) {
+      throw new NotFoundException('El proveedor ya existe');
+    }
+
+    const supplier = await this.supplierRepository.save(createSupplier);
+
+
+
+    return supplier;
   }
 
   //buscar todos los proveedores
@@ -42,16 +74,52 @@ export class SupplierService {
     return supplier;
   }
 
+  //buscar un proveedor por id
   async findSupplierOne(id: number) {
-    return `This action returns a #${id} supplier`;
+    const supplier = await this.supplierRepository.findOne({ where: { id: id } });
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+
+    return supplier;
   }
 
+  //actualizar un proveedor
   async updateSupplier(id: number, updateSupplierDto: UpdateSupplierDto) {
-    return `This action updates a #${id} supplier`;
+
+    //buscar el proveedor por id
+    const supplier = await this.supplierRepository.findOne({ where: { id: id } });
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+
+    Object.assign(supplier, updateSupplierDto);
+
+    await this.supplierRepository.save(supplier);
+
+    return supplier;
   }
 
   async removeSupplier(id: number) {
     return `This action removes a #${id} supplier`;
+  }
+
+
+  //crear un instructor
+  async createTeacher(data: CreateTeacherDto) {
+    const teacher = this.teacherRepository.create(data);
+
+    const supplier = await this.supplierRepository.findOne({
+      where: { id: data.supplierId },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+
+    teacher.supplier = supplier;
+
+    return this.teacherRepository.save(teacher);
   }
 
   //buscar todos los instructores por query
@@ -70,10 +138,10 @@ export class SupplierService {
           supplier: {
             id: supplierId
           },
-        
+
         },
       })
-    }else{
+    } else {
 
       teacher = await this.teacherRepository.find({
         relations: {
@@ -89,7 +157,7 @@ export class SupplierService {
 
   //buscar un instructor por id
   async findTeacherById(id: number) {
- 
+
     const teacher = await this.teacherRepository.findOne({
       relations: {
         supplier: true,
@@ -101,4 +169,29 @@ export class SupplierService {
 
     return teacher;
   }
+
+  //actualizar un instructor
+  async updateTeacher(id: number, updateTeacherDto: CreateTeacherDto) {
+    const teacher = await this.teacherRepository.findOne({
+      where: { id: id },
+      relations: {
+        supplier: true,
+      },
+    });
+    if (!teacher) {
+      throw new NotFoundException('Teacher not found');
+    }
+    let supplier = await this.supplierRepository.findOne({
+      where: { id: updateTeacherDto.supplierId },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found');
+    }
+    Object.assign(teacher, updateTeacherDto);
+    teacher.supplier = supplier;
+    await this.teacherRepository.save(teacher);
+    return teacher;
+  }
+
 }
