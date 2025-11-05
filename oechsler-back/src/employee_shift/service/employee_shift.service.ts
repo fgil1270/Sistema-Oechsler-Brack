@@ -418,13 +418,14 @@ export class EmployeeShiftService {
               }
             }
 
+
             if (index.getDay() == 6 && shift.shift.name == 'Turno 1') {
               contPeriodicidad++;
             }
             if (index.getDay() == 6 && shift.shift.name == 'Turno 2') {
               contPeriodicidad++;
             }
-            if (index.getDay() == 5 && shift.shift.name == 'Turno 3') {
+            if (index.getDay() == 6 && shift.shift.name == 'Turno 3') {
               contPeriodicidad++;
             }
             if (index.getDay() == 5 && shift.shift.name == 'Mixto') {

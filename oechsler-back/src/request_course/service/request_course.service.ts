@@ -100,7 +100,7 @@ export class RequestCourseService {
           course_name: data.courseName,
           training_reason: data.traininReason,
           training_objective: data.trainingObjective,
-          efficiency_period: data.efficiencyPeriod,
+          efficiency_period: data.efficiencyPeriod == "" ? null : data.efficiencyPeriod,
           priority: data.priority,
           tentative_date_start: data.tentativeDateStart as any,
           tentative_date_end: data.tentativeDateEnd as any,
@@ -125,6 +125,10 @@ export class RequestCourseService {
           definitionObjectiveAnnual: null
         });
 
+
+
+
+
         //si data.definitionObjetiveAnnualId existe se busca la definición del objetivo anual
         if (data.definitionObjetiveAnnualId) {
           const definitionObjetiveAnnual = await this.definitionObjectiveAnnualService.findObjectiveEmployee(
@@ -135,6 +139,58 @@ export class RequestCourseService {
 
         const requestCourse = await this.requestCourse.save(
           requestCourseCreate,
+        );
+
+        //se obtiene el lider del empleado
+        let leader = await this.organigramaService.leaders(emp.id);
+        let leadersMail = [];
+
+        const emailEmployee = await this.userService.findByIdEmployee(emp.id);
+
+        if (emailEmployee) {
+          leadersMail.push(emailEmployee.user[0].email);
+        }
+
+        if (leader.orgs.length > 0) {
+
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.leader.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              for (const u of user.user) {
+                //si el usuario tiene correo y no esta eliminado
+                if (u.email && u.deleted_at == null) {
+                  //se agrega el correo a la lista de correos
+                  leadersMail.push(u.email);
+                }
+              }
+            }
+          }
+        } else {
+          //busca empleados que su usuario tenga rol Jefe de turno
+          const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.userId', 'user')
+            .innerJoinAndSelect('user.roles', 'role')
+            .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          if (jefeTurno.length > 0) {
+            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
+          }
+        }
+
+
+        //se envian los correos
+        await this.mailService.sendEmail(`Creación Solicitud de Curso " ${requestCourse.course.name}"`,
+          {
+            curso: requestCourse.course.name,
+            status: requestCourse.status,
+            empleados: [`#${requestCourse.employee.employee_number}) ${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}`]
+          },
+          leadersMail,
+          'solicitud_curso'
         );
       }
 
@@ -563,7 +619,7 @@ export class RequestCourseService {
       });
 
       //se obtiene el lider del empleado
-      const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+      let leader = await this.organigramaService.leaders(requestCourse.employee.id);
 
       //se obtiene el departamento de la solicitud de curso
       let department = await this.departmentService.findOne(requestCourse.department.id);
@@ -620,6 +676,11 @@ export class RequestCourseService {
       } else if (data.status == 'Solicitado' && requestCourse.origin == 'Solicitud') {
         //se asigna el status de la solicitud
         requestCourse.status = 'Solicitado';
+        if (data.avoidApprove) {
+          let aprueba = await this.employeeService.findOne(user.idEmployee);
+          requestCourse.approved_at_leader = new Date();
+          requestCourse.leader = aprueba.emp;
+        }
 
       }
 
@@ -634,7 +695,7 @@ export class RequestCourseService {
 
       //si el status de la solicitud de curso es Autorizado
       //y se quiere cambiar a cancelado
-      if (requestCourse.status == 'Asignado' && data.status == 'Cancelado') {
+      if ((requestCourse.status == 'Asignado' || requestCourse.status == 'Pendiente Evaluar Empleado') && data.status == 'Cancelado') {
         //el estatus cambia de Asignado a Autorizado
         requestCourse.status = 'Autorizado';
         requestCourse.requestCourseAssignment = [];
@@ -657,7 +718,7 @@ export class RequestCourseService {
 
         //si el usuario logueado es admin
         if (isAdmin) {
-          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          leader = await this.organigramaService.leaders(requestCourse.employee.id);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
@@ -704,7 +765,7 @@ export class RequestCourseService {
 
         if (data.avoidApprove) {
           const userApprove = await this.employeeService.findOne(user.idEmployee);
-          const leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          leader = await this.organigramaService.leaders(requestCourse.employee.id);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
@@ -717,6 +778,13 @@ export class RequestCourseService {
 
       if (data.status == 'Pendiente Evaluar Empleado') {
         requestCourse.status = 'Pendiente Evaluar Empleado';
+      }
+
+      if (data.status == 'Finalizado') {
+        requestCourse.status = 'Finalizado';
+      }
+      if (data.status == 'Cancelado') {
+        requestCourse.status = 'Cancelado';
       }
 
       if (data.requestBy) {
@@ -743,24 +811,45 @@ export class RequestCourseService {
       }
 
       const save = await this.requestCourse.save(requestCourse);
+
       let leadersMail = [];
-      for (const l of leader.orgs) {
-        //si el lider puede evaluar
-        if (l.evaluar) {
-          const user = await this.userService.findByIdEmployee(l.id);
-          //recorre el arreglo de usuarios que tiene el lider
-          for (const u of user.user) {
-            //si el usuario tiene correo y no esta eliminado
-            if (u.email && u.deleted_at == null) {
-              //se agrega el correo a la lista de correos
-              leadersMail.push(u.email);
+      const emailEmployee = await this.userService.findByIdEmployee(requestCourse.employee.id);
+      if (emailEmployee) {
+        leadersMail.push(emailEmployee.user[0].email);
+      }
+
+      if (leader.orgs.length > 0) {
+
+        for (const l of leader.orgs) {
+          //si el lider puede evaluar
+          if (l.evaluar) {
+            const user = await this.userService.findByIdEmployee(l.leader.id);
+            //recorre el arreglo de usuarios que tiene el lider
+            for (const u of user.user) {
+              //si el usuario tiene correo y no esta eliminado
+              if (u.email && u.deleted_at == null) {
+                //se agrega el correo a la lista de correos
+                leadersMail.push(u.email);
+              }
             }
           }
+        }
+      } else {
+        //busca empleados que su usuario tenga rol Jefe de turno
+        const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+          .innerJoinAndSelect('employee.userId', 'user')
+          .innerJoinAndSelect('user.roles', 'role')
+          .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+          .andWhere('employee.deleted_at IS NULL')
+          .orderBy('employee.employee_number', 'ASC')
+          .getMany();
+        if (jefeTurno.length > 0) {
+          leadersMail.push(...jefeTurno.map(emp => emp.user.email));
         }
       }
 
       //se envian los correos
-      await this.mailService.sendEmail(`Actualizacion de Solicitud deCurso "${save.course.name}"`,
+      await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
         {
           curso: save.course.name,
           status: save.status,
@@ -773,7 +862,7 @@ export class RequestCourseService {
       return {
         error: false,
         msg: 'Solicitud de curso actualizada correctamente',
-        data: data,
+        data: save,
       };
     } catch (error) {
       return {
@@ -892,8 +981,17 @@ export class RequestCourseService {
           request.approved_at_leader = new Date();
 
         } else if (data.status == 'Solicitado' && request.origin == 'Solicitud') {
-          //se asigna el status de la solicitud
-          request.status = 'Solicitado';
+          if (data.avoidApprove) {
+            let approveLeader = await this.employeeService.findOne(user.idEmployee);
+            request.approved_at_leader = new Date();
+            request.status = 'Autorizado';
+            request.leader = approveLeader.emp;
+            request.rh = approveLeader.emp;
+            request.approved_at_rh = new Date();
+          } else {
+            //se asigna el status de la solicitud
+            request.status = 'Solicitado';
+          }
 
         }
 
@@ -909,19 +1007,39 @@ export class RequestCourseService {
         //actualiza la solicitud de curso
         const save = await this.requestCourse.save(request);
 
-        //recorre el arreglo de lideres
-        for (const l of leader.orgs) {
-          //si el lider puede evaluar
-          if (l.evaluar) {
-            const user = await this.userService.findByIdEmployee(l.leader.id);
-            //recorre el arreglo de usuarios que tiene el lider
-            for (const u of user.user) {
-              //si el usuario tiene correo y no esta eliminado
-              if (u.email && u.deleted_at == null) {
-                //se agrega el correo a la lista de correos
-                leadersMail.push(u.email);
+
+        const emailEmployee = await this.userService.findByIdEmployee(request.employee.id);
+        if (emailEmployee) {
+          leadersMail.push(emailEmployee.user[0].email);
+        }
+
+        if (leader.orgs.length > 0) {
+
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.leader.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              for (const u of user.user) {
+                //si el usuario tiene correo y no esta eliminado
+                if (u.email && u.deleted_at == null) {
+                  //se agrega el correo a la lista de correos
+                  leadersMail.push(u.email);
+                }
               }
             }
+          }
+        } else {
+          //busca empleados que su usuario tenga rol Jefe de turno
+          const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.userId', 'user')
+            .innerJoinAndSelect('user.roles', 'role')
+            .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          if (jefeTurno.length > 0) {
+            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
           }
         }
 
@@ -977,18 +1095,38 @@ export class RequestCourseService {
           //se crea solicitud de curso
           const save = await this.requestCourse.save(createRequest);
 
-          for (const l of leader.orgs) {
-            //si el lider puede evaluar
-            if (l.evaluar) {
-              const user = await this.userService.findByIdEmployee(l.id);
-              //recorre el arreglo de usuarios que tiene el lider
-              for (const u of user.user) {
-                //si el usuario tiene correo y no esta eliminado
-                if (u.email && u.deleted_at == null) {
-                  //se agrega el correo a la lista de correos
-                  leadersMail.push(u.email);
+          const emailEmployee = await this.userService.findByIdEmployee(save.employee.id);
+          if (emailEmployee) {
+            leadersMail.push(emailEmployee.user[0].email);
+          }
+
+          if (leader.orgs.length > 0) {
+
+            for (const l of leader.orgs) {
+              //si el lider puede evaluar
+              if (l.evaluar) {
+                const user = await this.userService.findByIdEmployee(l.leader.id);
+                //recorre el arreglo de usuarios que tiene el lider
+                for (const u of user.user) {
+                  //si el usuario tiene correo y no esta eliminado
+                  if (u.email && u.deleted_at == null) {
+                    //se agrega el correo a la lista de correos
+                    leadersMail.push(u.email);
+                  }
                 }
               }
+            }
+          } else {
+            //busca empleados que su usuario tenga rol Jefe de turno
+            const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+              .innerJoinAndSelect('employee.userId', 'user')
+              .innerJoinAndSelect('user.roles', 'role')
+              .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+              .andWhere('employee.deleted_at IS NULL')
+              .orderBy('employee.employee_number', 'ASC')
+              .getMany();
+            if (jefeTurno.length > 0) {
+              leadersMail.push(...jefeTurno.map(emp => emp.user.email));
             }
           }
 
@@ -1015,6 +1153,17 @@ export class RequestCourseService {
         error: true,
         msg: error.message,
       };
+    }
+  }
+
+  //actualizar multiples status
+  updateStatusMultiple(data: UpdateRequestCourseDto, user: any) {
+    //si es estatus es Autorizado
+    if (data.status == 'Autorizado') {
+
+
+    } else if (data.status == 'Cancelado') {
+
     }
   }
 
@@ -1110,6 +1259,7 @@ export class RequestCourseService {
           rh: true,
           gm: true,
           requestBy: true,
+          courseEfficiency: true
         },
         where: {
           id: idRequestCourse,
@@ -1131,8 +1281,17 @@ export class RequestCourseService {
 
       const assessment = await this.requestCourseAssessmentEmployee.save(createAssessment);
 
-      //actualizar el status de la solicitud de curso a Evaluado
-      //requestCourse.status = 'Evaluado';
+
+      //si existe evaluacion de eficiencia cambia el status del curso a Finalizado
+      if (requestCourse.courseEfficiency.length > 0) {
+        requestCourse.status = 'Finalizado';
+      } else {
+        if (requestCourse.efficiency_period != null && requestCourse.efficiency_period != '') {
+          requestCourse.status = 'Pendiente Evaluar Eficiencia';
+        } else {
+          requestCourse.status = 'Finalizado';
+        }
+      }
 
       await this.requestCourse.save(requestCourse);
 

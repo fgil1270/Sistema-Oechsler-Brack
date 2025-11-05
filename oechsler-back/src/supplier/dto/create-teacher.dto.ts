@@ -43,3 +43,5 @@ export class CreateTeacherDto {
     @ApiProperty({ description: 'ID del proveedor' })
     supplierId: number;
 }
+
+export class UpdateTeacherDto extends PartialType(CreateTeacherDto) { }

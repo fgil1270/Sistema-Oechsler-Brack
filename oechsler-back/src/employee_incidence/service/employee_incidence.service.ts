@@ -2115,8 +2115,8 @@ export class EmployeeIncidenceService {
 
                 if (incidence.ei_shift == 1) {
                   hrEntrada = '05:00:00';
-                  hrSalida = '21:59:00';
-
+                  hrSalida = '22:10:00';
+                  diaSiguente = new Date(diahoy);
                 } else if (incidence.ei_shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
