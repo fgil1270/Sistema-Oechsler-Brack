@@ -1166,6 +1166,12 @@ export class ChecadorService {
             diaAnterior = new Date(index);
             diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
             break;
+          case 'TP2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
         }
       } else {
         switch (turnoActual) {
@@ -1234,6 +1240,12 @@ export class ChecadorService {
             hrSalida = '07:00:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TP2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
             break;
         }
       }
@@ -1306,6 +1318,12 @@ export class ChecadorService {
             diaAnterior = new Date(index);
             diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
             break;
+          case 'TP2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
+            break;
         }
       } else {
         switch (turnoActual) {
@@ -1374,6 +1392,12 @@ export class ChecadorService {
             hrSalida = '07:00:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
+            break;
+          case 'TP2':
+            hrEntrada = '05:00:00'; //dia Actual
+            hrSalida = '23:00:00'; //dia siguiente
+            diaAnterior = new Date(index);
+            diaSiguente = new Date(index);
             break;
         }
       }
