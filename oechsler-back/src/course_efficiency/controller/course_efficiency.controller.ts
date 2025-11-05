@@ -6,21 +6,25 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 import { CreateCourseEfficiencyDto, UpdateCourseEfficiencyDto } from '../dto/course_efficiency.dto';
 import { CourseEfficiencyService } from '../service/course_efficiency.service';
+import { RoleGuard } from '../../auth/guards/role.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
+@UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Eficiencia de cursos')
 @Controller('course-efficiency')
 export class CourseEfficiencyController {
-  constructor(private readonly courseEfficiencyService: CourseEfficiencyService) {}
+  constructor(private readonly courseEfficiencyService: CourseEfficiencyService) { }
 
   @Post()
-  create(@Body() createCourseEfficiencyDto: CreateCourseEfficiencyDto) {
-    return this.courseEfficiencyService.create(createCourseEfficiencyDto);
+  create(@Body() createCourseEfficiencyDto: CreateCourseEfficiencyDto, @CurrentUser() user: any) {
+    return this.courseEfficiencyService.create(createCourseEfficiencyDto, user);
   }
 
   @Get()
@@ -43,3 +47,7 @@ export class CourseEfficiencyController {
     return this.courseEfficiencyService.remove(+id);
   }
 }
+function User(): (target: CourseEfficiencyController, propertyKey: "create", parameterIndex: 1) => void {
+  throw new Error('Function not implemented.');
+}
+

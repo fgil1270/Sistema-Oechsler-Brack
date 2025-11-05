@@ -103,6 +103,15 @@ export class RequestCourseController {
     return this.requestCourseService.updateMultiple(data.requestCourseIds, data, user);
   }
 
+  @ApiOperation({ summary: 'Actualizar multiples solicitudes de curso' })
+  @Put('approve')
+  async updateStatusMultiple(
+    @Body() data: UpdateRequestCourseDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.requestCourseService.updateStatusMultiple(data, user);
+  }
+
   @ApiOperation({ summary: 'Actualizar solicitud de curso' })
   @Put(':id')
   async update(
