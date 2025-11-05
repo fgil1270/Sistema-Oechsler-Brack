@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiTags } from '@nestjs/swagger';
 
+import { TrainingMachine } from '../../training_machine/entities/training_machine.entity';
+
 @ApiTags('production_area')
 @Entity()
 export class ProductionArea {
@@ -17,22 +19,25 @@ export class ProductionArea {
   id: number;
 
   @ApiProperty({ description: 'Nombre del área de producción' })
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
   @ApiProperty({ description: 'Comentario sobre el área de producción' })
-  @Column()
+  @Column({ type: 'text' })
   comment: string;
 
   @ApiProperty({ description: 'Fecha de creación del área de producción' })
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty({ description: 'Fecha de actualización del área de producción' })
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @ApiProperty({ description: 'Fecha de eliminación del área de producción' })
   @DeleteDateColumn()
-  deletedAt: Date;
+  deleted_at: Date;
+
+  @OneToMany(() => TrainingMachine, (trainingMachine) => trainingMachine.productionArea)
+  trainingMachines: TrainingMachine[];
 }
