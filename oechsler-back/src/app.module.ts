@@ -29,6 +29,7 @@ import { EmployeesModule } from './employees/employees.module';
 import { EnabledCreateIncidenceModule } from './enabled_create_incidence/enabled_create_incidence.module';
 import { enviroments } from './enviroments';
 import { PercentageDefinitionModule } from './evaluation_annual/percentage_definition/percentage_definition.module';
+import { GeneralModule } from './general/general.module';
 import { IncidenceCatologueModule } from './incidence_catologue/incidence_catologue.module';
 import { JobDocumentModule } from './job_document/job_document.module';
 import { JobsModule } from './jobs/jobs.module';
@@ -37,17 +38,18 @@ import { CustomLoggerService } from './logger/logger.service';
 import { OrganigramaModule } from './organigrama/organigrama.module';
 import { PatternModule } from './pattern/pattern.module';
 import { PayrollsModule } from './payrolls/payrolls.module';
+import { ProductionAreaModule } from './production_area/production_area.module';
 import { RequestCourseModule } from './request_course/request_course.module';
+import { CronRequestCourseService } from './request_course/service/cron_request_course.service';
 import { RolesModule } from './roles/roles.module';
 import { ShiftModule } from './shift/shift.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { TimeCorrectionModule } from './time_correction/time_correction.module';
+import { TrainingMachineModule } from './training_machine/training_machine.module';
 import { UsersModule } from './users/users.module';
 import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import { ViewsModule } from './views/views.module';
-import { GeneralModule } from './general/general.module';
-import { CronRequestCourseService } from './request_course/service/cron_request_course.service';
-import { ProductionAreaModule } from './production_area/production_area.module';
+import { TrainingModule } from './training/training.module';
 
 
 @Module({
@@ -112,7 +114,9 @@ import { ProductionAreaModule } from './production_area/production_area.module';
     EnabledCreateIncidenceModule,
     CourseEfficiencyModule,
     GeneralModule,
-    ProductionAreaModule
+    ProductionAreaModule,
+    TrainingMachineModule,
+    TrainingModule
   ],
   controllers: [
     AppController

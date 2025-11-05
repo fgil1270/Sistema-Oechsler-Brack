@@ -7,15 +7,20 @@ import {
   DeleteDateColumn,
   OneToMany,
 } from 'typeorm';
+import { ApiProperty, ApiTags } from '@nestjs/swagger';
+
 import { Employee } from '../../employees/entities/employee.entity';
 import { EnabledCreateIncidence } from 'src/enabled_create_incidence/entities/enabled-create-incidence.entity';
 import { EmployeePayrollHistory } from '../../employees/entities/employee_payroll_history.entity';
 
+@ApiTags('payroll')
 @Entity()
 export class Payroll {
+  @ApiProperty({ description: 'Unique identifier for the payroll' })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ description: 'Nombre del puesto' })
   @Column({ unique: true, type: 'varchar', length: 255 })
   name: string;
 
