@@ -1,15 +1,39 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  Repository,
+  UpdateResult,
+  DeleteResult,
+  IsNull,
+  Not,
+  Like,
+  In,
+} from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+
+import { TrainingMachine } from '../entities/training_machine.entity';
 import { CreateTrainingMachineDto, UpdateTrainingMachineDto } from '../dto/create-training-machine.dto';
 
 
 @Injectable()
 export class TrainingMachineService {
+
+  constructor(
+    @InjectRepository(TrainingMachine) private trainingMachineRepository: Repository<TrainingMachine>,
+  ) { }
+
   create(createTrainingMachineDto: CreateTrainingMachineDto) {
     return 'This action adds a new training-machine';
   }
 
   findAll() {
-    return `This action returns all training-machines`;
+    const trainingMachines = this.trainingMachineRepository.find();
+
+    return trainingMachines;
   }
 
   findOne(id: number) {
