@@ -2101,8 +2101,11 @@ export class EmployeeIncidenceService {
             if (currentIncidence[0].incidenceCatologue.code_band == 'HE' || currentIncidence[0].incidenceCatologue.code_band == 'HET' || currentIncidence[0].incidenceCatologue.code_band == 'TxT') {
               if (turnoActual != '' && (turnoActual == 'T1' || turnoActual == 'TI1')) {
 
+                if (incidence.ei_shift == 1) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
 
-                if (incidence.ei_shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
                   diaAnterior = new Date(diahoy);
@@ -2114,6 +2117,11 @@ export class EmployeeIncidenceService {
               } else if (turnoActual != '' && (turnoActual == 'T2' || turnoActual == 'TI2')) {
 
                 if (incidence.ei_shift == 1) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '22:10:00';
+                  diaSiguente = new Date(diahoy);
+
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '22:10:00';
                   diaSiguente = new Date(diahoy);
@@ -2175,7 +2183,7 @@ export class EmployeeIncidenceService {
               'Dia festivo / Descanso trabajo',
             );
             dates[j].incidencia.push({
-              ei_code_band: holiday.code_band,
+              ei_code_band: 'Festivo',
             })
             sumaHrsIncidencias += hourShift;
           }

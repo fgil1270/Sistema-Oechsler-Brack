@@ -60,4 +60,8 @@ export class Training {
 
     @OneToMany(() => HistoryTraining, (historyTraining) => historyTraining.training)
     historyTraining: HistoryTraining[];
+
+    @ManyToOne(() => Employee, (employee) => employee.trainer)
+    @JoinColumn({ name: 'trainer_id' })
+    employeeTrainer: Employee;
 }

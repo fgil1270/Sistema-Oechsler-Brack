@@ -6,36 +6,64 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
+  HttpCode,
+  HttpStatus
 } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
-import { CreateTrainingDto, UpdateTrainingDto } from '../dto/create-training.dto';
-import { Training } from '../entities/training.entity';
+import { CreateTrainingDto, UpdateTrainingDto, SearchTrainingDto } from '../dto/create-training.dto';
 import { TrainingService } from '../service/training.service';
+import { Views } from '../../auth/decorators/views.decorator';
+import { RoleGuard } from '../../auth/guards/role.guard';
 
-@Controller('trainings')
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Entrenamientos')
+@Controller('training')
 export class TrainingController {
   constructor(private readonly trainingService: TrainingService) { }
 
+  @ApiOperation({ summary: 'Crear Entrenamiento de empleado' })
   @Post()
   create(@Body() createTrainingDto: CreateTrainingDto) {
     return this.trainingService.create(createTrainingDto);
   }
 
+  @ApiOperation({ summary: 'Listar entrenamientos' })
+  @HttpCode(HttpStatus.OK)
   @Get()
-  findAll() {
-    return this.trainingService.findAll();
+  findAll(@Body() searchTrainingDto: SearchTrainingDto) {
+    return this.trainingService.findAll(searchTrainingDto);
   }
 
+  @ApiOperation({ summary: 'Acceder a las vistas de entrenamiento' })
+  @HttpCode(HttpStatus.OK)
+  @Get('access')
+  @Views('entrenamiento')
+  access(@Body() searchTrainingDto: SearchTrainingDto) {
+    return this.trainingService.findAll(searchTrainingDto);
+  }
+
+  @ApiOperation({ summary: 'Listar maquinas de entrenamiento disponibles' })
+  @Get('available-machine')
+  findAvailableMachine() {
+    return this.trainingService.findAvailableMachine();
+  }
+
+  @ApiOperation({ summary: 'Listar entrenamiento por ID' })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.trainingService.findOne(+id);
   }
 
+  @ApiOperation({ summary: 'Actualizar entrenamiento' })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateTrainingDto: UpdateTrainingDto) {
     return this.trainingService.update(+id, updateTrainingDto);
   }
 
+  @ApiOperation({ summary: 'Eliminar entrenamiento' })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.trainingService.remove(+id);

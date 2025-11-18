@@ -13,6 +13,7 @@ import { ApiProperty, ApiTags } from '@nestjs/swagger';
 
 import { Training } from './training.entity';
 import { TrainingMachine } from '../../training_machine/entities/training_machine.entity';
+import { Employee } from '../../employees/entities/employee.entity';
 
 @ApiTags('history_training')
 @Entity()
@@ -48,4 +49,8 @@ export class HistoryTraining {
     @ManyToOne(() => TrainingMachine, (trainingMachine) => trainingMachine.historyTraining)
     @JoinColumn({ name: 'training_machine_id' })
     trainingMachine: TrainingMachine;
+
+    @ManyToOne(() => Employee, (employee) => employee.historyTraining)
+    @JoinColumn({ name: 'trainer_id' })
+    employeeTrainer: Employee;
 }

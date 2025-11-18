@@ -422,7 +422,8 @@ export class TimeCorrectionService {
         //se obtiene la hora de inicio y fin del turno
         let startTimeShift;
         let endTimeShift;
-        if (turnoActual != 'T3') {
+        if (turnoActual != 'T3' && turnoActual != 'TI3') {
+
           startTimeShift = moment(
             new Date(
               `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`,
@@ -436,6 +437,7 @@ export class TimeCorrectionService {
             'HH:mm',
           );
         } else {
+
           startTimeShift = moment(
             new Date(
               `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`,
@@ -487,7 +489,6 @@ export class TimeCorrectionService {
         const minutesConvert = Math.round((diffTimeShift - hoursConvert) * 60);
 
 
-
         registros.push({
           id: i,
           id_empleado: iterator.id,
@@ -536,7 +537,6 @@ export class TimeCorrectionService {
       registros,
       diasGenerados,
     };
-
 
   }
 
