@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
-import { CreateTrainingDto, UpdateTrainingDto } from '../dto/create-training.dto';
+import { CreateTrainingDto, UpdateTrainingDto, SearchTrainingDto } from '../dto/create-training.dto';
 import { TrainingService } from '../service/training.service';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
@@ -33,16 +33,22 @@ export class TrainingController {
   @ApiOperation({ summary: 'Listar entrenamientos' })
   @HttpCode(HttpStatus.OK)
   @Get()
-  findAll() {
-    return this.trainingService.findAll();
+  findAll(@Body() searchTrainingDto: SearchTrainingDto) {
+    return this.trainingService.findAll(searchTrainingDto);
   }
 
   @ApiOperation({ summary: 'Acceder a las vistas de entrenamiento' })
   @HttpCode(HttpStatus.OK)
   @Get('access')
   @Views('entrenamiento')
-  access() {
-    return this.trainingService.findAll();
+  access(@Body() searchTrainingDto: SearchTrainingDto) {
+    return this.trainingService.findAll(searchTrainingDto);
+  }
+
+  @ApiOperation({ summary: 'Listar maquinas de entrenamiento disponibles' })
+  @Get('available-machine')
+  findAvailableMachine() {
+    return this.trainingService.findAvailableMachine();
   }
 
   @ApiOperation({ summary: 'Listar entrenamiento por ID' })

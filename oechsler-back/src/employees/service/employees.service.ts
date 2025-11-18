@@ -900,9 +900,11 @@ export class EmployeesService {
       user,
     );
 
+
+    let filterEmployee = employee.filter((emp: any) => emp.payRoll.name == data.payRoll);
     const report = [];
-    for (let index = 0; index < employee.length; index++) {
-      const emp = employee[index];
+    for (let index = 0; index < filterEmployee.length; index++) {
+      const emp = filterEmployee[index];
       const row = {};
       const ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
       const diaConsulta = moment(new Date(data.startDate)); //dia de consulta del reporte
@@ -969,6 +971,7 @@ export class EmployeesService {
           logAdjustmentVacationEmployee: true,
         }
       });
+
 
 
       //si existe un un historial de vacaciones

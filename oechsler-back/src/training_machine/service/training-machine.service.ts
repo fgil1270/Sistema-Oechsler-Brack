@@ -36,8 +36,14 @@ export class TrainingMachineService {
     return trainingMachines;
   }
 
-  findOne(id: number) {
-    return `This action returns a #id training-machine`;
+  //buscar por id
+  async findOne(id: number) {
+    const trainingMachine = await this.trainingMachineRepository.findOne({ where: { id: id } });
+    if (!trainingMachine) {
+      throw new NotFoundException(`Training machine with ID ${id} not found`);
+    }
+    return trainingMachine;
+
   }
 
   update(id: number, updateTrainingMachineDto: UpdateTrainingMachineDto) {

@@ -64,4 +64,7 @@ export class Competence {
 
   @OneToMany(() => CompetenceMachine, (competenceMachine) => competenceMachine.competence)
   competenceMachines: CompetenceMachine[];
+
+  @Column({ type: 'boolean', default: false })
+  is_production: boolean;
 }
