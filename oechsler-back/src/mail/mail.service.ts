@@ -21,7 +21,7 @@ export interface MailData {
 
 export interface MailDataPendingIncidence {
   totalIncidencias: number;
-  totalTimeCorrection: number;
+  //totalTimeCorrection: number;
 }
 
 @Injectable()

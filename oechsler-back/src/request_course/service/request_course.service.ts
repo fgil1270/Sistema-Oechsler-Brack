@@ -146,6 +146,8 @@ export class RequestCourseService {
         let leadersMail = [];
 
         const emailEmployee = await this.userService.findByIdEmployee(emp.id);
+        //notifica Hansel
+        leadersMail.push('h.perez@oechsler.mx');
 
         if (emailEmployee) {
           leadersMail.push(emailEmployee.user[0].email);

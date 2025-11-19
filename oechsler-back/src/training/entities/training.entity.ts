@@ -55,9 +55,6 @@ export class Training {
     @JoinColumn({ name: 'employee_id' })
     employee: Employee;
 
-    @OneToMany(() => FileTraining, (fileTraining) => fileTraining.training)
-    fileTraining: FileTraining[];
-
     @OneToMany(() => HistoryTraining, (historyTraining) => historyTraining.training)
     historyTraining: HistoryTraining[];
 
