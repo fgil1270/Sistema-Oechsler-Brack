@@ -134,6 +134,7 @@ export class ChecadorService {
   async findbyDateOrganigrama(data: FindChecadaDto, user: any) {
 
     //se obtienen los empleados por organigrama
+
     const organigrama = await this.organigramaService.findJerarquia(
       {
         type: data.type,
@@ -142,9 +143,12 @@ export class ChecadorService {
     );
     let arrayIdsEmployee = [];
     arrayIdsEmployee = organigrama.map((item) => item.id);
-
+    
     //se obtienen las checadas por rango de fechas y ids de empleados
-    const checador = await this.checadorRepository.find({
+    let checador;
+    if(arrayIdsEmployee.length == 0) return checador;
+    try {
+      checador = await this.checadorRepository.find({
       where: {
         employee: {
           id: In([arrayIdsEmployee]),
@@ -172,6 +176,10 @@ export class ChecadorService {
         date: 'ASC',
       },
     });
+    } catch (error) {
+      return
+    }
+    
 
     return checador;
   }

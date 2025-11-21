@@ -110,8 +110,8 @@ export class TimeCorrectionService {
     let organigrama = await this.organigramaService.findJerarquia(
       {
         type: data.tipoJerarquia,
-        startDate: '',
-        endDate: '',
+        /* startDate: '',
+        endDate: '', */
       },
       user,
     );

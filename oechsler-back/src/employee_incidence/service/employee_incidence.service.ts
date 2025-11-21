@@ -810,7 +810,7 @@ export class EmployeeIncidenceService {
 
   //buscar por estatus
   async findIncidencesByStatus(data: ReportEmployeeIncidenceDto, user: any) {
-
+    
     let whereQuery: any;
     const idsEmployees: any = [];
     //se obtienen los empleados por organigrama
@@ -826,8 +826,9 @@ export class EmployeeIncidenceService {
 
       idsEmployees.push(element.id);
     }
-
-    const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
+    let incidences;
+    try {
+      incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
       .innerJoinAndSelect('employee_incidence.employee', 'employee')
       .innerJoinAndSelect('employee_incidence.incidenceCatologue', 'incidenceCatologue')
       .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
@@ -849,6 +850,11 @@ export class EmployeeIncidenceService {
           });
       }))
       .getMany();
+    } catch (error) {
+      
+      return;
+    }
+    
 
     const total = incidences.length;
 
@@ -2368,7 +2374,7 @@ export class EmployeeIncidenceService {
         .groupBy('leader.id')
         .getRawMany();
     } catch (error) {
-      console.log(error)
+      return;
     }
     lideres.push(...listOrg.map(lider => ({ idLider: lider.leaderId, email: '', empleados: [] })));
 
@@ -2488,7 +2494,7 @@ export class EmployeeIncidenceService {
 
 
       if (totalIncidencias > 0 && lideres[i].idLider == 368) { // || mailData.totalTimeCorrection > 0) {
-        console.log('totalIncidencias ', totalIncidencias);
+        
         await this.mailService.sendEmailPendingIncidence(['f.gil@oechsler.mx'], 'Incidencias y correcciones de tiempo pendientes', mailData);
       }
 
