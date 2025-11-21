@@ -845,7 +845,7 @@ export class ChecadorService {
             break;
           case 'MIX':
             hrEntrada = '00:01:00'; //dia actual
-            hrSalida = '22:00:00'; //dia siguiente
+            hrSalida = '23:00:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(index);
             break;
@@ -920,7 +920,7 @@ export class ChecadorService {
             break;
           case 'MIX':
             hrEntrada = '03:00:00'; //dia actual
-            hrSalida = '22:00:00'; //dia siguiente
+            hrSalida = '22:30:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(index);
             break;
