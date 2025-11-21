@@ -25,7 +25,7 @@ export class CronSendEmailPendingIncidenceService {
     // '0 04 * * *' enviar correo cada dia a las 4 am
     //0 06 * * *
     @ApiOperation({ summary: 'Enviar correo cada 10 segundos, para notificar incidencias pendientes' })
-    @Cron('*/10 * * * * *', {
+    @Cron('*/3 * * * *', {
         timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
         //o si se requiere un offset se puede usar utcOffset
         //utcOffset: '-06:00' // ejemplo para centro de mexico

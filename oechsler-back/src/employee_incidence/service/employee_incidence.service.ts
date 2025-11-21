@@ -2331,8 +2331,10 @@ export class EmployeeIncidenceService {
         idEmpleado: number,
         employeeNumber: number,
         name: string,
-        incidencia: Array<any>,
-        fecha: string
+        incidencia: Array<{
+          name: string,
+          fecha: string
+        }>,
       }>
     }> = [];
     let idsJefeTurno: number[];
@@ -2468,8 +2470,7 @@ export class EmployeeIncidenceService {
 
         const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
         if (empleado) {
-          empleado.incidencia.push(incidence);
-          empleado.fecha = format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd');
+          empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
         }
       });
 

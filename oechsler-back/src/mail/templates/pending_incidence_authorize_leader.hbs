@@ -2,8 +2,9 @@
 <ul>
     {{#each empleados}}
     <li>{{this.name}}</li>
-    <li>{{this.incidencia}}</li>
-    <li>{{this.fecha}}</li>
+    <li>{{#each this.incidencia}}
+        <p>{{this.name}}: {{this.fecha}}</p>
+    </li>
     {{/each}}
 </ul>
 
