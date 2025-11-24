@@ -232,7 +232,7 @@ export class MailService {
         to: to,
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
-        template: 'pending_incidence_authorize_leader', // `.hbs` extension is appended automatically
+        template: 'pending_incidence_authorize', // `.hbs` extension is appended automatically
         context: { ...mailData, ...envVariables },
       })
       .then((success) => {

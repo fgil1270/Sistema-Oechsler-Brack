@@ -1,10 +1,17 @@
 <p>Incidencias pendientes por autorizar.</p>
 <ul>
-    {{#each empleados}}
-    <li>{{this.name}}</li>
-    <li>{{#each this.incidencia}}
-        <p>{{this.name}}: {{this.fecha}}</p>
-    </li>
+    {{#each lideres}}
+    <li>Lider: #{{this.leaderEmployeeNumber}} - {{this.leaderName}}</li>
+    <ul>
+        {{#each this.employees}}
+        <li>Empleado: # {{this.employeeNumber}} - {{this.name}}</li>
+        <ul>
+            {{#each this.incidencia}}
+            <li>{{this.name}}: {{this.fecha}}</li>
+            {{/each}}
+        </ul>
+        {{/each}}
+    </ul>
     {{/each}}
 </ul>
 
