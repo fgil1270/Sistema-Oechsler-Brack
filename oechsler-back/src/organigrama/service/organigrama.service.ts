@@ -292,8 +292,9 @@ export class OrganigramaService {
           leader: In([user.idEmployee]),
         },
       });
-
-      const levelOne = await this.organigramaRepository.find({
+      let levelOne;
+      
+      levelOne = await this.organigramaRepository.find({
         relations: {
           employee: {
             department: true,
@@ -305,6 +306,7 @@ export class OrganigramaService {
           leader: true,
         },
         where: {
+          deleted_at: IsNull(),
           employee: {
             deleted_at: IsNull(),
           },
@@ -318,6 +320,8 @@ export class OrganigramaService {
           },
         },
       });
+      
+      
 
       let visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
         .innerJoinAndSelect('employee.job', 'job')
@@ -361,7 +365,7 @@ export class OrganigramaService {
         if (data.needUser) {
           employees.push(userLogin.emp);
         }
-
+        
         return employees;
       }
 
