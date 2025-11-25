@@ -159,6 +159,13 @@ export class MailService {
         method: 'CANCEL',
         content: calendar.toString(),
       };
+      // ✅ Verificar que el evento tenga el UID correcto
+      const events = calendar.events();
+      if (events.length > 0) {
+        const event = events[0];
+
+        console.log("evet", event)
+      }
     }
 
     await this.mailerService
@@ -168,7 +175,7 @@ export class MailService {
         return true;
       })
       .catch((err) => {
-
+        this.log.error('Error al enviar cancelación', err);
         return true;
       });
   }

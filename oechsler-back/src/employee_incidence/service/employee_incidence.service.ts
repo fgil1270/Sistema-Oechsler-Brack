@@ -1245,6 +1245,7 @@ export class EmployeeIncidenceService {
           });
         }
       }
+
       if (emailUser) {
         emailUser.user.forEach((u) => {
           if (u.deleted_at == null) {
@@ -1415,9 +1416,21 @@ export class EmployeeIncidenceService {
             end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
             timezone: 'America/Mexico_City',
             summary: subject,
-            description: 'Canceled Event',
+            description: 'Incidencia Cancelada',
             sequence: 1,
             status: ICalEventStatus.CANCELLED,
+            attendees: [
+              /* {
+                email: to[1],
+                status: ICalAttendeeStatus.ACCEPTED,
+              }, */
+              {
+                email: to[0],
+
+                status: ICalAttendeeStatus.DECLINED,
+              },
+            ]
+
           });
         }
 
