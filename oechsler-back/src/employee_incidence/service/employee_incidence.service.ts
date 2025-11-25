@@ -1416,6 +1416,7 @@ export class EmployeeIncidenceService {
             timezone: 'America/Mexico_City',
             summary: subject,
             description: 'Canceled Event',
+            sequence: 1,
             status: ICalEventStatus.CANCELLED,
           });
         }
