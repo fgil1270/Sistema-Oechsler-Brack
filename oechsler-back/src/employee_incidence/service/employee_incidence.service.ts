@@ -1407,20 +1407,18 @@ export class EmployeeIncidenceService {
         calendar.method(ICalCalendarMethod.CANCEL);
         calendar.timezone('America/Mexico_City');
 
-        const createEventIncidence = this.eventIncidenceRepository.create();
-        const saveEventIncidence = await this.eventIncidenceRepository.save(createEventIncidence);
 
-
-        calendar.createEvent({
-          id: saveEventIncidence.id,
-          start: diaInicio,
-          end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
-          timezone: 'America/Mexico_City',
-          summary: subject,
-          description: 'Canceled Event',
-          status: ICalEventStatus.CANCELLED,
-
-        });
+        if (employeeIncidence.eventIncidence) {
+          calendar.createEvent({
+            id: employeeIncidence.eventIncidence.id,
+            start: diaInicio,
+            end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
+            timezone: 'America/Mexico_City',
+            summary: subject,
+            description: 'Canceled Event',
+            status: ICalEventStatus.CANCELLED,
+          });
+        }
 
 
         //ENVIO DE CORREO
@@ -1435,18 +1433,6 @@ export class EmployeeIncidenceService {
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
 
-        //codigo para cancelar incidencia en outlook
-        /* const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
-        const jcalData = leerCal.parseICS(icsData);
-        const c = ical();
-        
-        const vcalendar = jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] as leerCal.VEvent;
-        
-        vcalendar.status = 'CANCELLED';
-        
-        jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar; */
-
-        //id 1763659910000@oechsler.mx
 
         //se envia correo
         //si es el campo produccion_visible se envia el correo a produccion

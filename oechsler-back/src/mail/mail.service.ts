@@ -139,24 +139,30 @@ export class MailService {
       });
   }
 
-  async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], calendar: ICalCalendar,) {
+  async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], calendar?: ICalCalendar,) {
     const envVariables = {
       port: process.env.PORT,
       // Agrega otras variables de entorno que necesites
     };
+
+    const mailOptions: any = {
+      to: to,
+      from: 'OechslerMX<notificationes@oechsler.mx>',
+      subject: subject,
+      template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
+      context: { ...mailData, ...envVariables },
+    };
+
+    if (calendar) {
+      mailOptions.icalEvent = {
+        filename: 'evento.ics',
+        method: 'CANCEL',
+        content: calendar.toString(),
+      };
+    }
+
     await this.mailerService
-      .sendMail({
-        to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
-        subject: subject,
-        template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
-        context: { ...mailData, ...envVariables },
-        icalEvent: {
-          filename: 'evento.ics',
-          method: 'CANCEL',
-          content: calendar.toString(),
-        }
-      })
+      .sendMail(mailOptions)
       .then((success) => {
 
         return true;
