@@ -16,10 +16,11 @@ import { RequestCourseAssessmentEmployee } from './entities/request_course_asses
 import { MailModule } from '../mail/mail.module';
 import { EmployeeObjectiveModule } from '../employee_objective/employee_objective.module';
 import { UsersModule } from '../users/users.module';
+import { EventRequestCourse } from './entities/event_request_course.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RequestCourse, RequestCourseAssignment, RequestCourseDocument, RequestCourseAssessmentEmployee]),
+    TypeOrmModule.forFeature([RequestCourse, RequestCourseAssignment, RequestCourseDocument, RequestCourseAssessmentEmployee, EventRequestCourse]),
     CourseModule,
     DepartmentsModule,
     EmployeesModule,
