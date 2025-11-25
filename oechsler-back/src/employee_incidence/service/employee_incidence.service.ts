@@ -30,6 +30,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import PDFDocument from 'pdfkit-table';
 import { Readable } from 'stream';
+import * as crypto from 'crypto';
 
 import {
   CreateEmployeeIncidenceDto,
@@ -49,19 +50,13 @@ import { EmployeeProfile } from '../../employee-profiles/entities/employee-profi
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
-import { list, save } from 'pdfkit';
-import { UUID } from 'typeorm/driver/mongodb/bson.typings';
-import { number } from 'joi';
-import e from 'express';
-
+import { EventIncidence } from '../entities/event_incidence.entity';
 
 @Injectable()
 export class EmployeeIncidenceService {
   constructor(
-    @InjectRepository(EmployeeIncidence)
-    private employeeIncidenceRepository: Repository<EmployeeIncidence>,
-    @InjectRepository(DateEmployeeIncidence)
-    private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
+    @InjectRepository(EmployeeIncidence) private employeeIncidenceRepository: Repository<EmployeeIncidence>,
+    @InjectRepository(DateEmployeeIncidence) private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
     private incidenceCatologueService: IncidenceCatologueService,
     private employeeService: EmployeesService,
     private employeeShiftService: EmployeeShiftService,
@@ -73,6 +68,7 @@ export class EmployeeIncidenceService {
     private calendarService: CalendarService,
     private enabledCreateIncidenceService: EnabledCreateIncidenceService,
     @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(EventIncidence) private eventIncidenceRepository: Repository<EventIncidence>,
   ) { }
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
@@ -458,10 +454,16 @@ export class EmployeeIncidenceService {
       let dias = diaFin.diff(diaInicio, 'days');
       calendar.method(ICalCalendarMethod.REQUEST);
       calendar.timezone('America/Mexico_City');
+
+      //event incidence UUID (v4)
+      const createEventIncidence = this.eventIncidenceRepository.create();
+      const saveEventIncidence = await this.eventIncidenceRepository.save(createEventIncidence);
+
+
       //id `1763659910000@oechsler.mx`
       //crea el evento
       calendar.createEvent({
-        id: `${new Date().getTime()}@oechsler.mx`,
+        id: saveEventIncidence.id,
         start: diaInicio,
         end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
         allDay: true,
@@ -504,6 +506,8 @@ export class EmployeeIncidenceService {
             to,
             calendar,
           );
+
+          employeeIncidenceCreate.eventIncidence = saveEventIncidence;
         } else {
           //si Produccion es verdadero y el usuario es distinto al de la incidencia
           //crea la incidencia con status pendiente
@@ -1290,9 +1294,13 @@ export class EmployeeIncidenceService {
         calendar.method(ICalCalendarMethod.REQUEST);
         calendar.timezone('America/Mexico_City');
 
+        //event incidence UUID (v4)
+        const createEventIncidence = this.eventIncidenceRepository.create();
+        const saveEventIncidence = await this.eventIncidenceRepository.save(createEventIncidence);
 
         if (to.length > 0) {
           calendar.createEvent({
+            id: saveEventIncidence.id,
             start: diaInicio,
             end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
             allDay: true,
@@ -1314,6 +1322,8 @@ export class EmployeeIncidenceService {
               },
             ],
           });
+
+          employeeIncidence.eventIncidence = saveEventIncidence;
 
           let day = new Date();
           // Generar archivo .ics y guardar en la ruta especificada
@@ -1394,6 +1404,23 @@ export class EmployeeIncidenceService {
             return status;
           }
         }
+        calendar.method(ICalCalendarMethod.CANCEL);
+        calendar.timezone('America/Mexico_City');
+
+        const createEventIncidence = this.eventIncidenceRepository.create();
+        const saveEventIncidence = await this.eventIncidenceRepository.save(createEventIncidence);
+
+
+        calendar.createEvent({
+          id: saveEventIncidence.id,
+          start: diaInicio,
+          end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
+          timezone: 'America/Mexico_City',
+          summary: subject,
+          description: 'Canceled Event',
+          status: ICalEventStatus.CANCELLED,
+
+        });
 
 
         //ENVIO DE CORREO
@@ -1438,6 +1465,7 @@ export class EmployeeIncidenceService {
             subject,
             mailData,
             to,
+            calendar
           );
         }
 
@@ -2510,9 +2538,9 @@ export class EmployeeIncidenceService {
       //envio de correo
 
 
-      if (totalIncidencias > 0 && lideres[i].idLider == 368) { // || mailData.totalTimeCorrection > 0) {
+      if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
-        await this.mailService.sendEmailPendingIncidence(['f.gil@oechsler.mx'], 'Incidencias pendientes de autorización', mailData);
+        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización', mailData);
       }
 
 
@@ -2702,9 +2730,9 @@ export class EmployeeIncidenceService {
       //envio de correo
 
 
-      if (totalIncidencias > 0 && lideres[i].idLider == 368) { // || mailData.totalTimeCorrection > 0) {
+      if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
-        await this.mailService.sendEmailPendingIncidence(['f.gil@oechsler.mx'], 'Incidencias pendientes de autorización', mailData);
+        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización', mailData);
       }
 
 
@@ -2966,10 +2994,11 @@ export class EmployeeIncidenceService {
       });
       //envio de correo
 
+      let correoDaniel = await this.employeeService.findOne(365);
+      let correoCarlos = await this.employeeService.findOne(600);
+      if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
-      if (totalIncidencias > 0 && leader.idLider == 365) { // || mailData.totalTimeCorrection > 0) {
-
-        await this.mailService.sendEmailPendingIncidenceJefe(['f.gil@oechsler.mx'], 'Incidencias pendientes de autorización', mailData);
+        await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email], 'Incidencias pendientes de autorización', mailData);
       }
     });
 

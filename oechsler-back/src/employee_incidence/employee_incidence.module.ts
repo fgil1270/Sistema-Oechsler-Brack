@@ -20,11 +20,12 @@ import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
 import { CalendarModule } from '../calendar/calendar.module';
 import { EnabledCreateIncidenceModule } from 'src/enabled_create_incidence/enabled_create_incidence.module';
+import { EventIncidence } from './entities/event_incidence.entity';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EmployeeIncidence, DateEmployeeIncidence]),
+    TypeOrmModule.forFeature([EmployeeIncidence, DateEmployeeIncidence, EventIncidence]),
     IncidenceCatologueModule,
     EmployeesModule,
     EmployeeShiftModule,
@@ -45,4 +46,4 @@ import { EnabledCreateIncidenceModule } from 'src/enabled_create_incidence/enabl
   providers: [EmployeeIncidenceService, EmployeeIncidence],
   exports: [EmployeeIncidenceService, EmployeeIncidence],
 })
-export class EmployeeIncidenceModule {}
+export class EmployeeIncidenceModule { }

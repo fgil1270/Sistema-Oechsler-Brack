@@ -139,15 +139,23 @@ export class MailService {
       });
   }
 
-  async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[]) {
-    let port = process.env.PORT || 3000;
+  async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], calendar: ICalCalendar,) {
+    const envVariables = {
+      port: process.env.PORT,
+      // Agrega otras variables de entorno que necesites
+    };
     await this.mailerService
       .sendMail({
         to: to,
         from: 'OechslerMX<notificationes@oechsler.mx>',
         subject: subject,
         template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
-        context: mailData,
+        context: { ...mailData, ...envVariables },
+        icalEvent: {
+          filename: 'evento.ics',
+          method: 'CANCEL',
+          content: calendar.toString(),
+        }
       })
       .then((success) => {
 

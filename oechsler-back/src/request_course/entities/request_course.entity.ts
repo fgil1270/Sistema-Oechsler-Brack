@@ -23,6 +23,7 @@ import { CourseEfficiency } from '../../course_efficiency/entities/course_effici
 import { RequestCourseDocument } from './request_course_document.entity';
 import { RequestCourseAssessmentEmployee } from './request_course_assessment_employee.entity';
 import { DefinitionObjectiveAnnual } from '../../employee_objective/entities/definition_objective_annual.entity';
+import { EventRequestCourse } from './event_request_course.entity';
 
 @Entity()
 export class RequestCourse {
@@ -159,4 +160,8 @@ export class RequestCourse {
   @ManyToOne(() => DefinitionObjectiveAnnual, (post) => post.requestCourse)
   @JoinColumn()
   definitionObjectiveAnnual: DefinitionObjectiveAnnual;
+
+  @OneToOne(() => EventRequestCourse)
+  @JoinColumn()
+  eventRequestCourse: EventRequestCourse;
 }

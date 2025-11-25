@@ -889,7 +889,7 @@ export class EmployeesService {
 
   //reporte de vacaciones
   async vacationReport(data, user) {
-
+    console.log(data)
     const employee = await this.organigramaService.findJerarquia(
       {
         type: data.type,
@@ -901,7 +901,7 @@ export class EmployeesService {
     );
 
 
-    let filterEmployee = employee.filter((emp: any) => emp.payRoll.name == data.payRoll);
+    let filterEmployee = data.payRoll == 'Todas' ? employee : employee.filter((emp: any) => emp.payRoll.name == data.payRoll);
     const report = [];
     for (let index = 0; index < filterEmployee.length; index++) {
       const emp = filterEmployee[index];
