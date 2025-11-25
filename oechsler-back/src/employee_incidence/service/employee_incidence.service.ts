@@ -476,6 +476,10 @@ export class EmployeeIncidenceService {
         url: 'https://example.com',
         busystatus: ICalEventBusyStatus.FREE,
         //status: ICalEventStatus.CONFIRMED,
+        organizer: {
+          name: 'OechslerMX',
+          email: 'notificationes@oechsler.mx'
+        },
         attendees:
           to.length > 0
             ? to.map((email) => {
@@ -1243,7 +1247,7 @@ export class EmployeeIncidenceService {
         );
         if (userLider.user.length > 0) {
           userLider.user.forEach((u) => {
-            if (u.deleted_at == null) {
+            if (u.deleted_at == null && to.indexOf(u.email) === -1) {
               to.push(u.email);
             }
           });
@@ -1252,9 +1256,10 @@ export class EmployeeIncidenceService {
 
       if (emailUser) {
         emailUser.user.forEach((u) => {
-          if (u.deleted_at == null) {
+          if (u.deleted_at == null && to.indexOf(u.email) === -1) {
             to.push(u.email);
           }
+
         });
       }
 
