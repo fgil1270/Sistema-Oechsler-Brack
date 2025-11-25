@@ -409,16 +409,19 @@ export class EmployeeIncidenceService {
             lider.leader.id,
           );
           if (userLider.user.length > 0) {
+
             userLider.user.forEach((u) => {
-              if (u.deleted_at == null) {
+              //un correo por lider
+              if (u.deleted_at == null && to.indexOf(u.email) === -1) {
                 to.push(u.email);
               }
             });
           }
         }
         if (mailUser.user.length > 0) {
+          //un correo por usuario
           mailUser.user.forEach((u) => {
-            if (u.deleted_at == null) {
+            if (u.deleted_at == null && to.indexOf(u.email) === -1) {
               to.push(u.email);
             }
           });
@@ -1212,6 +1215,7 @@ export class EmployeeIncidenceService {
           },
           incidenceCatologue: true,
           dateEmployeeIncidence: true,
+          eventIncidence: true
         },
       });
 
@@ -1261,8 +1265,9 @@ export class EmployeeIncidenceService {
         name: 'Incidencias',
         prodId: '//OechslerMX//OITS//MX',
       });
-      const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour), 'yyyy-MM-dd'));
-      const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour), 'yyyy-MM-dd'));
+
+      const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd'));
+      const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd'));
       let dias = diaFin.diff(diaInicio, 'days');
 
       if (updateEmployeeIncidenceDto.status == 'Autorizada') {
@@ -1328,14 +1333,7 @@ export class EmployeeIncidenceService {
 
           let day = new Date();
           // Generar archivo .ics y guardar en la ruta especificada
-          /* const icsFilePath = 'documents/calendar/empleados';
-          const icsFileName = `${employeeIncidence.employee.employee_number}_${employeeIncidence.id}_${day.getFullYear()}${day.getMonth()}${day.getDate()}${day.getHours()}${day.getMinutes()}${day.getSeconds()}.ics`;
-          const icsFileContent = calendar.toString();
-    
-          // Guardar archivo .ics
-          fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
 
-          // Continuar con el resto del código...
 
           //se envia correo
           //si es el campo produccion_visible se envia el correo a produccion
@@ -1419,18 +1417,19 @@ export class EmployeeIncidenceService {
             description: 'Incidencia Cancelada',
             sequence: 1,
             status: ICalEventStatus.CANCELLED,
-            attendees: [
-              /* {
-                email: to[1],
-                status: ICalAttendeeStatus.ACCEPTED,
-              }, */
-              {
-                email: to[0],
-
-                status: ICalAttendeeStatus.DECLINED,
-              },
-            ]
-
+            organizer: {
+              email: 'notificationes@oechsler.mx',
+              name: 'OechslerMX',
+            },
+            attendees:
+              to.length > 0
+                ? to.map((email) => {
+                  return {
+                    email: email,
+                    status: ICalAttendeeStatus.DECLINED,
+                  };
+                })
+                : []
           });
         }
 
