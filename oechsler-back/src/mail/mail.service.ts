@@ -164,7 +164,7 @@ export class MailService {
       if (events.length > 0) {
         const event = events[0];
 
-        console.log("evet", event)
+
       }
     }
 
