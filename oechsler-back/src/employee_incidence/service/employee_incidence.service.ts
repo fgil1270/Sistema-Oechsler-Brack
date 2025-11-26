@@ -413,7 +413,7 @@ export class EmployeeIncidenceService {
             userLider.user.forEach((u) => {
               //un correo por lider
               if (u.deleted_at == null && to.indexOf(u.email) === -1) {
-                to.push(u.email);
+                //to.push(u.email);
               }
             });
           }
@@ -1248,7 +1248,7 @@ export class EmployeeIncidenceService {
         if (userLider.user.length > 0) {
           userLider.user.forEach((u) => {
             if (u.deleted_at == null && to.indexOf(u.email) === -1) {
-              to.push(u.email);
+              //to.push(u.email);
             }
           });
         }
