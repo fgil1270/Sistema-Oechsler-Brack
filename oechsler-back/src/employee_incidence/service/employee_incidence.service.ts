@@ -413,7 +413,7 @@ export class EmployeeIncidenceService {
             userLider.user.forEach((u) => {
               //un correo por lider
               if (u.deleted_at == null && to.indexOf(u.email) === -1) {
-                //to.push(u.email);
+                to.push(u.email);
               }
             });
           }
@@ -1248,7 +1248,7 @@ export class EmployeeIncidenceService {
         if (userLider.user.length > 0) {
           userLider.user.forEach((u) => {
             if (u.deleted_at == null && to.indexOf(u.email) === -1) {
-              //to.push(u.email);
+              to.push(u.email);
             }
           });
         }
@@ -2529,9 +2529,6 @@ export class EmployeeIncidenceService {
         }
       });
 
-
-
-
       let mailData = {
         empleados: lideres[i].empleados,
       }
@@ -3002,7 +2999,7 @@ export class EmployeeIncidenceService {
       let correoCarlos = await this.employeeService.findOne(600);
       if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
-        await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email], 'Incidencias pendientes de autorización', mailData);
+        await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email, 'f.gil@oechsler.mx'], 'Incidencias pendientes de autorización', mailData);
       }
     });
 

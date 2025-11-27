@@ -143,43 +143,43 @@ export class ChecadorService {
     );
     let arrayIdsEmployee = [];
     arrayIdsEmployee = organigrama.map((item) => item.id);
-    
+
     //se obtienen las checadas por rango de fechas y ids de empleados
     let checador;
-    if(arrayIdsEmployee.length == 0) return checador;
+    if (arrayIdsEmployee.length == 0) return checador;
     try {
       checador = await this.checadorRepository.find({
-      where: {
-        employee: {
-          id: In([arrayIdsEmployee]),
-          /* employeeShift: {
-            start_date: format(new Date(data.startDate), 'yyyy-MM-dd') as any,
-          }, */
-        },
-        date: Between(
-          format(new Date(data.startDate), `yyyy-MM-dd ${data.hrEntrada}`) as any,
-          format(new Date(data.endDate), `yyyy-MM-dd ${data.hrSalida}`) as any,
-        ),
-        numRegistroChecador: data.numRegistroChecador.valueOf(),
-        status: In(data.status)
-      },
-      relations: {
-        employee: {
-          employeeShift: {
-            shift: true,
+        where: {
+          employee: {
+            id: In([arrayIdsEmployee]),
+            /* employeeShift: {
+              start_date: format(new Date(data.startDate), 'yyyy-MM-dd') as any,
+            }, */
           },
-          employeeProfile: true,
+          date: Between(
+            format(new Date(data.startDate), `yyyy-MM-dd ${data.hrEntrada}`) as any,
+            format(new Date(data.endDate), `yyyy-MM-dd ${data.hrSalida}`) as any,
+          ),
+          numRegistroChecador: data.numRegistroChecador.valueOf(),
+          status: In(data.status)
         },
-        createdBy: true
-      },
-      order: {
-        date: 'ASC',
-      },
-    });
+        relations: {
+          employee: {
+            employeeShift: {
+              shift: true,
+            },
+            employeeProfile: true,
+          },
+          createdBy: true
+        },
+        order: {
+          date: 'ASC',
+        },
+      });
     } catch (error) {
       return
     }
-    
+
 
     return checador;
   }
@@ -853,7 +853,7 @@ export class ChecadorService {
             break;
           case 'MIX':
             hrEntrada = '00:01:00'; //dia actual
-            hrSalida = '23:00:00'; //dia siguiente
+            hrSalida = '23:59:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(index);
             break;

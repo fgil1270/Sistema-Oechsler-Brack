@@ -11,7 +11,7 @@ import {
     OneToOne,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { RequestCourse } from './request_course.entity';
+import { RequestCourseAssignment } from './request_course_assignment.entity';
 
 @Entity()
 export class EventRequestCourse {
@@ -31,7 +31,11 @@ export class EventRequestCourse {
     @DeleteDateColumn()
     deleted_at: Date;
 
-    @OneToOne(() => RequestCourse, (requestCourse) => requestCourse.eventRequestCourse)
-    requestCourse: RequestCourse;
+    @ApiProperty({ description: 'Secuencia del evento de solicitud de curso' })
+    @Column({ type: 'int', default: 0 })
+    sequence: number;
+
+    @OneToOne(() => RequestCourseAssignment, (requestCourseAssignment) => requestCourseAssignment.eventRequestCourse)
+    requestCourseAssignment: RequestCourseAssignment;
 
 }

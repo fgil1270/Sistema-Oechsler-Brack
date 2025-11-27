@@ -85,6 +85,7 @@ export class MailService {
       });
   }
 
+  //enviar correo de autorizacion de incidencia
   async sendEmailAutorizaIncidence(
     subject: string,
     mailData: MailData,
@@ -103,31 +104,12 @@ export class MailService {
         subject: subject,
         template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
         context: { ...mailData, ...envVariables },
-        /* headers: {
-                'x-invite': {
-                  prepared: true,
-                  value: 'asd'
-                }
-              }, */
         icalEvent: {
           filename: 'evento.ics',
           method: 'REQUEST',
           content: calendar.toString(),
         },
-        /*  attachments: [
-                {
-                    //contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    //contentDisposition: 'attachment', 
-                    filename: 'evento.ics',
-                    content: calendar.toString(),
-                },
-            ], */
-        /* alternatives: [
-                {
-                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    content: calendar.toString(),
-                },
-            ], */
+
       })
       .then((success) => {
 
@@ -286,5 +268,27 @@ export class MailService {
         this.log.error('Error al enviar correo', err);
         return true;
       });
+  }
+
+  //envio de correo sin templeate
+  async sendEmailNoTemplate(
+    subject: string,
+    mailData: MailData,
+    to: string[],
+    calendar?: ICalCalendar,
+  ) {
+    await this.mailerService
+      .sendMail({
+        to: to,
+        from: 'OechslerMX<notificationes@oechsler.mx>',
+        subject: subject,
+        //html: mailData,
+        icalEvent: {
+          filename: 'evento.ics',
+          method: 'REQUEST',
+          content: calendar.toString(),
+        },
+      });
+
   }
 }

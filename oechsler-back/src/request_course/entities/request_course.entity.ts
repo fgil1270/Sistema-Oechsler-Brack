@@ -161,7 +161,4 @@ export class RequestCourse {
   @JoinColumn()
   definitionObjectiveAnnual: DefinitionObjectiveAnnual;
 
-  @OneToOne(() => EventRequestCourse)
-  @JoinColumn()
-  eventRequestCourse: EventRequestCourse;
 }
