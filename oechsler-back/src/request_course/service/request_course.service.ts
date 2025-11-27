@@ -21,6 +21,19 @@ import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { join } from 'path';
 import { mkdirSync, existsSync, writeFileSync } from 'fs';
 import { format } from 'date-fns';
+import ical, {
+  ICalCalendar,
+  ICalAttendee,
+  ICalAttendeeStatus,
+  ICalCalendarMethod,
+  ICalEventBusyStatus,
+  ICalEventStatus,
+  ICalEvent,
+  ICalDateTimeValue,
+  ICalEventRepeatingFreq,
+  ICalWeekday
+} from 'ical-generator';
+import * as moment from 'moment';
 
 import { RequestCourse } from '../entities/request_course.entity';
 import { RequestCourseAssignment } from '../entities/request_course_assignment.entity';
@@ -44,6 +57,7 @@ import { RequestCourseAssessmentEmployee } from '../entities/request_course_asse
 import { MailService } from '../../mail/mail.service';
 import { EmployeeObjetiveService } from '../../employee_objective/service/employee_objective.service';
 import { UsersService } from '../../users/service/users.service';
+import { EventRequestCourse } from '../entities/event_request_course.entity';
 
 @Injectable()
 export class RequestCourseService {
@@ -63,6 +77,7 @@ export class RequestCourseService {
     private mailService: MailService,
     @Inject(forwardRef(() => EmployeeObjetiveService)) private definitionObjectiveAnnualService: EmployeeObjetiveService,
     private userService: UsersService,
+    @InjectRepository(EventRequestCourse) private eventRequestCourseRepository: Repository<EventRequestCourse>,
   ) { }
 
   // Crear solicitud de curso
@@ -232,26 +247,177 @@ export class RequestCourseService {
         }
       });
 
-      //crear asignacion de curso
+      //crear la asignacion de curso
+      const createAssignment = await this.requestCourseAssignment.create({
+        date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
+        date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
+        day: currData.day,
+        requestCourse: requestCourse,
+        teacher: teacher,
+
+      });
+
+      //event incidence UUID (v4)
+      const createEventIncidence = this.eventRequestCourseRepository.create();
+      const saveEventIncidence = await this.eventRequestCourseRepository.save(createEventIncidence);
+
+      //se asigna el evento a la asignacion de solicitud de cursos
+      createAssignment.eventRequestCourse = saveEventIncidence;
+
+      const assignment = await this.requestCourseAssignment.save(createAssignment);
+
+      //se envian los correos
+      const calendar = ical({
+        name: 'Incidencias',
+        prodId: '//OechslerMX//OITS//MX',
+      });
+      calendar.method(ICalCalendarMethod.REQUEST);
+      calendar.timezone('America/Mexico_City');
+      const diaInicio = moment(format(new Date(dateStart), 'yyyy-MM-dd'));
+      const diaFin = moment(format(new Date(dateEnd), 'yyyy-MM-dd'));
+      let dias = diaFin.diff(diaInicio, 'days');
+      const horaInicio = moment(dateStart);
+      const horaFin = moment(dateStart).set({
+        hour: moment(dateEnd).hour(),
+        minute: moment(dateEnd).minute(),
+        second: moment(dateEnd).second()
+      });
+      const diferenciaHoras = horaFin.diff(horaInicio, 'hours');
+
+
+      //actualiza el status de la solicitud de curso a Asignado
       for (const request of requestCourse) {
-
-        const createAssignment = await this.requestCourseAssignment.create({
-          date_start: format(dateStart, 'yyyy-MM-dd HH:mm:ss'),
-          date_end: format(dateEnd, 'yyyy-MM-dd HH:mm:ss'),
-          day: currData.day,
-          requestCourse: requestCourse,
-          teacher: teacher,
-
-        });
-
-        const assignment = await this.requestCourseAssignment.save(createAssignment);
-
         request.status = 'Asignado';
         request.type = currData.type;
         request.place = currData.place;
         await this.requestCourse.save(request);
       }
 
+      // ✅ Configurar recurrencia basada en los días
+      const diasRecurrencia = assignment.day; // ej: "L,Ma,Mi,J,V" o "Lunes,Martes"
+      const frecuenciaIcal = this.parseDaysToIcalFrequency(diasRecurrencia);
+
+      // Obtener los IDs de los empleados asignados
+      const idsEmployees = assignment.requestCourse.map(rc => rc.employee.id);
+
+      let to = [];
+      for (const idEmp of idsEmployees) {
+        const user = await this.userService.findByIdEmployee(idEmp);
+        //recorre el arreglo de usuarios que tiene el empleado
+        //para agregar los correos al evento
+        //si el usuario tiene correo y no esta eliminado
+        //ademas que no se repita el correo
+        user.user.forEach((u) => {
+          if (u.deleted_at == null && to.indexOf(u.email) === -1) {
+            to.push(u.email);
+          }
+        });
+      }
+
+      // Crear el evento con recurrencia si aplica
+      // aplicando evento por horas
+      const event = calendar.createEvent({
+        id: saveEventIncidence.id,
+        start: diaInicio.toDate(),
+        end: diaInicio.clone().add(diferenciaHoras, 'hours').toDate(),
+        allDay: true,
+        timezone: 'America/Mexico_City',
+        summary: `Curso: ${course.name}`,
+        description: `Curso asignado: ${course.name}\nProfesor: ${teacher.name}'}`,
+        url: 'https://example.com',
+        busystatus: ICalEventBusyStatus.BUSY,
+        status: ICalEventStatus.CONFIRMED,
+        organizer: {
+          name: 'OechslerMX',
+          email: 'notificationes@oechsler.mx'
+        },
+        attendees: to.length > 0 ? to.map((email) => {
+          return {
+            email: email,
+            status: ICalAttendeeStatus.ACCEPTED,
+          };
+        })
+          : [],
+      });
+
+      // Agregar recurrencia si se definieron días
+      if (frecuenciaIcal.frequency) {
+        event.repeating({
+          freq: frecuenciaIcal.frequency,
+          byDay: frecuenciaIcal.byDay,
+          until: diaFin.toDate(), // Fecha de finalización de la recurrencia
+          interval: 1, // Cada semana
+        });
+      }
+
+
+      //obtener los lideres de los empleados
+      let leaderMail = [];
+      for (const emp of employees.emps) {
+        const leader = await this.organigramaService.leaders(emp.id);
+        for (const l of leader.orgs) {
+          //si el lider puede evaluar
+          if (l.evaluar) {
+            const user = await this.userService.findByIdEmployee(l.leader.id);
+            //recorre el arreglo de usuarios que tiene el lider
+            //para agregar los correos al evento
+            //si el usuario tiene correo y no esta eliminado
+            //ademas que no se repita el correo
+            user.user.forEach((u) => {
+              if (u.deleted_at == null && to.indexOf(u.email) === -1) {
+                leaderMail.push(u.email);
+              }
+            });
+          }
+        }
+      }
+
+      // ✅ Crear evento con recurrencia
+      const eventLeader = calendar.createEvent({
+        id: saveEventIncidence.id,
+        start: diaInicio.toDate(),
+        end: diaInicio.clone().add(2, 'hours').toDate(), // Duración del curso
+        allDay: true,
+        timezone: 'America/Mexico_City',
+        summary: `Curso: ${course.name}`,
+        description: `Curso asignado: ${course.name}\nProfesor: ${teacher.name}\nLugar: ${currData.place || 'Por definir'}`,
+        url: 'https://example.com',
+        busystatus: ICalEventBusyStatus.BUSY, // ✅ Cambiar a BUSY para cursos
+        status: ICalEventStatus.CONFIRMED,
+        organizer: {
+          name: 'OechslerMX',
+          email: 'notificationes@oechsler.mx'
+        },
+        attendees: to.length > 0 ? to.map((email) => ({
+          email: email,
+          status: ICalAttendeeStatus.ACCEPTED,
+        })) : [],
+      });
+
+      // ✅ Configurar recurrencia
+      if (frecuenciaIcal.frequency) {
+        eventLeader.repeating({
+          freq: frecuenciaIcal.frequency,
+          byDay: frecuenciaIcal.byDay,
+          until: diaFin.toDate(), // Hasta la fecha de fin del curso
+          interval: 1 // Cada semana
+        });
+      }
+      //enviar correo a empleados
+      const mail = await this.mailService.sendEmailNoTemplate(
+        `Curso asignado: ${course.name}`,
+        null,
+        to.map((email) => email),
+        calendar,
+      );
+
+      //enviar correo a lideres
+      const mailLeader = await this.mailService.sendEmailNoTemplate(
+        `Curso asignado: ${course.name}`,
+        null,
+        leaderMail,
+        calendar,
+      );
 
       return {
         error: false,
@@ -264,6 +430,60 @@ export class RequestCourseService {
         msg: error.message
       };
     }
+  }
+  // Mapeo de días en español a formato iCal
+  private parseDaysToIcalFrequency(dias: string): {
+    frequency: ICalEventRepeatingFreq | null,
+    byDay: ICalWeekday[] | null
+  } {
+    if (!dias) {
+      return { frequency: null, byDay: null };
+    }
+
+    // Mapeo de días en español a formato iCal
+    const dayMapping: Record<string, ICalWeekday> = {
+      // Formato corto
+      'L': ICalWeekday.MO,    // Lunes
+      'Ma': ICalWeekday.TU,   // Martes 
+      'Mi': ICalWeekday.WE,   // Miércoles
+      'J': ICalWeekday.TH,    // Jueves
+      'V': ICalWeekday.FR,    // Viernes
+      'S': ICalWeekday.SA,    // Sábado
+      'D': ICalWeekday.SU,    // Domingo
+
+      'M': ICalWeekday.TU,   // Martes
+      'X': ICalWeekday.WE,   // Miércoles
+
+      // Formato largo
+      'Lunes': ICalWeekday.MO,
+      'Martes': ICalWeekday.TU,
+      'Miércoles': ICalWeekday.WE,
+      'Miercoles': ICalWeekday.WE, // Sin acento
+      'Jueves': ICalWeekday.TH,
+      'Viernes': ICalWeekday.FR,
+      'Sábado': ICalWeekday.SA,
+      'Sabado': ICalWeekday.SA, // Sin acento
+      'Domingo': ICalWeekday.SU
+    };
+
+    // Separar días por coma y limpiar espacios
+    const diasArray = dias.split(',').map(d => d.trim());
+
+    // Convertir a formato iCal
+    const byDay = diasArray
+      .map(dia => dayMapping[dia])
+      .filter(Boolean) as ICalWeekday[]; // Eliminar undefined
+
+    if (byDay.length === 0) {
+      return { frequency: null, byDay: null };
+    }
+
+    // Si hay días específicos, usar frecuencia semanal
+    return {
+      frequency: ICalEventRepeatingFreq.WEEKLY,
+      byDay: byDay
+    };
+
   }
 
   // Buscar solicitud de curso por ID

@@ -9,9 +9,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  OneToOne,
 } from 'typeorm';
 import { RequestCourse } from './request_course.entity';
 import { Teacher } from '../../supplier/entities/teacher.entity';
+import { EventRequestCourse } from './event_request_course.entity';
 
 @Entity()
 export class RequestCourseAssignment {
@@ -39,7 +41,7 @@ export class RequestCourseAssignment {
   @DeleteDateColumn()
   deleted_at: Date;
 
-  @ManyToMany( () => RequestCourse, (requestCourse) => requestCourse.requestCourseAssignment )
+  @ManyToMany(() => RequestCourse, (requestCourse) => requestCourse.requestCourseAssignment)
   @JoinTable({
     joinColumn: {
       name: 'requestCourseAssignmentId',
@@ -53,4 +55,8 @@ export class RequestCourseAssignment {
   @ManyToOne(() => Teacher, (post) => post.requestCourseAssignment)
   @JoinColumn()
   teacher: Teacher;
+
+  @OneToOne(() => EventRequestCourse, (eventRequestCourse) => eventRequestCourse.requestCourseAssignment)
+  @JoinColumn()
+  eventRequestCourse: EventRequestCourse;
 }

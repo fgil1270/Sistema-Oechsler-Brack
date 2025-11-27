@@ -85,6 +85,7 @@ export class MailService {
       });
   }
 
+  //enviar correo de autorizacion de incidencia
   async sendEmailAutorizaIncidence(
     subject: string,
     mailData: MailData,
@@ -103,31 +104,12 @@ export class MailService {
         subject: subject,
         template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
         context: { ...mailData, ...envVariables },
-        /* headers: {
-                'x-invite': {
-                  prepared: true,
-                  value: 'asd'
-                }
-              }, */
         icalEvent: {
           filename: 'evento.ics',
           method: 'REQUEST',
           content: calendar.toString(),
         },
-        /*  attachments: [
-                {
-                    //contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    //contentDisposition: 'attachment', 
-                    filename: 'evento.ics',
-                    content: calendar.toString(),
-                },
-            ], */
-        /* alternatives: [
-                {
-                    contentType: 'text/calendar; charset="utf-8"; method=REQUEST',
-                    content: calendar.toString(),
-                },
-            ], */
+
       })
       .then((success) => {
 
@@ -139,30 +121,43 @@ export class MailService {
       });
   }
 
-  async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], calendar: ICalCalendar,) {
+  async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], calendar?: ICalCalendar,) {
     const envVariables = {
       port: process.env.PORT,
       // Agrega otras variables de entorno que necesites
     };
+
+    const mailOptions: any = {
+      to: to,
+      from: 'OechslerMX<notificationes@oechsler.mx>',
+      subject: subject,
+      template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
+      context: { ...mailData, ...envVariables },
+    };
+
+    if (calendar) {
+      mailOptions.icalEvent = {
+        filename: 'evento.ics',
+        method: 'CANCEL',
+        content: calendar.toString(),
+      };
+      // ✅ Verificar que el evento tenga el UID correcto
+      const events = calendar.events();
+      if (events.length > 0) {
+        const event = events[0];
+
+
+      }
+    }
+
     await this.mailerService
-      .sendMail({
-        to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
-        subject: subject,
-        template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
-        context: { ...mailData, ...envVariables },
-        icalEvent: {
-          filename: 'evento.ics',
-          method: 'CANCEL',
-          content: calendar.toString(),
-        }
-      })
+      .sendMail(mailOptions)
       .then((success) => {
 
         return true;
       })
       .catch((err) => {
-
+        this.log.error('Error al enviar cancelación', err);
         return true;
       });
   }
@@ -273,5 +268,27 @@ export class MailService {
         this.log.error('Error al enviar correo', err);
         return true;
       });
+  }
+
+  //envio de correo sin templeate
+  async sendEmailNoTemplate(
+    subject: string,
+    mailData: MailData,
+    to: string[],
+    calendar?: ICalCalendar,
+  ) {
+    await this.mailerService
+      .sendMail({
+        to: to,
+        from: 'OechslerMX<notificationes@oechsler.mx>',
+        subject: subject,
+        //html: mailData,
+        icalEvent: {
+          filename: 'evento.ics',
+          method: 'REQUEST',
+          content: calendar.toString(),
+        },
+      });
+
   }
 }

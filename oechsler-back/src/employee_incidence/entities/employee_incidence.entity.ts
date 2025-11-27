@@ -98,7 +98,7 @@ export class EmployeeIncidence {
   @Column({ type: 'text', nullable: true })
   employee_image: string;
 
-  @OneToOne(() => EventIncidence)
+  @OneToOne(() => EventIncidence, (eventIncidence) => eventIncidence.employeeIncidence)
   @JoinColumn()
   eventIncidence: EventIncidence;
 }
