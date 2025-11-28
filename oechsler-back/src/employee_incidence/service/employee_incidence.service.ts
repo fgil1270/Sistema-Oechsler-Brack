@@ -2540,14 +2540,11 @@ export class EmployeeIncidenceService {
       lideres[i].empleados.forEach(emp => {
         totalIncidencias += emp.incidencia.length;
       });
+      
       //envio de correo
-
-      if (lideres[i].idLider == 636) {
-        console.log(mailData)
-      }
       if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
-        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización', mailData);
+        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 24Hrs', mailData);
       }
 
 
@@ -2739,7 +2736,7 @@ export class EmployeeIncidenceService {
 
       if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
-        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización', mailData);
+        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 48Hrs', mailData);
       }
 
 
@@ -2762,7 +2759,9 @@ export class EmployeeIncidenceService {
         name: string,
         incidencia: Array<{
           name: string,
-          fecha: string
+          fecha: string,
+          created_at: string,
+          dias_transcurrido: number;
         }>,
       }>
     }> = [];
@@ -2788,7 +2787,9 @@ export class EmployeeIncidenceService {
           name: string,
           incidencia: Array<{
             name: string,
-            fecha: string
+            fecha: string,
+            created_at: string,
+            dias_transcurrido: number;
           }>,
         }>
       }>
@@ -2840,9 +2841,6 @@ export class EmployeeIncidenceService {
 
     for (let i = 0; i < lideres.length; i++) {
 
-      //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
-
-
       //se obtiene el usuario del lider
       user = await this.dataSource.manager.createQueryBuilder('user', 'user')
         .innerJoin('user.employee', 'employee')
@@ -2864,9 +2862,8 @@ export class EmployeeIncidenceService {
         return {
           idEmpleado: emp.employee.id,
           employeeNumber: emp.employee.employee_number,
-          name: emp.employee.name,
-          incidencia: [],
-          fecha: ''
+          name: emp.employee.name + ' ' + emp.employee.paternal_surname + ' ' + emp.employee.maternal_surname,
+          incidencia: []
         }
       })];
 
@@ -2891,7 +2888,6 @@ export class EmployeeIncidenceService {
                 employeeNumber: emp.employee_number,
                 name: emp.name,
                 incidencia: [],
-                fecha: ''
               }
             })
           ];
@@ -2933,12 +2929,19 @@ export class EmployeeIncidenceService {
 
         const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
         if (empleado) {
-          empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
+          // calcular días transcurridos desde la creación de la incidencia hasta hoy
+          const createdAt = incidence.created_at ? new Date(incidence.created_at) : new Date();
+          const today = new Date();
+          const diffDays = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+
+          empleado.incidencia.push({ 
+            name: incidence.incidenceCatologue.name, 
+            fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd'),
+            created_at: format(incidence.created_at, 'yyyy-MM-dd'),
+            dias_transcurrido: diffDays
+          });
         }
       });
-
-
-
 
     }
 
@@ -2959,58 +2962,32 @@ export class EmployeeIncidenceService {
         //.groupBy('leader.id')
         .getRawMany();
     } catch (error) {
-      console.log(error)
       return error;
     }
 
-    //se organiza la informacion de lideres y sublideres
+    
+    //console.log("lideres", leaderOfLeader)
+    //console.dir(leaderOfLeader, { depth: null, colors: true });
 
-    for (let index = 0; index < listLeaderOfLeader.length; index++) {
-      const element = listLeaderOfLeader[index];
-      const alpha = leaderOfLeader.find(j => j.idLider == element.leaderId)
+    // ✅ Filtrar todo en una sola pasada
+    lideres = lideres
+          .map(sublider => ({
+            ...sublider,
+            empleados: sublider.empleados.filter(empleado => empleado.incidencia.length > 0)
+          }))
+          .filter(sublider => sublider.empleados.length > 0)
+      
 
-      if (alpha) {
-        //si ya existe el lider se agrega el sublider
-        alpha.subLider.push(...lideres.filter(l => l.idLider === element.employeeId));
-      } else {
-        //se obtiene el usuario del lider
-        let emailLeader = await this.dataSource.manager.createQueryBuilder('user', 'user')
-          .innerJoin('user.employee', 'employee')
-          .where('employee.id = :id', { id: listOrg.length > 0 ? listOrg[0].leaderId : null })
-          .getMany();
+    let mailData = {
+      empleados: lideres,
+     }
+    //correo de Daniel kilian
+    let correoDaniel = await this.employeeService.findOne(365);
+    //correo de carlos Arturo
+    let correoCarlos = await this.employeeService.findOne(600);
 
-        leaderOfLeader.push({
-          idLider: element.leaderId,
-          name: element.leaderName + ' ' + element.leaderPaternalSurname + ' ' + element.leaderMaternalSurname,
-          employeeNumber: element.leaderEmployeeNumber,
-          email: emailLeader.length > 0 ? emailLeader[0].email : '',
-          subLider: [...lideres.filter(l => l.idLider === element.employeeId)]
-        });
-      }
-    }
-
-    leaderOfLeader.forEach(async leader => {
-      let mailData = {
-        empleados: leader.subLider,
-      }
-      let totalIncidencias = 0;
-      leader.subLider.forEach(emp => {
-        emp.empleados.forEach(empleado => {
-          totalIncidencias += empleado.incidencia.length;
-        });
-      });
-      //envio de correo
-
-      let correoDaniel = await this.employeeService.findOne(365);
-      let correoCarlos = await this.employeeService.findOne(600);
-      if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
-
-        await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email, 'f.gil@oechsler.mx'], 'Incidencias pendientes de autorización', mailData);
-      }
-    });
-
-
-
+    //envio de correo
+    await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email, 'f.gil@oechsler.mx'], 'Incidencias pendientes de autorización, 1 semana o mas', mailData);
 
   }
 
