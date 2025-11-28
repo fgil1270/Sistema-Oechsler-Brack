@@ -20,7 +20,7 @@ export interface MailData {
 }
 
 export interface MailDataPendingIncidence {
-  empleados: any;
+  empleados: any[];
   //totalTimeCorrection: number;
 }
 

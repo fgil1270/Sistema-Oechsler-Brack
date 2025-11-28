@@ -889,7 +889,7 @@ export class EmployeesService {
 
   //reporte de vacaciones
   async vacationReport(data, user) {
-    console.log(data)
+
     const employee = await this.organigramaService.findJerarquia(
       {
         type: data.type,

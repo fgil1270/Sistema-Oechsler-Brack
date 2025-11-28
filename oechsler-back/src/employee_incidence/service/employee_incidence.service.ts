@@ -2519,6 +2519,10 @@ export class EmployeeIncidenceService {
 
       }
 
+      //si no tiene incidencias pendientes continua
+      if (incidencias.length == 0) {
+        continue;
+      }
 
       //asigna la incidencia al empleado correspondiente
       incidencias.forEach(incidence => {
@@ -2538,7 +2542,9 @@ export class EmployeeIncidenceService {
       });
       //envio de correo
 
-
+      if (lideres[i].idLider == 636) {
+        console.log(mailData)
+      }
       if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
         await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización', mailData);
@@ -2956,7 +2962,7 @@ export class EmployeeIncidenceService {
       console.log(error)
       return error;
     }
-    //console.log("jefes", listLeaderOfLeader)
+
     //se organiza la informacion de lideres y sublideres
 
     for (let index = 0; index < listLeaderOfLeader.length; index++) {
