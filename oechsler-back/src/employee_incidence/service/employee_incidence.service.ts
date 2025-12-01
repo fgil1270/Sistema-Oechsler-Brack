@@ -560,7 +560,17 @@ export class EmployeeIncidenceService {
         index <= new Date(createEmployeeIncidenceDto.end_date);
         index = new Date(index.setDate(index.getDate() + 1))
       ) {
-        //Se obtiene el perfil del empleado
+        //VERIFICA SI EL DIA ES FERIADO
+        const dayHoliday = await this.calendarService.findByDate(
+          format(index, 'yyyy-MM-dd'),
+        );
+
+        //SI EL DIA ES FERIADO
+        //y no es sugerido para apartar
+        //continua con el siguiente dia
+        if (dayHoliday && dayHoliday?.suggest != true) {
+          continue;
+        }
 
         let ifCreate = false;
         const weekDaysProfile = employee.emps[j].employeeProfile.work_days;

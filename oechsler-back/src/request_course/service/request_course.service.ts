@@ -167,7 +167,10 @@ export class RequestCourseService {
         leadersMail.push('h.perez@oechsler.mx');
 
         if (emailEmployee) {
-          leadersMail.push(emailEmployee.user[0].email);
+          if (leadersMail.indexOf(emailEmployee.user[0].email) === -1) {
+            leadersMail.push(emailEmployee.user[0].email);
+          }
+
         }
 
         if (leader.orgs.length > 0) {
@@ -177,13 +180,15 @@ export class RequestCourseService {
             if (l.evaluar) {
               const user = await this.userService.findByIdEmployee(l.leader.id);
               //recorre el arreglo de usuarios que tiene el lider
-              for (const u of user.user) {
-                //si el usuario tiene correo y no esta eliminado
-                if (u.email && u.deleted_at == null) {
-                  //se agrega el correo a la lista de correos
+
+              //si el usuario tiene correo y no esta eliminado
+              user.user.forEach((u) => {
+                if (u.deleted_at == null && leadersMail.indexOf(u.email) === -1) {
                   leadersMail.push(u.email);
                 }
-              }
+              });
+
+
             }
           }
         } else {
@@ -195,9 +200,13 @@ export class RequestCourseService {
             .andWhere('employee.deleted_at IS NULL')
             .orderBy('employee.employee_number', 'ASC')
             .getMany();
-          if (jefeTurno.length > 0) {
-            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
-          }
+
+          jefeTurno.forEach((u) => {
+            if (u.deleted_at == null && leadersMail.indexOf(u.email) === -1) {
+              leadersMail.push(u.email);
+            }
+          });
+
         }
 
 
@@ -1080,15 +1089,18 @@ export class RequestCourseService {
       }
 
       //se envian los correos
-      await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
-        {
-          curso: save.course.name,
-          status: save.status,
-          empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
-        },
-        leadersMail,
-        'solicitud_curso'
-      );
+      //si el status es  Pendiente, Autorizado, Cancelado, Finalizado, Pendiente Evaluar Empleado, Solicitado
+      if (['Pendiente', 'Autorizado', 'Cancelado', 'Finalizado', 'Pendiente Evaluar Empleado', 'Solicitado'].includes(save.status)) {
+        await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
+          {
+            curso: save.course.name,
+            status: save.status,
+            empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+          },
+          leadersMail,
+          'solicitud_curso'
+        );
+      }
 
       return {
         error: false,
