@@ -28,7 +28,7 @@ import { MailService } from './mail.service';
           }, */
         },
         defaults: {
-          from: '"No Reply" <notificationes@oechsler.mx>',
+          from: '"No Reply" <notifications@oechsler.mx>',
         },
         template: {
           dir: join(__dirname, './templates'),

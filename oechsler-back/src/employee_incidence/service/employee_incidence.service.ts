@@ -478,7 +478,7 @@ export class EmployeeIncidenceService {
         //status: ICalEventStatus.CONFIRMED,
         organizer: {
           name: 'OechslerMX',
-          email: 'notificationes@oechsler.mx'
+          email: 'notifications@oechsler.mx'
         },
         attendees:
           to.length > 0
@@ -1423,7 +1423,7 @@ export class EmployeeIncidenceService {
             sequence: 1,
             status: ICalEventStatus.CANCELLED,
             organizer: {
-              email: 'notificationes@oechsler.mx',
+              email: 'notifications@oechsler.mx',
               name: 'OechslerMX',
             },
             attendees:
@@ -2540,7 +2540,7 @@ export class EmployeeIncidenceService {
       lideres[i].empleados.forEach(emp => {
         totalIncidencias += emp.incidencia.length;
       });
-      
+
       //envio de correo
       if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
 
@@ -2934,8 +2934,8 @@ export class EmployeeIncidenceService {
           const today = new Date();
           const diffDays = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
-          empleado.incidencia.push({ 
-            name: incidence.incidenceCatologue.name, 
+          empleado.incidencia.push({
+            name: incidence.incidenceCatologue.name,
             fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd'),
             created_at: format(incidence.created_at, 'yyyy-MM-dd'),
             dias_transcurrido: diffDays
@@ -2965,22 +2965,22 @@ export class EmployeeIncidenceService {
       return error;
     }
 
-    
+
     //console.log("lideres", leaderOfLeader)
     //console.dir(leaderOfLeader, { depth: null, colors: true });
 
     // ✅ Filtrar todo en una sola pasada
     lideres = lideres
-          .map(sublider => ({
-            ...sublider,
-            empleados: sublider.empleados.filter(empleado => empleado.incidencia.length > 0)
-          }))
-          .filter(sublider => sublider.empleados.length > 0)
-      
+      .map(sublider => ({
+        ...sublider,
+        empleados: sublider.empleados.filter(empleado => empleado.incidencia.length > 0)
+      }))
+      .filter(sublider => sublider.empleados.length > 0)
+
 
     let mailData = {
       empleados: lideres,
-     }
+    }
     //correo de Daniel kilian
     let correoDaniel = await this.employeeService.findOne(365);
     //correo de carlos Arturo

@@ -58,6 +58,7 @@ import { MailService } from '../../mail/mail.service';
 import { EmployeeObjetiveService } from '../../employee_objective/service/employee_objective.service';
 import { UsersService } from '../../users/service/users.service';
 import { EventRequestCourse } from '../entities/event_request_course.entity';
+import { EventRequestCourseLeader } from '../entities/event_request_course_leader.entity';
 
 @Injectable()
 export class RequestCourseService {
@@ -78,6 +79,7 @@ export class RequestCourseService {
     @Inject(forwardRef(() => EmployeeObjetiveService)) private definitionObjectiveAnnualService: EmployeeObjetiveService,
     private userService: UsersService,
     @InjectRepository(EventRequestCourse) private eventRequestCourseRepository: Repository<EventRequestCourse>,
+    @InjectRepository(EventRequestCourseLeader) private eventRequestCourseLeaderRepository: Repository<EventRequestCourseLeader>,
   ) { }
 
   // Crear solicitud de curso
@@ -257,12 +259,18 @@ export class RequestCourseService {
 
       });
 
-      //event incidence UUID (v4)
-      const createEventIncidence = this.eventRequestCourseRepository.create();
-      const saveEventIncidence = await this.eventRequestCourseRepository.save(createEventIncidence);
+      //crea event request course UUID (v4)
+      const createEventRequestCourse = this.eventRequestCourseRepository.create();
+      const saveEventRequestCourse = await this.eventRequestCourseRepository.save(createEventRequestCourse);
+
+      //crea event request course leader 
+      const createEventRequestCourseLeader = this.eventRequestCourseLeaderRepository.create();
+      const saveEventRequestCourseLeader = await this.eventRequestCourseLeaderRepository.save(createEventRequestCourseLeader);
+
 
       //se asigna el evento a la asignacion de solicitud de cursos
-      createAssignment.eventRequestCourse = saveEventIncidence;
+      createAssignment.eventRequestCourse = saveEventRequestCourse;
+      createAssignment.eventRequestCourseLeader = saveEventRequestCourseLeader;
 
       const assignment = await this.requestCourseAssignment.save(createAssignment);
 
@@ -317,7 +325,7 @@ export class RequestCourseService {
       // Crear el evento con recurrencia si aplica
       // aplicando evento por horas
       const event = calendar.createEvent({
-        id: saveEventIncidence.id,
+        id: saveEventRequestCourse.id,
         start: diaInicio.toDate(),
         end: diaInicio.clone().add(diferenciaHoras, 'hours').toDate(),
         allDay: true,
@@ -372,9 +380,9 @@ export class RequestCourseService {
         }
       }
 
-      // ✅ Crear evento con recurrencia
+      // ✅ Crear evento con recurrencia para líderes
       const eventLeader = calendar.createEvent({
-        id: saveEventIncidence.id,
+        id: saveEventRequestCourseLeader.id,
         start: diaInicio.toDate(),
         end: diaInicio.clone().add(2, 'hours').toDate(), // Duración del curso
         allDay: true,
@@ -382,7 +390,7 @@ export class RequestCourseService {
         summary: `Curso: ${course.name}`,
         description: `Curso asignado: ${course.name}\nProfesor: ${teacher.name}\nLugar: ${currData.place || 'Por definir'}`,
         url: 'https://example.com',
-        busystatus: ICalEventBusyStatus.BUSY, // ✅ Cambiar a BUSY para cursos
+        busystatus: ICalEventBusyStatus.FREE, // ✅ Cambiar a BUSY para cursos
         status: ICalEventStatus.CONFIRMED,
         organizer: {
           name: 'OechslerMX',
@@ -403,6 +411,7 @@ export class RequestCourseService {
           interval: 1 // Cada semana
         });
       }
+
       //enviar correo a empleados
       const mail = await this.mailService.sendEmailNoTemplate(
         `Curso asignado: ${course.name}`,
