@@ -973,7 +973,7 @@ export class EmployeesService {
       });
 
 
-
+        
       //si existe un un historial de vacaciones
       //se toman los dias de vacaciones del historial
       if (lastVacationProfile) {
@@ -991,7 +991,7 @@ export class EmployeesService {
           //se obtiene el total de dias que corresponden al año de cambio de perfil de vacaciones
           totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.total : 0;
           //se obtiene los dias que corresponden al siguiente año de cambio de perfil de vacaciones
-          sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day;
+          sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) == 0 ? 0: (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day) ;
           //suma de los dias de antiguedad del historial
           sumaDiasAntiguedadHistorial = totalDiasByAnoHistorial + sumDiasSiguenteAnoHistorial;
 
@@ -1003,7 +1003,6 @@ export class EmployeesService {
           arrayAno = anoCumplidos.toFixed(2).split('.');
 
           
-
           //se obtiene el total de dias que corresponden al año despues del cambio de perfil
           objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
             (year) =>
@@ -1026,7 +1025,7 @@ export class EmployeesService {
           arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
           objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
           objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-          totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
+          totalDiasByFinAno = parseInt(arrayAnoHistorial[0]) != 0 ? objDiasByAnoFin.total : 0;
           sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
           sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
         } catch (error) {
@@ -1055,7 +1054,7 @@ export class EmployeesService {
         arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
         objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayFinAno[0]));
         objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
+        totalDiasByFinAno = parseInt(arrayFinAno[0]) != 0 ? objDiasByAnoFin.total : 0;
         sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
         sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
 
