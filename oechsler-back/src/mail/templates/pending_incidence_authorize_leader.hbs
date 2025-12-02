@@ -1,16 +1,26 @@
 <p>Incidencias pendientes por autorizar.</p>
 <ul>
-    {{#each lideres}}
-    <li>Lider: #{{this.leaderEmployeeNumber}} - {{this.leaderName}}</li>
+    {{#each empleados}}
+    <li>Lider: #{{this.employeeNumber}} - {{this.name}}</li>
     <ul>
-        {{#each this.employees}}
-        <li>Empleado: # {{this.employeeNumber}} - {{this.name}}</li>
-        <ul>
-            {{#each this.incidencia}}
-            <li>{{this.name}}: {{this.fecha}}</li>
+        {{#if this.empleados.length}}
+            {{#each this.empleados}}
+            <li>Empleado: # {{this.employeeNumber}} - {{this.name}}</li>
+            <ul>
+                {{#if this.incidencia.length}}
+                    {{#each this.incidencia}}
+                    
+                    <li>Incidencia: {{this.name}}</li>
+                    <ul>
+                        <li>Dias de la incidencia: {{this.fecha}}</li>
+                        <li>Fecha de creación: {{this.created_at}}</li>
+                        <li>Total de dias sin autorizar: {{this.dias_transcurrido}}</li>
+                    </ul>
+                    {{/each}}
+                {{/if}}
+            </ul>
             {{/each}}
-        </ul>
-        {{/each}}
+        {{/if}}
     </ul>
     {{/each}}
 </ul>

@@ -20,7 +20,7 @@ export interface MailData {
 }
 
 export interface MailDataPendingIncidence {
-  empleados: any;
+  empleados: any[];
   //totalTimeCorrection: number;
 }
 
@@ -47,7 +47,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
+        from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: template, // `.hbs` extension is appended automatically
         context: { ...mailData, ...this.envVariables },
@@ -70,7 +70,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
+        from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: 'crear_incidencia', // `.hbs` extension is appended automatically
         context: mailData,
@@ -100,7 +100,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
+        from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
         context: { ...mailData, ...envVariables },
@@ -129,7 +129,7 @@ export class MailService {
 
     const mailOptions: any = {
       to: to,
-      from: 'OechslerMX<notificationes@oechsler.mx>',
+      from: 'OechslerMX<notifications@oechsler.mx>',
       subject: subject,
       template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
       context: { ...mailData, ...envVariables },
@@ -208,7 +208,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
+        from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: template, // `.hbs` extension is appended automatically
         context: mailData,
@@ -233,7 +233,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
+        from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: 'pending_incidence_authorize', // `.hbs` extension is appended automatically
         context: { ...mailData, ...envVariables },
@@ -255,7 +255,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
+        from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: 'pending_incidence_authorize_leader', // `.hbs` extension is appended automatically
         context: { ...mailData, ...this.envVariables },
@@ -280,7 +280,7 @@ export class MailService {
     await this.mailerService
       .sendMail({
         to: to,
-        from: 'OechslerMX<notificationes@oechsler.mx>',
+        from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         //html: mailData,
         icalEvent: {

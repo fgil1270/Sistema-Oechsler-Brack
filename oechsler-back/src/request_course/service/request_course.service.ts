@@ -58,6 +58,7 @@ import { MailService } from '../../mail/mail.service';
 import { EmployeeObjetiveService } from '../../employee_objective/service/employee_objective.service';
 import { UsersService } from '../../users/service/users.service';
 import { EventRequestCourse } from '../entities/event_request_course.entity';
+import { EventRequestCourseLeader } from '../entities/event_request_course_leader.entity';
 
 @Injectable()
 export class RequestCourseService {
@@ -78,6 +79,7 @@ export class RequestCourseService {
     @Inject(forwardRef(() => EmployeeObjetiveService)) private definitionObjectiveAnnualService: EmployeeObjetiveService,
     private userService: UsersService,
     @InjectRepository(EventRequestCourse) private eventRequestCourseRepository: Repository<EventRequestCourse>,
+    @InjectRepository(EventRequestCourseLeader) private eventRequestCourseLeaderRepository: Repository<EventRequestCourseLeader>,
   ) { }
 
   // Crear solicitud de curso
@@ -165,7 +167,10 @@ export class RequestCourseService {
         leadersMail.push('h.perez@oechsler.mx');
 
         if (emailEmployee) {
-          leadersMail.push(emailEmployee.user[0].email);
+          if (leadersMail.indexOf(emailEmployee.user[0].email) === -1) {
+            leadersMail.push(emailEmployee.user[0].email);
+          }
+
         }
 
         if (leader.orgs.length > 0) {
@@ -175,13 +180,15 @@ export class RequestCourseService {
             if (l.evaluar) {
               const user = await this.userService.findByIdEmployee(l.leader.id);
               //recorre el arreglo de usuarios que tiene el lider
-              for (const u of user.user) {
-                //si el usuario tiene correo y no esta eliminado
-                if (u.email && u.deleted_at == null) {
-                  //se agrega el correo a la lista de correos
+
+              //si el usuario tiene correo y no esta eliminado
+              user.user.forEach((u) => {
+                if (u.deleted_at == null && leadersMail.indexOf(u.email) === -1) {
                   leadersMail.push(u.email);
                 }
-              }
+              });
+
+
             }
           }
         } else {
@@ -193,9 +200,13 @@ export class RequestCourseService {
             .andWhere('employee.deleted_at IS NULL')
             .orderBy('employee.employee_number', 'ASC')
             .getMany();
-          if (jefeTurno.length > 0) {
-            leadersMail.push(...jefeTurno.map(emp => emp.user.email));
-          }
+
+          jefeTurno.forEach((u) => {
+            if (u.deleted_at == null && leadersMail.indexOf(u.email) === -1) {
+              leadersMail.push(u.email);
+            }
+          });
+
         }
 
 
@@ -257,12 +268,18 @@ export class RequestCourseService {
 
       });
 
-      //event incidence UUID (v4)
-      const createEventIncidence = this.eventRequestCourseRepository.create();
-      const saveEventIncidence = await this.eventRequestCourseRepository.save(createEventIncidence);
+      //crea event request course UUID (v4)
+      const createEventRequestCourse = this.eventRequestCourseRepository.create();
+      const saveEventRequestCourse = await this.eventRequestCourseRepository.save(createEventRequestCourse);
+
+      //crea event request course leader 
+      const createEventRequestCourseLeader = this.eventRequestCourseLeaderRepository.create();
+      const saveEventRequestCourseLeader = await this.eventRequestCourseLeaderRepository.save(createEventRequestCourseLeader);
+
 
       //se asigna el evento a la asignacion de solicitud de cursos
-      createAssignment.eventRequestCourse = saveEventIncidence;
+      createAssignment.eventRequestCourse = saveEventRequestCourse;
+      createAssignment.eventRequestCourseLeader = saveEventRequestCourseLeader;
 
       const assignment = await this.requestCourseAssignment.save(createAssignment);
 
@@ -317,7 +334,7 @@ export class RequestCourseService {
       // Crear el evento con recurrencia si aplica
       // aplicando evento por horas
       const event = calendar.createEvent({
-        id: saveEventIncidence.id,
+        id: saveEventRequestCourse.id,
         start: diaInicio.toDate(),
         end: diaInicio.clone().add(diferenciaHoras, 'hours').toDate(),
         allDay: true,
@@ -372,9 +389,9 @@ export class RequestCourseService {
         }
       }
 
-      // ✅ Crear evento con recurrencia
+      // ✅ Crear evento con recurrencia para líderes
       const eventLeader = calendar.createEvent({
-        id: saveEventIncidence.id,
+        id: saveEventRequestCourseLeader.id,
         start: diaInicio.toDate(),
         end: diaInicio.clone().add(2, 'hours').toDate(), // Duración del curso
         allDay: true,
@@ -382,7 +399,7 @@ export class RequestCourseService {
         summary: `Curso: ${course.name}`,
         description: `Curso asignado: ${course.name}\nProfesor: ${teacher.name}\nLugar: ${currData.place || 'Por definir'}`,
         url: 'https://example.com',
-        busystatus: ICalEventBusyStatus.BUSY, // ✅ Cambiar a BUSY para cursos
+        busystatus: ICalEventBusyStatus.FREE, // ✅ Cambiar a BUSY para cursos
         status: ICalEventStatus.CONFIRMED,
         organizer: {
           name: 'OechslerMX',
@@ -403,6 +420,7 @@ export class RequestCourseService {
           interval: 1 // Cada semana
         });
       }
+
       //enviar correo a empleados
       const mail = await this.mailService.sendEmailNoTemplate(
         `Curso asignado: ${course.name}`,
@@ -1071,15 +1089,18 @@ export class RequestCourseService {
       }
 
       //se envian los correos
-      await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
-        {
-          curso: save.course.name,
-          status: save.status,
-          empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
-        },
-        leadersMail,
-        'solicitud_curso'
-      );
+      //si el status es  Pendiente, Autorizado, Cancelado, Finalizado, Pendiente Evaluar Empleado, Solicitado
+      if (['Pendiente', 'Autorizado', 'Cancelado', 'Finalizado', 'Pendiente Evaluar Empleado', 'Solicitado'].includes(save.status)) {
+        await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
+          {
+            curso: save.course.name,
+            status: save.status,
+            empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+          },
+          leadersMail,
+          'solicitud_curso'
+        );
+      }
 
       return {
         error: false,

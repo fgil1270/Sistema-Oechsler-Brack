@@ -36,7 +36,7 @@ export class CronSendEmailPendingIncidenceService {
         //mostrar en archivo de log
         try {
 
-            this.log.log(`Enviando correo diario a las ${fechaMexico}`);
+            this.log.log(`Enviando correo diario a las ${fechaMexico}, notificar incidencias pendientes de 24hrs`);
             await this.employeeIncidenceService.getReportPendingIncidence();
 
         } catch (err) {
@@ -55,7 +55,7 @@ export class CronSendEmailPendingIncidenceService {
         const fechaMexico = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
         try {
 
-            this.log.log(`Enviando diario a las ${fechaMexico}`);
+            this.log.log(`Enviando correo diario a las ${fechaMexico}, notificar incidencias pendientes de 48hrs`);
             await this.employeeIncidenceService.getReportPendingIncidence48();
 
         } catch (err) {
@@ -66,7 +66,7 @@ export class CronSendEmailPendingIncidenceService {
 
     //0 06 * * * enviar correo cada dia a las 6 am
     @ApiOperation({ summary: 'Enviar correo diario a las 6 am, para notificar incidencias pendientes de 168 horas' })
-    @Cron('0 06 * * *', {
+    @Cron('0 06 * * * ', {
         timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
         //o si se requiere un offset se puede usar utcOffset
         //utcOffset: '-06:00' // ejemplo para centro de mexico
@@ -75,7 +75,7 @@ export class CronSendEmailPendingIncidenceService {
         const fechaMexico = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
         try {
 
-            this.log.log(`Enviando diario a las ${fechaMexico}`);
+            this.log.log(`Enviando correo diario a las ${fechaMexico}, notificar incidencias pendientes de una semana`);
             await this.employeeIncidenceService.getReportPendingIncidence72();
 
         } catch (err) {

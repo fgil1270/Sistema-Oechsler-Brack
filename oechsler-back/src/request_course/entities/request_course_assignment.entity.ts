@@ -14,6 +14,7 @@ import {
 import { RequestCourse } from './request_course.entity';
 import { Teacher } from '../../supplier/entities/teacher.entity';
 import { EventRequestCourse } from './event_request_course.entity';
+import { EventRequestCourseLeader } from './event_request_course_leader.entity';
 
 @Entity()
 export class RequestCourseAssignment {
@@ -59,4 +60,8 @@ export class RequestCourseAssignment {
   @OneToOne(() => EventRequestCourse, (eventRequestCourse) => eventRequestCourse.requestCourseAssignment)
   @JoinColumn()
   eventRequestCourse: EventRequestCourse;
+
+  @OneToOne(() => EventRequestCourseLeader, (eventRequestCourseLeader) => eventRequestCourseLeader.requestCourseAssignment)
+  @JoinColumn()
+  eventRequestCourseLeader: EventRequestCourseLeader;
 }
