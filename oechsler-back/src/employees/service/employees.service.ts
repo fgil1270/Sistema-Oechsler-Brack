@@ -1002,7 +1002,7 @@ export class EmployeesService {
           //se genera array para separar años y dias
           arrayAno = anoCumplidos.toFixed(2).split('.');
 
-
+          
 
           //se obtiene el total de dias que corresponden al año despues del cambio de perfil
           objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find(
@@ -1183,6 +1183,8 @@ export class EmployeesService {
       row['dias_disponibles_fin_ano'] = (sumaDiasAntiguedadFin - dayUsedAllYears).toFixed(2); //dias disponibles hasta fin de año
 
       report.push(row);
+
+      
     }
 
     return report;
