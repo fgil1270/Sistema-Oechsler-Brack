@@ -111,8 +111,6 @@ export class RequestCourseService {
           emp.department.id,
         );
 
-
-
         const requestCourseCreate = this.requestCourse.create({
           course_name: data.courseName,
           training_reason: data.traininReason,
@@ -141,10 +139,6 @@ export class RequestCourseService {
           comment: data.comment,
           definitionObjectiveAnnual: null
         });
-
-
-
-
 
         //si data.definitionObjetiveAnnualId existe se busca la definición del objetivo anual
         if (data.definitionObjetiveAnnualId) {
@@ -208,7 +202,6 @@ export class RequestCourseService {
           });
 
         }
-
 
         //se envian los correos
         await this.mailService.sendEmail(`Creación Solicitud de Curso " ${requestCourse.course.name}"`,
@@ -311,7 +304,18 @@ export class RequestCourseService {
       }
 
       // ✅ Configurar recurrencia basada en los días
-      const diasRecurrencia = assignment.day; // ej: "L,Ma,Mi,J,V" o "Lunes,Martes"
+      let diasRecurrencia = '';  // ej: "L,Ma,Mi,J,V" o "Lunes,Martes"
+      if (assignment.day == 'L,M,X,J,V,S,D') {
+        //cuenta el todal de dias entre la fecha de inicio y fin
+        //si el total de dias dias es mayor a una semana 
+        //y si es mayor a 7 dias solo pone los dias 'L,M,X,J,V'
+        if (dias > 7) {
+          diasRecurrencia = 'L,M,X,J,V';
+        }
+
+      } else {
+        diasRecurrencia = assignment.day;
+      }
       const frecuenciaIcal = this.parseDaysToIcalFrequency(diasRecurrencia);
 
       // Obtener los IDs de los empleados asignados
@@ -1067,8 +1071,7 @@ export class RequestCourseService {
             //recorre el arreglo de usuarios que tiene el lider
             for (const u of user.user) {
               //si el usuario tiene correo y no esta eliminado
-              if (u.email && u.deleted_at == null) {
-                //se agrega el correo a la lista de correos
+              if (u.deleted_at == null && leadersMail.indexOf(u.email) === -1) {
                 leadersMail.push(u.email);
               }
             }
@@ -1090,7 +1093,7 @@ export class RequestCourseService {
 
       //se envian los correos
       //si el status es  Pendiente, Autorizado, Cancelado, Finalizado, Pendiente Evaluar Empleado, Solicitado
-      if (['Pendiente', 'Autorizado', 'Cancelado', 'Finalizado', 'Pendiente Evaluar Empleado', 'Solicitado'].includes(save.status)) {
+      if (!(data.status == 'Autorizado' && save.status == 'Solicitado')) {
         await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
           {
             curso: save.course.name,

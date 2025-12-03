@@ -268,13 +268,8 @@ export class EmployeeIncidenceService {
                       //de lunes a jueves
                       throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
                     }
-
                   }
-
-
                 }
-
-
               }
             }
 
