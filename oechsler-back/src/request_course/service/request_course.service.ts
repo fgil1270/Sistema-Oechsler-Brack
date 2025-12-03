@@ -232,7 +232,7 @@ export class RequestCourseService {
   async createAssignmentCourse(currData: RequestCourseAssignmentDto) {
     //revisar cuando sea el mismo empleado 2 veces
     try {
-      const employees = await this.employeeService.findMore(currData.employeeId);
+      //const employees = await this.employeeService.findMore(currData.employeeId);
       const course = await this.courseService.findOne(currData.courseId);
       const teacher = await this.supplierService.findTeacherById(currData.teacherId);
 
@@ -245,6 +245,9 @@ export class RequestCourseService {
       //const employeeIncidences = await this.employeeIncidenceService.findEmployeeIncidenceByEmployeeId(employees.emps.map((emp) => emp.id));
       //buscar solicitud de cursos aprobados de los empleados seleccionados
       const requestCourse = await this.requestCourse.find({
+        relations:{
+          employee: true
+        },
         where: {
           status: 'Autorizado',
           id: In(currData.requestCourseId)
@@ -258,7 +261,6 @@ export class RequestCourseService {
         day: currData.day,
         requestCourse: requestCourse,
         teacher: teacher,
-
       });
 
       //crea event request course UUID (v4)
@@ -305,10 +307,13 @@ export class RequestCourseService {
 
       // ✅ Configurar recurrencia basada en los días
       let diasRecurrencia = '';  // ej: "L,Ma,Mi,J,V" o "Lunes,Martes"
+      console.log(assignment.day)
+      console.log(dias)
       if (assignment.day == 'L,M,X,J,V,S,D') {
         //cuenta el todal de dias entre la fecha de inicio y fin
         //si el total de dias dias es mayor a una semana 
         //y si es mayor a 7 dias solo pone los dias 'L,M,X,J,V'
+        
         if (dias > 7) {
           diasRecurrencia = 'L,M,X,J,V';
         }
@@ -317,6 +322,7 @@ export class RequestCourseService {
         diasRecurrencia = assignment.day;
       }
       const frecuenciaIcal = this.parseDaysToIcalFrequency(diasRecurrencia);
+      console.log("frequencia", frecuenciaIcal)
 
       // Obtener los IDs de los empleados asignados
       const idsEmployees = assignment.requestCourse.map(rc => rc.employee.id);
@@ -374,23 +380,41 @@ export class RequestCourseService {
 
       //obtener los lideres de los empleados
       let leaderMail = [];
-      for (const emp of employees.emps) {
-        const leader = await this.organigramaService.leaders(emp.id);
-        for (const l of leader.orgs) {
-          //si el lider puede evaluar
-          if (l.evaluar) {
-            const user = await this.userService.findByIdEmployee(l.leader.id);
-            //recorre el arreglo de usuarios que tiene el lider
-            //para agregar los correos al evento
-            //si el usuario tiene correo y no esta eliminado
-            //ademas que no se repita el correo
-            user.user.forEach((u) => {
-              if (u.deleted_at == null && to.indexOf(u.email) === -1) {
-                leaderMail.push(u.email);
-              }
-            });
+      for (const emp of idsEmployees) {
+        const leader = await this.organigramaService.leaders(emp);
+        if(leader.orgs.length>0){
+          for (const l of leader.orgs) {
+            //si el lider puede evaluar
+            if (l.evaluar) {
+              const user = await this.userService.findByIdEmployee(l.leader.id);
+              //recorre el arreglo de usuarios que tiene el lider
+              //para agregar los correos al evento
+              //si el usuario tiene correo y no esta eliminado
+              //ademas que no se repita el correo
+              user.user.forEach((u) => {
+                if (u.deleted_at == null && leaderMail.indexOf(u.email) === -1) {
+                  leaderMail.push(u.email);
+                }
+              });
+            }
           }
+        }else{
+          //busca empleados que su usuario tenga rol Jefe de turno
+          const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.userId', 'user')
+            .innerJoinAndSelect('user.roles', 'role')
+            .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+
+          jefeTurno.forEach((u) => {
+            if (u.deleted_at == null && leaderMail.indexOf(u.email) === -1) {
+              leaderMail.push(u.email);
+            }
+          });
         }
+        
       }
 
       // ✅ Crear evento con recurrencia para líderes
@@ -409,7 +433,7 @@ export class RequestCourseService {
           name: 'OechslerMX',
           email: 'notificationes@oechsler.mx'
         },
-        attendees: to.length > 0 ? to.map((email) => ({
+        attendees: leaderMail.length > 0 ? leaderMail.map((email) => ({
           email: email,
           status: ICalAttendeeStatus.ACCEPTED,
         })) : [],
@@ -425,18 +449,33 @@ export class RequestCourseService {
         });
       }
 
+      
+  
+
       //enviar correo a empleados
-      const mail = await this.mailService.sendEmailNoTemplate(
+      const mail = await this.mailService.sendEmailCourseAssignment(
         `Curso asignado: ${course.name}`,
-        null,
+        {
+          course: course.name,
+          teacher: teacher.name,
+          dateStart: dateStart,
+          dateEnd: dateEnd,
+          employees: assignment.requestCourse.map(emp => `#${emp.employee.employee_number} - ${emp.employee.name} ${emp.employee.paternal_surname} ${emp.employee.maternal_surname} `)
+        },
         to.map((email) => email),
         calendar,
       );
 
       //enviar correo a lideres
-      const mailLeader = await this.mailService.sendEmailNoTemplate(
+      const mailLeader = await this.mailService.sendEmailCourseAssignment(
         `Curso asignado: ${course.name}`,
-        null,
+        {
+          course: course.name,
+          teacher: teacher.name,
+          dateStart: dateStart,
+          dateEnd: dateEnd,
+          employees: assignment.requestCourse.map(emp => `#${emp.employee.employee_number} - ${emp.employee.name} ${emp.employee.paternal_surname} ${emp.employee.maternal_surname} `)
+        },
         leaderMail,
         calendar,
       );
@@ -447,6 +486,7 @@ export class RequestCourseService {
         data: requestCourse
       };
     } catch (error) {
+      console.log(error)
       return {
         error: true,
         msg: error.message
