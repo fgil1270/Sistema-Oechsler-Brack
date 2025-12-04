@@ -24,6 +24,14 @@ export interface MailDataPendingIncidence {
   //totalTimeCorrection: number;
 }
 
+export interface MailDataAssigmentCourse {
+  course: string,
+  teacher: string,
+  dateStart: Date,
+  dateEnd: Date,
+  employees: string[]
+}
+
 @Injectable()
 export class MailService {
   private log = new CustomLoggerService();
@@ -92,10 +100,6 @@ export class MailService {
     to: string[],
     calendar: ICalCalendar,
   ) {
-    const envVariables = {
-      port: process.env.PORT,
-      // Agrega otras variables de entorno que necesites
-    };
 
     await this.mailerService
       .sendMail({
@@ -103,7 +107,7 @@ export class MailService {
         from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: 'autoriza_incidencia', // `.hbs` extension is appended automatically
-        context: { ...mailData, ...envVariables },
+        context: { ...mailData, ...this.envVariables },
         icalEvent: {
           filename: 'evento.ics',
           method: 'REQUEST',
@@ -122,17 +126,13 @@ export class MailService {
   }
 
   async sendEmailRechazaIncidence(subject: string, mailData: MailData, to: string[], calendar?: ICalCalendar,) {
-    const envVariables = {
-      port: process.env.PORT,
-      // Agrega otras variables de entorno que necesites
-    };
 
     const mailOptions: any = {
       to: to,
       from: 'OechslerMX<notifications@oechsler.mx>',
       subject: subject,
       template: 'rechaza_incidencia', // `.hbs` extension is appended automatically
-      context: { ...mailData, ...envVariables },
+      context: { ...mailData, ...this.envVariables },
     };
 
     if (calendar) {
@@ -225,10 +225,7 @@ export class MailService {
 
   //Enviar correo a los lideres que tengan incidencias con 24 hrs pendientes por autorizar
   async sendEmailPendingIncidence(to: string[], subject: string, mailData: MailDataPendingIncidence) {
-    const envVariables = {
-      port: process.env.PORT,
-      // Agrega otras variables de entorno que necesites
-    };
+
     //to = ['f.gil@oechsler.mx']
     await this.mailerService
       .sendMail({
@@ -236,7 +233,7 @@ export class MailService {
         from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
         template: 'pending_incidence_authorize', // `.hbs` extension is appended automatically
-        context: { ...mailData, ...envVariables },
+        context: { ...mailData, ...this.envVariables },
       })
       .then((success) => {
         this.log.log('se envio correo de notificacion');
@@ -271,9 +268,9 @@ export class MailService {
   }
 
   //envio de correo sin templeate
-  async sendEmailNoTemplate(
+  async sendEmailCourseAssignment(
     subject: string,
-    mailData: MailData,
+    mailData: MailDataAssigmentCourse,
     to: string[],
     calendar?: ICalCalendar,
   ) {
@@ -282,7 +279,8 @@ export class MailService {
         to: to,
         from: 'OechslerMX<notifications@oechsler.mx>',
         subject: subject,
-        //html: mailData,
+        template: 'asignacion_curso', // `.hbs` extension is appended automatically
+        context: { ...mailData, ...this.envVariables },
         icalEvent: {
           filename: 'evento.ics',
           method: 'REQUEST',

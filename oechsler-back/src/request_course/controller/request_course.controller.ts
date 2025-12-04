@@ -162,7 +162,7 @@ export class AssignmentCourseController {
     return this.requestCourseService.updateAssignment(id, data, user);
   }
 
-  @ApiOperation({ summary: 'Actulizar empleados de curso' })
+  @ApiOperation({ summary: 'Actulizar empleados de asignacion de curso' })
   @Put(':id/change')
   async updateCourseAssignment(
     @Param('id', ParseIntPipe) id: number,
