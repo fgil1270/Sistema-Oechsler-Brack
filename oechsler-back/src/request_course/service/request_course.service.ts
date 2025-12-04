@@ -245,7 +245,7 @@ export class RequestCourseService {
       //const employeeIncidences = await this.employeeIncidenceService.findEmployeeIncidenceByEmployeeId(employees.emps.map((emp) => emp.id));
       //buscar solicitud de cursos aprobados de los empleados seleccionados
       const requestCourse = await this.requestCourse.find({
-        relations:{
+        relations: {
           employee: true
         },
         where: {
@@ -307,13 +307,12 @@ export class RequestCourseService {
 
       // ✅ Configurar recurrencia basada en los días
       let diasRecurrencia = '';  // ej: "L,Ma,Mi,J,V" o "Lunes,Martes"
-      console.log(assignment.day)
-      console.log(dias)
+
       if (assignment.day == 'L,M,X,J,V,S,D') {
         //cuenta el todal de dias entre la fecha de inicio y fin
         //si el total de dias dias es mayor a una semana 
         //y si es mayor a 7 dias solo pone los dias 'L,M,X,J,V'
-        
+
         if (dias > 7) {
           diasRecurrencia = 'L,M,X,J,V';
         }
@@ -322,7 +321,6 @@ export class RequestCourseService {
         diasRecurrencia = assignment.day;
       }
       const frecuenciaIcal = this.parseDaysToIcalFrequency(diasRecurrencia);
-      console.log("frequencia", frecuenciaIcal)
 
       // Obtener los IDs de los empleados asignados
       const idsEmployees = assignment.requestCourse.map(rc => rc.employee.id);
@@ -382,7 +380,7 @@ export class RequestCourseService {
       let leaderMail = [];
       for (const emp of idsEmployees) {
         const leader = await this.organigramaService.leaders(emp);
-        if(leader.orgs.length>0){
+        if (leader.orgs.length > 0) {
           for (const l of leader.orgs) {
             //si el lider puede evaluar
             if (l.evaluar) {
@@ -398,7 +396,7 @@ export class RequestCourseService {
               });
             }
           }
-        }else{
+        } else {
           //busca empleados que su usuario tenga rol Jefe de turno
           const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
             .innerJoinAndSelect('employee.userId', 'user')
@@ -414,7 +412,7 @@ export class RequestCourseService {
             }
           });
         }
-        
+
       }
 
       // ✅ Crear evento con recurrencia para líderes
@@ -449,8 +447,8 @@ export class RequestCourseService {
         });
       }
 
-      
-  
+
+
 
       //enviar correo a empleados
       const mail = await this.mailService.sendEmailCourseAssignment(
@@ -486,7 +484,6 @@ export class RequestCourseService {
         data: requestCourse
       };
     } catch (error) {
-      console.log(error)
       return {
         error: true,
         msg: error.message
