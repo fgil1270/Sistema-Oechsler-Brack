@@ -1,0 +1,13 @@
+<p>Curso: {{course}}</p>
+<p><b>Instructor: </b>{{teacher}}</p>
+<p><b>Inicio: </b>{{dateStart}}, <b>Fin: </b>{{dateEnd}}</p>
+<p></p>
+<ul>
+    {{#each employees}}
+    <li>{{this}}</li>
+    {{/each}}
+</ul>
+
+
+<p>Para más información revisar vista Capacitación y evaluaciones &gt; Cursos.</p>
+<a href="http://192.168.51.39:{{port}}">Sistema OITS</a>

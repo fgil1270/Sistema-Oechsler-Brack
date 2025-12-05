@@ -45,11 +45,11 @@ import { RolesModule } from './roles/roles.module';
 import { ShiftModule } from './shift/shift.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { TimeCorrectionModule } from './time_correction/time_correction.module';
+import { TrainingModule } from './training/training.module';
 import { TrainingMachineModule } from './training_machine/training_machine.module';
 import { UsersModule } from './users/users.module';
 import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import { ViewsModule } from './views/views.module';
-import { TrainingModule } from './training/training.module';
 
 
 @Module({

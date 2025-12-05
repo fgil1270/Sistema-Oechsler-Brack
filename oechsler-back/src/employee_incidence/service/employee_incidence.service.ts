@@ -11,7 +11,7 @@ import {
   Brackets
 } from 'typeorm';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { format, subDays } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 import { es } from 'date-fns/locale';
 import * as moment from 'moment';
@@ -30,6 +30,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import PDFDocument from 'pdfkit-table';
 import { Readable } from 'stream';
+import * as crypto from 'crypto';
+import { CustomLoggerService } from '../../logger/logger.service';
 
 import {
   CreateEmployeeIncidenceDto,
@@ -49,16 +51,15 @@ import { EmployeeProfile } from '../../employee-profiles/entities/employee-profi
 import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
-import { list, save } from 'pdfkit';
-
+import { EventIncidence } from '../entities/event_incidence.entity';
 
 @Injectable()
 export class EmployeeIncidenceService {
+
+  private log = new CustomLoggerService();
   constructor(
-    @InjectRepository(EmployeeIncidence)
-    private employeeIncidenceRepository: Repository<EmployeeIncidence>,
-    @InjectRepository(DateEmployeeIncidence)
-    private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
+    @InjectRepository(EmployeeIncidence) private employeeIncidenceRepository: Repository<EmployeeIncidence>,
+    @InjectRepository(DateEmployeeIncidence) private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
     private incidenceCatologueService: IncidenceCatologueService,
     private employeeService: EmployeesService,
     private employeeShiftService: EmployeeShiftService,
@@ -70,6 +71,8 @@ export class EmployeeIncidenceService {
     private calendarService: CalendarService,
     private enabledCreateIncidenceService: EnabledCreateIncidenceService,
     @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(EventIncidence) private eventIncidenceRepository: Repository<EventIncidence>,
+
   ) { }
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
@@ -269,13 +272,8 @@ export class EmployeeIncidenceService {
                       //de lunes a jueves
                       throw new NotFoundException(`No Employee Shifts found for the date ${format(index, 'yyyy-MM-dd')} (Empleado #${employee.emps[j].employee_number})`);
                     }
-
                   }
-
-
                 }
-
-
               }
             }
 
@@ -410,16 +408,19 @@ export class EmployeeIncidenceService {
             lider.leader.id,
           );
           if (userLider.user.length > 0) {
+
             userLider.user.forEach((u) => {
-              if (u.deleted_at == null) {
+              //un correo por lider
+              if (u.deleted_at == null && to.indexOf(u.email) === -1) {
                 to.push(u.email);
               }
             });
           }
         }
         if (mailUser.user.length > 0) {
+          //un correo por usuario
           mailUser.user.forEach((u) => {
-            if (u.deleted_at == null) {
+            if (u.deleted_at == null && to.indexOf(u.email) === -1) {
               to.push(u.email);
             }
           });
@@ -446,13 +447,25 @@ export class EmployeeIncidenceService {
           leader.emp.maternal_surname,
       };
 
-      const calendar = ical();
+      const calendar = ical({
+        name: 'Incidencias',
+        prodId: '//OechslerMX//OITS//MX',
+      });
       const diaInicio = moment(format(new Date(createEmployeeIncidenceDto.start_date), 'yyyy-MM-dd'));
       const diaFin = moment(format(new Date(createEmployeeIncidenceDto.end_date), 'yyyy-MM-dd'));
       let dias = diaFin.diff(diaInicio, 'days');
       calendar.method(ICalCalendarMethod.REQUEST);
       calendar.timezone('America/Mexico_City');
+
+      //event incidence UUID (v4)
+      const createEventIncidence = this.eventIncidenceRepository.create();
+      const saveEventIncidence = await this.eventIncidenceRepository.save(createEventIncidence);
+
+
+      //id `1763659910000@oechsler.mx`
+      //crea el evento
       calendar.createEvent({
+        id: saveEventIncidence.id,
         start: diaInicio,
         end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
         allDay: true,
@@ -462,6 +475,10 @@ export class EmployeeIncidenceService {
         url: 'https://example.com',
         busystatus: ICalEventBusyStatus.FREE,
         //status: ICalEventStatus.CONFIRMED,
+        organizer: {
+          name: 'OechslerMX',
+          email: 'notifications@oechsler.mx'
+        },
         attendees:
           to.length > 0
             ? to.map((email) => {
@@ -472,6 +489,8 @@ export class EmployeeIncidenceService {
             })
             : [],
       });
+
+
 
       //si el usuario crea incidencia para el mismo
       //envia correo de creacion de incidencia
@@ -493,6 +512,8 @@ export class EmployeeIncidenceService {
             to,
             calendar,
           );
+
+          employeeIncidenceCreate.eventIncidence = saveEventIncidence;
         } else {
           //si Produccion es verdadero y el usuario es distinto al de la incidencia
           //crea la incidencia con status pendiente
@@ -538,7 +559,17 @@ export class EmployeeIncidenceService {
         index <= new Date(createEmployeeIncidenceDto.end_date);
         index = new Date(index.setDate(index.getDate() + 1))
       ) {
-        //Se obtiene el perfil del empleado
+        //VERIFICA SI EL DIA ES FERIADO
+        const dayHoliday = await this.calendarService.findByDate(
+          format(index, 'yyyy-MM-dd'),
+        );
+
+        //SI EL DIA ES FERIADO
+        //y no es sugerido para apartar
+        //continua con el siguiente dia
+        if (dayHoliday && dayHoliday?.suggest != true) {
+          continue;
+        }
 
         let ifCreate = false;
         const weekDaysProfile = employee.emps[j].employeeProfile.work_days;
@@ -816,29 +847,35 @@ export class EmployeeIncidenceService {
 
       idsEmployees.push(element.id);
     }
-
-    const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
-      .innerJoinAndSelect('employee_incidence.employee', 'employee')
-      .innerJoinAndSelect('employee_incidence.incidenceCatologue', 'incidenceCatologue')
-      .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-      .leftJoinAndSelect('employee_incidence.leader', 'leader')
-      .leftJoinAndSelect('employee_incidence.createdBy', 'createdBy')
-      .leftJoinAndSelect('employee.organigramaL', 'organigramaL')
-      .leftJoinAndSelect('organigramaL.leader', 'organigramaLeader')
-      .where('employee_incidence.employeeId IN (:ids)', { ids: idsEmployees })
-      .andWhere('employee_incidence.status IN (:status)', { status: data.status == 'Todas' ? ['Autorizada', 'Pendiente', 'Rechazada'] : [data.status] })
-      .andWhere('incidenceCatologue.deleted_at IS NULL')
-      .andWhere(new Brackets(qb => {
-        qb.where('dateEmployeeIncidence.date BETWEEN :start AND :end', {
-          start: format(new Date(data.start_date), 'yyyy-MM-dd'),
-          end: format(new Date(data.end_date), 'yyyy-MM-dd'),
-        })
-          .orWhere('employee_incidence.created_at BETWEEN :start AND :end', {
+    let incidences;
+    try {
+      incidences = await this.employeeIncidenceRepository.createQueryBuilder('employee_incidence')
+        .innerJoinAndSelect('employee_incidence.employee', 'employee')
+        .innerJoinAndSelect('employee_incidence.incidenceCatologue', 'incidenceCatologue')
+        .innerJoinAndSelect('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
+        .leftJoinAndSelect('employee_incidence.leader', 'leader')
+        .leftJoinAndSelect('employee_incidence.createdBy', 'createdBy')
+        .leftJoinAndSelect('employee.organigramaL', 'organigramaL')
+        .leftJoinAndSelect('organigramaL.leader', 'organigramaLeader')
+        .where('employee_incidence.employeeId IN (:ids)', { ids: idsEmployees })
+        .andWhere('employee_incidence.status IN (:status)', { status: data.status == 'Todas' ? ['Autorizada', 'Pendiente', 'Rechazada'] : [data.status] })
+        .andWhere('incidenceCatologue.deleted_at IS NULL')
+        .andWhere(new Brackets(qb => {
+          qb.where('dateEmployeeIncidence.date BETWEEN :start AND :end', {
             start: format(new Date(data.start_date), 'yyyy-MM-dd'),
             end: format(new Date(data.end_date), 'yyyy-MM-dd'),
-          });
-      }))
-      .getMany();
+          })
+            .orWhere('employee_incidence.created_at BETWEEN :start AND :end', {
+              start: format(new Date(data.start_date), 'yyyy-MM-dd'),
+              end: format(new Date(data.end_date), 'yyyy-MM-dd'),
+            });
+        }))
+        .getMany();
+    } catch (error) {
+
+      return;
+    }
+
 
     const total = incidences.length;
 
@@ -1191,6 +1228,7 @@ export class EmployeeIncidenceService {
           },
           incidenceCatologue: true,
           dateEmployeeIncidence: true,
+          eventIncidence: true
         },
       });
 
@@ -1218,26 +1256,32 @@ export class EmployeeIncidenceService {
         );
         if (userLider.user.length > 0) {
           userLider.user.forEach((u) => {
-            if (u.deleted_at == null) {
+            if (u.deleted_at == null && to.indexOf(u.email) === -1) {
               to.push(u.email);
             }
           });
         }
       }
+
       if (emailUser) {
         emailUser.user.forEach((u) => {
-          if (u.deleted_at == null) {
+          if (u.deleted_at == null && to.indexOf(u.email) === -1) {
             to.push(u.email);
           }
+
         });
       }
 
       let subject = '';
       let mailData: MailData;
 
-      const calendar = ical();
-      const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date + ' ' + employeeIncidence.start_hour), 'yyyy-MM-dd'));
-      const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date + ' ' + employeeIncidence.end_hour), 'yyyy-MM-dd'));
+      const calendar = ical({
+        name: 'Incidencias',
+        prodId: '//OechslerMX//OITS//MX',
+      });
+
+      const diaInicio = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd'));
+      const diaFin = moment(format(new Date(employeeIncidence.dateEmployeeIncidence[employeeIncidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd'));
       let dias = diaFin.diff(diaInicio, 'days');
 
       if (updateEmployeeIncidenceDto.status == 'Autorizada') {
@@ -1270,9 +1314,13 @@ export class EmployeeIncidenceService {
         calendar.method(ICalCalendarMethod.REQUEST);
         calendar.timezone('America/Mexico_City');
 
+        //event incidence UUID (v4)
+        const createEventIncidence = this.eventIncidenceRepository.create();
+        const saveEventIncidence = await this.eventIncidenceRepository.save(createEventIncidence);
 
         if (to.length > 0) {
           calendar.createEvent({
+            id: saveEventIncidence.id,
             start: diaInicio,
             end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
             allDay: true,
@@ -1295,16 +1343,11 @@ export class EmployeeIncidenceService {
             ],
           });
 
+          employeeIncidence.eventIncidence = saveEventIncidence;
+
           let day = new Date();
           // Generar archivo .ics y guardar en la ruta especificada
-          /* const icsFilePath = 'documents/calendar/empleados';
-          const icsFileName = `${employeeIncidence.employee.employee_number}_${employeeIncidence.id}_${day.getFullYear()}${day.getMonth()}${day.getDate()}${day.getHours()}${day.getMinutes()}${day.getSeconds()}.ics`;
-          const icsFileContent = calendar.toString();
-    
-          // Guardar archivo .ics
-          fs.writeFileSync(`${icsFilePath}/${icsFileName}`, icsFileContent); */
 
-          // Continuar con el resto del código...
 
           //se envia correo
           //si es el campo produccion_visible se envia el correo a produccion
@@ -1374,6 +1417,35 @@ export class EmployeeIncidenceService {
             return status;
           }
         }
+        calendar.method(ICalCalendarMethod.CANCEL);
+        calendar.timezone('America/Mexico_City');
+
+
+        if (employeeIncidence.eventIncidence) {
+          calendar.createEvent({
+            id: employeeIncidence.eventIncidence.id,
+            start: diaInicio,
+            end: dias > 1 ? diaFin.add(1, 'days') : diaFin,
+            timezone: 'America/Mexico_City',
+            summary: subject,
+            description: 'Incidencia Cancelada',
+            sequence: 1,
+            status: ICalEventStatus.CANCELLED,
+            organizer: {
+              email: 'notifications@oechsler.mx',
+              name: 'OechslerMX',
+            },
+            attendees:
+              to.length > 0
+                ? to.map((email) => {
+                  return {
+                    email: email,
+                    status: ICalAttendeeStatus.DECLINED,
+                  };
+                })
+                : []
+          });
+        }
 
 
         //ENVIO DE CORREO
@@ -1388,16 +1460,6 @@ export class EmployeeIncidenceService {
           employeeAutoriza: `${userAutoriza.emp.employee_number} ${userAutoriza.emp.name} ${userAutoriza.emp.paternal_surname} ${userAutoriza.emp.maternal_surname}`,
         };
 
-        //codigo para cancelar incidencia en outlook
-        /* const icsData = fs.readFileSync('documents/calendar/empleados/1270_727_202451201832.ics', 'utf8');
-        const jcalData = leerCal.parseICS(icsData);
-        const c = ical();
-        
-        const vcalendar = jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] as leerCal.VEvent;
-        
-        vcalendar.status = 'CANCELLED';
-        
-        jcalData['c3cc5a1d-0bf4-48d2-870a-c09a1679d177'] = vcalendar; */
 
         //se envia correo
         //si es el campo produccion_visible se envia el correo a produccion
@@ -1416,6 +1478,7 @@ export class EmployeeIncidenceService {
             subject,
             mailData,
             to,
+            calendar
           );
         }
 
@@ -2101,8 +2164,11 @@ export class EmployeeIncidenceService {
             if (currentIncidence[0].incidenceCatologue.code_band == 'HE' || currentIncidence[0].incidenceCatologue.code_band == 'HET' || currentIncidence[0].incidenceCatologue.code_band == 'TxT') {
               if (turnoActual != '' && (turnoActual == 'T1' || turnoActual == 'TI1')) {
 
+                if (incidence.ei_shift == 1) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
 
-                if (incidence.ei_shift == 2) {
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
                   diaAnterior = new Date(diahoy);
@@ -2114,6 +2180,11 @@ export class EmployeeIncidenceService {
               } else if (turnoActual != '' && (turnoActual == 'T2' || turnoActual == 'TI2')) {
 
                 if (incidence.ei_shift == 1) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '22:10:00';
+                  diaSiguente = new Date(diahoy);
+
+                } else if (incidence.ei_shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '22:10:00';
                   diaSiguente = new Date(diahoy);
@@ -2175,7 +2246,7 @@ export class EmployeeIncidenceService {
               'Dia festivo / Descanso trabajo',
             );
             dates[j].incidencia.push({
-              ei_code_band: holiday.code_band,
+              ei_code_band: 'Festivo',
             })
             sumaHrsIncidencias += hourShift;
           }
@@ -2301,81 +2372,146 @@ export class EmployeeIncidenceService {
   //para obtener las incidencias con status pendiente
   //obtener las correcciones de tiempo de los empleados
   async getReportPendingIncidence() {
-
+    let lideres: Array<{
+      idLider: number;
+      name: string;
+      employeeNumber: number;
+      email: string;
+      empleados: Array<{
+        idEmpleado: number,
+        employeeNumber: number,
+        name: string,
+        incidencia: Array<{
+          name: string,
+          fecha: string
+        }>,
+      }>
+    }> = [];
     let idsJefeTurno: number[];
-    let idsLider: number[] = [];
     let user: any;
-    let empleados: any;
     let visibleJefeTurno: any[];
-
     let listOrg = [];
+    let jefeTurno: any[];
 
-    //se obtienen los jefes de turno
-    const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
-      .innerJoinAndSelect('emp.job', 'job')
-      .where('job.deleted_at IS NULL')
-      .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
-      .getMany();
 
-    idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+    try {
+      //se obtienen los jefes de turno
+      jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
+        .innerJoinAndSelect('emp.job', 'job')
+        .where('job.deleted_at IS NULL')
+        .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
+        .getMany();
 
-    //se asignan los jefes de turno al arreglo de lideres
-    idsLider = [...idsJefeTurno];
+      //se asignan los jefes de turno al arreglo de lideres
+      lideres.push(...jefeTurno.map(jefe => ({
+        idLider: jefe.id,
+        name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
+        employeeNumber: jefe.employee_number,
+        email: '',
+        empleados: []
+      })));
+
+      idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+    } catch (error) {
+      this.log.error(`Error al obtener los jefes de turno: ${error.message}`, error.stack);
+    }
+
+
 
     //se obtienen los lideres que tienen empleados a su cargo
     try {
       listOrg = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
         .innerJoinAndSelect('organigrama.leader', 'leader')
         .select('leader.id', 'leaderId')
+        .addSelect('leader.employee_number', 'leaderEmployeeNumber')
         .addSelect('leader.name', 'leaderName')
+        .addSelect('leader.paternal_surname', 'leaderPaternalSurname')
+        .addSelect('leader.maternal_surname', 'leaderMaternalSurname')
         .addSelect('COUNT(organigrama.id)', 'total')
         .where('leader.deleted_at IS NULL')
-        .andWhere('leader.id NOT IN (:...ids)', { ids: idsLider })
+        .andWhere('leader.id NOT IN (:...ids)', { ids: lideres.map(l => l.idLider) })
         .groupBy('leader.id')
         .getRawMany();
+
+      lideres.push(...listOrg.map(lider => ({
+        idLider: lider.leaderId,
+        name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
+        employeeNumber: lider.leaderEmployeeNumber,
+        email: '', empleados: []
+      })));
     } catch (error) {
-      console.log(error)
+      this.log.error(`Error al obtener los lideres del organigrama: ${error.message}`, error.stack);
     }
 
-    let temporalIds = listOrg.map(lider => lider.leaderId);
-    idsLider.push(...listOrg.map(lider => lider.leaderId));
 
-    for (let i = 0; i < idsLider.length; i++) {
-      let idsEmployees: number[] = [];
-      let totalIncidenciaPendiente = 0;
-      let registros = [];
+
+    for (let i = 0; i < lideres.length; i++) {
+
       //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
 
-
-      //se obtiene el usuario del lider
-      user = await this.dataSource.manager.createQueryBuilder('user', 'user')
-        .innerJoin('user.employee', 'employee')
-        .where('employee.id = :id', { id: idsLider[i] })
-        .getMany();
-
-      //se obtienen los empleados asignados al lider por organigrama
-      let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
-        .innerJoinAndSelect('organigrama.employee', 'employee')
-        .innerJoinAndSelect('organigrama.leader', 'leader')
-        .where('leader.id = :id', { id: idsLider[i] })
-        .getMany();
-
-
-      idsEmployees = [...org.map(emp => emp.employee.id)];
-
-      //se obtienen los empleados que puesto es visible por jefe de turno
-      if (idsJefeTurno.includes(idsLider[i])) {
-        visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-          .innerJoinAndSelect('employee.job', 'job')
-          .innerJoinAndSelect('employee.payRoll', 'payRoll')
-          .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-          .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-          .where('job.shift_leader = 1')
-          .andWhere('employee.deleted_at IS NULL')
-          .orderBy('employee.employee_number', 'ASC')
+      try {
+        //se obtiene el usuario del lider
+        user = await this.dataSource.manager.createQueryBuilder('user', 'user')
+          .innerJoin('user.employee', 'employee')
+          .where('employee.id = :id', { id: lideres[i].idLider })
           .getMany();
 
-        idsEmployees = [...idsEmployees, ...visibleJefeTurno.map(emp => emp.id)];
+        //se obtienen los empleados asignados al lider por organigrama
+        let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+          .innerJoinAndSelect('organigrama.employee', 'employee')
+          .innerJoinAndSelect('organigrama.leader', 'leader')
+          .where('leader.id = :id', { id: lideres[i].idLider })
+          .getMany();
+
+        if (user.length == 0) {
+          continue;
+        }
+        //se agrega el correo del lider
+        lideres[i].email = user[0].email;
+        //se asignan los empleados al lider
+        lideres[i].empleados = [...org.map(emp => {
+          return {
+            idEmpleado: emp.employee.id,
+            employeeNumber: emp.employee.employee_number,
+            name: emp.employee.name,
+            incidencia: [],
+            fecha: ''
+          }
+        })];
+      } catch (error) {
+        this.log.error(`Error al obtener los empleados del lider ${lideres[i].name} - ${lideres[i].employeeNumber}: ${error.message}`, error.stack);
+      }
+
+
+      //se obtienen los empleados que puesto es visible por jefe de turno
+      if (idsJefeTurno.includes(lideres[i].idLider)) {
+        try {
+          visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.job', 'job')
+            .innerJoinAndSelect('employee.payRoll', 'payRoll')
+            .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+            .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+            .where('job.shift_leader = 1')
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          //se asignan los empleados visibles por jefe de turno al lider
+          lideres[i].empleados =
+            [
+              ...lideres[i].empleados,
+              ...visibleJefeTurno.map(emp => {
+                return {
+                  idEmpleado: emp.id,
+                  employeeNumber: emp.employee_number,
+                  name: emp.name,
+                  incidencia: [],
+                  fecha: ''
+                }
+              })
+            ];
+        } catch (error) {
+          this.log.error(`Error al obtener los empleados visibles por jefe de turno para el lider ${lideres[i].name} - ${lideres[i].employeeNumber}: ${error.message}`, error.stack);
+        }
 
       }
 
@@ -2393,432 +2529,58 @@ export class EmployeeIncidenceService {
           },
           where: {
             employee: {
-              id: In(idsEmployees),
+              id: In(lideres[i].empleados.map(e => e.idEmpleado)),
             },
             status: 'Pendiente',
-            dateEmployeeIncidence: {
-              date: LessThanOrEqual(new Date(format(yesterday, 'yyyy-MM-dd'))),
-            },
+            created_at: LessThanOrEqual(new Date(format(yesterday, 'yyyy-MM-dd'))),
           },
           order: {
             employee: {
               id: 'ASC',
-            },
-            type: 'ASC',
+            }
           },
         });
 
       } catch (error) {
+        //si hay error lo agrega al log
+        this.log.log(`Error al obtener las incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`);
 
       }
 
-      //suma el total de incidencias pendientes
-      totalIncidenciaPendiente += incidencias.length;
 
-      //correccion de tiempos
+      //si no tiene incidencias pendientes continua
+      if (incidencias.length == 0) {
+        continue;
+      }
 
-      const diaAyer = subDays(new Date(), 1);
-      const sixMonthsAgo = subDays(new Date(), 90);
-
-      const from = format(new Date(diaAyer), 'yyyy-MM-dd 00:00:00');
-      const to = format(new Date(sixMonthsAgo), 'yyyy-MM-dd 23:59:59');
-
-
-      //se recorre el arreglo de empleados
-      //employees.emps
-      let h = 0;
-      for (const iterator of idsEmployees) {
-        const eventDays = [];
-        let totalHrsRequeridas = 0;
-        let totalHrsTrabajadas = 0;
-        const totalHrsExtra = 0;
-
-        //se recorre el arreglo de dias generados
-        for (let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
-          const dataDate = {
-            start: index,
-            end: index,
-          };
-
-          const searchTimeCorrection = await this.dataSource.manager.createQueryBuilder('time_correction', 'time_correction')
-            .innerJoin('time_correction.employee', 'employee')
-            .where('time_correction.date = :date', { date: format(index, 'yyyy-MM-dd') })
-            .andWhere('employee.id = :id', { id: iterator })
-            .getOne();
-
-
-
-          //se verifica si el dia es festivo
-          const dayCalendar = await this.calendarService.findByDate(index as any);
-
-          if (dayCalendar) {
-            if (dayCalendar.holiday) {
-              continue;
-            }
+      //asigna la incidencia al empleado correspondiente
+      incidencias.forEach(incidence => {
+        try {
+          const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
+          if (empleado) {
+            empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
           }
-
-          if (searchTimeCorrection) {
-            continue;
-          }
-
-          const nowDate = new Date(index);
-
-          //turno actual
-          const employeeShif = await this.employeeShiftService.findMore(
-            dataDate,
-            [iterator],
-          );
-
-          //se realiza la busqueda de incidencias de tiempo compensatorio por empleado y por rango de fechas
-          //y que esten autorizadas
-          const incidenciaCompensatorio =
-            await this.employeeIncidenceRepository.find({
-              relations: {
-                employee: true,
-                incidenceCatologue: true,
-                dateEmployeeIncidence: true,
-              },
-              where: {
-                employee: {
-                  id: iterator,
-                },
-                dateEmployeeIncidence: {
-                  date: Between(index as any, index as any),
-                },
-                status: 'Autorizada',
-                type: In(['Compensatorio', 'Repago']),
-              },
-              order: {
-                employee: {
-                  id: 'ASC',
-                },
-                type: 'ASC',
-              },
-            });
-
-          //si existe incidencia de tiempo compensatorio autorizada salta el proceso
-          if (incidenciaCompensatorio.length > 0) {
-            continue;
-          }
-
-          //se obtienen las incidencias del dia
-          //si existe alguna de las siguientes no mostrara en el reporte
-          const otherIncidence = await this.dataSource.manager.createQueryBuilder('employee_incidence', 'employee_incidence')
-            .innerJoin('employee_incidence.employee', 'employee')
-            .innerJoin('employee_incidence.incidenceCatologue', 'incidenceCatologue')
-            .where('employee.id = :id', { id: iterator })
-            .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada'] })
-            .andWhere('employee_incidence.date BETWEEN :from AND :to', { from: format(new Date(index), 'yyyy-MM-dd'), to: format(new Date(index), 'yyyy-MM-dd') })
-            .andWhere('incidenceCatologue.code_band IN (:...code_band)', {
-              code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS', 'CAST', 'FINJ', 'HE', 'INC',
-                'DFT', 'VacM', 'Sind', 'PRTC', 'DOM', 'VACA', 'HO', 'HET', 'PSSE']
-            })
-            .getMany();
-
-
-          if (employeeShif.events.length == 0) {
-            continue;
-          }
-
-          //si existe incidencia no se muestra en el reporte
-          if (otherIncidence.length > 0) {
-
-            continue;
-          }
-
-          const turnoActual = employeeShif.events[0]?.nameShift;
-          let hrEntrada = '00:00:00';
-          let hrSalida = '23:59:00';
-          let diaAnterior;
-          let diaSiguente;
-
-          const dataDateAnterior = {
-            start: new Date(nowDate.setDate(nowDate.getDate() - 1)),
-            end: new Date(nowDate.setDate(nowDate.getDate() - 1)),
-          };
-          const dataDateSiguiente = {
-            start: new Date(nowDate.setDate(nowDate.getDate() + 1)),
-            end: new Date(nowDate.setDate(nowDate.getDate() + 1)),
-          };
-
-          const employeeShifAnterior = await this.employeeShiftService.findMore(
-            dataDateAnterior,
-            `${iterator}`,
-          );
-          const employeeShifSiguiente = await this.employeeShiftService.findMore(
-            dataDateSiguiente,
-            `${iterator}`,
-          );
-          const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
-          const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
-
-          //turno actual es igual al turno del dia anterior
-          if (turnoActual == turnoAnterior) {
-            //turno actual es igual al turno del dia siguiente
-            if (turnoActual == turnoSiguiente) {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '15:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T4':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '09:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-              }
-            } else {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T4':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '12:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-              }
-            }
-          } else {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T2':
-                hrEntrada = '11:00:00'; //dia Actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T3':
-                hrEntrada = '20:00:00'; //dia actual
-                hrSalida = '08:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T4':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-2':
-                hrEntrada = '14:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-            }
-          }
-
-          const registrosChecadorNuevo = await this.checadorService.findbyDate(
-            iterator,
-            diaAnterior,
-            diaSiguente,
-            hrEntrada,
-            hrSalida,
-          );
-
-
-          //se obtiene la hora de inicio y fin del turno
-          let startTimeShift;
-          let endTimeShift;
-          if (turnoActual != 'T3') {
-            startTimeShift = moment(
-              new Date(
-                `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`,
-              ),
-              'HH:mm',
-            );
-            endTimeShift = moment(
-              new Date(
-                `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`,
-              ),
-              'HH:mm',
-            );
-          } else {
-            startTimeShift = moment(
-              new Date(
-                `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`,
-              ),
-              'HH:mm',
-            );
-            endTimeShift = moment(
-              new Date(
-                `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
-                }`,
-              ),
-              'HH:mm',
-            );
-          }
-
-          const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
-          totalHrsRequeridas += diffTimeShift >= 0 ? diffTimeShift : 0;
-
-          //se obtienen los registros del dia
-
-          const firstDate = moment(new Date(registrosChecadorNuevo[0]?.date));
-          const secondDate = moment(new Date(registrosChecadorNuevo[registrosChecadorNuevo.length - 1]?.date));
-          let diffDate = secondDate.diff(firstDate, 'hours', true);
-          let calculoHrsExtra = 0;
-          const incidenciaVac = false;
-
-          const hours = Math.floor(diffDate);
-          const minutes = (diffDate - hours) * 60;
-
-          const date = new Date();
-          date.setHours(hours);
-          date.setMinutes(minutes);
-
-
-          //si el total de horas registradas es menor al total de horas por dia -3
-          //o el total de horas registradas es mayor al total de horas por dia +3
-          //muestra los datos
-          if (diffDate >= diffTimeShift - 3 && diffDate <= diffTimeShift + 3) {
-            continue;
-          }
-
-          const horas_realizadas = date.toTimeString().split(' ')[0].split(':');
-
-          registros.push({
-            id: h,
-            id_empleado: iterator,
-
-          });
-
-          //si existe incidencia de vacaciones se toma como hrs trabajadas
-          if (incidenciaVac) {
-            diffDate = diffTimeShift;
-          }
-
-          //se calcula las horas trabajadas y hrs extra
-          calculoHrsExtra +=
-            diffDate - diffTimeShift <= 0 ? 0 : diffDate - diffTimeShift;
-
-          totalHrsTrabajadas += diffDate >= 0 ? diffDate : 0;
-
-          /* eventDays.push({
-                      date: format(index, 'yyyy-MM-dd'),
-                      incidencia: {extra: incidenceExtra, incidencias: incidencias},
-                      employeeShift: employeeShif.events[0]?.nameShift,
-                  }); */
-
-          h++;
+        } catch (error) {
+          this.log.error(`Error al asignar la incidencia al empleado ${incidence.employee.id} para el lider ${lideres[i].name} - ${lideres[i].employeeNumber}: ${error.message}`, error.stack);
         }
 
-        totalHrsTrabajadas = totalHrsTrabajadas - totalHrsExtra;
-
-      }
+      });
 
       let mailData = {
-        totalIncidencias: totalIncidenciaPendiente,
-        totalTimeCorrection: registros.length,
+        empleados: lideres[i].empleados,
       }
+      let totalIncidencias = 0;
+      lideres[i].empleados.forEach(emp => {
+        totalIncidencias += emp.incidencia.length;
+      });
 
       //envio de correo
-      if (mailData.totalIncidencias > 0 || mailData.totalTimeCorrection > 0) {
-
-        await this.mailService.sendEmailPendingIncidence(user.map(user => user.email), 'Incidencias y correcciones de tiempo pendientes', mailData);
+      if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
+        try {
+          await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 24Hrs', mailData);
+        } catch (error) {
+          this.log.error(`Error al enviar el correo al lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
+        }
       }
 
 
@@ -2829,86 +2591,149 @@ export class EmployeeIncidenceService {
   //para obtener las incidencias con status pendiente y que no se han procesado en mas de 48 horas
   //obtener las correcciones de tiempo de los empleados
   async getReportPendingIncidence48() {
-
+    let lideres: Array<{
+      idLider: number;
+      name: string;
+      employeeNumber: number;
+      email: string;
+      empleados: Array<{
+        idEmpleado: number,
+        employeeNumber: number,
+        name: string,
+        incidencia: Array<{
+          name: string,
+          fecha: string
+        }>,
+      }>
+    }> = [];
     let idsJefeTurno: number[];
-    let idsLider: number[] = [];
     let user: any;
-    let empleados: any;
-    let idsEmployees: number[] = [];
     let visibleJefeTurno: any[];
+    let listOrg = [];
+    let jefeTurno: any[];
+
+    try {
+      //se obtienen los jefes de turno
+      jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
+        .innerJoinAndSelect('emp.job', 'job')
+        .where('job.deleted_at IS NULL')
+        .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
+        .getMany();
+
+      //se asignan los jefes de turno al arreglo de lideres
+      lideres.push(...jefeTurno.map(jefe => ({
+        idLider: jefe.id,
+        name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
+        employeeNumber: jefe.employee_number,
+        email: '',
+        empleados: []
+      })));
+
+      idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+    } catch (error) {
+      this.log.error(`Error al obtener los jefes de turno: ${error.message}`, error.stack);
+    }
 
 
-    //se obtienen los jefes de turno
-    const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
-      .innerJoinAndSelect('emp.job', 'job')
-      .where('job.deleted_at IS NULL')
-      .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
-      .getMany();
-
-    idsJefeTurno = jefeTurno.map(jefe => jefe.id);
-
-    //se asignan los jefes de turno al arreglo de lideres
-    idsLider = [...idsJefeTurno];
 
     //se obtienen los lideres que tienen empleados a su cargo
-    const listOrg = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
-      .innerJoinAndSelect('organigrama.leader', 'leader')
-      .select('leader.id', 'leaderId')
-      .addSelect('leader.name', 'leaderName')
-      .addSelect('COUNT(organigrama.id)', 'total')
-      .where('leader.deleted_at IS NULL')
-      .andWhere('leader.id NOT IN (:...ids)', { ids: idsLider })
-      .groupBy('leader.id')
-      .getRawMany();
+    try {
+      listOrg = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+        .innerJoinAndSelect('organigrama.leader', 'leader')
+        .select('leader.id', 'leaderId')
+        .addSelect('leader.employee_number', 'leaderEmployeeNumber')
+        .addSelect('leader.name', 'leaderName')
+        .addSelect('leader.paternal_surname', 'leaderPaternalSurname')
+        .addSelect('leader.maternal_surname', 'leaderMaternalSurname')
+        .addSelect('COUNT(organigrama.id)', 'total')
+        .where('leader.deleted_at IS NULL')
+        .andWhere('leader.id NOT IN (:...ids)', { ids: lideres.map(l => l.idLider) })
+        .groupBy('leader.id')
+        .getRawMany();
+    } catch (error) {
+      this.log.error(`Error al obtener los lideres que tienen empleados a su cargo: ${error.message}`, error.stack);
 
-    let temporalIds = listOrg.map(lider => lider.id);
-    idsLider.push(...listOrg.map(lider => lider.id));
+    }
+
+    lideres.push(...listOrg.map(lider => ({
+      idLider: lider.leaderId,
+      name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
+      employeeNumber: lider.leaderEmployeeNumber,
+      email: '', empleados: []
+    })));
 
 
-    for (let i = 0; i < idsLider.length; i++) {
-      let idsEmployees: number[] = [];
-      let totalIncidenciaPendiente = 0;
-      let registros = [];
+    for (let i = 0; i < lideres.length; i++) {
+
+      //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
+
 
       //se obtiene el usuario del lider
       user = await this.dataSource.manager.createQueryBuilder('user', 'user')
         .innerJoin('user.employee', 'employee')
-        .where('employee.id = :id', { id: idsLider[i] })
+        .where('employee.id = :id', { id: lideres[i].idLider })
         .getMany();
 
       //se obtienen los empleados asignados al lider por organigrama
       let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
         .innerJoinAndSelect('organigrama.employee', 'employee')
         .innerJoinAndSelect('organigrama.leader', 'leader')
-        .where('leader.id = :id', { id: idsLider[i] })
+        .where('leader.id = :id', { id: lideres[i].idLider })
         .getMany();
 
-
-      idsEmployees = [...org.map(emp => emp.employee.id)];
-
+      if (user.length == 0) {
+        continue;
+      }
+      //se agrega el correo del lider
+      lideres[i].email = user[0].email;
+      //se asignan los empleados al lider
+      lideres[i].empleados = [...org.map(emp => {
+        return {
+          idEmpleado: emp.employee.id,
+          employeeNumber: emp.employee.employee_number,
+          name: emp.employee.name,
+          incidencia: [],
+          fecha: ''
+        }
+      })];
 
       //se obtienen los empleados que puesto es visible por jefe de turno
-      if (idsJefeTurno.includes(idsLider[i])) {
-        visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-          .innerJoinAndSelect('employee.job', 'job')
-          .innerJoinAndSelect('employee.payRoll', 'payRoll')
-          .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-          .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-          .where('job.shift_leader = 1')
-          .andWhere('employee.deleted_at IS NULL')
-          .orderBy('employee.employee_number', 'ASC')
-          .getMany();
+      if (idsJefeTurno.includes(lideres[i].idLider)) {
+        try {
+          visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.job', 'job')
+            .innerJoinAndSelect('employee.payRoll', 'payRoll')
+            .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+            .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+            .where('job.shift_leader = 1')
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          //se asignan los empleados visibles por jefe de turno al lider
+          lideres[i].empleados = [
+            ...lideres[i].empleados,
+            ...visibleJefeTurno.map(emp => {
+              return {
+                idEmpleado: emp.id,
+                employeeNumber: emp.employee_number,
+                name: emp.name,
+                incidencia: [],
+                fecha: ''
+              }
+            })
+          ];
 
-        idsEmployees = [...idsEmployees, ...visibleJefeTurno.map(emp => emp.id)];
+        } catch (error) {
+          this.log.error(`Error al obtener los empleados visibles por jefe de turno para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
+
+        }
 
       }
 
 
       //se obtienen las incidencias pendientes de los empleados
       //y la fecha de la incidencia es 1 dia antes de la fecha actual
-
-      const diaAyer = subDays(new Date(), 2);
-      const sixMonthsAgo = subDays(new Date(), 90);
+      const yesterday = subDays(new Date(), 2);
       let incidencias: any[];
       try {
         incidencias = await this.employeeIncidenceRepository.find({
@@ -2919,456 +2744,322 @@ export class EmployeeIncidenceService {
           },
           where: {
             employee: {
-              id: In(idsEmployees),
+              id: In(lideres[i].empleados.map(e => e.idEmpleado)),
             },
             status: 'Pendiente',
-            dateEmployeeIncidence: {
-              date: LessThan(new Date(format(diaAyer, 'yyyy-MM-dd'))),
-            },
+            created_at: LessThanOrEqual(new Date(format(yesterday, 'yyyy-MM-dd'))),
           },
           order: {
             employee: {
               id: 'ASC',
-            },
-            type: 'ASC',
+            }
           },
         });
 
       } catch (error) {
+        this.log.error(`Error al obtener las incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
 
       }
 
-      //suma el total de incidencias pendientes
-      totalIncidenciaPendiente += incidencias.length;
 
-      //correccion de tiempos
-      //fecha inicio y fecha fin
-      const from = format(new Date(sixMonthsAgo), 'yyyy-MM-dd 23:59:59');
-      const to = format(new Date(diaAyer), 'yyyy-MM-dd 00:00:00');
-
-      //se recorre el arreglo de empleados
-      //employees.emps
-      let h = 0;
-      for (const iterator of idsEmployees) {
-        const eventDays = [];
-        let totalHrsRequeridas = 0;
-        let totalHrsTrabajadas = 0;
-        const totalHrsExtra = 0;
-
-        //se recorre el arreglo de dias generados
-        for (let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
-          const dataDate = {
-            start: index,
-            end: index,
-          };
-
-          //se busca si existe una correccion de tiempo
-          const searchTimeCorrection = await this.dataSource.manager.createQueryBuilder('time_correction', 'time_correction')
-            .innerJoin('time_correction.employee', 'employee')
-            .where('time_correction.date = :date', { date: format(index, 'yyyy-MM-dd') })
-            .andWhere('employee.id = :id', { id: iterator })
-            .getOne();
-
-
-
-          //se verifica si el dia es festivo
-          const dayCalendar = await this.calendarService.findByDate(index as any);
-
-          //si es festivo no se muestra en el reporte
-          if (dayCalendar) {
-            if (dayCalendar.holiday) {
-              continue;
-            }
+      //asigna la incidencia al empleado correspondiente
+      incidencias.forEach(incidence => {
+        try {
+          const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
+          if (empleado) {
+            empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
           }
-
-
-
-          //si existe correccionm de tiempo salta el proceso
-          if (searchTimeCorrection) {
-            continue;
-          }
-
-          const nowDate = new Date(index);
-
-          //turno actual
-          const employeeShif = await this.employeeShiftService.findMore(
-            dataDate,
-            [iterator],
-          );
-
-          //si no existe turno actual no se muestra en el reporte
-          if (employeeShif.events.length == 0) {
-            continue;
-          }
-
-
-          //se realiza la busqueda de incidencias de tiempo compensatorio por empleado y por rango de fechas
-          //y que esten autorizadas
-          const incidenciaCompensatorio =
-            await this.employeeIncidenceRepository.find({
-              relations: {
-                employee: true,
-                incidenceCatologue: true,
-                dateEmployeeIncidence: true,
-              },
-              where: {
-                employee: {
-                  id: iterator,
-                },
-                dateEmployeeIncidence: {
-                  date: Between(index as any, index as any),
-                },
-                status: 'Autorizada',
-                type: In(['Compensatorio', 'Repago']),
-              },
-              order: {
-                employee: {
-                  id: 'ASC',
-                },
-                type: 'ASC',
-              },
-            });
-
-          //si existe incidencia de tiempo compensatorio autorizada salta el proceso
-          if (incidenciaCompensatorio.length > 0) {
-            continue;
-          }
-
-          //se obtienen las incidencias del dia
-          //si existe alguna de las siguientes no mostrara en el reporte
-          const otherIncidence = await this.dataSource.manager.createQueryBuilder('employee_incidence', 'employee_incidence')
-            .innerJoin('employee_incidence.employee', 'employee')
-            .innerJoin('employee_incidence.incidenceCatologue', 'incidenceCatologue')
-            .innerJoin('employee_incidence.dateEmployeeIncidence', 'dateEmployeeIncidence')
-            .where('employee.id = :id', { id: iterator })
-            .andWhere('employee_incidence.status IN (:status)', { status: ['Autorizada'] })
-            .andWhere('dateEmployeeIncidence.date BETWEEN :from AND :to', { from: format(new Date(index), 'yyyy-MM-dd'), to: format(new Date(index), 'yyyy-MM-dd') })
-            .andWhere('incidenceCatologue.code_band IN (:...code_band)', {
-              code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS', 'CAST', 'FINJ', 'HE', 'INC',
-                'DFT', 'VacM', 'Sind', 'PRTC', 'DOM', 'VACA', 'HO', 'HET', 'PSSE']
-            })
-            .getMany();
-
-
-
-
-          //si existe incidencia no se muestra en el reporte
-          if (otherIncidence.length > 0) {
-
-            continue;
-          }
-
-          const turnoActual = employeeShif.events[0]?.nameShift;
-          let hrEntrada = '00:00:00';
-          let hrSalida = '23:59:00';
-          let diaAnterior;
-          let diaSiguente;
-
-          const dataDateAnterior = {
-            start: new Date(nowDate.setDate(nowDate.getDate() - 1)),
-            end: new Date(nowDate.setDate(nowDate.getDate() - 1)),
-          };
-          const dataDateSiguiente = {
-            start: new Date(nowDate.setDate(nowDate.getDate() + 1)),
-            end: new Date(nowDate.setDate(nowDate.getDate() + 1)),
-          };
-
-          const employeeShifAnterior = await this.employeeShiftService.findMore(
-            dataDateAnterior,
-            `${iterator}`,
-          );
-          const employeeShifSiguiente = await this.employeeShiftService.findMore(
-            dataDateSiguiente,
-            `${iterator}`,
-          );
-          const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
-          const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
-
-          //turno actual es igual al turno del dia anterior
-          if (turnoActual == turnoAnterior) {
-            //turno actual es igual al turno del dia siguiente
-            if (turnoActual == turnoSiguiente) {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '15:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T4':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '09:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-              }
-            } else {
-              switch (turnoActual) {
-                case 'T1':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T2':
-                  hrEntrada = '05:00:00'; //dia Actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T3':
-                  hrEntrada = '13:00:00'; //dia actual
-                  hrSalida = '07:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-                case 'MIX':
-                  hrEntrada = '03:00:00'; //dia actual
-                  hrSalida = '22:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'TI':
-                  hrEntrada = '02:00:00'; //dia actual
-                  hrSalida = '23:00:00'; //dia siguiente
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T4':
-                  hrEntrada = '21:00:00'; //dia anterior
-                  hrSalida = '15:00:00'; //dia actual
-                  diaAnterior = new Date(nowDate.setDate(nowDate.getDate() - 1));
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-1':
-                  hrEntrada = '03:00:00'; //dia anterior
-                  hrSalida = '22:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(index);
-                  break;
-                case 'T12-2':
-                  hrEntrada = '12:00:00'; //dia anterior
-                  hrSalida = '08:00:00'; //dia actual
-                  diaAnterior = new Date(index);
-                  diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                  break;
-              }
-            }
-          } else {
-            switch (turnoActual) {
-              case 'T1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T2':
-                hrEntrada = '11:00:00'; //dia Actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T3':
-                hrEntrada = '20:00:00'; //dia actual
-                hrSalida = '08:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-              case 'MIX':
-                hrEntrada = '03:00:00'; //dia actual
-                hrSalida = '22:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'TI':
-                hrEntrada = '02:00:00'; //dia actual
-                hrSalida = '23:00:00'; //dia siguiente
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T4':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '16:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-1':
-                hrEntrada = '03:00:00'; //dia anterior
-                hrSalida = '22:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(index);
-                break;
-              case 'T12-2':
-                hrEntrada = '14:00:00'; //dia anterior
-                hrSalida = '08:00:00'; //dia actual
-                diaAnterior = new Date(index);
-                diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
-                break;
-            }
-          }
-
-          const registrosChecadorNuevo = await this.checadorService.findbyDate(
-            iterator,
-            diaAnterior,
-            diaSiguente,
-            hrEntrada,
-            hrSalida,
-          );
-
-
-          //se obtiene la hora de inicio y fin del turno
-          let startTimeShift;
-          let endTimeShift;
-          if (turnoActual != 'T3') {
-            startTimeShift = moment(
-              new Date(
-                `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`,
-              ),
-              'HH:mm',
-            );
-            endTimeShift = moment(
-              new Date(
-                `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.endTimeshift}`,
-              ),
-              'HH:mm',
-            );
-          } else {
-            startTimeShift = moment(
-              new Date(
-                `${employeeShif.events[0]?.start} ${employeeShif.events[0]?.startTimeshift}`,
-              ),
-              'HH:mm',
-            );
-            endTimeShift = moment(
-              new Date(
-                `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
-                }`,
-              ),
-              'HH:mm',
-            );
-          }
-
-          const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
-          totalHrsRequeridas += diffTimeShift >= 0 ? diffTimeShift : 0;
-
-          //se obtienen los registros del dia
-
-          const firstDate = moment(new Date(registrosChecadorNuevo[0]?.date));
-          const secondDate = moment(new Date(registrosChecadorNuevo[registrosChecadorNuevo.length - 1]?.date));
-          let diffDate = secondDate.diff(firstDate, 'hours', true);
-          let calculoHrsExtra = 0;
-          const incidenciaVac = false;
-
-          const hours = Math.floor(diffDate);
-          const minutes = (diffDate - hours) * 60;
-
-          const date = new Date();
-          date.setHours(hours);
-          date.setMinutes(minutes);
-
-
-          //si el total de horas registradas es menor al total de horas por dia -3
-          //o el total de horas registradas es mayor al total de horas por dia +3
-          //muestra los datos
-          if (diffDate >= diffTimeShift - 3 && diffDate <= diffTimeShift + 3) {
-            continue;
-          }
-
-          const horas_realizadas = date.toTimeString().split(' ')[0].split(':');
-
-          registros.push({
-            id: h,
-            id_empleado: iterator,
-
-          });
-
-          //si existe incidencia de vacaciones se toma como hrs trabajadas
-          if (incidenciaVac) {
-            diffDate = diffTimeShift;
-          }
-
-          //se calcula las horas trabajadas y hrs extra
-          calculoHrsExtra +=
-            diffDate - diffTimeShift <= 0 ? 0 : diffDate - diffTimeShift;
-
-          totalHrsTrabajadas += diffDate >= 0 ? diffDate : 0;
-
-          /* eventDays.push({
-                      date: format(index, 'yyyy-MM-dd'),
-                      incidencia: {extra: incidenceExtra, incidencias: incidencias},
-                      employeeShift: employeeShif.events[0]?.nameShift,
-                  }); */
-
-          h++;
+        } catch (error) {
+          this.log.error(`Error al asignar la incidencia al empleado para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
         }
 
-        totalHrsTrabajadas = totalHrsTrabajadas - totalHrsExtra;
-
-      }
-
-      let jefeLider = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-        .innerJoinAndSelect('employee.organigramaL', 'org')
-        .innerJoinAndSelect('org.leader', 'leader')
-        .innerJoinAndSelect('leader.userId', 'user')
-        .where('employee.id = :id', { id: idsLider[i] })
-        .getOne();
+      });
 
       let mailData = {
-        totalIncidencias: totalIncidenciaPendiente,
-        totalTimeCorrection: registros.length,
-        liderName: jefeLider.name + ' ' + jefeLider.paternal_surname + ' ' + jefeLider.maternal_surname,
+        empleados: lideres[i].empleados,
       }
-
-
-
-      let correos: string[] = [];
-
-      correos.push(jefeLider.organigramaL[0].leader.userId[0].email);
-      correos = [...correos, ...user.map(user => user.email)];
-
+      let totalIncidencias = 0;
+      lideres[i].empleados.forEach(emp => {
+        totalIncidencias += emp.incidencia.length;
+      });
       //envio de correo
-      if (mailData.totalIncidencias > 0 || mailData.totalTimeCorrection > 0) {
-        await this.mailService.sendEmailPendingIncidenceJefe(correos, 'Incidencias y correcciones de tiempo pendientes con mas de 48hrs', mailData);
+
+
+      if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
+        try {
+          await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 48Hrs', mailData);
+        } catch (error) {
+          this.log.error(`Error al enviar el correo de incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
+        }
       }
 
 
     }
+  }
+
+  //obtener los lideres que tienen empleados a su cargo
+  //para obtener las incidencias con status pendiente y que no se han procesado en mas de 72 horas
+  //obtener las correcciones de tiempo de los empleados
+  async getReportPendingIncidence72() {
+
+    let lideres: Array<{
+      idLider: number;
+      name: string;
+      employeeNumber: number;
+      email: string;
+      empleados: Array<{
+        idEmpleado: number,
+        employeeNumber: number,
+        name: string,
+        incidencia: Array<{
+          name: string,
+          fecha: string,
+          created_at: string,
+          dias_transcurrido: number;
+        }>,
+      }>
+    }> = [];
+
+    let idsJefeTurno: number[];
+    let user: any;
+    let visibleJefeTurno: any[];
+    let listOrg = [];
+    let listLeaderOfLeader = [];
+    let leaderOfLeader: Array<{
+      idLider: number;
+      name: string;
+      employeeNumber: number;
+      email: string;
+      subLider: Array<{
+        idLider: number;
+        name: string;
+        employeeNumber: number;
+        email: string;
+        empleados: Array<{
+          idEmpleado: number,
+          employeeNumber: number,
+          name: string,
+          incidencia: Array<{
+            name: string,
+            fecha: string,
+            created_at: string,
+            dias_transcurrido: number;
+          }>,
+        }>
+      }>
+    }> = [];
+    let jefeTurno: any[];
+
+    try {
+      //se obtienen los jefes de turno
+      jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
+        .innerJoinAndSelect('emp.job', 'job')
+        .where('job.deleted_at IS NULL')
+        .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
+        .getMany();
+
+      //se asignan los jefes de turno al arreglo de lideres
+      lideres.push(...jefeTurno.map(jefe => ({
+        idLider: jefe.id,
+        name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
+        employeeNumber: jefe.employee_number,
+        email: '',
+        empleados: []
+      })));
+
+      idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+    } catch (error) {
+      this.log.error(`Error al obtener los jefes de turno: ${error.message}`, error.stack);
+    }
+
+
+
+    //se obtienen los lideres que tienen empleados a su cargo
+    try {
+      listOrg = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+        .innerJoinAndSelect('organigrama.leader', 'leader')
+        .select('leader.id', 'leaderId')
+        .addSelect('leader.employee_number', 'leaderEmployeeNumber')
+        .addSelect('leader.name', 'leaderName')
+        .addSelect('leader.paternal_surname', 'leaderPaternalSurname')
+        .addSelect('leader.maternal_surname', 'leaderMaternalSurname')
+        .addSelect('COUNT(organigrama.id)', 'total')
+        .where('leader.deleted_at IS NULL')
+        .andWhere('leader.id NOT IN (:...ids)', { ids: lideres.map(l => l.idLider) })
+        .groupBy('leader.id')
+        .getRawMany();
+
+      lideres.push(...listOrg.map(lider => ({
+        idLider: lider.leaderId,
+        name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
+        employeeNumber: lider.leaderEmployeeNumber,
+        email: '', empleados: []
+      })));
+
+    } catch (error) {
+      this.log.error(`Error al obtener los lideres que tienen empleados a su cargo: ${error.message}`, error.stack);
+    }
+
+    for (let i = 0; i < lideres.length; i++) {
+      try {
+        //se obtiene el usuario del lider
+        user = await this.dataSource.manager.createQueryBuilder('user', 'user')
+          .innerJoin('user.employee', 'employee')
+          .where('employee.id = :id', { id: lideres[i].idLider })
+          .getMany();
+
+        //se obtienen los empleados asignados al lider por organigrama
+        let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+          .innerJoinAndSelect('organigrama.employee', 'employee')
+          .innerJoinAndSelect('organigrama.leader', 'leader')
+          .where('leader.id = :id', { id: lideres[i].idLider })
+          .getMany();
+
+
+        //se agrega el correo del lider
+        lideres[i].email = user.length > 0 ? user[0].email : '';
+        //se asignan los empleados al lider
+        lideres[i].empleados = [...org.map(emp => {
+          return {
+            idEmpleado: emp.employee.id,
+            employeeNumber: emp.employee.employee_number,
+            name: emp.employee.name + ' ' + emp.employee.paternal_surname + ' ' + emp.employee.maternal_surname,
+            incidencia: []
+          }
+        })];
+
+        //se obtienen los empleados que puesto es visible por jefe de turno
+        if (idsJefeTurno.includes(lideres[i].idLider)) {
+          visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.job', 'job')
+            .innerJoinAndSelect('employee.payRoll', 'payRoll')
+            .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+            .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+            .where('job.shift_leader = 1')
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          //se asignan los empleados visibles por jefe de turno al lider
+          lideres[i].empleados =
+            [
+              ...lideres[i].empleados,
+              ...visibleJefeTurno.map(emp => {
+                return {
+                  idEmpleado: emp.id,
+                  employeeNumber: emp.employee_number,
+                  name: emp.name,
+                  incidencia: [],
+                }
+              })
+            ];
+        }
+      } catch (error) {
+        this.log.error(`Error al obtener los empleados para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} : ${error.message}`, error.stack);
+      }
+
+
+
+      //se obtienen las incidencias pendientes de los empleados
+      //y la fecha de la incidencia es 2 dia antes de la fecha actual
+      const yesterday = subDays(new Date(), 7);
+      let incidencias: any[];
+      try {
+        incidencias = await this.employeeIncidenceRepository.find({
+          relations: {
+            employee: true,
+            incidenceCatologue: true,
+            dateEmployeeIncidence: true,
+          },
+          where: {
+            employee: {
+              id: In(lideres[i].empleados.map(e => e.idEmpleado)),
+            },
+            status: 'Pendiente',
+            created_at: LessThanOrEqual(new Date(format(yesterday, 'yyyy-MM-dd'))),
+          },
+          order: {
+            employee: {
+              id: 'ASC',
+            }
+          },
+        });
+
+      } catch (error) {
+        this.log.error(`Error al obtener las incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} : ${error.message}`, error.stack);
+      }
+
+
+      //asigna la incidencia al empleado correspondiente
+      incidencias.forEach(incidence => {
+        try {
+          const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
+          if (empleado) {
+            // calcular días transcurridos desde la creación de la incidencia hasta hoy
+            const createdAt = incidence.created_at ? new Date(incidence.created_at) : new Date();
+            const today = new Date();
+            const diffDays = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+
+            empleado.incidencia.push({
+              name: incidence.incidenceCatologue.name,
+              fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd'),
+              created_at: format(incidence.created_at, 'yyyy-MM-dd'),
+              dias_transcurrido: diffDays
+            });
+          }
+        } catch (error) {
+          this.log.error(`Error al asignar la incidencia al empleado para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} : ${error.message}`, error.stack);
+        }
+
+      });
+
+    }
+
+    //se busca al lider del lider
+    try {
+      listLeaderOfLeader = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+        .innerJoinAndSelect('organigrama.leader', 'leader')
+        .innerJoinAndSelect('organigrama.employee', 'employee')
+        .select('leader.id', 'leaderId')
+        .addSelect('leader.employee_number', 'leaderEmployeeNumber')
+        .addSelect('leader.name', 'leaderName')
+        .addSelect('leader.paternal_surname', 'leaderPaternalSurname')
+        .addSelect('leader.maternal_surname', 'leaderMaternalSurname')
+        .addSelect('employee.id', 'employeeId')
+        //.addSelect('COUNT(organigrama.id)', 'total')
+        .where('leader.deleted_at IS NULL')
+        .andWhere('employee.id IN (:...ids)', { ids: lideres.map(l => l.idLider) })
+        //.groupBy('leader.id')
+        .getRawMany();
+    } catch (error) {
+      this.log.error(`Error al obtener los lideres de lideres: ${error.message}`, error.stack);
+    }
+
+
+    // ✅ Filtrar todo en una sola pasada
+    lideres = lideres
+      .map(sublider => ({
+        ...sublider,
+        empleados: sublider.empleados.filter(empleado => empleado.incidencia.length > 0)
+      }))
+      .filter(sublider => sublider.empleados.length > 0)
+
+
+    let mailData = {
+      empleados: lideres,
+    }
+    //correo de Daniel kilian
+    let correoDaniel = await this.employeeService.findOne(365);
+    //correo de carlos Arturo
+    let correoCarlos = await this.employeeService.findOne(600);
+
+    try {
+      //envio de correo
+      await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email, 'f.gil@oechsler.mx'], 'Incidencias pendientes de autorización, 1 semana o mas', mailData);
+
+    } catch (error) {
+      this.log.error(`Error al enviar el correo de incidencias pendientes de 1 semana o mas: ${error.message}`, error.stack);
+    }
+
   }
 
   //reporte para obtener los empleados en planta

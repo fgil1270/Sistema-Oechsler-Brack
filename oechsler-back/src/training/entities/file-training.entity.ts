@@ -40,7 +40,4 @@ export class FileTraining {
     @DeleteDateColumn()
     deleted_at: Date;
 
-    @ManyToOne(() => Training, (training) => training.fileTraining)
-    @JoinColumn({ name: 'training_id' })
-    training: Training;
 }

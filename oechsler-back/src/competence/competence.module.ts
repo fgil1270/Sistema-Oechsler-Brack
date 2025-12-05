@@ -6,6 +6,7 @@ import { CompetenceService } from './service/competence.service';
 import { Competence } from './entities/competence.entity';
 import { TypeCompetence } from './entities/type_competence.entity';
 import { TypeElementCompetence } from './entities/type_element_competence.entity';
+import { SubCompetenceTraining } from './entities/sub_competence_training.entity';
 
 @Module({
   imports: [
@@ -13,10 +14,11 @@ import { TypeElementCompetence } from './entities/type_element_competence.entity
       Competence,
       TypeCompetence,
       TypeElementCompetence,
+      SubCompetenceTraining,
     ]),
   ],
   controllers: [CompetenceController],
   providers: [CompetenceService],
   exports: [CompetenceService],
 })
-export class CompetenceModule {}
+export class CompetenceModule { }

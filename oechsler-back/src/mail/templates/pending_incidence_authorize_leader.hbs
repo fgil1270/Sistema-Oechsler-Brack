@@ -1,6 +1,29 @@
-<p>El empleado: {{liderName}}, tiene</p> 
-<p>{{totalIncidencias}} Incidencias pendientes por autorizar.</p>
-<p>{{totalTimeCorrection}} Correciones de tiempo por revisar.</p>
+<p>Incidencias pendientes por autorizar.</p>
+<ul>
+    {{#each empleados}}
+    <li>Lider: #{{this.employeeNumber}} - {{this.name}}</li>
+    <ul>
+        {{#if this.empleados.length}}
+            {{#each this.empleados}}
+            <li>Empleado: # {{this.employeeNumber}} - {{this.name}}</li>
+            <ul>
+                {{#if this.incidencia.length}}
+                    {{#each this.incidencia}}
+                    
+                    <li>Incidencia: {{this.name}}</li>
+                    <ul>
+                        <li>Dias de la incidencia: {{this.fecha}}</li>
+                        <li>Fecha de creación: {{this.created_at}}</li>
+                        <li>Total de dias sin autorizar: {{this.dias_transcurrido}}</li>
+                    </ul>
+                    {{/each}}
+                {{/if}}
+            </ul>
+            {{/each}}
+        {{/if}}
+    </ul>
+    {{/each}}
+</ul>
 
 <p>Para más información revisar vista de autorización de incidencias.</p>
 <a href="http://192.168.51.39:{{port}}">Sistema OITS</a>

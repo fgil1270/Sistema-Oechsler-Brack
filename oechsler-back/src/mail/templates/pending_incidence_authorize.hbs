@@ -1,6 +1,17 @@
-<p>Usted tiene:</p> 
-<p>{{totalIncidencias}} Incidencias pendientes por autorizar.</p>
-<p>{{totalTimeCorrection}} Correciones de tiempo por revisar.</p>
+<p>Incidencias pendientes por autorizar.</p>
+<ul>
+    {{#each empleados}}
+    <li># {{this.employeeNumber}} - {{this.name}}</li>
+    <ul>
+        {{#each this.incidencia}}
+        <li>{{this.name}}: {{this.fecha}}</li>
+        {{/each}}
+    </ul>
+    </li>
+    {{/each}}
+</ul>
+
+<div>Datos: {{empleados}} </div>
 
 <p>Para más información revisar vista de autorización de incidencias.</p>
 <a href="http://192.168.51.39:{{port}}">Sistema OITS</a>

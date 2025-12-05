@@ -900,9 +900,11 @@ export class EmployeesService {
       user,
     );
 
+
+    let filterEmployee = data.payRoll == 'Todas' ? employee : employee.filter((emp: any) => emp.payRoll.name == data.payRoll);
     const report = [];
-    for (let index = 0; index < employee.length; index++) {
-      const emp = employee[index];
+    for (let index = 0; index < filterEmployee.length; index++) {
+      const emp = filterEmployee[index];
       const row = {};
       const ingreso = moment(new Date(emp?.date_employment)); // dia de ingreso
       const diaConsulta = moment(new Date(data.startDate)); //dia de consulta del reporte
@@ -971,6 +973,7 @@ export class EmployeesService {
       });
 
 
+
       //si existe un un historial de vacaciones
       //se toman los dias de vacaciones del historial
       if (lastVacationProfile) {
@@ -988,7 +991,7 @@ export class EmployeesService {
           //se obtiene el total de dias que corresponden al año de cambio de perfil de vacaciones
           totalDiasByAnoHistorial = objDiasByAnoHistorial ? objDiasByAnoHistorial.total : 0;
           //se obtiene los dias que corresponden al siguiente año de cambio de perfil de vacaciones
-          sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day;
+          sumDiasSiguenteAnoHistorial = (parseInt(arrayAnoHistorial[1]) == 0 ? 0 : (parseInt(arrayAnoHistorial[1]) / 100) * objDiasBySiguenteAnoHistorial.day);
           //suma de los dias de antiguedad del historial
           sumaDiasAntiguedadHistorial = totalDiasByAnoHistorial + sumDiasSiguenteAnoHistorial;
 
@@ -998,7 +1001,6 @@ export class EmployeesService {
           //se calculan los dias de vacaciones al dia de la consulta
           //se genera array para separar años y dias
           arrayAno = anoCumplidos.toFixed(2).split('.');
-
 
 
           //se obtiene el total de dias que corresponden al año despues del cambio de perfil
@@ -1023,7 +1025,7 @@ export class EmployeesService {
           arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
           objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAnoHistorial[0]) != 0 ? parseInt(arrayAnoHistorial[0]) + 1 : 1));
           objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-          totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
+          totalDiasByFinAno = parseInt(arrayAnoHistorial[0]) != 0 ? objDiasByAnoFin.total : 0;
           sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
           sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
         } catch (error) {
@@ -1043,7 +1045,7 @@ export class EmployeesService {
         objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
         objDiasBySiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
         totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
-        sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day;
+        sumDiasSiguenteAno = (parseInt(arrayAno[1]) == 0 ? 0 : (parseInt(arrayAno[1]) / 100) * objDiasBySiguenteAno.day);
         sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
 
         //se obtiene los años cumplidos a fin de año
@@ -1052,8 +1054,8 @@ export class EmployeesService {
         arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
         objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayFinAno[0]));
         objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-        totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
-        sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
+        totalDiasByFinAno = parseInt(arrayFinAno[0]) != 0 ? objDiasByAnoFin.total : 0;
+        sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) == 0 ? 0 : (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day);
         sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
 
       }
@@ -1180,6 +1182,8 @@ export class EmployeesService {
       row['dias_disponibles_fin_ano'] = (sumaDiasAntiguedadFin - dayUsedAllYears).toFixed(2); //dias disponibles hasta fin de año
 
       report.push(row);
+
+
     }
 
     return report;
@@ -1233,15 +1237,15 @@ export class EmployeesService {
     const arrayAno = anoCumplidos.toFixed(2).split('.');
     const objDiasByAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayAno[0]));
     const objDiasBysiguenteAno = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayAno[0]) != 0 ? parseInt(arrayAno[0]) + 1 : 1));
-    const totalDiasByAno = objDiasByAno ? objDiasByAno.total : 0;
-    const sumDiasSiguenteAno = (parseInt(arrayAno[1]) / 100) * objDiasBysiguenteAno.day;
+    const totalDiasByAno = parseInt(arrayAno[0]) != 0 ? objDiasByAno.total : 0;
+    const sumDiasSiguenteAno = (parseInt(arrayAno[1]) == 0 ? 0 : (parseInt(arrayAno[1]) / 100) * objDiasBysiguenteAno.day);
     const sumaDiasAntiguedad = totalDiasByAno + sumDiasSiguenteAno;
     //se calculan los dias de vacaciones a fin de año
     const arrayFinAno = anoCumplidosFinAno.toFixed(2).split('.');
     const objDiasByAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === parseInt(arrayFinAno[0]));
     const objDiasBysiguenteAnoFin = vacationsAno.vacationsProfile.vacationProfileDetail.find((year) => year.year === (parseInt(arrayFinAno[0]) != 0 ? parseInt(arrayFinAno[0]) + 1 : 1));
-    const totalDiasByFinAno = objDiasByAnoFin ? objDiasByAnoFin.total : 0;
-    const sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
+    const totalDiasByFinAno = parseInt(arrayFinAno[0]) != 0 ? objDiasByAnoFin.total : 0;
+    const sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) == 0 ? 0 : (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day);;
     const sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
     let totalDiasVacacionesMedioDia = 0;
     let dataTest: any;

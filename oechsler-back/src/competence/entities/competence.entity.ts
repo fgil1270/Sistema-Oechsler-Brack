@@ -18,6 +18,7 @@ import { DncCourseManual } from '../../employee_objective/entities/dnc_manual.en
 import { CompetenceEvaluation } from '../../employee_objective/entities/competence_evaluation.entity';
 import { RequestCourse } from '../../request_course/entities/request_course.entity';
 import { CompetenceMachine } from '../../training_machine/entities/competence_machine.entity';
+import { SubCompetenceTraining } from './sub_competence_training.entity';
 
 @Entity()
 export class Competence {
@@ -64,4 +65,10 @@ export class Competence {
 
   @OneToMany(() => CompetenceMachine, (competenceMachine) => competenceMachine.competence)
   competenceMachines: CompetenceMachine[];
+
+  @Column({ type: 'boolean', default: false })
+  is_production: boolean;
+
+  @OneToMany(() => SubCompetenceTraining, (subCompetenceTraining) => subCompetenceTraining.competence)
+  subCompetenceTrainings: SubCompetenceTraining[];
 }

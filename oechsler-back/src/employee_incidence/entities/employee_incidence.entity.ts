@@ -8,10 +8,12 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { IncidenceCatologue } from '../../incidence_catologue/entities/incidence_catologue.entity';
 import { DateEmployeeIncidence } from './date_employee_incidence.entity';
+import { EventIncidence } from './event_incidence.entity';
 
 @Entity()
 export class EmployeeIncidence {
@@ -95,4 +97,8 @@ export class EmployeeIncidence {
 
   @Column({ type: 'text', nullable: true })
   employee_image: string;
+
+  @OneToOne(() => EventIncidence, (eventIncidence) => eventIncidence.employeeIncidence)
+  @JoinColumn()
+  eventIncidence: EventIncidence;
 }
