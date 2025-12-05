@@ -7,18 +7,23 @@ import * as expressListRoutes from 'express-list-endpoints';
 import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
+
+  const logger = new CustomLoggerService();
+  const customLogger = new CustomLoggerService();
+
   const app = await NestFactory.create(AppModule, {
     logger: new CustomLoggerService(),
   });
   // Aumentar el límite de tamaño del cuerpo de la solicitud
   app.use(bodyParser.json({ limit: '50mb' })); // Límite para JSON
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // Límite para datos codificados en URL
-  app.enableCors( {
+  app.enableCors({
     origin: '*',
     /*methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Authorization',
     optionsSuccessStatus: 200*/
-  }  );
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -26,6 +31,7 @@ async function bootstrap() {
   );
 
   process.env.TZ = 'Etc/Universal'; //establece la zona horaria universal
+
   // Configuración Swagger en NestJS
   const config = new DocumentBuilder()
     .setTitle('API OECHSLER')
@@ -36,7 +42,45 @@ async function bootstrap() {
 
   // URL API
   SwaggerModule.setup('docs', app, document);
-  
+
+  // ✅ Manejar promesas rechazadas no capturadas
+  process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+    logger.error('❌ Unhandled Rejection at:', promise.toString());
+    logger.error('Reason:', reason);
+    customLogger.error('Unhandled Rejection', JSON.stringify({
+      reason: reason?.message || reason,
+      stack: reason?.stack,
+      promise: promise.toString(),
+    }));
+
+    // No cerrar el servidor, solo logear
+    // En producción, podrías decidir cerrar después de X errores
+  });
+
+  // ✅ Manejar excepciones no capturadas
+  process.on('uncaughtException', (error: Error) => {
+    logger.error('❌ Uncaught Exception:', error.message);
+    logger.error('Stack:', error.stack);
+    customLogger.error('Uncaught Exception', JSON.stringify({
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    }));
+
+    // ⚠️ Cerrar la aplicación después de excepción no capturada
+    //process.exit(1);
+  });
+
+  // ✅ Manejar advertencias
+  process.on('warning', (warning: Error) => {
+    logger.warn(`⚠️ Warning: ${warning.name}`);
+    logger.warn(`Message: ${warning.message}`);
+    customLogger.warn(`Process Warning: ${JSON.stringify({
+      name: warning.name,
+      message: warning.message,
+      stack: warning.stack,
+    })}`);
+  });
 
   await app.listen(process.env.PORT);
 

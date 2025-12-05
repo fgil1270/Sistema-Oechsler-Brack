@@ -31,6 +31,7 @@ import * as path from 'path';
 import PDFDocument from 'pdfkit-table';
 import { Readable } from 'stream';
 import * as crypto from 'crypto';
+import { CustomLoggerService } from '../../logger/logger.service';
 
 import {
   CreateEmployeeIncidenceDto,
@@ -54,6 +55,8 @@ import { EventIncidence } from '../entities/event_incidence.entity';
 
 @Injectable()
 export class EmployeeIncidenceService {
+
+
   constructor(
     @InjectRepository(EmployeeIncidence) private employeeIncidenceRepository: Repository<EmployeeIncidence>,
     @InjectRepository(DateEmployeeIncidence) private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
@@ -69,6 +72,7 @@ export class EmployeeIncidenceService {
     private enabledCreateIncidenceService: EnabledCreateIncidenceService,
     @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(EventIncidence) private eventIncidenceRepository: Repository<EventIncidence>,
+    private log = new CustomLoggerService()
   ) { }
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
@@ -2386,26 +2390,32 @@ export class EmployeeIncidenceService {
     let idsJefeTurno: number[];
     let user: any;
     let visibleJefeTurno: any[];
-
     let listOrg = [];
+    let jefeTurno: any[];
 
-    //se obtienen los jefes de turno
-    const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
-      .innerJoinAndSelect('emp.job', 'job')
-      .where('job.deleted_at IS NULL')
-      .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
-      .getMany();
 
-    //se asignan los jefes de turno al arreglo de lideres
-    lideres.push(...jefeTurno.map(jefe => ({
-      idLider: jefe.id,
-      name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
-      employeeNumber: jefe.employee_number,
-      email: '',
-      empleados: []
-    })));
+    try {
+      //se obtienen los jefes de turno
+      jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
+        .innerJoinAndSelect('emp.job', 'job')
+        .where('job.deleted_at IS NULL')
+        .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
+        .getMany();
 
-    idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+      //se asignan los jefes de turno al arreglo de lideres
+      lideres.push(...jefeTurno.map(jefe => ({
+        idLider: jefe.id,
+        name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
+        employeeNumber: jefe.employee_number,
+        email: '',
+        empleados: []
+      })));
+
+      idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+    } catch (error) {
+      this.log.error(`Error al obtener los jefes de turno: ${error.message}`, error.stack);
+    }
+
 
 
     //se obtienen los lideres que tienen empleados a su cargo
@@ -2422,76 +2432,87 @@ export class EmployeeIncidenceService {
         .andWhere('leader.id NOT IN (:...ids)', { ids: lideres.map(l => l.idLider) })
         .groupBy('leader.id')
         .getRawMany();
+
+      lideres.push(...listOrg.map(lider => ({
+        idLider: lider.leaderId,
+        name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
+        employeeNumber: lider.leaderEmployeeNumber,
+        email: '', empleados: []
+      })));
     } catch (error) {
-      return;
+      this.log.error(`Error al obtener los lideres del organigrama: ${error.message}`, error.stack);
     }
-    lideres.push(...listOrg.map(lider => ({
-      idLider: lider.leaderId,
-      name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
-      employeeNumber: lider.leaderEmployeeNumber,
-      email: '', empleados: []
-    })));
+
 
 
     for (let i = 0; i < lideres.length; i++) {
 
       //si es jefe de turno agrega los empleados que su puesto es visible por jefe de turno
 
+      try {
+        //se obtiene el usuario del lider
+        user = await this.dataSource.manager.createQueryBuilder('user', 'user')
+          .innerJoin('user.employee', 'employee')
+          .where('employee.id = :id', { id: lideres[i].idLider })
+          .getMany();
 
-      //se obtiene el usuario del lider
-      user = await this.dataSource.manager.createQueryBuilder('user', 'user')
-        .innerJoin('user.employee', 'employee')
-        .where('employee.id = :id', { id: lideres[i].idLider })
-        .getMany();
+        //se obtienen los empleados asignados al lider por organigrama
+        let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+          .innerJoinAndSelect('organigrama.employee', 'employee')
+          .innerJoinAndSelect('organigrama.leader', 'leader')
+          .where('leader.id = :id', { id: lideres[i].idLider })
+          .getMany();
 
-      //se obtienen los empleados asignados al lider por organigrama
-      let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
-        .innerJoinAndSelect('organigrama.employee', 'employee')
-        .innerJoinAndSelect('organigrama.leader', 'leader')
-        .where('leader.id = :id', { id: lideres[i].idLider })
-        .getMany();
-
-      if (user.length == 0) {
-        continue;
-      }
-      //se agrega el correo del lider
-      lideres[i].email = user[0].email;
-      //se asignan los empleados al lider
-      lideres[i].empleados = [...org.map(emp => {
-        return {
-          idEmpleado: emp.employee.id,
-          employeeNumber: emp.employee.employee_number,
-          name: emp.employee.name,
-          incidencia: [],
-          fecha: ''
+        if (user.length == 0) {
+          continue;
         }
-      })];
+        //se agrega el correo del lider
+        lideres[i].email = user[0].email;
+        //se asignan los empleados al lider
+        lideres[i].empleados = [...org.map(emp => {
+          return {
+            idEmpleado: emp.employee.id,
+            employeeNumber: emp.employee.employee_number,
+            name: emp.employee.name,
+            incidencia: [],
+            fecha: ''
+          }
+        })];
+      } catch (error) {
+        this.log.error(`Error al obtener los empleados del lider ${lideres[i].name} - ${lideres[i].employeeNumber}: ${error.message}`, error.stack);
+      }
+
 
       //se obtienen los empleados que puesto es visible por jefe de turno
       if (idsJefeTurno.includes(lideres[i].idLider)) {
-        visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-          .innerJoinAndSelect('employee.job', 'job')
-          .innerJoinAndSelect('employee.payRoll', 'payRoll')
-          .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-          .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-          .where('job.shift_leader = 1')
-          .andWhere('employee.deleted_at IS NULL')
-          .orderBy('employee.employee_number', 'ASC')
-          .getMany();
-        //se asignan los empleados visibles por jefe de turno al lider
-        lideres[i].empleados =
-          [
-            ...lideres[i].empleados,
-            ...visibleJefeTurno.map(emp => {
-              return {
-                idEmpleado: emp.id,
-                employeeNumber: emp.employee_number,
-                name: emp.name,
-                incidencia: [],
-                fecha: ''
-              }
-            })
-          ];
+        try {
+          visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.job', 'job')
+            .innerJoinAndSelect('employee.payRoll', 'payRoll')
+            .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+            .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+            .where('job.shift_leader = 1')
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          //se asignan los empleados visibles por jefe de turno al lider
+          lideres[i].empleados =
+            [
+              ...lideres[i].empleados,
+              ...visibleJefeTurno.map(emp => {
+                return {
+                  idEmpleado: emp.id,
+                  employeeNumber: emp.employee_number,
+                  name: emp.name,
+                  incidencia: [],
+                  fecha: ''
+                }
+              })
+            ];
+        } catch (error) {
+          this.log.error(`Error al obtener los empleados visibles por jefe de turno para el lider ${lideres[i].name} - ${lideres[i].employeeNumber}: ${error.message}`, error.stack);
+        }
+
       }
 
 
@@ -2521,8 +2542,11 @@ export class EmployeeIncidenceService {
         });
 
       } catch (error) {
+        //si hay error lo agrega al log
+        this.log.log(`Error al obtener las incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`);
 
       }
+
 
       //si no tiene incidencias pendientes continua
       if (incidencias.length == 0) {
@@ -2531,11 +2555,15 @@ export class EmployeeIncidenceService {
 
       //asigna la incidencia al empleado correspondiente
       incidencias.forEach(incidence => {
-
-        const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
-        if (empleado) {
-          empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
+        try {
+          const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
+          if (empleado) {
+            empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
+          }
+        } catch (error) {
+          this.log.error(`Error al asignar la incidencia al empleado ${incidence.employee.id} para el lider ${lideres[i].name} - ${lideres[i].employeeNumber}: ${error.message}`, error.stack);
         }
+
       });
 
       let mailData = {
@@ -2548,8 +2576,11 @@ export class EmployeeIncidenceService {
 
       //envio de correo
       if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
-
-        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 24Hrs', mailData);
+        try {
+          await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 24Hrs', mailData);
+        } catch (error) {
+          this.log.error(`Error al enviar el correo al lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
+        }
       }
 
 
@@ -2578,26 +2609,31 @@ export class EmployeeIncidenceService {
     let idsJefeTurno: number[];
     let user: any;
     let visibleJefeTurno: any[];
-
     let listOrg = [];
+    let jefeTurno: any[];
 
-    //se obtienen los jefes de turno
-    const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
-      .innerJoinAndSelect('emp.job', 'job')
-      .where('job.deleted_at IS NULL')
-      .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
-      .getMany();
+    try {
+      //se obtienen los jefes de turno
+      jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
+        .innerJoinAndSelect('emp.job', 'job')
+        .where('job.deleted_at IS NULL')
+        .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
+        .getMany();
 
-    //se asignan los jefes de turno al arreglo de lideres
-    lideres.push(...jefeTurno.map(jefe => ({
-      idLider: jefe.id,
-      name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
-      employeeNumber: jefe.employee_number,
-      email: '',
-      empleados: []
-    })));
+      //se asignan los jefes de turno al arreglo de lideres
+      lideres.push(...jefeTurno.map(jefe => ({
+        idLider: jefe.id,
+        name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
+        employeeNumber: jefe.employee_number,
+        email: '',
+        empleados: []
+      })));
 
-    idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+      idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+    } catch (error) {
+      this.log.error(`Error al obtener los jefes de turno: ${error.message}`, error.stack);
+    }
+
 
 
     //se obtienen los lideres que tienen empleados a su cargo
@@ -2615,8 +2651,10 @@ export class EmployeeIncidenceService {
         .groupBy('leader.id')
         .getRawMany();
     } catch (error) {
-      return;
+      this.log.error(`Error al obtener los lideres que tienen empleados a su cargo: ${error.message}`, error.stack);
+
     }
+
     lideres.push(...listOrg.map(lider => ({
       idLider: lider.leaderId,
       name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
@@ -2661,18 +2699,18 @@ export class EmployeeIncidenceService {
 
       //se obtienen los empleados que puesto es visible por jefe de turno
       if (idsJefeTurno.includes(lideres[i].idLider)) {
-        visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-          .innerJoinAndSelect('employee.job', 'job')
-          .innerJoinAndSelect('employee.payRoll', 'payRoll')
-          .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-          .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-          .where('job.shift_leader = 1')
-          .andWhere('employee.deleted_at IS NULL')
-          .orderBy('employee.employee_number', 'ASC')
-          .getMany();
-        //se asignan los empleados visibles por jefe de turno al lider
-        lideres[i].empleados =
-          [
+        try {
+          visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.job', 'job')
+            .innerJoinAndSelect('employee.payRoll', 'payRoll')
+            .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+            .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+            .where('job.shift_leader = 1')
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          //se asignan los empleados visibles por jefe de turno al lider
+          lideres[i].empleados = [
             ...lideres[i].empleados,
             ...visibleJefeTurno.map(emp => {
               return {
@@ -2684,6 +2722,12 @@ export class EmployeeIncidenceService {
               }
             })
           ];
+
+        } catch (error) {
+          this.log.error(`Error al obtener los empleados visibles por jefe de turno para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
+
+        }
+
       }
 
 
@@ -2713,21 +2757,23 @@ export class EmployeeIncidenceService {
         });
 
       } catch (error) {
+        this.log.error(`Error al obtener las incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
 
       }
 
 
       //asigna la incidencia al empleado correspondiente
       incidencias.forEach(incidence => {
-
-        const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
-        if (empleado) {
-          empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
+        try {
+          const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
+          if (empleado) {
+            empleado.incidencia.push({ name: incidence.incidenceCatologue.name, fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd') });
+          }
+        } catch (error) {
+          this.log.error(`Error al asignar la incidencia al empleado para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
         }
+
       });
-
-
-
 
       let mailData = {
         empleados: lideres[i].empleados,
@@ -2740,8 +2786,11 @@ export class EmployeeIncidenceService {
 
 
       if (totalIncidencias > 0) { // || mailData.totalTimeCorrection > 0) {
-
-        await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 48Hrs', mailData);
+        try {
+          await this.mailService.sendEmailPendingIncidence([lideres[i].email], 'Incidencias pendientes de autorización, 48Hrs', mailData);
+        } catch (error) {
+          this.log.error(`Error al enviar el correo de incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} - ${lideres[i].email}: ${error.message}`, error.stack);
+        }
       }
 
 
@@ -2799,24 +2848,30 @@ export class EmployeeIncidenceService {
         }>
       }>
     }> = [];
+    let jefeTurno: any[];
 
-    //se obtienen los jefes de turno
-    const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
-      .innerJoinAndSelect('emp.job', 'job')
-      .where('job.deleted_at IS NULL')
-      .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
-      .getMany();
+    try {
+      //se obtienen los jefes de turno
+      jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'emp')
+        .innerJoinAndSelect('emp.job', 'job')
+        .where('job.deleted_at IS NULL')
+        .andWhere('job.cv_name = :name', { name: 'Jefe de Turno' })
+        .getMany();
 
-    //se asignan los jefes de turno al arreglo de lideres
-    lideres.push(...jefeTurno.map(jefe => ({
-      idLider: jefe.id,
-      name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
-      employeeNumber: jefe.employee_number,
-      email: '',
-      empleados: []
-    })));
+      //se asignan los jefes de turno al arreglo de lideres
+      lideres.push(...jefeTurno.map(jefe => ({
+        idLider: jefe.id,
+        name: jefe.name + ' ' + jefe.paternal_surname + ' ' + jefe.maternal_surname,
+        employeeNumber: jefe.employee_number,
+        email: '',
+        empleados: []
+      })));
 
-    idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+      idsJefeTurno = jefeTurno.map(jefe => jefe.id);
+    } catch (error) {
+      this.log.error(`Error al obtener los jefes de turno: ${error.message}`, error.stack);
+    }
+
 
 
     //se obtienen los lideres que tienen empleados a su cargo
@@ -2833,70 +2888,75 @@ export class EmployeeIncidenceService {
         .andWhere('leader.id NOT IN (:...ids)', { ids: lideres.map(l => l.idLider) })
         .groupBy('leader.id')
         .getRawMany();
-    } catch (error) {
-      return error;
-    }
-    lideres.push(...listOrg.map(lider => ({
-      idLider: lider.leaderId,
-      name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
-      employeeNumber: lider.leaderEmployeeNumber,
-      email: '', empleados: []
-    })));
 
+      lideres.push(...listOrg.map(lider => ({
+        idLider: lider.leaderId,
+        name: lider.leaderName + ' ' + lider.leaderPaternalSurname + ' ' + lider.leaderMaternalSurname,
+        employeeNumber: lider.leaderEmployeeNumber,
+        email: '', empleados: []
+      })));
+
+    } catch (error) {
+      this.log.error(`Error al obtener los lideres que tienen empleados a su cargo: ${error.message}`, error.stack);
+    }
 
     for (let i = 0; i < lideres.length; i++) {
-
-      //se obtiene el usuario del lider
-      user = await this.dataSource.manager.createQueryBuilder('user', 'user')
-        .innerJoin('user.employee', 'employee')
-        .where('employee.id = :id', { id: lideres[i].idLider })
-        .getMany();
-
-      //se obtienen los empleados asignados al lider por organigrama
-      let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
-        .innerJoinAndSelect('organigrama.employee', 'employee')
-        .innerJoinAndSelect('organigrama.leader', 'leader')
-        .where('leader.id = :id', { id: lideres[i].idLider })
-        .getMany();
-
-
-      //se agrega el correo del lider
-      lideres[i].email = user.length > 0 ? user[0].email : '';
-      //se asignan los empleados al lider
-      lideres[i].empleados = [...org.map(emp => {
-        return {
-          idEmpleado: emp.employee.id,
-          employeeNumber: emp.employee.employee_number,
-          name: emp.employee.name + ' ' + emp.employee.paternal_surname + ' ' + emp.employee.maternal_surname,
-          incidencia: []
-        }
-      })];
-
-      //se obtienen los empleados que puesto es visible por jefe de turno
-      if (idsJefeTurno.includes(lideres[i].idLider)) {
-        visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
-          .innerJoinAndSelect('employee.job', 'job')
-          .innerJoinAndSelect('employee.payRoll', 'payRoll')
-          .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
-          .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
-          .where('job.shift_leader = 1')
-          .andWhere('employee.deleted_at IS NULL')
-          .orderBy('employee.employee_number', 'ASC')
+      try {
+        //se obtiene el usuario del lider
+        user = await this.dataSource.manager.createQueryBuilder('user', 'user')
+          .innerJoin('user.employee', 'employee')
+          .where('employee.id = :id', { id: lideres[i].idLider })
           .getMany();
-        //se asignan los empleados visibles por jefe de turno al lider
-        lideres[i].empleados =
-          [
-            ...lideres[i].empleados,
-            ...visibleJefeTurno.map(emp => {
-              return {
-                idEmpleado: emp.id,
-                employeeNumber: emp.employee_number,
-                name: emp.name,
-                incidencia: [],
-              }
-            })
-          ];
+
+        //se obtienen los empleados asignados al lider por organigrama
+        let org = await this.dataSource.manager.createQueryBuilder('organigrama', 'organigrama')
+          .innerJoinAndSelect('organigrama.employee', 'employee')
+          .innerJoinAndSelect('organigrama.leader', 'leader')
+          .where('leader.id = :id', { id: lideres[i].idLider })
+          .getMany();
+
+
+        //se agrega el correo del lider
+        lideres[i].email = user.length > 0 ? user[0].email : '';
+        //se asignan los empleados al lider
+        lideres[i].empleados = [...org.map(emp => {
+          return {
+            idEmpleado: emp.employee.id,
+            employeeNumber: emp.employee.employee_number,
+            name: emp.employee.name + ' ' + emp.employee.paternal_surname + ' ' + emp.employee.maternal_surname,
+            incidencia: []
+          }
+        })];
+
+        //se obtienen los empleados que puesto es visible por jefe de turno
+        if (idsJefeTurno.includes(lideres[i].idLider)) {
+          visibleJefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+            .innerJoinAndSelect('employee.job', 'job')
+            .innerJoinAndSelect('employee.payRoll', 'payRoll')
+            .innerJoinAndSelect('employee.vacationProfile', 'vacationProfile')
+            .innerJoinAndSelect('employee.employeeProfile', 'employeeProfile')
+            .where('job.shift_leader = 1')
+            .andWhere('employee.deleted_at IS NULL')
+            .orderBy('employee.employee_number', 'ASC')
+            .getMany();
+          //se asignan los empleados visibles por jefe de turno al lider
+          lideres[i].empleados =
+            [
+              ...lideres[i].empleados,
+              ...visibleJefeTurno.map(emp => {
+                return {
+                  idEmpleado: emp.id,
+                  employeeNumber: emp.employee_number,
+                  name: emp.name,
+                  incidencia: [],
+                }
+              })
+            ];
+        }
+      } catch (error) {
+        this.log.error(`Error al obtener los empleados para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} : ${error.message}`, error.stack);
       }
+
 
 
       //se obtienen las incidencias pendientes de los empleados
@@ -2925,27 +2985,31 @@ export class EmployeeIncidenceService {
         });
 
       } catch (error) {
-        return error;
+        this.log.error(`Error al obtener las incidencias pendientes para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} : ${error.message}`, error.stack);
       }
 
 
       //asigna la incidencia al empleado correspondiente
       incidencias.forEach(incidence => {
+        try {
+          const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
+          if (empleado) {
+            // calcular días transcurridos desde la creación de la incidencia hasta hoy
+            const createdAt = incidence.created_at ? new Date(incidence.created_at) : new Date();
+            const today = new Date();
+            const diffDays = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
-        const empleado = lideres[i].empleados.find(e => e.idEmpleado === incidence.employee.id);
-        if (empleado) {
-          // calcular días transcurridos desde la creación de la incidencia hasta hoy
-          const createdAt = incidence.created_at ? new Date(incidence.created_at) : new Date();
-          const today = new Date();
-          const diffDays = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-
-          empleado.incidencia.push({
-            name: incidence.incidenceCatologue.name,
-            fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd'),
-            created_at: format(incidence.created_at, 'yyyy-MM-dd'),
-            dias_transcurrido: diffDays
-          });
+            empleado.incidencia.push({
+              name: incidence.incidenceCatologue.name,
+              fecha: format(parseISO(incidence.dateEmployeeIncidence[0].date), 'yyyy-MM-dd') + ' - ' + format(parseISO(incidence.dateEmployeeIncidence[incidence.dateEmployeeIncidence.length - 1].date), 'yyyy-MM-dd'),
+              created_at: format(incidence.created_at, 'yyyy-MM-dd'),
+              dias_transcurrido: diffDays
+            });
+          }
+        } catch (error) {
+          this.log.error(`Error al asignar la incidencia al empleado para el lider ${lideres[i].name} - ${lideres[i].employeeNumber} : ${error.message}`, error.stack);
         }
+
       });
 
     }
@@ -2967,12 +3031,9 @@ export class EmployeeIncidenceService {
         //.groupBy('leader.id')
         .getRawMany();
     } catch (error) {
-      return error;
+      this.log.error(`Error al obtener los lideres de lideres: ${error.message}`, error.stack);
     }
 
-
-    //console.log("lideres", leaderOfLeader)
-    //console.dir(leaderOfLeader, { depth: null, colors: true });
 
     // ✅ Filtrar todo en una sola pasada
     lideres = lideres
@@ -2991,8 +3052,13 @@ export class EmployeeIncidenceService {
     //correo de carlos Arturo
     let correoCarlos = await this.employeeService.findOne(600);
 
-    //envio de correo
-    await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email, 'f.gil@oechsler.mx'], 'Incidencias pendientes de autorización, 1 semana o mas', mailData);
+    try {
+      //envio de correo
+      await this.mailService.sendEmailPendingIncidenceJefe([correoDaniel.emp.userId[0].email, correoCarlos.emp.userId[0].email, 'f.gil@oechsler.mx'], 'Incidencias pendientes de autorización, 1 semana o mas', mailData);
+
+    } catch (error) {
+      this.log.error(`Error al enviar el correo de incidencias pendientes de 1 semana o mas: ${error.message}`, error.stack);
+    }
 
   }
 
