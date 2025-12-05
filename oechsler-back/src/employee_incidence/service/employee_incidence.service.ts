@@ -56,7 +56,7 @@ import { EventIncidence } from '../entities/event_incidence.entity';
 @Injectable()
 export class EmployeeIncidenceService {
 
-
+  private log = new CustomLoggerService();
   constructor(
     @InjectRepository(EmployeeIncidence) private employeeIncidenceRepository: Repository<EmployeeIncidence>,
     @InjectRepository(DateEmployeeIncidence) private dateEmployeeIncidenceRepository: Repository<DateEmployeeIncidence>,
@@ -72,7 +72,7 @@ export class EmployeeIncidenceService {
     private enabledCreateIncidenceService: EnabledCreateIncidenceService,
     @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(EventIncidence) private eventIncidenceRepository: Repository<EventIncidence>,
-    private log = new CustomLoggerService()
+
   ) { }
 
   async create(createEmployeeIncidenceDto: CreateEmployeeIncidenceDto, user: any) {
