@@ -290,7 +290,7 @@ export class ReportFlexTimeController {
     if (report.access == 'true') {
       return true;
     } else {
-      return this.employeeIncidenceService.reportFlexTimeV2(report, user);
+      return this.employeeIncidenceService.reportFlexTimeV3(report, user);
     }
   }
 }
