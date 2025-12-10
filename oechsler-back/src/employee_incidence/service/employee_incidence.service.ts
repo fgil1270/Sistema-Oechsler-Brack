@@ -52,6 +52,7 @@ import { UsersService } from '../../users/service/users.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/service/enabled-create-incidence.service';
 import { EventIncidence } from '../entities/event_incidence.entity';
+import { exit } from 'process';
 
 @Injectable()
 export class EmployeeIncidenceService {
@@ -2438,6 +2439,7 @@ export class EmployeeIncidenceService {
       const allEmployeeShifts = await this.dataSource.manager
         .createQueryBuilder('employee_shift', 'es')
         .innerJoinAndSelect('es.shift', 's')
+        .innerJoinAndSelect('es.employee', 'e')
         .where('es.employeeId IN (:...ids)', { ids: arrayEmployeeIds })
         .andWhere('es.start_date BETWEEN :from AND :to', {
           from: format(subDays(new Date(from), 1), 'yyyy-MM-dd'),
@@ -2448,7 +2450,8 @@ export class EmployeeIncidenceService {
       // Mapa: employeeId_fecha -> turno
       const shiftsMap = new Map();
       allEmployeeShifts.forEach(shift => {
-        const key = `${shift.employeeId}_${format(new Date(shift.start_date), 'yyyy-MM-dd')}`;
+
+        const key = `${shift.employee.id}_${format(new Date(shift.start_date), 'yyyy-MM-dd')}`;
         shiftsMap.set(key, {
           id: shift.id,
           nameShift: shift.shift.code,
@@ -2462,7 +2465,9 @@ export class EmployeeIncidenceService {
           borderColor: shift.shift.color,
           textColor: '#74ad74',
         });
+
       });
+
 
       // ✅ 2. PRE-CARGAR CALENDARIO (días festivos)
       const allCalendarDays = await this.calendarService.findRangeDate({
@@ -2477,6 +2482,7 @@ export class EmployeeIncidenceService {
       const allChecadorRecords = await this.dataSource.manager
         .createQueryBuilder('checador', 'c')
         .leftJoinAndSelect('c.recordDevice', 'rd')
+        .innerJoinAndSelect('c.employee', 'e')
         .where('c.employeeId IN (:...ids)', { ids: arrayEmployeeIds })
         .andWhere('c.date BETWEEN :from AND :to', {
           from: `${format(subDays(new Date(from), 1), 'yyyy-MM-dd')} 00:00:00`,
@@ -2490,7 +2496,7 @@ export class EmployeeIncidenceService {
       const checadorMap = new Map();
       allChecadorRecords.forEach(record => {
         const date = format(new Date(record.date), 'yyyy-MM-dd');
-        const key = `${record.employeeId}_${date}`;
+        const key = `${record.employee.id}_${date}`;
 
         if (!checadorMap.has(key)) {
           checadorMap.set(key, []);
@@ -2584,6 +2590,22 @@ export class EmployeeIncidenceService {
               salida: '',
               dayHour: 0,
             });
+          } else if (!existingDate) { // Si no hay turno asignado ese dia
+            newObject.dates.push({
+              date: diaStr,
+              shift: null,
+              incidencia: [],
+              employeeShift: '',
+              entrada: '',
+              salida: '',
+              dayHour: 0,
+            });
+          } else if (existingDate && format(new Date(empShiftDate), 'yyyy-MM-dd') === diaStr) {
+            const turnoKey = `${empId}_${diaStr}`;
+            const shift = shiftsMap.get(turnoKey);
+
+            existingDate.shift = shift || null;
+            existingDate.employeeShift = shiftName || '';
           }
         }
       }
@@ -2662,46 +2684,51 @@ export class EmployeeIncidenceService {
             .find((inc) => inc && ['HE', 'HET', 'TxT'].includes(inc.incidenceCatologue.code_band));
 
           if (incidenciaTiempoExtra) {
+            // Determinar si es un array o un objeto individual
+            const incidencias = Array.isArray(incidenciaTiempoExtra) ? incidenciaTiempoExtra : [incidenciaTiempoExtra];
 
-            if (incidenciaTiempoExtra) {
+            // Procesar solo la primera incidencia de tiempo extra encontrada
+            const incidencia = incidencias[0];
+
+            if (incidencia) {
               if (turnoActual != '' && (turnoActual == 'T1' || turnoActual == 'TI1')) {
 
-                if (incidenciaTiempoExtra[0].shift == 1) {
+                if (incidencia.shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
 
-                } else if (incidenciaTiempoExtra[0].shift == 2) {
+                } else if (incidencia.shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
                   diaAnterior = new Date(diahoy);
-                } else if (incidenciaTiempoExtra[0].shift == 3) {
+                } else if (incidencia.shift == 3) {
                   hrEntrada = '20:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
                 }
               } else if (turnoActual != '' && (turnoActual == 'T2' || turnoActual == 'TI2')) {
 
-                if (incidenciaTiempoExtra[0].shift == 1) {
+                if (incidencia.shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '22:10:00';
                   diaSiguente = new Date(diahoy);
 
-                } else if (incidenciaTiempoExtra[0].shift == 2) {
+                } else if (incidencia.shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '22:10:00';
                   diaSiguente = new Date(diahoy);
-                } else if (incidenciaTiempoExtra[0].shift == 3) {
+                } else if (incidencia.shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                 }
               } else if (turnoActual != '' && (turnoActual == 'T3' || turnoActual == 'TI3')) {
 
-                if (incidenciaTiempoExtra[0].shift == 1) {
+                if (incidencia.shift == 1) {
                   hrEntrada = '20:00:00';
                   hrSalida = '06:59:00';
                   diahoy.setDate(diahoy.getDate() - 1);
-                } else if (incidenciaTiempoExtra[0].shift == 2) {
+                } else if (incidencia.shift == 2) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
 
@@ -2709,24 +2736,24 @@ export class EmployeeIncidenceService {
                 }
               } else if (turnoActual != '' && turnoActual == 'TI') {
 
-                if (incidenciaTiempoExtra[0].shift == 1) {
+                if (incidencia.shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '14:59:00';
 
-                } else if (incidenciaTiempoExtra[0].shift == 2) {
+                } else if (incidencia.shift == 2) {
                   hrEntrada = '13:00:00';
                   hrSalida = '21:59:00';
                 }
               } else if (turnoActual != '' && turnoActual == 'MIX') {
 
-                if (incidenciaTiempoExtra[0].shift == 1) {
+                if (incidencia.shift == 1) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
 
-                } else if (incidenciaTiempoExtra[0].shift == 2) {
+                } else if (incidencia.shift == 2) {
                   hrEntrada = '05:00:00';
                   hrSalida = '21:59:00';
-                } else if (incidenciaTiempoExtra[0].shift == 3) {
+                } else if (incidencia.shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   diaSiguente.setDate(diaSiguente.getDate() + 1);
@@ -2805,9 +2832,8 @@ export class EmployeeIncidenceService {
 
           // ✅ Obtener registros checador desde mapa (día actual + día anterior + día siguiente)
           const keyChecador = `${empleado.idEmpleado}_${diaConsulta}`;
-          const keyChecadorAnterior = `${empleado.idEmpleado}_${diaAnterior}`;
-          const keyChecadorSiguiente = `${empleado.idEmpleado}_${diaSiguente}`;
-
+          const keyChecadorAnterior = `${empleado.idEmpleado}_${format(diaAnterior, 'yyyy-MM-dd')}`;
+          const keyChecadorSiguiente = `${empleado.idEmpleado}_${format(diaSiguente, 'yyyy-MM-dd')}`;
           let registrosChecador = [
             ...(checadorMap.get(keyChecadorAnterior) || []),
             ...(checadorMap.get(keyChecador) || []),
@@ -2880,6 +2906,8 @@ export class EmployeeIncidenceService {
         empleado.horasTrabajadas = `${totalHrsTrabajadas}.${String(totalMinutisTrabados).padStart(2, '0')}`;
         empleado.totalHorasIncidencia = totalHorasIncidencia;
         empleado.colorText = totalHrsTrabajadas >= totalHrsRequeridas ? '#74ad74' : '#ff0000';
+
+
       }
 
       return {
