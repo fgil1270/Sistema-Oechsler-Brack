@@ -290,6 +290,20 @@ export class ReportFlexTimeController {
     if (report.access == 'true') {
       return true;
     } else {
+      return this.employeeIncidenceService.reportFlexTimeV2(report, user);
+    }
+  }
+
+  @ApiOperation({ summary: 'Reporte de Tiempo compensatorio y repagos' })
+  @Views('horario_flexible')
+  @Get('v3')
+  reportCompensatoryTimev3(
+    @Query() report: ReportEmployeeIncidenceDto,
+    @CurrentUser() user: any,
+  ) {
+    if (report.access == 'true') {
+      return true;
+    } else {
       return this.employeeIncidenceService.reportFlexTimeV3(report, user);
     }
   }

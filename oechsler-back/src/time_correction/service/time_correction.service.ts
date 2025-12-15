@@ -88,9 +88,27 @@ export class TimeCorrectionService {
   // Buscar corrección de tiempo por fecha y empleado
   async findTimeCorrection(date: string, employeeId: number) {
     return await this.timeCorrectionRepository.findOne({
+      relations: {
+        employee: true,
+      },
       where: {
         date: format(new Date(date), 'yyyy-MM-dd') as any,
         employee: { id: employeeId },
+      },
+    });
+  }
+
+  // Buscar corrección de tiempo por fecha y empleado
+  async findTimeCorrectionRangeDate(startDate: string, endDate: string, employeeId: number[]) {
+    return await this.timeCorrectionRepository.find({
+      relations: {
+        employee: true,
+      },
+      where: {
+        date: Between(new Date(startDate), new Date(endDate)) as any,
+        employee: {
+          id: In(employeeId)
+        },
       },
     });
   }

@@ -54,6 +54,34 @@ import { EnabledCreateIncidenceService } from 'src/enabled_create_incidence/serv
 import { EventIncidence } from '../entities/event_incidence.entity';
 import { exit } from 'process';
 
+export interface IncidenciaType {
+  id: number;
+  incidenceId: number;
+  resourceId: number;
+  title: string;
+  code: string;
+  codeBand: string;
+  incidenceName: string;
+  employeeName: string;
+  reportNomina: boolean;
+  description: string;
+  total_hour: number;
+  total_day: number;
+  start: Date;
+  end: Date;
+  backgroundColor: string;
+  unique_day: boolean;
+  textColor: string;
+  status: string;
+  approve: string;
+  approveEmployeeNumber: number;
+  canceledBy: string;
+  shift: any;
+  type: string;
+  created_at: Date;
+  incidenceShift: any;
+}
+
 @Injectable()
 export class EmployeeIncidenceService {
 
@@ -676,7 +704,8 @@ export class EmployeeIncidenceService {
       .getMany();
 
     let i = 0;
-    const newIncidences = [];
+
+    const newIncidences: IncidenciaType[] = [];
 
     if (incidences) {
       incidences.forEach((incidence) => {
@@ -689,6 +718,7 @@ export class EmployeeIncidenceService {
           textColor = '#000';
         }
 
+        //recorre los dias de la incidencia
         incidence.dateEmployeeIncidence.forEach((date) => {
           i++;
 

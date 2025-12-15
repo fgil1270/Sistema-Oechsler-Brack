@@ -80,6 +80,15 @@ export class ChecadorController {
     return this.checadorService.reportNomipaq(data, user);
   }
 
+  @ApiOperation({
+    summary: 'Acceso a la vista de Nomipaq y reporte de Nomipaq',
+  })
+  @Views('nomipaq')
+  @Get('nomipaq/report/v2')
+  reportNomipaqV2(@Query() data: NomipaqDto, @CurrentUser() user: any) {
+    return this.checadorService.reportNomipaqV2(data, user);
+  }
+
   @ApiOperation({ summary: 'Actualizar Checada' })
   @Put(':id')
   update(
