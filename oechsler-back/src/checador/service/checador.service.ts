@@ -1168,14 +1168,77 @@ export class ChecadorService {
           }
         }
 
+
+
         // ✅ CALCULAR HORAS TRABAJADAS
         if (registrosChecador.length > 0) {
-          const firstDate = moment(registrosChecador[0].date);
-          const secondDate = moment(registrosChecador[registrosChecador.length - 1].date);
+          // Verificar si hay incidencia de tiempo extra en turno 3
+          let turnoIncidencia = 0;
+          for (const inc of incidenciasNormales) {
+            if (['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
+              turnoIncidencia = inc.incidenceShift || 0;
+              break;
+            }
+          }
 
-          const diffDatehour = secondDate.diff(firstDate, 'hours');
-          const diffDatemin = secondDate.diff(firstDate, 'minutes');
-          const diffDate = secondDate.diff(firstDate, 'hours', true);
+          let diffDatehour = 0;
+          let diffDatemin = 0;
+          let diffDate = 0;
+
+          // Si es T1 o TI1 con tiempo extra en turno 3, calcular turnos por separado
+          if ((turnoActual === 'T1' || turnoActual === 'TI1') && incidenciaTiemExtra && turnoIncidencia === 3) {
+
+            // Filtrar registros del Turno 1 (06:30 - 15:00)
+            const registrosTurno1 = registrosChecador.filter(r => {
+              const horaRegistro = moment(r.date);
+              const inicioT1 = moment(`${diaConsulta} 05:00:00`);
+              const finT1 = moment(`${diaConsulta} 16:00:00`);
+              return horaRegistro.isSameOrAfter(inicioT1) && horaRegistro.isSameOrBefore(finT1);
+            });
+
+            // Filtrar registros del Turno 3 (21:20 - 06:10 del día siguiente)
+            const registrosTurno3 = registrosChecador.filter(r => {
+              const horaRegistro = moment(r.date);
+              const inicioT3 = moment(`${diaConsulta} 21:00:00`);
+              const finT3 = moment(`${diaSiguiente} 07:00:00`);
+              return horaRegistro.isSameOrAfter(inicioT3) && horaRegistro.isSameOrBefore(finT3);
+            });
+
+            let diffHrT1 = 0;
+            let diffMinT1 = 0;
+            let diffHrT3 = 0;
+            let diffMinT3 = 0;
+
+            // Calcular horas del Turno 1
+            if (registrosTurno1.length >= 2) {
+              const firstHrT1 = moment(registrosTurno1[0].date);
+              const secondHrT1 = moment(registrosTurno1[registrosTurno1.length - 1].date);
+              diffHrT1 = secondHrT1.diff(firstHrT1, 'hours');
+              diffMinT1 = secondHrT1.diff(firstHrT1, 'minutes');
+            }
+
+            // Calcular horas del Turno 3
+            if (registrosTurno3.length >= 2) {
+              const firstHrT3 = moment(registrosTurno3[0].date);
+              const secondHrT3 = moment(registrosTurno3[registrosTurno3.length - 1].date);
+              diffHrT3 = secondHrT3.diff(firstHrT3, 'hours');
+              diffMinT3 = secondHrT3.diff(firstHrT3, 'minutes');
+            }
+
+            // Sumar las horas de ambos turnos
+            diffDatehour = diffHrT1 + diffHrT3;
+            diffDatemin = diffMinT1 + diffMinT3;
+            diffDate = (diffMinT1 + diffMinT3) / 60;
+
+          } else {
+            // Código original para casos normales
+            const firstDate = moment(registrosChecador[0].date);
+            const secondDate = moment(registrosChecador[registrosChecador.length - 1].date);
+
+            diffDatehour = secondDate.diff(firstDate, 'hours');
+            diffDatemin = secondDate.diff(firstDate, 'minutes');
+            diffDate = secondDate.diff(firstDate, 'hours', true);
+          }
 
           const horasDia = diffDatehour;
           const minsDia = diffDatemin % 60;
@@ -1210,11 +1273,14 @@ export class ChecadorService {
             }
           }
 
+
           // DFT en domingo
-          if (existeDFT && registrosChecador.length > 0) {
+          /* if (existeDFT && registrosChecador.length > 0) {
             const porcentajeTrabajado = Math.min(1, diffDate / diffTimeShift);
             incidenceExtra.push((porcentajeTrabajado / 1.666667).toFixed(2) + 'DFT');
-          }
+
+            
+          } */
 
           // Domingo
           if (Number(new Date(diaConsulta).getDay()) === 0) {
@@ -1223,6 +1289,7 @@ export class ChecadorService {
             }
           }
         }
+
 
         // Día festivo
         if (dayCalendar?.holiday) {

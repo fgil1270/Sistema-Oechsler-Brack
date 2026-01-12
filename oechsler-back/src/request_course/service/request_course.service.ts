@@ -203,16 +203,19 @@ export class RequestCourseService {
 
         }
 
-        //se envian los correos
-        await this.mailService.sendEmail(`Creación Solicitud de Curso " ${requestCourse.course.name}"`,
-          {
-            curso: requestCourse.course.name,
-            status: requestCourse.status,
-            empleados: [`#${requestCourse.employee.employee_number}) ${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}`]
-          },
-          leadersMail,
-          'solicitud_curso'
-        );
+        if (requestCourse.tentative_date_end > requestCourse.created_at) {
+          //se envian los correos
+          await this.mailService.sendEmail(`Creación Solicitud de Curso " ${requestCourse.course.name}"`,
+            {
+              curso: requestCourse.course.name,
+              status: requestCourse.status,
+              empleados: [`#${requestCourse.employee.employee_number}) ${requestCourse.employee.name} ${requestCourse.employee.paternal_surname} ${requestCourse.employee.maternal_surname}`]
+            },
+            leadersMail,
+            'solicitud_curso'
+          );
+        }
+
       }
 
       return {

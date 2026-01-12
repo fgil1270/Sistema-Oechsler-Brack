@@ -26,7 +26,7 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 @ApiTags('Correcion de tiempos')
 @Controller('time-correction')
 export class TimeCorrectionController {
-  constructor(private readonly timeCorrectionService: TimeCorrectionService) {}
+  constructor(private readonly timeCorrectionService: TimeCorrectionService) { }
 
   @ApiOperation({ summary: 'Crear correción de tiempo' })
   @Post()
@@ -51,5 +51,11 @@ export class TimeCorrectionController {
   @Get('report')
   correctionTimeReport(@Query() data: any, @CurrentUser() user: any) {
     return this.timeCorrectionService.find(data, user);
+  }
+
+  @ApiOperation({ summary: 'Reporte corrección de tiempo v2' })
+  @Get('reportV2')
+  correctionTimeReportV2(@Query() data: any, @CurrentUser() user: any) {
+    return this.timeCorrectionService.reportTimeCorrection(data, user);
   }
 }

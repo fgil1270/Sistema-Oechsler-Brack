@@ -558,6 +558,461 @@ export class TimeCorrectionService {
 
   }
 
+  // Reporte correccion de tiempo version 2 (refactorizada)
+  async reportTimeCorrection(data: ReportTimeCorrectionDto, user: any) {
+
+    try {
+      const tipoNomina = data.tipoEmpleado;
+      const isAdmin = user.roles.some(
+        (role) => role.name === 'Admin' || role.name === 'RH',
+      );
+      const isJefeTurno = user.roles.some(
+        (role) => role.name === 'Jefe de turno',
+      );
+
+      // Obtener organigrama
+      let organigrama = await this.organigramaService.findJerarquia(
+        { type: data.tipoJerarquia },
+        user,
+      );
+
+      // Filtrar organigrama según permisos
+      if (!isAdmin) {
+        organigrama = organigrama.filter((item) => item.id !== user.idEmployee);
+      }
+
+      // Filtrar por tipo de nómina
+      organigrama = tipoNomina === 'Todas'
+        ? organigrama
+        : organigrama.filter((emp) => emp.payRoll.name === tipoNomina);
+
+      if (organigrama.length === 0) {
+        return { registros: [], diasGenerados: [] };
+      }
+
+      // Generar rango de fechas
+      const from = new Date(data.startDate);
+      const to = new Date(data.endDate);
+      const diasGenerados = this.generateDateRange(from, to);
+
+      // Obtener IDs de empleados
+      const employeeIds = organigrama.map(emp => emp.id);
+
+      // Batch loading: Pre-cargar todos los datos necesarios
+      const [
+        timeCorrections,
+        holidays,
+        compensatoryIncidences,
+        authorizedIncidences,
+        allShifts,
+        allLeaders,
+      ] = await Promise.all([
+        this.loadTimeCorrections(employeeIds, from, to),
+        this.loadHolidays(from, to),
+        this.loadCompensatoryIncidences(employeeIds, from, to),
+        this.loadAuthorizedIncidences(employeeIds, from, to),
+        this.loadEmployeeShifts(employeeIds, from, to),
+        this.loadEmployeeLeaders(employeeIds),
+      ]);
+
+      // Crear maps para búsqueda O(1)
+      const correctionsMap = this.createTimeCorrectionMap(timeCorrections);
+      const holidaysSet = new Set(holidays.map(h => format(new Date(h.date), 'yyyy-MM-dd')));
+      const compensatoryMap = this.createIncidenceMap(compensatoryIncidences);
+      const incidencesMap = this.createIncidenceMap(authorizedIncidences);
+      const shiftsMap = this.createShiftsMap(allShifts);
+      const leadersMap = new Map(allLeaders.map(l => [l.employeeId, l.leaders]));
+
+      const registros = [];
+      let registroId = 0;
+
+      // Procesar cada empleado
+      for (const employee of organigrama) {
+        // Procesar cada día del rango
+        for (const currentDate of diasGenerados) {
+          const dateKey = format(currentDate, 'yyyy-MM-dd');
+          const correctionKey = `${employee.id}-${dateKey}`;
+
+          // Verificar si es día festivo
+          if (holidaysSet.has(dateKey)) {
+            continue;
+          }
+
+          // Verificar si ya existe corrección de tiempo
+          if (correctionsMap.has(correctionKey)) {
+            continue;
+          }
+
+          // Verificar incidencia compensatoria
+          if (compensatoryMap.has(correctionKey)) {
+            continue;
+          }
+
+          // Verificar incidencias autorizadas que excluyen del reporte
+          if (incidencesMap.has(correctionKey)) {
+            continue;
+          }
+
+          // Obtener turno del empleado
+          const shiftKey = `${employee.id}-${dateKey}`;
+          const employeeShift = shiftsMap.get(shiftKey);
+          const turnoActual = employeeShift?.nameShift;
+
+          // Obtener turnos anterior y siguiente
+          const previousDate = new Date(currentDate);
+          previousDate.setDate(previousDate.getDate() - 1);
+          const nextDate = new Date(currentDate);
+          nextDate.setDate(nextDate.getDate() + 1);
+
+          const previousShiftKey = `${employee.id}-${format(previousDate, 'yyyy-MM-dd')}`;
+          const nextShiftKey = `${employee.id}-${format(nextDate, 'yyyy-MM-dd')}`;
+
+          const turnoAnterior = shiftsMap.get(previousShiftKey)?.nameShift;
+          const turnoSiguiente = shiftsMap.get(nextShiftKey)?.nameShift;
+
+          // Obtener horarios de entrada/salida para consultar checador
+          let { hrEntrada, hrSalida, diaAnterior, diaSiguente } =
+            await this.checadorService.entradaSalidaChecador(
+              currentDate,
+              turnoAnterior,
+              turnoActual,
+              turnoSiguiente
+            );
+
+          let checadas = [];
+          let incongruencia = '';
+
+          // Si no tiene turno el día actual
+          if (!employeeShift) {
+            // Revisar turno del día anterior
+            if (['T2', 'TI2', 'T3', 'TI3'].includes(turnoAnterior)) {
+              // Verificar incidencias del día anterior
+              const previousDateKey = `${employee.id}-${format(previousDate, 'yyyy-MM-dd')}`;
+              const hasIncidencesPrevious = incidencesMap.has(previousDateKey);
+
+              if (hasIncidencesPrevious) {
+                continue;
+              }
+            } else {
+              // Buscar checadas del día actual
+              checadas = await this.dataSource.manager
+                .createQueryBuilder('Checador', 'c')
+                .leftJoinAndSelect('c.employee', 'employee')
+                .where('employee.id = :employeeId', { employeeId: employee.id })
+                .andWhere('c.date >= :from AND c.date <= :to', {
+                  from: format(currentDate, 'yyyy-MM-dd 00:00:00'),
+                  to: format(currentDate, 'yyyy-MM-dd 23:59:59')
+                })
+                .getMany();
+
+              if (checadas.length === 0) {
+                continue;
+              }
+
+              // Ajustar horarios de búsqueda
+              diaAnterior = currentDate;
+              diaSiguente = currentDate;
+              hrEntrada = '00:01:00';
+              hrSalida = '23:59:00';
+            }
+          }
+
+          // Obtener registros del checador
+          const registrosChecadorNuevo = await this.dataSource.manager
+            .createQueryBuilder('Checador', 'c')
+            .leftJoinAndSelect('c.employee', 'employee')
+            .where('employee.id = :employeeId', { employeeId: employee.id })
+            .andWhere('c.date >= :from AND c.date <= :to', {
+              from: format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`),
+              to: format(diaSiguente, `yyyy-MM-dd ${hrSalida}`)
+            })
+            .orderBy('c.date', 'ASC')
+            .getMany();
+
+          // Determinar incongruencia
+          if (registrosChecadorNuevo.length > 0) {
+            if (!employeeShift) {
+              incongruencia = 'No tiene turno asignado';
+            } else {
+              if (['TI', 'TI1', 'TI2', 'TI3'].includes(turnoActual)) {
+                incongruencia = 'No tiene incidencia';
+              } else {
+                incongruencia = 'incongruencia de horas';
+              }
+            }
+          } else {
+            if (checadas.length > 0) {
+              incongruencia = 'No tiene turno asignado';
+            } else {
+              if (employeeShift) {
+                incongruencia = 'No tiene checadas';
+              } else {
+                continue;
+              }
+            }
+          }
+
+          // Si no hay datos del shift, continuar
+          if (!employeeShift || !employeeShift.startTimeshift || !employeeShift.endTimeshift) {
+            continue;
+          }
+
+          // Calcular horarios del turno
+          let startTimeShift: moment.Moment;
+          let endTimeShift: moment.Moment;
+
+          if (turnoActual !== 'T3' && turnoActual !== 'TI3') {
+            startTimeShift = moment(
+              `${format(currentDate, 'yyyy-MM-dd')} ${employeeShift.startTimeshift}`,
+              'YYYY-MM-DD HH:mm'
+            );
+            endTimeShift = moment(
+              `${format(currentDate, 'yyyy-MM-dd')} ${employeeShift.endTimeshift}`,
+              'YYYY-MM-DD HH:mm'
+            );
+          } else {
+            startTimeShift = moment(
+              `${format(currentDate, 'yyyy-MM-dd')} ${employeeShift.startTimeshift}`,
+              'YYYY-MM-DD HH:mm'
+            );
+            endTimeShift = moment(
+              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShift.endTimeshift}`,
+              'YYYY-MM-DD HH:mm'
+            );
+          }
+
+          const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
+
+          if (diffTimeShift < 0) {
+            continue;
+          }
+
+          // Calcular diferencia de tiempo en checadas
+          if (registrosChecadorNuevo.length === 0) {
+            continue;
+          }
+
+          const firstDate = moment(registrosChecadorNuevo[0].date);
+          const secondDate = moment(registrosChecadorNuevo[registrosChecadorNuevo.length - 1].date);
+          const diffDate = secondDate.diff(firstDate, 'hours', true);
+
+          // Filtro de tolerancia: si está dentro del rango ±3 horas, no mostrar
+          if (diffDate >= diffTimeShift - 3 && diffDate <= diffTimeShift + 3) {
+            continue;
+          }
+
+          // Calcular horas realizadas
+          const hours = Math.floor(diffDate);
+          const minutes = Math.round((diffDate - hours) * 60);
+
+          // Obtener líderes
+          const lideres = leadersMap.get(employee.id) || [];
+
+          // Convertir horas esperadas
+          const hoursConvert = Math.floor(diffTimeShift);
+          const minutesConvert = Math.round((diffTimeShift - hoursConvert) * 60);
+
+          // Agregar registro
+          registros.push({
+            id: registroId,
+            id_empleado: employee.id,
+            employee_number: employee.employee_number,
+            nombre: `${employee.name} ${employee.paternal_surname} ${employee.maternal_surname}`,
+            date: format(currentDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }),
+            turno: turnoActual,
+            hora_inicio: startTimeShift.format('HH:mm'),
+            hora_fin: endTimeShift.format('HH:mm'),
+            hora_inicio_reloj: firstDate.format('HH:mm'),
+            hora_fin_reloj: secondDate.format('HH:mm'),
+            horas_esperadas: `${hoursConvert.toString().padStart(2, '0')}:${minutesConvert.toString().padStart(2, '0')}`,
+            incongruencia: incongruencia,
+            horas_realizadas: diffDate >= 0
+              ? `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+              : '00:00',
+            suma_hrs: diffTimeShift + 2,
+            comments: '',
+            checadas: registrosChecadorNuevo,
+            lideres: lideres,
+          });
+
+          registroId++;
+        }
+      }
+
+      return {
+        registros,
+        diasGenerados: diasGenerados.map(d => format(d, 'yyyy-MM-dd')),
+      };
+    } catch (error) {
+      throw new BadGatewayException(
+        `Error al generar reporte de corrección de tiempo: ${error.message}`
+      );
+    }
+  }
+
+  // Métodos auxiliares privados para batch loading
+  private generateDateRange(from: Date, to: Date): Date[] {
+    const dates: Date[] = [];
+    const currentDate = new Date(from);
+    const endDate = new Date(to);
+
+    while (currentDate <= endDate) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return dates;
+  }
+
+  // Cargar correcciones de tiempo
+  private async loadTimeCorrections(employeeIds: number[], from: Date, to: Date) {
+    return await this.timeCorrectionRepository.find({
+      where: {
+        date: Between(from, to),
+        employee: { id: In(employeeIds) }
+      },
+      relations: ['employee']
+    });
+  }
+
+  // Cargar días festivos - optimizado con una sola query
+  private async loadHolidays(from: Date, to: Date) {
+    // Generar todas las fechas del rango
+    const dates = this.generateDateRange(from, to);
+
+    // Buscar todos los festivos de una vez
+    const holidays = await Promise.all(
+      dates.map(date => this.calendarService.findByDate(format(date, 'yyyy-MM-dd')))
+    );
+
+    // Filtrar solo los días festivos
+    return holidays
+      .map((h, index) => h?.holiday ? { date: dates[index] } : null)
+      .filter(h => h !== null);
+  }
+
+  // Cargar incidencias compensatorias
+  private async loadCompensatoryIncidences(employeeIds: number[], from: Date, to: Date) {
+    return await this.employeeIncidenceRepository.find({
+      relations: {
+        employee: true,
+        incidenceCatologue: true,
+        dateEmployeeIncidence: true,
+      },
+      where: {
+        employee: { id: In(employeeIds) },
+        dateEmployeeIncidence: {
+          date: Between(from, to),
+        },
+        status: 'Autorizada',
+        type: In(['Compensatorio', 'Repago']),
+      },
+    });
+  }
+
+  // Cargar incidencias autorizadas
+  private async loadAuthorizedIncidences(employeeIds: number[], from: Date, to: Date) {
+    return await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
+      start: format(from, 'yyyy-MM-dd 00:00:00') as any,
+      end: format(to, 'yyyy-MM-dd 23:59:59') as any,
+      status: ['Autorizada'],
+      ids: employeeIds.map(id => `${id}`),
+      code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS',
+        'CAST', 'FINJ', 'HE', 'INC', 'DFT', 'VacM', 'Sind', 'PRTC',
+        'DOM', 'VACA', 'HO', 'HET', 'PSSE'],
+    });
+  }
+
+  // Cargar turnos de empleados - OPTIMIZADO: batch por día en lugar de individual
+  private async loadEmployeeShifts(employeeIds: number[], from: Date, to: Date) {
+    const allShifts = [];
+    const startDate = new Date(from);
+    const endDate = new Date(to);
+
+    // Agregar un día antes y uno después para los turnos adyacentes
+    startDate.setDate(startDate.getDate() - 1);
+    endDate.setDate(endDate.getDate() + 1);
+
+    const dates = this.generateDateRange(startDate, endDate);
+
+    // Procesar todos los días en paralelo con Promise.all
+    const shiftsPerDay = await Promise.all(
+      dates.map(async (date) => {
+        const dataDate = {
+          start: new Date(date),
+          end: new Date(date),
+        };
+
+        // Obtener turnos de TODOS los empleados para esta fecha de una vez
+        const shifts = await this.employeeShiftService.findMore(dataDate, employeeIds);
+
+        if (!shifts?.events || shifts.events.length === 0) {
+          return [];
+        }
+
+        // Mapear cada turno con su empleado y fecha
+        return shifts.events.map(shift => ({
+          employeeId: shift.employeeId || employeeIds[shifts.events.indexOf(shift)],
+          date: new Date(date),
+          ...shift
+        }));
+      })
+    );
+
+    // Aplanar el array de arrays
+    return shiftsPerDay.flat();
+  }
+
+  // Cargar líderes de empleados - optimizado con Promise.all
+  private async loadEmployeeLeaders(employeeIds: number[]) {
+    // Obtener líderes de todos los empleados en paralelo
+    const leadersPromises = employeeIds.map(async (employeeId) => {
+      const lideres = await this.organigramaService.leaders(employeeId);
+      return {
+        employeeId,
+        leaders: lideres.orgs?.map(lider => lider.leader?.employee_number).filter(Boolean) || []
+      };
+    });
+
+    return await Promise.all(leadersPromises);
+  }
+
+  // Crear mapas para búsqueda rápida
+  private createTimeCorrectionMap(corrections: any[]) {
+    const map = new Map();
+    corrections.forEach(tc => {
+      const key = `${tc.employee.id}-${format(new Date(tc.date), 'yyyy-MM-dd')}`;
+      map.set(key, tc);
+    });
+    return map;
+  }
+
+  // Crear mapa de incidencias
+  private createIncidenceMap(incidences: any[]) {
+    const map = new Map();
+    incidences.forEach(inc => {
+      const dates = inc.dateEmployeeIncidence || [inc];
+      dates.forEach(dateInc => {
+        const date = dateInc.date || inc.date;
+        if (date) {
+          const key = `${inc.employee?.id || inc.id_employee}-${format(new Date(date), 'yyyy-MM-dd')}`;
+          map.set(key, inc);
+        }
+      });
+    });
+    return map;
+  }
+
+  // Crear mapa de turnos
+  private createShiftsMap(shifts: any[]) {
+    const map = new Map();
+    shifts.forEach(shift => {
+      const key = `${shift.employeeId}-${format(new Date(shift.date), 'yyyy-MM-dd')}`;
+      map.set(key, shift);
+    });
+    return map;
+  }
+
   //Buscar checadas
   async findByEmployee(data: any, user: any) {
 
