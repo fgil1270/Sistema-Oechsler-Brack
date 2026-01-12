@@ -8,6 +8,9 @@ import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
 
+  // Aumentar el límite de listeners para evitar la advertencia de memory leak
+  process.setMaxListeners(20);
+
   const logger = new CustomLoggerService();
   const customLogger = new CustomLoggerService();
 

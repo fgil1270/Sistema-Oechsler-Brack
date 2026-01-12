@@ -584,6 +584,7 @@ export class EmployeeShiftService {
 
       return {
         id: employeeShift.id,
+        employeeId: employeeShift.employee.id,
         nameShift: employeeShift.shift.code,
         resourceId: employeeShift.employee.id,
         title: employeeShift.shift.name,
