@@ -518,17 +518,16 @@ export class TimeCorrectionService {
           hora_fin: endTimeShift.format('HH:mm'),
           hora_inicio_reloj: firstDate.format('HH:mm'),
           hora_fin_reloj: secondDate.format('HH:mm'),
-          horas_esperadas: `${hoursConvert.toString().padStart(2, '0')}:${minutesConvert.toString().padStart(2, '0')}`,//moment(diffTimeShift, 'HH:mm').format('HH:mm'),
+          horas_esperadas: `${hoursConvert.toString().padStart(2, '0')}:${minutesConvert.toString().padStart(2, '0')}`,
           incongruencia: incongruencia,
           horas_realizadas:
             diffDate >= 0 ? horas_realizadas[0] + ':' + horas_realizadas[1] : 0,
           suma_hrs: diffTimeShift + 2,
           comments: '',
           checadas: registrosChecadorNuevo,
-          lideres: lideres.orgs.map((lider) =>
-            lider.leader.employee_number,
-          ),
-
+          lideres: lideres.orgs
+            .map((lider) => lider.leader?.employee_number)
+            .filter((leader) => leader != null),
 
         });
 
