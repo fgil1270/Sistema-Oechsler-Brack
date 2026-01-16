@@ -1540,6 +1540,8 @@ export class EmployeeIncidenceService {
       data: {}
     };
     try {
+
+      const userLoggin = await this.employeeService.findOne(user.idEmployee);
       const employeeIncidence = await this.employeeIncidenceRepository.findOne({
         where: {
           id: id,
@@ -1553,16 +1555,20 @@ export class EmployeeIncidenceService {
         },
       });
 
-
+      //validacion si existe commentario de cancelacion
       if (updateEmployeeIncidenceDto.commentCancel) {
         employeeIncidence.commentCancel = updateEmployeeIncidenceDto.commentCancel;
+        employeeIncidence.date_canceled = new Date();
+        employeeIncidence.canceledBy = userLoggin.emp;
       }
 
+      //validacion si existe commentario de aprobacion RH
       if (updateEmployeeIncidenceDto.approveRHComment) {
         employeeIncidence.approveRHComment = updateEmployeeIncidenceDto.approveRHComment;
       }
 
       employeeIncidence.status = updateEmployeeIncidenceDto.status;
+
 
       let save = await this.employeeIncidenceRepository.save(employeeIncidence);
 
