@@ -159,6 +159,7 @@ export class RequestCourseService {
         const emailEmployee = await this.userService.findByIdEmployee(emp.id);
         //notifica Hansel
         leadersMail.push('h.perez@oechsler.mx');
+        leadersMail.push('f.gil@oechsler.mx');
 
         if (emailEmployee) {
           if (leadersMail.indexOf(emailEmployee.user[0].email) === -1) {
@@ -170,6 +171,10 @@ export class RequestCourseService {
         if (leader.orgs.length > 0) {
 
           for (const l of leader.orgs) {
+
+            if (l.leader == null) {
+              continue;
+            }
             //si el lider puede evaluar
             if (l.evaluar) {
               const user = await this.userService.findByIdEmployee(l.leader.id);
@@ -314,16 +319,20 @@ export class RequestCourseService {
       if (assignment.day == 'L,M,X,J,V,S,D') {
         //cuenta el todal de dias entre la fecha de inicio y fin
         //si el total de dias dias es mayor a una semana 
-        //y si es mayor a 7 dias solo pone los dias 'L,M,X,J,V'
+        //y si es mayor a 7 dias solo pone los dias 'L,M,X,J,V,S,D'
 
         if (dias > 7) {
-          diasRecurrencia = 'L,M,X,J,V';
+          diasRecurrencia = 'L,M,X,J,V,S,D';
+        } else {
+          diasRecurrencia = 'L,M,X,J,V,S';
         }
 
       } else {
         diasRecurrencia = assignment.day;
       }
+
       const frecuenciaIcal = this.parseDaysToIcalFrequency(diasRecurrencia);
+
 
       // Obtener los IDs de los empleados asignados
       const idsEmployees = assignment.requestCourse.map(rc => rc.employee.id);
@@ -385,6 +394,9 @@ export class RequestCourseService {
         const leader = await this.organigramaService.leaders(emp);
         if (leader.orgs.length > 0) {
           for (const l of leader.orgs) {
+            if (l.leader == null) {
+              continue;
+            }
             //si el lider puede evaluar
             if (l.evaluar) {
               const user = await this.userService.findByIdEmployee(l.leader.id);
@@ -463,7 +475,7 @@ export class RequestCourseService {
           dateEnd: dateEnd,
           employees: assignment.requestCourse.map(emp => `#${emp.employee.employee_number} - ${emp.employee.name} ${emp.employee.paternal_surname} ${emp.employee.maternal_surname} `)
         },
-        to.map((email) => email),
+        to,
         calendar,
       );
 
@@ -905,6 +917,8 @@ export class RequestCourseService {
       //se obtiene el lider del empleado
       let leader = await this.organigramaService.leaders(requestCourse.employee.id);
 
+      leader.orgs = leader.orgs.filter(org => org.leader != null);
+
       //se obtiene el departamento de la solicitud de curso
       let department = await this.departmentService.findOne(requestCourse.department.id);
       //se obtiene el presupuesto de entrenamiento del departamento
@@ -955,7 +969,7 @@ export class RequestCourseService {
 
         requestCourse.status = 'Solicitado';
         requestCourse.approved_at_leader = new Date();
-        requestCourse.leader = leader.orgs[0].leader;
+        requestCourse.leader = leader.orgs.length > 0 ? leader.orgs[0].leader : null;
 
       } else if (data.status == 'Solicitado' && requestCourse.origin == 'Solicitud') {
         //se asigna el status de la solicitud
@@ -1003,6 +1017,7 @@ export class RequestCourseService {
         //si el usuario logueado es admin
         if (isAdmin) {
           leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          leader.orgs = leader.orgs.filter(org => org.leader != null);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
@@ -1050,6 +1065,7 @@ export class RequestCourseService {
         if (data.avoidApprove) {
           const userApprove = await this.employeeService.findOne(user.idEmployee);
           leader = await this.organigramaService.leaders(requestCourse.employee.id);
+          leader.orgs = leader.orgs.filter(org => org.leader != null);
           requestCourse.approved_at_leader = new Date();
           requestCourse.leader = leader.orgs[0].leader;
           requestCourse.approved_at_rh = new Date();
@@ -1260,8 +1276,8 @@ export class RequestCourseService {
               request.leader = jefeTurno[0].employee;
             }
 
-          } else {
-            request.leader = leader.orgs.length > 0 ? leader.orgs[0].leader : null;
+          } else if (leader.orgs.length > 0) {
+            request.leader = leader.orgs.filter(org => org.leader != null)[0].leader;
           }
           request.status = 'Solicitado';
           request.approved_at_leader = new Date();
@@ -1390,6 +1406,10 @@ export class RequestCourseService {
 
             for (const l of leader.orgs) {
               //si el lider puede evaluar
+              if (l.leader != null) {
+                continue;
+              }
+
               if (l.evaluar) {
                 const user = await this.userService.findByIdEmployee(l.leader.id);
                 //recorre el arreglo de usuarios que tiene el lider
@@ -1625,6 +1645,7 @@ export class RequestCourseService {
             },
           },
         },
+        documents: true,
       },
       where: {
         status: In(['Asignado', 'Finalizado'])
@@ -1896,6 +1917,7 @@ export class RequestCourseService {
 
         //se obtiene el lider del empleado nuevo
         const leader = await this.organigramaService.leaders(newEmployee.emp.id);
+        leader.orgs = leader.orgs.filter(org => org.leader != null);
 
         //crear nueva solicitud de curso con el nuevo empleado
         const createRequestCourse = this.requestCourse.create({
@@ -1951,6 +1973,7 @@ export class RequestCourseService {
 
         //se obtiene el lider del empleado nuevo
         const leader = await this.organigramaService.leaders(newEmployee.emp.id);
+        leader.orgs = leader.orgs.filter(org => org.leader != null);
 
         //crear nueva solicitud de curso con el nuevo empleado
         const createRequestCourse = this.requestCourse.create({

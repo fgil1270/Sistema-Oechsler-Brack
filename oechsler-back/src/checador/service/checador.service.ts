@@ -1066,18 +1066,27 @@ export class ChecadorService {
           }
 
           // DFT
-          if (inc.codeBand === 'DFT') {
+          // Día festivo
+          if (inc.codeBand === 'DFT' || dayCalendar?.holiday) {
             existeDFT = true;
             totalHrsTrabajadas += hourShift;
             totalMinTrabajados += minShift;
           }
+
 
           // Otras incidencias
           if (!['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
             if (inc.codeBand === 'HDS') {
               incidenceExtra.push(`${moment.utc(inc.total_hour * 60 * 60 * 1000).format('H.mm')}${inc.codeBand}`);
             } else if (inc.codeBand !== 'INC') {
-              incidenceExtra.push(`1${inc.codeBand}`);
+              // si la fecha esta en el calendario como dia festivo
+              //cambia a 1DES
+              if (dayCalendar && dayCalendar.holiday && inc.codeBand == 'DFT') {
+                incidenceExtra.push(`1DES`);
+              } else {
+                incidenceExtra.push(`1${inc.codeBand}`);
+              }
+
             }
           }
 
@@ -1288,12 +1297,6 @@ export class ChecadorService {
               incidenceExtra.push('1DOM');
             }
           }
-        }
-
-
-        // Día festivo
-        if (dayCalendar?.holiday) {
-          totalHrsTrabajadas += hourShift;
         }
 
         eventDays.push({
