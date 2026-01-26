@@ -50,6 +50,7 @@ import { TrainingMachineModule } from './training_machine/training_machine.modul
 import { UsersModule } from './users/users.module';
 import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import { ViewsModule } from './views/views.module';
+import { ProductionMachineModule } from './production_machine/production_machine.module';
 
 
 @Module({
@@ -116,7 +117,8 @@ import { ViewsModule } from './views/views.module';
     GeneralModule,
     ProductionAreaModule,
     TrainingMachineModule,
-    TrainingModule
+    TrainingModule,
+    ProductionMachineModule
   ],
   controllers: [
     AppController
