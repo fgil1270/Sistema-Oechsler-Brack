@@ -24,14 +24,18 @@ export class ProductionMachineService {
     private productionMachineRepository: Repository<ProductionMachine>,
     @InjectDataSource() private dataSource: DataSource,
   ) { }
+
+  //crear maquina de produccion
   create(createProductionMachineDto: CreateProductionMachineDto) {
     return 'This action adds a new production-machine';
   }
 
+  //obtener todas las maquinas de produccion
   findAll() {
     return `This action returns all production-machines`;
   }
 
+  //obtener una maquina de produccion por id
   findOne(id: number) {
     return `This action returns a #id production-machine`;
   }
@@ -40,6 +44,7 @@ export class ProductionMachineService {
       return `This action updates a #id production-machine`;
     } */
 
+  //eliminar una maquina de produccion por id
   remove(id: number) {
     return `This action removes a #id production-machine`;
   }

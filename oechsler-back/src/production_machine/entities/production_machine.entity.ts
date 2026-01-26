@@ -7,7 +7,10 @@ import {
     DeleteDateColumn,
     ManyToOne,
     JoinColumn,
+    OneToMany,
 } from 'typeorm';
+
+import { ProductionMachineEmployee } from './production_machine_employee.entity';
 
 @Entity()
 export class ProductionMachine {
@@ -34,4 +37,7 @@ export class ProductionMachine {
 
     @DeleteDateColumn()
     deleted_at: Date;
+
+    @OneToMany(() => ProductionMachineEmployee, (productionMachineEmployee) => productionMachineEmployee.productionMachine)
+    productionMachineEmployees: ProductionMachineEmployee[];
 }

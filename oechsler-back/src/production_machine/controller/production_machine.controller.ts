@@ -17,7 +17,9 @@ import { ProductionMachineService } from '../service/production_machine.service'
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
 
-@Controller('production-machines')
+@UseGuards(AuthGuard('jwt'), RoleGuard)
+@ApiTags('Máquinas de producción')
+@Controller('production-machine')
 export class ProductionMachineController {
   constructor(private readonly productionMachineService: ProductionMachineService) { }
 

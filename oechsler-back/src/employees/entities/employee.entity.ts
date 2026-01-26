@@ -35,6 +35,7 @@ import { EmployeeWorkerHistory } from './employee_worker_history.entity';
 import { RequestCourseAssessmentEmployee } from '../../request_course/entities/request_course_assessment_employee.entity';
 import { Training } from '../../training/entities/training.entity';
 import { HistoryTraining } from '../../training/entities/history-training.entity';
+import { ProductionMachineEmployee } from '../../production_machine/entities/production_machine_employee.entity';
 
 @Entity()
 export class Employee {
@@ -270,5 +271,8 @@ export class Employee {
 
   @OneToMany(() => HistoryTraining, (historyTraining) => historyTraining.employeeTrainer)
   historyTraining: HistoryTraining[];
+
+  @OneToMany(() => ProductionMachineEmployee, (productionMachineEmployee) => productionMachineEmployee.employee)
+  productionMachineEmployees: ProductionMachineEmployee[];
 
 }
