@@ -26,18 +26,30 @@ export class ProductionMachineService {
   ) { }
 
   //crear maquina de produccion
-  create(createProductionMachineDto: CreateProductionMachineDto) {
+  async create(createProductionMachineDto: CreateProductionMachineDto) {
     return 'This action adds a new production-machine';
   }
 
   //obtener todas las maquinas de produccion
-  findAll() {
-    return `This action returns all production-machines`;
+  async findAll() {
+    return this.productionMachineRepository.find();
+  }
+
+  //obtener todas las maquinas de produccion con empleados
+  async findAllWithEmployees() {
+    return this.productionMachineRepository.find({
+      relations: ['productionMachineEmployees'],
+    });
   }
 
   //obtener una maquina de produccion por id
-  findOne(id: number) {
-    return `This action returns a #id production-machine`;
+  async findOne(id: number) {
+
+    let productionMachine = this.productionMachineRepository.findOne({
+      where: { id: id },
+      relations: ['productionMachineEmployees'],
+    });
+    return productionMachine;
   }
 
   /*   update(id: number, updateProductionMachineDto: UpdateProductionMachineDto) {
@@ -45,7 +57,7 @@ export class ProductionMachineService {
     } */
 
   //eliminar una maquina de produccion por id
-  remove(id: number) {
+  async remove(id: number) {
     return `This action removes a #id production-machine`;
   }
 }
