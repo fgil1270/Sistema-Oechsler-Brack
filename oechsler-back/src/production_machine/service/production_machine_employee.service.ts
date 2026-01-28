@@ -44,15 +44,37 @@ export class ProductionMachineEmployeeService {
       createProductionMachineEmployeeDto.employeeIds,
     );
 
+    //se obtiene la maquina de produccion
+    let productionMachine = await this.productionMachineService.findOne(createProductionMachineEmployeeDto.productionMachineId);
+
     //se mapean los turnos para crear las asignaciones de maquina de produccion - empleado
     for (let l = 0; l < shifts.events.length; l++) {
       const element = shifts.events[l];
 
-      //se obtiene la maquina de produccion
-      let productionMachine = await this.productionMachineService.findOne(createProductionMachineEmployeeDto.productionMachineId);
+
       //se obtiene el empleado
       let employee = await this.employeesService.findOne(element.employeeId);
 
+      //se obtiene las incidencias para el empleado en la fecha del turno
+      //VAC,INC, DFT, VacM, VACA, PSSE, PSS, PCS, 
+      let incidence = await this.dataSource.createQueryBuilder()
+        .select("inc.*")
+        .from("employee_incidence", "inc")
+        .innerJoinAndSelect("date_employee_incidence", "dei", "dei.incidenceId = inc.id")
+        .where("inc.employeeId = :employeeId", { employeeId: element.employeeId })
+        .andWhere("dei.date = :date", { date: format(new Date(element.start), 'yyyy-MM-dd') })
+        .andWhere("inc.code_band IN (:...codes)", { codes: ['VAC', 'INC', 'DFT', 'VacM', 'VACA', 'PSSE', 'PSS', 'PCS'] })
+        .getRawOne();
+
+      console.log('element.start', element.start);
+      console.log('employee', employee);
+      console.log('incidence', incidence);
+      return;
+      //si existe una incidencia, no se crea la asignacion
+      //continua con el siguiente dia
+      if (incidence) {
+        continue;
+      }
 
       let productionMachineEmployee = await this.productionMachineEmployeeRepository.create({
         date: format(new Date(element.start), 'yyyy-MM-dd') as any,
