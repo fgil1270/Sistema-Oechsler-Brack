@@ -44,7 +44,7 @@ export class CronRequestCourseService {
         //mostrar en archivo de log
         try {
             await this.requestCourseService.updateCronRequestCourse();
-            this.log.log(`Obtener solicitud de curso con status Asignado ${fechaMexico}`);
+            this.log.log(`Actualiuzar status de solicitud de curso ${fechaMexico}`);
             //se obtienen las solicitudes de curso con status Asignado
 
 
