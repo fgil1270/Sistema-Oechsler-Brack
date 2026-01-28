@@ -3927,7 +3927,7 @@ export class EmployeeIncidenceService {
             width: 1,
             opacity: 0.5,
           },
-        },
+        } as any,
       });
 
       if (doc.y > 630) {
