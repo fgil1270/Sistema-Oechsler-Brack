@@ -8,11 +8,13 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 
 import { CreateProductionMachineDto } from '../dto/create_production_machine.dto';
+import { SearchProductionMachineEmployeeDto } from '../dto/production_machine_employee.dto';
 import { ProductionMachineService } from '../service/production_machine.service';
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
@@ -73,6 +75,19 @@ export class ProductionMachineEmployeeController {
     return this.productionMachineEmployeeService.create(
       createProductionMachineEmployeeDto,
     );
+  }
+
+  @ApiOperation({ summary: 'Listar asignaciones máquina de producción - empleado' })
+  @Post('search')
+  findAll(@Body() searchProductionMachineEmployeeDto: SearchProductionMachineEmployeeDto) {
+    return this.productionMachineEmployeeService.findAll(searchProductionMachineEmployeeDto);
+  }
+
+  //eliminar asignacion maquina de produccion - empleado
+  @ApiOperation({ summary: 'Eliminar asignación máquina de producción - empleado' })
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.productionMachineEmployeeService.remove(id);
   }
 
 }
