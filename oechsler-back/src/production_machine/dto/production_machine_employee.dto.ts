@@ -23,3 +23,5 @@ export class CreateProductionMachineEmployeeDto {
     @ApiProperty({ description: 'Fecha de fin de la asignación', example: '2024-01-31' })
     end_date: string;
 }
+
+export class SearchProductionMachineEmployeeDto extends PartialType(CreateProductionMachineEmployeeDto) { }

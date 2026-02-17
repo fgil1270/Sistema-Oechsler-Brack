@@ -355,9 +355,9 @@ export class RequestCourseService {
       // aplicando evento por horas
       const event = calendar.createEvent({
         id: saveEventRequestCourse.id,
-        start: diaInicio.toDate(),
-        end: diaInicio.clone().add(diferenciaHoras, 'hours').toDate(),
-        allDay: true,
+        start: dateStart, // ✅ Usar la hora exacta de inicio del curso
+        end: dateEnd, // ✅ Usar la hora exacta de fin del curso
+        allDay: false, // ✅ NO es evento de todo el día, tiene horas específicas
         timezone: 'America/Mexico_City',
         summary: `Curso: ${course.name}`,
         description: `Curso asignado: ${course.name}\nProfesor: ${teacher.name}'}`,
@@ -368,13 +368,10 @@ export class RequestCourseService {
           name: 'OechslerMX',
           email: 'notificationes@oechsler.mx'
         },
-        attendees: to.length > 0 ? to.map((email) => {
-          return {
-            email: email,
-            status: ICalAttendeeStatus.ACCEPTED,
-          };
-        })
-          : [],
+        attendees: to.length > 0 ? to.map((email) => ({
+          email: email,
+          status: ICalAttendeeStatus.ACCEPTED,
+        })) : [],
       });
 
       // Agregar recurrencia si se definieron días
@@ -616,12 +613,57 @@ export class RequestCourseService {
       eployeesIds.push(emp.id);
     }
 
-    // Construir el filtro where correctamente
-    const whereConditions: FindOptionsWhere<RequestCourse> = {};
+    // Construir el filtro where correctamente usando array para OR
+    const whereConditions: FindOptionsWhere<RequestCourse>[] = [];
 
-    // Filtrar por status si existe
-    if (query.status && query.status.length > 0) {
-      whereConditions.status = In(query.status);
+    // Status que filtran por fechas tentativas
+    const statusForTentativeDates = ['Pendiente', 'Autorizado', 'Solicitado', 'Cancelado'];
+    // Status que filtran por fechas de asignación
+    const statusForAssignmentDates = ['Asignado', 'Finalizado', 'Pendiente Evaluar Empleado', 'Pendiente Evaluar Eficiencia', 'Evaluado'];
+
+    //si existe fecha de inicio y fecha de fin filtrar por rango de fechas
+    if (query.startDate && query.endDate && query.status && query.status.length > 0) {
+      // Verificar si algún status requiere filtrar por fechas tentativas
+      const hasTentativeStatus = query.status.some(s => statusForTentativeDates.includes(s));
+      // Verificar si algún status requiere filtrar por fechas de asignación
+      const hasAssignmentStatus = query.status.some(s => statusForAssignmentDates.includes(s));
+
+      if (hasTentativeStatus && hasAssignmentStatus) {
+        // OR: filtrar por fechas tentativas O por fechas de asignación
+        whereConditions.push(
+          {
+            status: In(query.status),
+            tentative_date_start: MoreThanOrEqual(new Date(query.startDate)),
+            tentative_date_end: LessThanOrEqual(new Date(query.endDate)),
+          },
+          {
+            status: In(query.status),
+            requestCourseAssignment: {
+              date_start: MoreThanOrEqual(new Date(query.startDate)),
+              date_end: LessThanOrEqual(new Date(query.endDate)),
+            },
+          }
+        );
+      } else if (hasTentativeStatus) {
+        // Solo filtrar por fechas tentativas
+        whereConditions.push({
+          status: In(query.status),
+          tentative_date_start: MoreThanOrEqual(new Date(query.startDate)),
+          tentative_date_end: LessThanOrEqual(new Date(query.endDate)),
+        });
+      } else if (hasAssignmentStatus) {
+        // Solo filtrar por fechas de asignación
+        whereConditions.push({
+          status: In(query.status),
+          requestCourseAssignment: {
+            date_start: MoreThanOrEqual(new Date(query.startDate)),
+            date_end: LessThanOrEqual(new Date(query.endDate)),
+          },
+        });
+      }
+    } else if (query.status && query.status.length > 0) {
+      // Solo filtrar por status sin fechas
+      whereConditions.push({ status: In(query.status) });
     }
 
     const requestCourse = await this.requestCourse.find({
@@ -643,6 +685,7 @@ export class RequestCourseService {
         requestBy: true,
         documents: true,
         courseEfficiency: true,
+        request_course_assessment_employee: true,
       },
       where: whereConditions,
     });
@@ -670,12 +713,10 @@ export class RequestCourseService {
       {
         type: 'Normal',
         byDepartmentDirector: true,
-        needUser: true,
+        needUser: false,
       },
       user,
     );
-
-
 
     let findOption: {
       employee?: any;
@@ -1085,6 +1126,7 @@ export class RequestCourseService {
       }
       if (data.status == 'Cancelado') {
         requestCourse.status = 'Cancelado';
+        requestCourse.comment = data.comment;
       }
 
       if (data.requestBy) {
@@ -1114,6 +1156,12 @@ export class RequestCourseService {
 
       let leadersMail = [];
       const emailEmployee = await this.userService.findByIdEmployee(requestCourse.employee.id);
+
+      //notificacion para hansel
+      if (requestCourse.status == 'Autorizado' || requestCourse.status == 'Cancelado') {
+        leadersMail.push('h.perez@oechsler.mx');
+      }
+
       if (emailEmployee) {
         leadersMail.push(emailEmployee.user[0].email);
       }
@@ -1167,10 +1215,7 @@ export class RequestCourseService {
         data: save,
       };
     } catch (error) {
-      return {
-        error: true,
-        msg: error.message,
-      };
+      throw new NotFoundException(error.message);
     }
   }
 
@@ -1311,6 +1356,7 @@ export class RequestCourseService {
 
 
         const emailEmployee = await this.userService.findByIdEmployee(request.employee.id);
+
         if (emailEmployee) {
           leadersMail.push(emailEmployee.user[0].email);
         }
@@ -1462,15 +1508,206 @@ export class RequestCourseService {
     }
   }
 
-  //actualizar multiples status
-  updateStatusMultiple(data: UpdateRequestCourseDto, user: any) {
-    //si es estatus es Autorizado
-    if (data.status == 'Autorizado') {
+  //Autorizar multiples solicitudes de curso
+  async updateStatusMultiple(data: UpdateRequestCourseDto, user: any) {
+
+    try {
+      const userEmployee = await this.employeeService.findOne(user.idEmployee);
+      //si es estatus es Autorizado
+      if (data.status == 'Autorizado') {
+
+        //se actualizan todas las solicitudes de curso que se envian en el array de idRequestCourse
+        const requestCourse = await this.requestCourse.find({
+          relations: {
+            employee: true,
+            department: true,
+            competence: true,
+            course: true,
+            leader: true,
+            rh: true,
+            gm: true,
+            requestBy: true,
+            requestCourseAssignment: {
+              teacher: true,
+            },
+          },
+          where: {
+            id: In(data.requestCourseIds),
+          },
+        });
+
+        for (const request of requestCourse) {
+
+          //se obtiene el departamento de la solicitud de curso
+          let department = await this.departmentService.findOne(request.department.id);
+          //se obtiene el presupuesto de entrenamiento del departamento
+          let trainingBudget = department.dept.training_budgetId?.find(b => b.year == new Date().getFullYear())?.amount;
+
+          //se obtienen todas las solicitudes de curso que pertenecen al mismo departamento
+          let courseByDepartment = await this.requestCourse.find({
+            relations: {
+              employee: true,
+              course: true,
+              department: {
+                training_budgetId: true,
+              },
+              competence: true,
+              leader: true,
+              rh: true,
+              gm: true,
+              requestBy: true,
+            },
+            where: {
+              department: {
+                id: department.dept.id,
+              },
+              status: Not(In(['Solicitado', 'Cancelado', 'Pendiente'])),
+            },
+          });
+
+          //suma del costo por cada solicitud de curso por departamento
+          const totalTrainingBudget = courseByDepartment.reduce((total, requestCourse) => {
+            total += Number(requestCourse.cost);
+            return total;
+          }, 0);
+
+          //si el curso pasa a Autorizado
+          let isAdmin = false;
+          let isLeader = false;
+          let isRh = false;
+          let isGm = false;
 
 
-    } else if (data.status == 'Cancelado') {
+          isAdmin = user.roles.some((role) => role.name == 'Admin');
+          isRh = user.roles.some((role) => role.name == 'RH');
+          isGm = user.roles.some((role) => role.name == 'Gerente');
+          //se verifica si el usuario logueado es lider
+          //se obtiene el lider del empleado
+          let leader = await this.organigramaService.leaders(request.employee.id);
+
+          leader.orgs = leader.orgs.filter(org => org.leader != null);
+
+          isLeader = leader.orgs.some((org) => org.leader.id == user.idEmployee);
+
+          //si el usuario logueado es admin
+          if (isAdmin) {
+            request.approved_at_leader = new Date();
+            request.leader = leader.orgs[0].leader;
+            request.approved_at_rh = new Date();
+            request.rh = userEmployee.emp;
+            request.status = 'Autorizado'
+          } else {
+
+            //si el usuario es Lider
+            if (isLeader) {
+              request.approved_at_leader = new Date();
+              request.leader = userEmployee.emp;
+
+            }
+
+            //si el usuario es RH
+            if (isRh) {
+              request.approved_at_rh = new Date();
+              request.rh = userEmployee.emp;
+              //se verifica si el presupuesto de entrenamiento del departamento es suficiente
+              if ((trainingBudget - totalTrainingBudget) < 0) {
+                throw new NotFoundException(`El presupuesto de entrenamiento del departamento ${department.dept.cv_description} no es suficiente para autorizar la solicitud de curso`);
+              }
+
+            }
+
+            //si el usuario es Gerente
+            if (isGm) {
+              request.approved_at_gm = new Date();
+              request.gm = userEmployee.emp;
+
+              request.status = 'Autorizado';
+            }
+
+            //si aprobo el lider
+            //si aprobo RH
+            //si aprobo GM
+            if (request.leader && request.rh) {
+              //si aprobo el lider y RH y GM
+              request.status = 'Autorizado';
+            }
+          }
+
+          if (data.avoidApprove) {
+            const userApprove = await this.employeeService.findOne(user.idEmployee);
+
+            request.approved_at_leader = new Date();
+            request.leader = leader.orgs[0].leader;
+            request.approved_at_rh = new Date();
+            request.rh = userApprove.emp;
+
+          }
+
+          const save = await this.requestCourse.save(request);
+
+          let leadersMail = [];
+          const emailEmployee = await this.userService.findByIdEmployee(request.employee.id);
+
+          if (emailEmployee) {
+            leadersMail.push(emailEmployee.user[0].email);
+          }
+
+          if (leader.orgs.length > 0) {
+
+            for (const l of leader.orgs) {
+              //si el lider puede evaluar
+              if (l.evaluar) {
+                const user = await this.userService.findByIdEmployee(l.leader.id);
+                //recorre el arreglo de usuarios que tiene el lider
+                for (const u of user.user) {
+                  //si el usuario tiene correo y no esta eliminado
+                  if (u.deleted_at == null && leadersMail.indexOf(u.email) === -1) {
+                    leadersMail.push(u.email);
+                  }
+                }
+              }
+            }
+          } else {
+            //busca empleados que su usuario tenga rol Jefe de turno
+            const jefeTurno = await this.dataSource.manager.createQueryBuilder('employee', 'employee')
+              .innerJoinAndSelect('employee.userId', 'user')
+              .innerJoinAndSelect('user.roles', 'role')
+              .where('role.name = :roleName', { roleName: 'Jefe de Turno' })
+              .andWhere('employee.deleted_at IS NULL')
+              .orderBy('employee.employee_number', 'ASC')
+              .getMany();
+            if (jefeTurno.length > 0) {
+              leadersMail.push(...jefeTurno.map(emp => emp.user.email));
+            }
+          }
+
+          //se envian los correos
+          //si el status es  Pendiente, Autorizado, Cancelado, Finalizado, Pendiente Evaluar Empleado, Solicitado
+          if (!(data.status == 'Autorizado' && save.status == 'Solicitado')) {
+            await this.mailService.sendEmail(`Actualizacion Solicitud de Curso " ${save.course.name}"`,
+              {
+                curso: save.course.name,
+                status: save.status,
+                empleados: [`#${save.employee.employee_number}) ${save.employee.name} ${save.employee.paternal_surname} ${save.employee.maternal_surname}`]
+              },
+              leadersMail,
+              'solicitud_curso'
+            );
+          }
+
+        }
+
+        return {
+          error: false,
+          msg: 'Solicitud de curso actualizada correctamente',
+        };
+
+      }
+    } catch (error) {
+      throw new Error("Error al actualizar el estatus de las solicitudes de curso: " + error.message);
 
     }
+
   }
 
   async uploadMultipleFiles(idRequestCourse: number, files: Array<Express.Multer.File>, classifications: string[]) {
@@ -1950,8 +2187,8 @@ export class RequestCourseService {
         const requestCourse = await this.requestCourse.save(createRequestCourse);
 
         //se cambia el estatus del empleado antiguo a aprobado
-        oldRequestCourse.status = 'Aprobado';
-        //await this.requestCourse.save(oldRequestCourse);
+        oldRequestCourse.status = 'Autorizado';
+        await this.requestCourse.save(oldRequestCourse);
 
         //se quita al auntiguo empleado del assignment.requestCourse
         assignment.requestCourse = assignment.requestCourse.filter((req: any) => req.id !== oldRequestCourse.id);
@@ -2027,6 +2264,48 @@ export class RequestCourseService {
       msg: 'Asignación de curso actualizada correctamente',
       data: assignment,
     };
+  }
+
+  async searchMissingDocumentRequestCourse() {
+    try {
+      //let request_course = await this.findAll({ status: ['Finalizado'] }, null);
+
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
+
+  async searchEvaluationPendingRequestCourse() {
+    try {
+      let request_course = await this.requestCourse.find({
+        relations: {
+          employee: {
+            userId: true,
+          },
+          course: true,
+          department: true,
+        },
+        where: {
+          status: 'Pendiente Evaluar Empleado'
+        }
+      });
+
+      for (const request of request_course) {
+        await this.mailService.sendEmail(`Evaluar Curso "${request.course.name}"`, {
+          curso: request.course.name,
+          empleados: [`#${request.employee.employee_number}) ${request.employee.name} ${request.employee.paternal_surname} ${request.employee.maternal_surname}`]
+        }, [request.employee.userId[0].email], 'evaluar_curso_empleado');
+      }
+
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
   }
 
 }

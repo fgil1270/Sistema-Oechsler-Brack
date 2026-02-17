@@ -31,6 +31,7 @@ import { IncidenceCatologueService } from '../../incidence_catologue/service/inc
 import { CalendarService } from '../../calendar/service/calendar.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { TimeCorrectionService } from '../../time_correction/service/time_correction.service';
+import { RecordDevice } from '../entities/record_device.entity';
 
 @Injectable()
 export class ChecadorService {
@@ -1689,6 +1690,9 @@ export class ChecadorService {
 
       //registros comedor
       const registrosComedor = await this.checadorRepository.find({
+        relations: {
+          recordDevice: true,
+        },
         where: {
           employee: {
             id: idEmployee,
@@ -1703,9 +1707,11 @@ export class ChecadorService {
         },
       });
 
+
+
       //total registros comedor
       let totalRegComedor = 0;
-      totalRegComedor = registrosComedor.filter((checador: any) => checador.origin == 'Comedor').length;
+      totalRegComedor = registrosComedor.filter((checador: any) => checador.recordDevice?.origin == 'Comedor').length;
 
       //obtener incidencias tiempo extra por turno(HET) y tiempo extra por horas(HE)
       const incidenciasNormales =

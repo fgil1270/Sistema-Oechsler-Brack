@@ -160,6 +160,17 @@ export class FindRequestCourseDto {
   @ApiProperty({ description: 'Array de status' })
   status: any[];
 
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Fecha de inicio' })
+  startDate: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Fecha de fin' })
+  endDate: string;
+
+
 }
 
 export class UpdateRequestCourseDto extends PartialType(RequestCourseDto) {
@@ -287,6 +298,7 @@ export class RequestCourseAssessmentDto {
   @IsString()
   @ApiProperty({ description: 'Comentarios' })
   comment: string;
+
 }
 
 

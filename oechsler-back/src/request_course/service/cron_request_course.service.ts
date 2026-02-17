@@ -29,6 +29,7 @@ export class CronRequestCourseService {
     ) { }
 
     private log = new CustomLoggerService();
+    private fechaMexico = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
 
     // todos los dias a las 6 am '0 6 * * *'
     // cada minuto '*/1 * * * *'
@@ -39,12 +40,12 @@ export class CronRequestCourseService {
         //utcOffset: '-06:00' // ejemplo para centro de mexico
     })
     async updateCronRequestCourse() {
-        const fechaMexico = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+        //const fechaMexico = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
         //this.logger.debug('Enviando correo cada minuto'); //mostrar en consola en formato log
         //mostrar en archivo de log
         try {
             await this.requestCourseService.updateCronRequestCourse();
-            this.log.log(`Actualiuzar status de solicitud de curso ${fechaMexico}`);
+            this.log.log(`Actualiuzar status de solicitud de curso ${this.fechaMexico}`);
             //se obtienen las solicitudes de curso con status Asignado
 
 
@@ -52,4 +53,35 @@ export class CronRequestCourseService {
             this.log.error('Error al enviar correo', err);
         }
     }
+
+    @Cron('0 6 * * *', {
+        name: 'searchMissingDocumentRequestCourse',
+        timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
+        //o si se requiere un offset se puede usar utcOffset
+        //utcOffset: '-06:00' // ejemplo para centro de mexico
+    })
+    async searchMissingDocumentRequestCourse() {
+        try {
+            await this.requestCourseService.searchMissingDocumentRequestCourse();
+            this.log.log(`Buscar solicitudes de curso con documentos faltantes ${this.fechaMexico}`);
+        } catch (err) {
+            this.log.error('Error al buscar solicitudes de curso con documentos faltantes', err);
+        }
+    }
+
+    @Cron('0 6 * * *', {
+        name: 'searchEvaluationPendingRequestCourse',
+        timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
+        //o si se requiere un offset se puede usar utcOffset
+        //utcOffset: '-06:00' // ejemplo para centro de mexico
+    })
+    async searchEvaluationPendingRequestCourse() {
+        try {
+            await this.requestCourseService.searchEvaluationPendingRequestCourse();
+            this.log.log(`Buscar solicitudes de curso con evaluacion pendiente ${this.fechaMexico}`);
+        } catch (err) {
+            this.log.error('Error al buscar solicitudes de curso con evaluacion pendiente', err);
+        }
+    }
+
 }
