@@ -12,7 +12,7 @@ import {
   Like,
 } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 import { CreateRoleDto, UpdateRoleDto } from '../dto/create-role.dto';
 import { Role } from '../entities/role.entity';

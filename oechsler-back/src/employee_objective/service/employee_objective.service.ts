@@ -397,7 +397,7 @@ export class EmployeeObjetiveService {
             width: 1,
             opacity: 0.5,
           },
-        },
+        } as any,
       });
 
       const definitionObjectiveAnnual =
@@ -1466,7 +1466,7 @@ export class EmployeeObjetiveService {
           width: 1,
           opacity: 0.5,
         },
-      },
+      } as any,
     });
 
     const definitionObjectiveAnnual =

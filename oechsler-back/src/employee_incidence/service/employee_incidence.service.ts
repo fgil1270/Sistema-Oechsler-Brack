@@ -320,7 +320,7 @@ export class EmployeeIncidenceService {
               if (IncidenceCatologue.code_band == 'INC') {
 
                 let nameTurno = '';
-                let i = 1;
+                let i = 0;
                 let horaInicio = '';
                 let horaFin = '';
                 let employeeShiftExistAnterior;
@@ -334,7 +334,7 @@ export class EmployeeIncidenceService {
                     employee.emps[j].id,
                   ]
                   );
-
+                  
                   nameTurno = employeeShiftExistAnterior.events[0].nameShift;
                   i++;
                 } while (nameTurno == 'TI');
@@ -3927,7 +3927,7 @@ export class EmployeeIncidenceService {
             width: 1,
             opacity: 0.5,
           },
-        },
+        } as any,
       });
 
       if (doc.y > 630) {
