@@ -69,4 +69,19 @@ export class CronRequestCourseService {
         }
     }
 
+    @Cron('0 6 * * *', {
+        name: 'searchEvaluationPendingRequestCourse',
+        timeZone: 'America/Mexico_City',// Especifica la zona horaria de México
+        //o si se requiere un offset se puede usar utcOffset
+        //utcOffset: '-06:00' // ejemplo para centro de mexico
+    })
+    async searchEvaluationPendingRequestCourse() {
+        try {
+            await this.requestCourseService.searchEvaluationPendingRequestCourse();
+            this.log.log(`Buscar solicitudes de curso con evaluacion pendiente ${this.fechaMexico}`);
+        } catch (err) {
+            this.log.error('Error al buscar solicitudes de curso con evaluacion pendiente', err);
+        }
+    }
+
 }

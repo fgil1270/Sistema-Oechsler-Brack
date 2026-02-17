@@ -355,9 +355,9 @@ export class RequestCourseService {
       // aplicando evento por horas
       const event = calendar.createEvent({
         id: saveEventRequestCourse.id,
-        start: diaInicio.toDate(),
-        end: diaInicio.clone().add(diferenciaHoras, 'hours').toDate(),
-        allDay: true,
+        start: dateStart, // ✅ Usar la hora exacta de inicio del curso
+        end: dateEnd, // ✅ Usar la hora exacta de fin del curso
+        allDay: false, // ✅ NO es evento de todo el día, tiene horas específicas
         timezone: 'America/Mexico_City',
         summary: `Curso: ${course.name}`,
         description: `Curso asignado: ${course.name}\nProfesor: ${teacher.name}'}`,
@@ -368,13 +368,10 @@ export class RequestCourseService {
           name: 'OechslerMX',
           email: 'notificationes@oechsler.mx'
         },
-        attendees: to.length > 0 ? to.map((email) => {
-          return {
-            email: email,
-            status: ICalAttendeeStatus.ACCEPTED,
-          };
-        })
-          : [],
+        attendees: to.length > 0 ? to.map((email) => ({
+          email: email,
+          status: ICalAttendeeStatus.ACCEPTED,
+        })) : [],
       });
 
       // Agregar recurrencia si se definieron días
@@ -616,12 +613,57 @@ export class RequestCourseService {
       eployeesIds.push(emp.id);
     }
 
-    // Construir el filtro where correctamente
-    const whereConditions: FindOptionsWhere<RequestCourse> = {};
+    // Construir el filtro where correctamente usando array para OR
+    const whereConditions: FindOptionsWhere<RequestCourse>[] = [];
 
-    // Filtrar por status si existe
-    if (query.status && query.status.length > 0) {
-      whereConditions.status = In(query.status);
+    // Status que filtran por fechas tentativas
+    const statusForTentativeDates = ['Pendiente', 'Autorizado', 'Solicitado', 'Cancelado'];
+    // Status que filtran por fechas de asignación
+    const statusForAssignmentDates = ['Asignado', 'Finalizado', 'Pendiente Evaluar Empleado', 'Pendiente Evaluar Eficiencia', 'Evaluado'];
+
+    //si existe fecha de inicio y fecha de fin filtrar por rango de fechas
+    if (query.startDate && query.endDate && query.status && query.status.length > 0) {
+      // Verificar si algún status requiere filtrar por fechas tentativas
+      const hasTentativeStatus = query.status.some(s => statusForTentativeDates.includes(s));
+      // Verificar si algún status requiere filtrar por fechas de asignación
+      const hasAssignmentStatus = query.status.some(s => statusForAssignmentDates.includes(s));
+
+      if (hasTentativeStatus && hasAssignmentStatus) {
+        // OR: filtrar por fechas tentativas O por fechas de asignación
+        whereConditions.push(
+          {
+            status: In(query.status),
+            tentative_date_start: MoreThanOrEqual(new Date(query.startDate)),
+            tentative_date_end: LessThanOrEqual(new Date(query.endDate)),
+          },
+          {
+            status: In(query.status),
+            requestCourseAssignment: {
+              date_start: MoreThanOrEqual(new Date(query.startDate)),
+              date_end: LessThanOrEqual(new Date(query.endDate)),
+            },
+          }
+        );
+      } else if (hasTentativeStatus) {
+        // Solo filtrar por fechas tentativas
+        whereConditions.push({
+          status: In(query.status),
+          tentative_date_start: MoreThanOrEqual(new Date(query.startDate)),
+          tentative_date_end: LessThanOrEqual(new Date(query.endDate)),
+        });
+      } else if (hasAssignmentStatus) {
+        // Solo filtrar por fechas de asignación
+        whereConditions.push({
+          status: In(query.status),
+          requestCourseAssignment: {
+            date_start: MoreThanOrEqual(new Date(query.startDate)),
+            date_end: LessThanOrEqual(new Date(query.endDate)),
+          },
+        });
+      }
+    } else if (query.status && query.status.length > 0) {
+      // Solo filtrar por status sin fechas
+      whereConditions.push({ status: In(query.status) });
     }
 
     const requestCourse = await this.requestCourse.find({
@@ -2227,6 +2269,36 @@ export class RequestCourseService {
   async searchMissingDocumentRequestCourse() {
     try {
       //let request_course = await this.findAll({ status: ['Finalizado'] }, null);
+
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
+
+  async searchEvaluationPendingRequestCourse() {
+    try {
+      let request_course = await this.requestCourse.find({
+        relations: {
+          employee: {
+            userId: true,
+          },
+          course: true,
+          department: true,
+        },
+        where: {
+          status: 'Pendiente Evaluar Empleado'
+        }
+      });
+
+      for (const request of request_course) {
+        await this.mailService.sendEmail(`Evaluar Curso "${request.course.name}"`, {
+          curso: request.course.name,
+          empleados: [`#${request.employee.employee_number}) ${request.employee.name} ${request.employee.paternal_surname} ${request.employee.maternal_surname}`]
+        }, [request.employee.userId[0].email], 'evaluar_curso_empleado');
+      }
 
     } catch (error) {
       return {
