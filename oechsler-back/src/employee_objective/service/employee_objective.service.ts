@@ -473,7 +473,7 @@ export class EmployeeObjetiveService {
           `${element.percentage}`,
           `${element.objectiveEvaluation[0]?.value_half_year ? element.objectiveEvaluation[0].value_half_year : ''}`,
           `${element.objectiveEvaluation[0]?.value_end_year ? element.objectiveEvaluation[0].value_end_year : ''}`,
-          `${percentageObjective.toFixed(1)}`,
+          `${Number(percentageObjective.toFixed(1)) == 0 ? '' : percentageObjective.toFixed(1)}`,
         ]);
         totalObjective += Number(element.percentage);
       });
@@ -1551,9 +1551,9 @@ export class EmployeeObjetiveService {
         `${element.goal}`,
         `${element.calculation}`,
         `${element.percentage}`,
-        `${element.objectiveEvaluation[0]?.value_half_year}`,
+        `${element.objectiveEvaluation[0]?.value_half_year ? element.objectiveEvaluation[0].value_half_year : ''}`,
         `${element.objectiveEvaluation[0]?.value_end_year ? element.objectiveEvaluation[0].value_end_year : ''}`,
-        `${percentageObjective.toFixed(1)}`,
+        `${Number(percentageObjective.toFixed(1)) == 0 ? '' : percentageObjective.toFixed(1)}`,
       ]);
       totalObjective += Number(element.percentage);
     });
@@ -1840,10 +1840,10 @@ export class EmployeeObjetiveService {
         ],
         [
           `Obtenido`,
-          `${Number(totalPercentageObjective.toFixed(1)) == 0 ? '0' : totalPercentageObjective.toFixed(1)}`,
-          `${Number(totalPercentagePerformance.toFixed(1)) == 0 ? '0' : totalPercentagePerformance.toFixed(1)}`,
-          `${Number(totalPercentageCompetence.toFixed(1)) == 0 ? '0' : totalPercentageCompetence.toFixed(1)}`,
-          `${Number((totalPercentageObjective + totalPercentagePerformance + totalPercentageCompetence).toFixed(1)) == 0 ? '0' : (totalPercentageObjective + totalPercentagePerformance + totalPercentageCompetence).toFixed(1)}`
+          `${Number(totalPercentageObjective.toFixed(1)) == 0 ? '' : totalPercentageObjective.toFixed(1)}`,
+          `${Number(totalPercentagePerformance.toFixed(1)) == 0 ? '' : totalPercentagePerformance.toFixed(1)}`,
+          `${Number(totalPercentageCompetence.toFixed(1)) == 0 ? '' : totalPercentageCompetence.toFixed(1)}`,
+          `${Number((totalPercentageObjective + totalPercentagePerformance + totalPercentageCompetence).toFixed(1)) == 0 ? '' : (totalPercentageObjective + totalPercentagePerformance + totalPercentageCompetence).toFixed(1)}`
         ]
       ],
     };
@@ -2344,6 +2344,7 @@ export class EmployeeObjetiveService {
         relations: {
           employee: {
             userId: true,
+            job: true,
           },
           percentageDefinition: true,
           evaluatedBy: true,
@@ -2486,7 +2487,7 @@ export class EmployeeObjetiveService {
           `${element.percentage}`,
           `${element.objectiveEvaluation[0]?.value_half_year ? element.objectiveEvaluation[0].value_half_year : ''}`,
           `${element.objectiveEvaluation[0]?.value_end_year ? element.objectiveEvaluation[0].value_end_year : ''}`,
-          `${percentageObjective.toFixed(1)}`,
+          `${Number(percentageObjective.toFixed(1)) == 0 ? '' : percentageObjective.toFixed(1)}`,
         ]);
         totalObjective += Number(element.percentage);
       });
@@ -2845,7 +2846,7 @@ export class EmployeeObjetiveService {
       return status;
     } catch (error) {
       status.error = true;
-      status.message = error;
+      status.message = error.message;
       status.code = 400;
 
       return status;
