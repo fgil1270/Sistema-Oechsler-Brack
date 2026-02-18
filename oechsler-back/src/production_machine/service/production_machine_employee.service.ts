@@ -21,6 +21,7 @@ import { ProductionMachineEmployee } from '../entities/production_machine_employ
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
 import { ProductionMachineService } from './production_machine.service';
 import { EmployeesService } from '../../employees/service/employees.service';
+import { CalendarService } from '../../calendar/service/calendar.service';
 
 @Injectable()
 export class ProductionMachineEmployeeService {
@@ -31,6 +32,7 @@ export class ProductionMachineEmployeeService {
     private employeeShiftService: EmployeeShiftService,
     private productionMachineService: ProductionMachineService,
     private employeesService: EmployeesService,
+    private calendarService: CalendarService,
   ) { }
 
   //crear asignacion maquina de produccion - empleado
@@ -163,7 +165,13 @@ export class ProductionMachineEmployeeService {
         const endDate = new Date(searchProductionMachineEmployeeDto.end_date);
 
         for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+          let arrayIncidences = [];
           const currentDate = format(new Date(date), 'yyyy-MM-dd');
+
+          //VERIFICA SI EL DIA ES FERIADO
+          const dayHoliday = await this.calendarService.findByDate(
+            format(date, 'yyyy-MM-dd'),
+          );
 
           // Buscar asignación de máquina para este empleado en esta fecha
           const assignment = assignments.find(
@@ -189,6 +197,22 @@ export class ProductionMachineEmployeeService {
             })
             .getOne();
 
+          if (incidence) {
+            arrayIncidences.push({
+              id: incidence.id,
+              code: incidence.incidenceCatologue?.code_band,
+              description: incidence.descripcion,
+            });
+          }
+
+          if (dayHoliday) {
+            arrayIncidences.push({
+              id: dayHoliday.id,
+              code: 'FERIADO',
+              description: dayHoliday.description,
+            });
+          }
+
           // Construir objeto de resultado unificado
           result.push({
             id: assignment?.id || null,
@@ -201,11 +225,7 @@ export class ProductionMachineEmployeeService {
               end: shift.end,
               title: shift.title,
             } : null,
-            incidence: incidence ? {
-              id: incidence.id,
-              code: incidence.incidenceCatologue?.code_band,
-              description: incidence.descripcion,
-            } : null,
+            incidence: arrayIncidences.length > 0 ? arrayIncidences : null,
           });
         }
       }
@@ -227,6 +247,7 @@ export class ProductionMachineEmployeeService {
     return `This action updates a #id production-machine-employee`;
   } */
 
+  //Quitar asignacion maquina de produccion - empleado
   async remove(id: number): Promise<void> {
     try {
       // Verificar que el registro existe
