@@ -627,6 +627,7 @@ export class TimeCorrectionService {
 
       // Procesar cada empleado
       for (const employee of organigrama) {
+
         // Procesar cada día del rango
         for (const currentDate of diasGenerados) {
           const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -683,6 +684,7 @@ export class TimeCorrectionService {
 
           // Si no tiene turno el día actual
           if (!employeeShift) {
+
             // Revisar turno del día anterior
             if (['T2', 'TI2', 'T3', 'TI3'].includes(turnoAnterior)) {
               // Verificar incidencias del día anterior
@@ -786,18 +788,19 @@ export class TimeCorrectionService {
             continue;
           }
 
-          // Calcular diferencia de tiempo en checadas
-          if (registrosChecadorNuevo.length === 0) {
-            continue;
-          }
+          let firstDate: moment.Moment | null = null;
+          let secondDate: moment.Moment | null = null;
+          let diffDate = 0;
 
-          const firstDate = moment(registrosChecadorNuevo[0].date);
-          const secondDate = moment(registrosChecadorNuevo[registrosChecadorNuevo.length - 1].date);
-          const diffDate = secondDate.diff(firstDate, 'hours', true);
+          if (registrosChecadorNuevo.length > 0) {
+            firstDate = moment(registrosChecadorNuevo[0].date);
+            secondDate = moment(registrosChecadorNuevo[registrosChecadorNuevo.length - 1].date);
+            diffDate = secondDate.diff(firstDate, 'hours', true);
 
-          // Filtro de tolerancia: si está dentro del rango ±3 horas, no mostrar
-          if (diffDate >= diffTimeShift - 3 && diffDate <= diffTimeShift + 3) {
-            continue;
+            // Filtro de tolerancia: si está dentro del rango ±3 horas, no mostrar
+            if (diffDate >= diffTimeShift - 3 && diffDate <= diffTimeShift + 3) {
+              continue;
+            }
           }
 
           // Calcular horas realizadas
@@ -821,11 +824,11 @@ export class TimeCorrectionService {
             turno: turnoActual,
             hora_inicio: startTimeShift.format('HH:mm'),
             hora_fin: endTimeShift.format('HH:mm'),
-            hora_inicio_reloj: firstDate.format('HH:mm'),
-            hora_fin_reloj: secondDate.format('HH:mm'),
+            hora_inicio_reloj: firstDate ? firstDate.format('HH:mm') : '',
+            hora_fin_reloj: secondDate ? secondDate.format('HH:mm') : '',
             horas_esperadas: `${hoursConvert.toString().padStart(2, '0')}:${minutesConvert.toString().padStart(2, '0')}`,
             incongruencia: incongruencia,
-            horas_realizadas: diffDate >= 0
+            horas_realizadas: registrosChecadorNuevo.length > 0 && diffDate >= 0
               ? `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
               : '00:00',
             suma_hrs: diffTimeShift + 2,

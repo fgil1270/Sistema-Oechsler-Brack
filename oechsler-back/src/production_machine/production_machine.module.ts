@@ -8,6 +8,7 @@ import { ProductionMachineEmployee } from './entities/production_machine_employe
 import { EmployeesModule } from '../employees/employees.module';
 import { ProductionMachineEmployeeService } from './service/production_machine_employee.service';
 import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
+import { CalendarModule } from '../calendar/calendar.module';
 
 
 @Module({
@@ -15,6 +16,7 @@ import { EmployeeShiftModule } from '../employee_shift/employee_shift.module';
     TypeOrmModule.forFeature([ProductionMachine, ProductionMachineEmployee]),
     EmployeesModule,
     EmployeeShiftModule,
+    CalendarModule,
   ],
   controllers: [ProductionMachineController, ProductionMachineEmployeeController],
   providers: [ProductionMachineService, ProductionMachineEmployeeService],

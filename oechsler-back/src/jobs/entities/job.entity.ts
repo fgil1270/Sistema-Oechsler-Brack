@@ -9,11 +9,17 @@ import {
   ManyToOne,
   ManyToMany,
   JoinTable,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
 import { Competence } from '../../competence/entities/competence.entity';
 import { JobDocument } from '../../job_document/entities/job-document.entity';
 import { EmployeeJobHistory } from '../../employees/entities/employee_job_history.entity';
+import { JobDescription } from '../../job_description/entities/job_description.entity';
+import { JobReportHim } from '../../job_description/entities/job_report_him.entity';
+import { JobHelp } from '../../job_description/entities/job_help.entity';
+import { JobAbsenceDelegate } from '../../job_description/entities/job_absence_delegate.entity';
 
 @Entity()
 export class Job {
@@ -66,4 +72,23 @@ export class Job {
 
   @Column({ type: 'boolean', default: true })
   active: boolean;
+
+  @Column({ type: 'int', nullable: true })
+  jobDescriptionId: number;
+
+  @OneToOne(() => JobDescription, (jobDescription) => jobDescription.job, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'jobDescriptionId' })
+  jobDescription: JobDescription;
+
+  @OneToMany(() => JobReportHim, (jobReportHim) => jobReportHim.job)
+  jobReportHim: JobReportHim[];
+
+  @OneToMany(() => JobHelp, (jobHelp) => jobHelp.job)
+  jobHelp: JobHelp[];
+
+  @OneToMany(() => JobAbsenceDelegate, (jobAbsenceDelegate) => jobAbsenceDelegate.job)
+  jobAbsenceDelegate: JobAbsenceDelegate[];
 }

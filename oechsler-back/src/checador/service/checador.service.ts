@@ -1454,7 +1454,7 @@ export class ChecadorService {
             diaSiguente = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
             break;
           case 'MIX':
-            hrEntrada = '03:00:00'; //dia actual
+            hrEntrada = '00:01:00'; //dia actual
             hrSalida = '22:30:00'; //dia siguiente
             diaAnterior = new Date(index);
             diaSiguente = new Date(index);
