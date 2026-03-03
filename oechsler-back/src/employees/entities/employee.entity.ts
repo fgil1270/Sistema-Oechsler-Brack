@@ -36,6 +36,7 @@ import { RequestCourseAssessmentEmployee } from '../../request_course/entities/r
 import { Training } from '../../training/entities/training.entity';
 import { HistoryTraining } from '../../training/entities/history-training.entity';
 import { ProductionMachineEmployee } from '../../production_machine/entities/production_machine_employee.entity';
+import { JobDescription } from '../../job_description/entities/job_description.entity';
 
 @Entity()
 export class Employee {
@@ -274,5 +275,14 @@ export class Employee {
 
   @OneToMany(() => ProductionMachineEmployee, (productionMachineEmployee) => productionMachineEmployee.employee)
   productionMachineEmployees: ProductionMachineEmployee[];
+
+  @OneToMany(() => JobDescription, (jobDescription) => jobDescription.authorizeLeader)
+  jobDescriptionAuthorizeLeader: JobDescription[];
+
+  @OneToMany(() => JobDescription, (jobDescription) => jobDescription.authorizeManager)
+  jobDescriptionAuthorizeManager: JobDescription[];
+
+  @OneToMany(() => JobDescription, (jobDescription) => jobDescription.authorizeRh)
+  jobDescriptionAuthorizeRh: JobDescription[];
 
 }

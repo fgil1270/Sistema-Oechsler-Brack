@@ -39,6 +39,7 @@ import { OrganigramaModule } from './organigrama/organigrama.module';
 import { PatternModule } from './pattern/pattern.module';
 import { PayrollsModule } from './payrolls/payrolls.module';
 import { ProductionAreaModule } from './production_area/production_area.module';
+import { ProductionMachineModule } from './production_machine/production_machine.module';
 import { RequestCourseModule } from './request_course/request_course.module';
 import { CronRequestCourseService } from './request_course/service/cron_request_course.service';
 import { RolesModule } from './roles/roles.module';
@@ -50,12 +51,11 @@ import { TrainingMachineModule } from './training_machine/training_machine.modul
 import { UsersModule } from './users/users.module';
 import { VacationsProfileModule } from './vacations-profile/vacations-profile.module';
 import { ViewsModule } from './views/views.module';
-import { ProductionMachineModule } from './production_machine/production_machine.module';
+import { JobDescriptionModule } from './job_description/job-description.module';
 
 
 @Module({
   imports: [
-    JobDocumentModule,
     WebsocketModule,
     MailModule,
     ConfigModule.forRoot({
@@ -118,7 +118,9 @@ import { ProductionMachineModule } from './production_machine/production_machine
     ProductionAreaModule,
     TrainingMachineModule,
     TrainingModule,
-    ProductionMachineModule
+    ProductionMachineModule,
+    JobDocumentModule,
+    JobDescriptionModule
   ],
   controllers: [
     AppController

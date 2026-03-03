@@ -227,15 +227,13 @@ export class ProductionMachineEmployeeService {
             } : null,
             incidence: arrayIncidences.length > 0 ? arrayIncidences : null,
           });
+
         }
       }
 
       return result;
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      throw new BadRequestException('Error en los filtros de búsqueda');
+      throw new BadRequestException(error.message);
     }
   }
 

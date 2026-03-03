@@ -26,11 +26,19 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 @ApiTags('Competencias/Habilidades')
 @Controller('competence')
 export class CompetenceController {
-  constructor(private readonly competenceService: CompetenceService) {}
+  constructor(private readonly competenceService: CompetenceService) { }
+
+  @ApiOperation({ summary: 'Crear Competencia' })
+  @Post()
+  create(@Body() competenceDto: CompetenceDto) {
+    return this.competenceService.create(competenceDto);
+  }
 
   @ApiOperation({ summary: 'Listar Competencias' })
   @Get()
   findAll() {
     return this.competenceService.findAll();
   }
+
+
 }

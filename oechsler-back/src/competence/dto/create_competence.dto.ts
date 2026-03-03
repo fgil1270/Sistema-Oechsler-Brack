@@ -10,7 +10,17 @@ import {
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CompetenceDto {
+
   @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Nombre de la competencia' })
+  name: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: 'Codigo de la competencia' })
+  code: string;
+  /* @IsNotEmpty()
   @IsString()
   @ApiProperty({ description: 'Area donde debera cumplirse el objetivo' })
   area: string;
@@ -41,7 +51,7 @@ export class CompetenceDto {
     description:
       'No definido, Pendiente Evaluado medio año, Pendiente evaluador medio año, Pendiente evaluado Fin de año, Pendiente evaluador fin de año, Finalizado',
   })
-  status?: string;
+  status?: string; */
 }
 
-export class UpdateCompetenceDto extends PartialType(CompetenceDto) {}
+export class UpdateCompetenceDto extends PartialType(CompetenceDto) { }

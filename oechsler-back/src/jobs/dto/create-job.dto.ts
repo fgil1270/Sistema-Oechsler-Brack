@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsBoolean, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsBoolean, IsOptional, IsInt } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateJobDto {
@@ -33,6 +34,15 @@ export class CreateJobDto {
   @IsBoolean()
   @ApiProperty({ description: 'Indica si el puesto esta activo' })
   active: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @ApiProperty({
+    description: 'ID de la descripción de puesto asociada',
+    required: false,
+  })
+  jobDescriptionId?: number;
 }
 
 export class UpdateJobDto extends PartialType(CreateJobDto) { }
