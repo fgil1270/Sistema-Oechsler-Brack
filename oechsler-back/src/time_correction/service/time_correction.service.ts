@@ -914,7 +914,7 @@ export class TimeCorrectionService {
 
   // Cargar incidencias autorizadas
   private async loadAuthorizedIncidences(employeeIds: number[], from: Date, to: Date) {
-    return await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
+    let incidence = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
       start: format(from, 'yyyy-MM-dd 00:00:00') as any,
       end: format(to, 'yyyy-MM-dd 23:59:59') as any,
       status: ['Autorizada'],
@@ -923,6 +923,8 @@ export class TimeCorrectionService {
         'CAST', 'FINJ', 'HE', 'INC', 'DFT', 'VacM', 'Sind', 'PRTC',
         'DOM', 'VACA', 'HO', 'HET', 'PSSE'],
     });
+
+    return incidence;
   }
 
   // Cargar turnos de empleados - OPTIMIZADO: batch por día en lugar de individual
@@ -992,12 +994,14 @@ export class TimeCorrectionService {
   // Crear mapa de incidencias
   private createIncidenceMap(incidences: any[]) {
     const map = new Map();
-    incidences.forEach(inc => {
+    incidences.forEach((inc: any) => {
+
       const dates = inc.dateEmployeeIncidence || [inc];
+
       dates.forEach(dateInc => {
-        const date = dateInc.date || inc.date;
+        const date = dateInc.start || inc.date;
         if (date) {
-          const key = `${inc.employee?.id || inc.id_employee}-${format(new Date(date), 'yyyy-MM-dd')}`;
+          const key = `${dateInc.resourceId ? dateInc.resourceId : inc.id_employee}-${format(new Date(date), 'yyyy-MM-dd')}`;
           map.set(key, inc);
         }
       });

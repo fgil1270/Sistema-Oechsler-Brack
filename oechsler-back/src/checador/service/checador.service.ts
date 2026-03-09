@@ -1537,7 +1537,7 @@ export class ChecadorService {
               diaAnterior = new Date(index);
               diaSiguente = new Date(index);
             } else {
-              hrEntrada = '02:00:00'; //dia actual
+              hrEntrada = '00:01:00'; //dia actual
               hrSalida = '23:00:00'; //dia siguiente
             }
             diaAnterior = new Date(index);
