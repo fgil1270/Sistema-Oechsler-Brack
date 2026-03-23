@@ -334,7 +334,7 @@ export class EmployeeIncidenceService {
                     employee.emps[j].id,
                   ]
                   );
-                  
+
                   nameTurno = employeeShiftExistAnterior.events[0].nameShift;
                   i++;
                 } while (nameTurno == 'TI');
@@ -734,6 +734,13 @@ export class EmployeeIncidenceService {
       },
     }); */
 
+    const statusFilter = data.status
+      ? (Array.isArray(data.status) ? data.status : [data.status])
+      : null;
+    const codeBandFilter = data.code_band
+      ? (Array.isArray(data.code_band) ? data.code_band : [data.code_band])
+      : null;
+
     const incidences = await this.employeeIncidenceRepository.createQueryBuilder('employeeIncidence')
       .innerJoinAndSelect('employeeIncidence.employee', 'employee')
       .leftJoinAndSelect('employeeIncidence.leader', 'leader')
@@ -743,10 +750,9 @@ export class EmployeeIncidenceService {
       .innerJoinAndSelect('employee.employeeShift', 'employeeShift')
       .innerJoinAndSelect('employeeShift.shift', 'shift')
       .where('employee.id IN (:...id)', { id: data.ids })
-      .andWhere('employeeIncidence.status IN (:status)', { status: data.status ? data.status : Not(IsNull()) })
+      .andWhere(statusFilter ? 'employeeIncidence.status IN (:...status)' : 'employeeIncidence.status IS NOT NULL', { status: statusFilter })
       .andWhere(`dateEmployeeIncidence.date BETWEEN '${format(new Date(from), 'yyyy-MM-dd')}' AND '${format(new Date(to), 'yyyy-MM-dd')}' `)
-      .andWhere(data.code_band ? 'incidenceCatologue.code_band IN (:...code_band)' : 'incidenceCatologue.code_band IS NOT NULL', { code_band: data.code_band })
-      .andWhere('employeeShift.start_date = dateEmployeeIncidence.date')
+      .andWhere(codeBandFilter ? 'incidenceCatologue.code_band IN (:...code_band)' : 'incidenceCatologue.code_band IS NOT NULL', { code_band: codeBandFilter })
       .getMany();
 
     let i = 0;
@@ -790,7 +796,7 @@ export class EmployeeIncidenceService {
             approve: incidence.leader ? incidence.leader.name + ' ' + incidence.leader.paternal_surname + ' ' + incidence.leader.maternal_surname : '',
             approveEmployeeNumber: incidence.leader ? incidence.leader.employee_number : 0,
             canceledBy: incidence.canceledBy ? incidence.canceledBy.name + ' ' + incidence.canceledBy.paternal_surname + ' ' + incidence.canceledBy.maternal_surname : '',
-            shift: incidence.employee.employeeShift[0].shift,
+            shift: incidence.employee.employeeShift?.[0]?.shift ?? null,
             type: incidence.type,
             created_at: incidence.created_at,
             incidenceShift: incidence.shift
@@ -2718,7 +2724,7 @@ export class EmployeeIncidenceService {
           const iniciaTurno = new Date(`${diaConsulta} ${dates[j].shift.startTimeshift}`);
           const termianTurno = new Date(`${diaConsulta} ${dates[j].shift.endTimeshift}`);
 
-          if (['T3', 'T12-2', 'TI3'].includes(turnoActual)) {
+          if (['T3', 'T12-2', 'TESP12-2', 'TI3'].includes(turnoActual)) {
             termianTurno.setDate(termianTurno.getDate() + 1);
           }
 
@@ -3102,6 +3108,7 @@ export class EmployeeIncidenceService {
         }
         // Ajuste final
         const quo = Math.floor(totalMinutisTrabados / 60);
+
         totalHrsTrabajadas += quo;
         totalMinutisTrabados = totalMinutisTrabados % 60;
 
