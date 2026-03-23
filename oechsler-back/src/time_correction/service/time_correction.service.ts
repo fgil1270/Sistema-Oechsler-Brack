@@ -920,7 +920,7 @@ export class TimeCorrectionService {
       status: ['Autorizada'],
       ids: employeeIds.map(id => `${id}`),
       code_band: ['VAC', 'PSTP', 'PETP', 'PSTL', 'PCS', 'PETL', 'PSS', 'HDS',
-        'CAST', 'FINJ', 'HE', 'INC', 'DFT', 'VacM', 'Sind', 'PRTC',
+        'CAST', 'FINJ', 'HE', 'INC', 'VacM', 'Sind', 'PRTC',
         'DOM', 'VACA', 'HO', 'HET', 'PSSE'],
     });
 
@@ -1120,8 +1120,17 @@ export class TimeCorrectionService {
         const turnoAnterior = employeeShifAnterior.events[0]?.nameShift;
         const turnoSiguiente = employeeShifSiguiente.events[0]?.nameShift;
 
+        //obtener el horario de entrada y salida
+        //para consultar el checador
+        ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.checadorService.entradaSalidaChecador(
+          nowDate,
+          turnoAnterior,
+          turnoActual,
+          turnoSiguiente
+        ))
+
         //turno actual es igual al turno del dia anterior
-        if (turnoActual == turnoAnterior) {
+        /* if (turnoActual == turnoAnterior) {
           //turno actual es igual al turno del dia siguiente
           if (turnoActual == turnoSiguiente) {
             switch (turnoActual) {
@@ -1331,7 +1340,7 @@ export class TimeCorrectionService {
               diaSiguente = new Date(nowDate.setDate(nowDate.getDate() + 1));
               break;
           }
-        }
+        } */
 
 
         //se obtienen las checadas del turno
