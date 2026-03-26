@@ -1065,10 +1065,12 @@ export class ChecadorService {
         // ✅ Obtener registros del checador desde el mapa
         const checadorKey = `${iterator.id}_${diaConsulta}`;
         let registrosChecador = checadorMap.get(checadorKey) || [];
+        let existTiempoExtraHoy = false;
 
         // ✅ AJUSTAR HORARIO SI HAY TIEMPO EXTRA
         for (const inc of incidenciasNormales) {
           if (['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
+            existTiempoExtraHoy = true;
             if (['T1', 'TI1'].includes(turnoActual)) {
               if (inc.incidenceShift === 1 || inc.incidenceShift === 2) {
                 hrEntrada = '05:00:00';
@@ -1196,19 +1198,21 @@ export class ChecadorService {
 
           registrosChecador = registrosChecador.filter(r => {
             const horaRegistro = moment(r.date);
-            const inicioT2 = moment(`${diaConsulta} ${employeeShif.startTimeshift}`);
-            const finT2 = moment(`${diaSig} ${hrSalida}`);
+            const inicioT2 = moment(`${format(diaAnt, 'yyyy-MM-dd')} ${hrEntrada}`);
+            const finT2 = moment(`${format(diaSig, 'yyyy-MM-dd')} ${hrSalida}`);
             return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
           });
         }
+
 
         //si el dia siguiente tiene incidencias
         //filtra las checadas para el fin del turno actual
         if (incidenciasSiguiente.length > 0) {
           registrosChecador = registrosChecador.filter(r => {
+
             const horaRegistro = moment(r.date);
-            const inicioT2 = moment(`${diaAnt} ${hrEntrada}`);
-            const finT2 = moment(`${diaConsulta} ${employeeShif.endTimeshift}`);
+            const inicioT2 = moment(`${format(diaAnt, 'yyyy-MM-dd')} ${hrEntrada}`);
+            const finT2 = moment(`${format(diaSig, 'yyyy-MM-dd')} ${hrSalida}`);
             return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
           });
         }
@@ -1221,6 +1225,7 @@ export class ChecadorService {
           if (diaConsulta <= format(new Date(), 'yyyy-MM-dd')) {
             if (incidenciasNormales.length === 0) {
               incidenceExtra.push(`1${faltaInjustificada.code_band}`);
+
             }
 
             if (timeCorrection) {
@@ -1228,7 +1233,6 @@ export class ChecadorService {
             }
           }
         }
-
 
         // ✅ CALCULAR HORAS TRABAJADAS
         if (registrosChecador.length > 0) {
@@ -1343,8 +1347,8 @@ export class ChecadorService {
               return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
             });
             // Código original para casos normales
-            const firstDate = moment(registrosChecador[0].date);
-            const secondDate = moment(registrosChecador[registrosChecador.length - 1].date);
+            const firstDate = moment(registrosChecador[0]?.date);
+            const secondDate = moment(registrosChecador[registrosChecador.length - 1]?.date);
 
             diffDatehour = secondDate.diff(firstDate, 'hours');
             diffDatemin = secondDate.diff(firstDate, 'minutes');
