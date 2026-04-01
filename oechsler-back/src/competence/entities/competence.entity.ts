@@ -7,18 +7,17 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
-  ManyToMany,
   OneToMany,
 } from 'typeorm';
 import { TypeCompetence } from './type_competence.entity';
 import { TypeElementCompetence } from './type_element_competence.entity';
-import { Job } from 'src/jobs/entities/job.entity';
 import { Course } from '../../course/entities/course.entity';
 import { DncCourseManual } from '../../employee_objective/entities/dnc_manual.entity';
 import { CompetenceEvaluation } from '../../employee_objective/entities/competence_evaluation.entity';
 import { RequestCourse } from '../../request_course/entities/request_course.entity';
 import { CompetenceMachine } from '../../training_machine/entities/competence_machine.entity';
 import { SubCompetenceTraining } from './sub_competence_training.entity';
+import { JobCompetence } from '../../jobs/entities/job_competence.entity';
 
 @Entity()
 export class Competence {
@@ -48,8 +47,8 @@ export class Competence {
   @JoinColumn()
   typeElementCompetence: TypeElementCompetence;
 
-  @ManyToMany(() => Job, (job) => job.competence)
-  job: Job[];
+  @OneToMany(() => JobCompetence, (jobCompetence) => jobCompetence.competence)
+  jobCompetences: JobCompetence[];
 
   @OneToMany(() => Course, (course) => course.competence)
   course: Course[];

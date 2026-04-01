@@ -649,7 +649,7 @@ export class EmployeesService {
       relations: {
         department: true,
         job: {
-          competence: true
+          jobCompetences: true
         },
         payRoll: true,
         vacationProfile: true,

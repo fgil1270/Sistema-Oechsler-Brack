@@ -7,19 +7,17 @@ import {
   DeleteDateColumn,
   OneToMany,
   ManyToOne,
-  ManyToMany,
-  JoinTable,
   OneToOne,
   JoinColumn,
 } from 'typeorm';
 import { Employee } from '../../employees/entities/employee.entity';
-import { Competence } from '../../competence/entities/competence.entity';
 import { JobDocument } from '../../job_document/entities/job-document.entity';
 import { EmployeeJobHistory } from '../../employees/entities/employee_job_history.entity';
 import { JobDescription } from '../../job_description/entities/job_description.entity';
 import { JobReportHim } from '../../job_description/entities/job_report_him.entity';
 import { JobHelp } from '../../job_description/entities/job_help.entity';
 import { JobAbsenceDelegate } from '../../job_description/entities/job_absence_delegate.entity';
+import { JobCompetence } from './job_competence.entity';
 
 @Entity()
 export class Job {
@@ -50,16 +48,8 @@ export class Job {
   @DeleteDateColumn()
   deleted_at: Date;
 
-  @ManyToMany(() => Competence, (competence) => competence.job)
-  @JoinTable({
-    joinColumn: {
-      name: 'jobId',
-    },
-    inverseJoinColumn: {
-      name: 'competenceId',
-    },
-  })
-  competence: Competence[];
+  @OneToMany(() => JobCompetence, (jobCompetence) => jobCompetence.job)
+  jobCompetences: JobCompetence[];
 
   @OneToMany(() => JobDocument, (post) => post.job)
   jobDocument: JobDocument[];

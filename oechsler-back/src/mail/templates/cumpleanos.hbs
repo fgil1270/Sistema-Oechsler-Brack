@@ -1,0 +1,7 @@
+<p>Cumpleañeros del dia: {{dia}}</p>
+<p></p>
+<ul>
+    {{#each employees}}
+    <li>#{{this.employee_number}} - {{this.name}} - {{this.job}} - {{this.yearAgo}} años cumplidos</li>
+    {{/each}}
+</ul>
