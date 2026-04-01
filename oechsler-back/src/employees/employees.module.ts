@@ -1,3 +1,4 @@
+
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -44,4 +45,4 @@ import { EmployeeWorkerHistory } from './entities/employee_worker_history.entity
   providers: [EmployeesService],
   exports: [EmployeesService],
 })
-export class EmployeesModule {}
+export class EmployeesModule { }

@@ -8,7 +8,8 @@ export class CustomLoggerService implements LoggerService {
 
   constructor() {
     this.logger = winston.createLogger({
-      level: 'info', // Cambiar de 'debug' a 'info' para reducir logs
+      //level: 'info', // Cambiar de 'debug' a 'info' para reducir logs
+      level: 'debug', // 'debug' muestra: error, warn, info, http, verbose, debug
       format: winston.format.combine(
         winston.format.timestamp({
           format: () => new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),

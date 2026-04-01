@@ -183,8 +183,9 @@ export class OrganigramaService {
     };
   }
 
+  //SE OBTIENEN LOS EMPLEADOS DEL LIDER
   async findEmployeeByLeader(idLeader: number, idUser: number) {
-    //SE OBTIENEN LOS EMPLEADOS DEL LIDER
+
     const leader = await this.employeeService.findOne(idLeader);
     const admin = await this.userService.findOne(idUser);
     let isAdmin = false;

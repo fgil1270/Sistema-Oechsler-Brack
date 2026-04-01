@@ -295,7 +295,7 @@ export class TimeCorrectionService {
         let hrEntrada = '00:00:00';
         let hrSalida = '23:59:00';
         let diaAnterior;
-        let diaSiguente;
+        let diaSiguiente;
 
         let diaResta = new Date(new Date(index).setDate(new Date(index).getDate() - 1));
         let diaSuma = new Date(new Date(index).setDate(new Date(index).getDate() + 1));
@@ -323,7 +323,7 @@ export class TimeCorrectionService {
 
         //obtener el horario de entrada y salida
         //para consultar el checador
-        ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.checadorService.entradaSalidaChecador(
+        ({ hrEntrada, hrSalida, diaAnterior, diaSiguiente } = await this.checadorService.entradaSalidaChecador(
           index,
           turnoAnterior,
           turnoActual,
@@ -374,7 +374,7 @@ export class TimeCorrectionService {
 
               //se busca el horario de entrada y salida
               diaAnterior = new Date(index);
-              diaSiguente = new Date(index);
+              diaSiguiente = new Date(index);
               hrEntrada = '00:01:00';
               hrSalida = '23:59:00';
             }
@@ -388,7 +388,7 @@ export class TimeCorrectionService {
           .andWhere(
             // Overlapping condition: busca checadas con el rango
             '(c.date >= :from AND c.date <= :to)',
-            { from: format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`) as any, to: format(diaSiguente, `yyyy-MM-dd ${hrSalida}`) as any }
+            { from: format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`) as any, to: format(diaSiguiente, `yyyy-MM-dd ${hrSalida}`) as any }
           )
           .orderBy('c.date', 'ASC')
           .getMany();
@@ -464,7 +464,7 @@ export class TimeCorrectionService {
           );
           endTimeShift = moment(
             new Date(
-              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
+              `${format(diaSiguiente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
               }`,
             ),
             'HH:mm',
@@ -671,7 +671,7 @@ export class TimeCorrectionService {
           const turnoSiguiente = shiftsMap.get(nextShiftKey)?.nameShift;
 
           // Obtener horarios de entrada/salida para consultar checador
-          let { hrEntrada, hrSalida, diaAnterior, diaSiguente } =
+          let { hrEntrada, hrSalida, diaAnterior, diaSiguiente } =
             await this.checadorService.entradaSalidaChecador(
               currentDate,
               turnoAnterior,
@@ -712,7 +712,7 @@ export class TimeCorrectionService {
 
               // Ajustar horarios de búsqueda
               diaAnterior = currentDate;
-              diaSiguente = currentDate;
+              diaSiguiente = currentDate;
               hrEntrada = '00:01:00';
               hrSalida = '23:59:00';
             }
@@ -725,7 +725,7 @@ export class TimeCorrectionService {
             .where('employee.id = :employeeId', { employeeId: employee.id })
             .andWhere('c.date >= :from AND c.date <= :to', {
               from: format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`),
-              to: format(diaSiguente, `yyyy-MM-dd ${hrSalida}`)
+              to: format(diaSiguiente, `yyyy-MM-dd ${hrSalida}`)
             })
             .orderBy('c.date', 'ASC')
             .getMany();
@@ -777,7 +777,7 @@ export class TimeCorrectionService {
               'YYYY-MM-DD HH:mm'
             );
             endTimeShift = moment(
-              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShift.endTimeshift}`,
+              `${format(diaSiguiente, 'yyyy-MM-dd')} ${employeeShift.endTimeshift}`,
               'YYYY-MM-DD HH:mm'
             );
           }
@@ -1098,7 +1098,7 @@ export class TimeCorrectionService {
         let hrEntrada = '00:00:00';
         let hrSalida = '23:59:00';
         let diaAnterior;
-        let diaSiguente;
+        let diaSiguiente;
 
         const dataDateAnterior = {
           start: new Date(nowDate.setDate(nowDate.getDate() - 1)),
@@ -1122,7 +1122,7 @@ export class TimeCorrectionService {
 
         //obtener el horario de entrada y salida
         //para consultar el checador
-        ({ hrEntrada, hrSalida, diaAnterior, diaSiguente } = await this.checadorService.entradaSalidaChecador(
+        ({ hrEntrada, hrSalida, diaAnterior, diaSiguiente } = await this.checadorService.entradaSalidaChecador(
           nowDate,
           turnoAnterior,
           turnoActual,
@@ -1347,7 +1347,7 @@ export class TimeCorrectionService {
         const registrosChecadorNuevo = await this.checadorService.findbyDate(
           iterator.id,
           diaAnterior,
-          diaSiguente,
+          diaSiguiente,
           hrEntrada,
           hrSalida,
         );
@@ -1391,7 +1391,7 @@ export class TimeCorrectionService {
           );
           endTimeShift = moment(
             new Date(
-              `${format(diaSiguente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
+              `${format(diaSiguiente, 'yyyy-MM-dd')} ${employeeShif.events[0]?.endTimeshift
               }`,
             ),
             'HH:mm',

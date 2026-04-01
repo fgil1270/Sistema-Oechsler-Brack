@@ -70,6 +70,9 @@ export class CompetenceService {
         typeCompetence: true,
         typeElementCompetence: true,
       },
+      order: {
+        name: 'ASC',
+      },
     });
 
     return competence;
@@ -83,7 +86,7 @@ export class CompetenceService {
       relations: {
         typeCompetence: true,
         typeElementCompetence: true,
-        job: true,
+        jobCompetences: true,
         course: true,
       },
     });

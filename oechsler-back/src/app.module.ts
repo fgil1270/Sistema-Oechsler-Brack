@@ -42,6 +42,7 @@ import { ProductionAreaModule } from './production_area/production_area.module';
 import { ProductionMachineModule } from './production_machine/production_machine.module';
 import { RequestCourseModule } from './request_course/request_course.module';
 import { CronRequestCourseService } from './request_course/service/cron_request_course.service';
+import { CronEmployeeService } from './employees/service/cron_employee.service';
 import { RolesModule } from './roles/roles.module';
 import { ShiftModule } from './shift/shift.module';
 import { SupplierModule } from './supplier/supplier.module';
@@ -129,7 +130,8 @@ import { JobDescriptionModule } from './job_description/job-description.module';
     AppService,
     CronSendEmailPendingIncidenceService,
     CustomLoggerService,
-    CronRequestCourseService
+    CronRequestCourseService,
+    CronEmployeeService
   ],
 })
 export class AppModule { }
