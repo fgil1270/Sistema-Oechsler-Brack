@@ -81,4 +81,7 @@ export class Job {
 
   @OneToMany(() => JobAbsenceDelegate, (jobAbsenceDelegate) => jobAbsenceDelegate.job)
   jobAbsenceDelegate: JobAbsenceDelegate[];
+
+  @OneToMany(() => JobDescription, (jobDescription) => jobDescription.jobLeader)
+  jobDescriptionLeader: JobDescription[];
 }

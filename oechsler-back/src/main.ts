@@ -6,6 +6,15 @@ import { CustomLoggerService } from './logger/logger.service';
 import * as expressListRoutes from 'express-list-endpoints';
 import * as bodyParser from 'body-parser';
 
+function isAddressInUseError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: string }).code === 'EADDRINUSE'
+  );
+}
+
 async function bootstrap() {
 
   // Aumentar el límite de listeners para evitar la advertencia de memory leak
@@ -56,8 +65,10 @@ async function bootstrap() {
       promise: promise.toString(),
     }));
 
-    // No cerrar el servidor, solo logear
-    // En producción, podrías decidir cerrar después de X errores
+    /* if (isAddressInUseError(reason)) {
+      logger.error('Puerto en uso. Cerrando proceso para evitar watcher colgado.', reason);
+      process.exit(1);
+    } */
   });
 
   // ✅ Manejar excepciones no capturadas
@@ -70,8 +81,10 @@ async function bootstrap() {
       name: error.name,
     }));
 
-    // ⚠️ Cerrar la aplicación después de excepción no capturada
-    //process.exit(1);
+    /* if (isAddressInUseError(error)) {
+      logger.error('Puerto en uso por excepción no capturada. Cerrando proceso.', error.message);
+      process.exit(1);
+    } */
   });
 
   // ✅ Manejar advertencias
@@ -85,7 +98,29 @@ async function bootstrap() {
     })}`);
   });
 
-  await app.listen(process.env.PORT);
+  const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+    logger.warn(`Recibida señal ${signal}. Cerrando aplicación...`);
+    await app.close();
+    process.exit(0);
+  };
+
+  process.once('SIGINT', () => {
+    void shutdown('SIGINT');
+  });
+
+  process.once('SIGTERM', () => {
+    void shutdown('SIGTERM');
+  });
+
+  try {
+    await app.listen(process.env.PORT);
+  } catch (error) {
+    if (isAddressInUseError(error)) {
+      logger.error('El puerto configurado ya está en uso. Finalizando proceso actual.', error);
+      process.exit(1);
+    }
+    throw error;
+  }
 
   const server = app.getHttpServer();
   const router = server._events.request._router;

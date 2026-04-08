@@ -26,7 +26,7 @@ export class JobDescription {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', length: 255, nullable: true })
     area: string;
 
     @Column({ type: 'text' })
@@ -91,4 +91,8 @@ export class JobDescription {
 
     @OneToMany(() => JobAreaExperience, (jobAreaExperience) => jobAreaExperience.jobDescription)
     jobAreaExperience: JobAreaExperience[];
+
+    @ManyToOne(() => Job, (job) => job.jobDescriptionLeader)
+    @JoinColumn()
+    jobLeader: Job;
 }

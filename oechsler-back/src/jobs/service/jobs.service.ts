@@ -56,7 +56,8 @@ export class JobsService {
     const job = await this.jobRepository.findOne({
       relations: {
         jobDocument: true,
-        jobCompetences: true
+        jobCompetences: true,
+        jobDescription: true,
       },
       where: {
         id: id,
