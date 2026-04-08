@@ -29,12 +29,12 @@ export class JobDescriptionController {
 
   @Get()
   findAll() {
-    return this.jobDescriptionService.findAll();
+    //return this.jobDescriptionService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.jobDescriptionService.findOne(+id);
+    //return this.jobDescriptionService.findOne(+id);
   }
 
 }

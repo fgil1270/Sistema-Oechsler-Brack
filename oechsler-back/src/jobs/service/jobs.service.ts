@@ -9,10 +9,16 @@ import { join } from 'path';
 
 import { CreateJobDto } from '../dto/create-job.dto';
 import { Job } from '../entities/job.entity';
+import { JobCompetence } from '../entities/job_competence.entity';
+import { CompetenceService } from '../../competence/service/competence.service';
 
 @Injectable()
 export class JobsService {
-  constructor(@InjectRepository(Job) private jobRepository: Repository<Job>) { }
+  constructor(
+    @InjectRepository(Job) private jobRepository: Repository<Job>,
+    @InjectRepository(JobCompetence) private jobCompetenceRepository: Repository<JobCompetence>,
+    private competenceService: CompetenceService
+  ) { }
 
   async create(createJobDto: CreateJobDto) {
     const jobCodeExist = await this.jobRepository.findOne({
@@ -57,7 +63,16 @@ export class JobsService {
       relations: {
         jobDocument: true,
         jobCompetences: true,
-        jobDescription: true,
+        jobDescription: {
+          activities: true,
+          jobReportHim: true,
+          jobHelp: true,
+          jobAbsenceDelegate: true,
+          jobInteractionArea: true,
+          jobDegree: true,
+          jobAreaExperience: true,
+          jobLeader: true,
+        },
       },
       where: {
         id: id,
@@ -176,4 +191,40 @@ export class JobsService {
 
     return await this.jobRepository.softDelete({ id });
   }
+
+  //crear job_competence
+  async createJobCompetence(jobId: number, competenceId: number, domain: string) {
+    const job = await this.jobRepository.findOne({
+      where: {
+        id: jobId,
+      },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Job #${jobId} not found`);
+    }
+
+    const jobCompetence = await this.jobCompetenceRepository.create({
+      job: job,
+      competence: await this.competenceService.findOne(competenceId),
+      domain: domain
+    });
+
+    return await this.jobCompetenceRepository.save(jobCompetence);
+  }
+
+  //buscar job_competence por id
+  async findOneJobCompetence(id: number) {
+    const job = await this.jobCompetenceRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Job Competence #${id} not found`);
+    }
+    return job;
+  }
+
 }

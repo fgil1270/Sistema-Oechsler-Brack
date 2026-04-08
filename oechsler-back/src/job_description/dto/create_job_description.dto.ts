@@ -53,34 +53,38 @@ export class EstructuraOrganizacionalDto {
     @IsArray()
     @IsNumber({}, { each: true })
     @ApiProperty({
-        description: 'Puestos a los que reporta el puesto actual',
+        description: 'Puestos que le reportan al puesto actual',
         example: [2, 5],
         required: false,
         type: [Number],
     })
-    reportHimJobIds?: number[];
+    idJobReportan?: number[];
 
     @IsOptional()
     @IsArray()
     @IsNumber({}, { each: true })
     @ApiProperty({
-        description: 'Puestos que brindan apoyo al puesto actual',
+        description: 'Puestos a los que brinda apoyo el puesto actual',
         example: [7, 9],
         required: false,
         type: [Number],
     })
-    helpJobIds?: number[];
+    idApoya?: number[];
 
     @IsOptional()
     @IsArray()
     @IsNumber({}, { each: true })
     @ApiProperty({
-        description: 'Puestos que pueden suplir al puesto actual por ausencia',
+        description: 'Puestos que pueden apoyar al puesto actual por ausencia',
         example: [11],
         required: false,
         type: [Number],
     })
-    absenceDelegateJobIds?: number[];
+    idApoyado?: number[];
+
+    @IsNumber()
+    @ApiProperty({ description: 'ID del puesto líder asociado al puesto actual', example: 3 })
+    idJobLeader: number;
 }
 export class ResponsibilityDto {
     @IsOptional()
@@ -110,12 +114,17 @@ export class CompetenceDto {
     @IsOptional()
     @IsNumber()
     @ApiProperty({ description: 'ID de la competencia', example: 1, required: false })
-    id?: number;
+    idcompetencia?: number;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: 'Nombre de la competencia', example: 'Liderazgo' })
     nameCompetencia: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Dominio de la competencia', example: 'Avanzado' })
+    domain: string;
 }
 
 
@@ -138,6 +147,11 @@ export class CreateJobDescriptionDto {
     @IsNumber()
     @ApiProperty({ description: 'Area del puesto', example: 1 })
     area: number;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Nombre del departamento', example: 'Produccion' })
+    areaName: string;
 
     @IsNotEmpty()
     @IsDateString()

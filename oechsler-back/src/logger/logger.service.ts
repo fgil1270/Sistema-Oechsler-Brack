@@ -8,8 +8,8 @@ export class CustomLoggerService implements LoggerService {
 
   constructor() {
     this.logger = winston.createLogger({
-      //level: 'info', // Cambiar de 'debug' a 'info' para reducir logs
-      level: 'debug', // 'debug' muestra: error, warn, info, http, verbose, debug
+      level: 'info', // Cambiar de 'debug' a 'info' para reducir logs
+      //level: 'debug', // 'debug' muestra: error, warn, info, http, verbose, debug
       format: winston.format.combine(
         winston.format.timestamp({
           format: () => new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
@@ -37,12 +37,12 @@ export class CustomLoggerService implements LoggerService {
 
   log(message: string) {
     // Filtrar mensajes de inicialización de módulos de NestJS
-    if (message.includes('dependencies initialized') ||
+    /* if (message.includes('dependencies initialized') ||
       message.includes('Starting Nest application') ||
       message.includes('Mapped {') ||
       (message.includes('{') && message.includes('route'))) {
       return;
-    }
+    } */
     // Usar setImmediate para no bloquear el event loop
     setImmediate(() => {
       this.logger.info(message);
