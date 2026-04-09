@@ -26,6 +26,7 @@ import { MailService } from './mail.service';
             // do not fail on invalid certs
             rejectUnauthorized: false,
           }, */
+          ignoreTLS: true,
         },
         defaults: {
           from: '"No Reply" <notifications@oechsler.mx>',
@@ -37,6 +38,7 @@ import { MailService } from './mail.service';
             strict: true,
           },
         },
+        preview: false,
       }),
     }),
   ],
