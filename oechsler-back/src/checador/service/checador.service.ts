@@ -21,7 +21,7 @@ import {
   DataSource
 } from 'typeorm';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { format, subDays, addDays } from 'date-fns';
+import { format, subDays, addDays, differenceInCalendarDays } from 'date-fns';
 import * as moment from 'moment';
 
 import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto, NomipaqDto } from '../dto/create-checada.dto';
@@ -841,6 +841,15 @@ export class ChecadorService {
       //fechas
       const from = format(new Date(data.startDate), 'yyyy-MM-dd 00:00:00');
       const to = format(new Date(data.endDate), 'yyyy-MM-dd 23:59:59');
+
+      const maxReportDays = Number(process.env.NOMIPAQ_REPORT_MAX_DAYS || '62');
+      const rangeDays = differenceInCalendarDays(new Date(data.endDate), new Date(data.startDate)) + 1;
+
+      if (rangeDays > maxReportDays) {
+        throw new BadRequestException(
+          `El rango máximo para reporte Nomipaq V2 es de ${maxReportDays} días. Solicitado: ${rangeDays} días.`,
+        );
+      }
 
       // Obtener organigrama (con empleados)
       const organigrama = await this.organigramaService.findJerarquia(

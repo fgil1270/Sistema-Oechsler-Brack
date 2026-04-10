@@ -26,11 +26,13 @@ import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto, NomipaqDto } from '
 import { Views } from '../../auth/decorators/views.decorator';
 import { RoleGuard } from '../../auth/guards/role.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { CustomLoggerService } from '../../logger/logger.service';
 
 @UseGuards(AuthGuard('jwt'), RoleGuard)
 @ApiTags('Reloj Checador')
 @Controller('checador')
 export class ChecadorController {
+  private log = new CustomLoggerService();
   constructor(
     private readonly checadorService: ChecadorService
   ) { }
@@ -131,7 +133,7 @@ export class ChecadorController {
         output.end();
         return;
       }
-
+      this.log.error('Error en reportNomipaqV2', error);
       throw error;
     }
   }
