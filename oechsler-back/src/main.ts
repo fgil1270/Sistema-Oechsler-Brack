@@ -26,15 +26,36 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new CustomLoggerService(),
   });
-  // Aumentar el límite de tamaño del cuerpo de la solicitud
-  app.use(bodyParser.json({ limit: '50mb' })); // Límite para JSON
-  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // Límite para datos codificados en URL
+
+  const allowedOrigins = [
+    'http://192.168.51.39:4200',
+    'http://localhost:4200',
+  ];
+
   app.enableCors({
-    origin: '*',
-    /*methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Authorization',
-    optionsSuccessStatus: 200*/
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS bloqueado para origen: ${origin}`));
+    },
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    credentials: true,
+    optionsSuccessStatus: 204,
   });
+  try {
+    /// Límite para datos codificados en URL
+    //Aumentar el límite de tamaño del cuerpo de la solicitud
+    app.use(bodyParser.json({ limit: '50mb' })); // Límite para JSON
+    app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+  } catch (error) {
+    logger.error('Error al configurar body parser', error);
+    throw error;
+  }
+
 
   app.useGlobalPipes(
     new ValidationPipe({

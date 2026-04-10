@@ -6,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
   forwardRef,
   Inject,
 } from '@nestjs/common';
@@ -33,10 +34,17 @@ import { CalendarService } from '../../calendar/service/calendar.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { TimeCorrectionService } from '../../time_correction/service/time_correction.service';
 import { RecordDevice } from '../entities/record_device.entity';
+import { CustomLoggerService } from '../../logger/logger.service';
+
+type NomipaqReportStreamWriter = {
+  start: (diasGenerados: string[]) => void;
+  writeRegistro: (registro: Record<string, unknown>) => void;
+  end: () => void;
+};
 
 @Injectable()
 export class ChecadorService {
-
+  private log = new CustomLoggerService();
   constructor(
     @InjectRepository(Checador)
     private checadorRepository: Repository<Checador>,
@@ -820,671 +828,701 @@ export class ChecadorService {
   }
 
   //repote de nomipaq v2
-  async reportNomipaqV2(data: NomipaqDto, user: any) {
+  async reportNomipaqV2(
+    data: NomipaqDto,
+    user: any,
+    streamWriter?: NomipaqReportStreamWriter,
+  ) {
     const tipoNomina = data.tipoEmpleado;
     const tipoJerarquia = data.tipoJerarquia;
 
-    // ✅ 1. PRE-CARGAR DATOS GENERALES
-    //fechas
-    const from = format(new Date(data.startDate), 'yyyy-MM-dd 00:00:00');
-    const to = format(new Date(data.endDate), 'yyyy-MM-dd 23:59:59');
+    try {
+      // ✅ 1. PRE-CARGAR DATOS GENERALES
+      //fechas
+      const from = format(new Date(data.startDate), 'yyyy-MM-dd 00:00:00');
+      const to = format(new Date(data.endDate), 'yyyy-MM-dd 23:59:59');
 
-    // Obtener organigrama (con empleados)
-    const organigrama = await this.organigramaService.findJerarquia(
-      {
-        type: tipoJerarquia,
-        needUser: true
-      },
-      user,
-    );
-
-    // Filtrar por tipo de nómina
-    const employeeNomina = tipoNomina == 'Todas'
-      ? organigrama
-      : organigrama.filter((emp) => emp.payRoll.name == tipoNomina);
-
-    if (employeeNomina.length === 0) {
-      return { registros: [], diasGenerados: [] };
-    }
-
-    const arrayEmployeeIds: number[] = employeeNomina.map(emp => emp.id);
-
-    // ✅ 2. GENERAR DÍAS DEL RANGO DE FECHAS
-    const diasGenerados = [];
-    for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
-      diasGenerados.push(format(x, 'yyyy-MM-dd'));
-    }
-
-    // ✅ 3. PRE-CARGAR TODOS LOS TURNOS de los empleados (día anterior, actual, siguiente)
-    const allEmployeeShifts = await this.employeeShiftService.findMore(
-      {
-        start: new Date(format(subDays(new Date(from), 1), 'yyyy-MM-dd')),
-        end: new Date(format(addDays(new Date(to), 1), 'yyyy-MM-dd')),
-      },
-      arrayEmployeeIds,
-    );
-
-    // Mapa: employeeId_fecha -> turno
-    const shiftsMap = new Map();
-    allEmployeeShifts.events?.forEach(shift => {
-      const key = `${shift.employeeId}_${format(new Date(shift.start), 'yyyy-MM-dd')}`;
-      shiftsMap.set(key, shift);
-    });
-
-    // ✅ 4. PRE-CARGAR CALENDARIO (días festivos)
-    const allCalendarDays = await this.calendarService.findRangeDate({
-      start: format(new Date(from), 'yyyy-MM-dd'),
-      end: format(new Date(to), 'yyyy-MM-dd')
-    });
-    const calendarMap = new Map(
-      allCalendarDays?.map(day => [format(new Date(day.date), 'yyyy-MM-dd'), day])
-    );
-
-    // ✅ 5. PRE-CARGAR TODAS LAS INCIDENCIAS
-    const allIncidences = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
-      start: format(new Date(from), 'yyyy-MM-dd 00:00:00') as any,
-      end: format(new Date(to), 'yyyy-MM-dd 23:59:59') as any,
-      ids: arrayEmployeeIds,
-      code_band: ['VAC', 'PCS', 'PSS', 'HDS', 'CAST', 'FINJ', 'INC', 'DFT', 'PRTC', 'DOM', 'VACA', 'HE', 'HET', 'TXT', 'PSSE'],
-      status: 'Autorizada'
-    });
-
-
-
-    // Mapa: employeeId_fecha -> incidencias[]
-    const incidencesMap = new Map();
-
-    allIncidences?.forEach(inc => {
-      const key = `${inc.resourceId}_${format(new Date(inc.start), 'yyyy-MM-dd')}`;
-      if (!incidencesMap.has(key)) {
-        incidencesMap.set(key, []);
-      }
-      incidencesMap.get(key).push(inc);
-    });
-
-    // ✅ 6. PRE-CARGAR TODOS LOS REGISTROS DEL CHECADOR
-    const allChecadorRecords = await this.checadorRepository.find({
-      where: {
-        employee: {
-          id: In(arrayEmployeeIds),
+      // Obtener organigrama (con empleados)
+      const organigrama = await this.organigramaService.findJerarquia(
+        {
+          type: tipoJerarquia,
+          needUser: true
         },
-        date: Between(
-          format(subDays(new Date(from), 1), 'yyyy-MM-dd 00:00:00') as any,
-          format(addDays(new Date(to), 1), 'yyyy-MM-dd 23:59:59') as any,
-        ),
-      },
-      relations: {
-        employee: true,
-        recordDevice: true,
-      },
-      order: {
-        employee: { id: 'ASC' },
-        date: 'ASC',
-      },
-    });
+        user,
+      );
 
-    // Mapa: employeeId_fecha -> registros[]
-    const checadorMap = new Map();
-    allChecadorRecords.forEach(record => {
-      const date = format(new Date(record.date), 'yyyy-MM-dd');
-      const key = `${record.employee.id}_${date}`;
+      // Filtrar por tipo de nómina
+      const employeeNomina = tipoNomina == 'Todas'
+        ? organigrama
+        : organigrama.filter((emp) => emp.payRoll.name == tipoNomina);
 
-      if (!checadorMap.has(key)) {
-        checadorMap.set(key, []);
+      if (employeeNomina.length === 0) {
+        if (streamWriter) {
+          streamWriter.start([]);
+          streamWriter.end();
+          return;
+        }
+        return { registros: [], diasGenerados: [] };
       }
-      checadorMap.get(key).push(record);
-    });
 
-    // ✅ 7. PRE-CARGAR CORRECCIONES DE TIEMPO
-    const allTimeCorrections = await this.timeCorrectionService.findTimeCorrectionRangeDate(
-      format(new Date(from), 'yyyy-MM-dd'),
-      format(new Date(to), 'yyyy-MM-dd'),
-      arrayEmployeeIds
-    );
+      const arrayEmployeeIds: number[] = employeeNomina.map(emp => emp.id);
 
-    const timeCorrectionsMap = new Map(
-      allTimeCorrections?.map(tc => [`${tc.employee.id}_${tc.date}`, tc])
-    );
+      // ✅ 2. GENERAR DÍAS DEL RANGO DE FECHAS
+      const diasGenerados = [];
+      for (let x = new Date(from); x <= new Date(to); x = new Date(x.setDate(x.getDate() + 1))) {
+        diasGenerados.push(format(x, 'yyyy-MM-dd'));
+      }
 
-    // ✅ 8. PRE-CARGAR CATÁLOGOS DE INCIDENCIAS
-    const incidenceHrExtra = await this.incidenceCatalogueService.findByCodeBand('HE');
-    const faltaInjustificada = await this.incidenceCatalogueService.findByCodeBand('FINJ');
+      // ✅ 3. PRE-CARGAR TODOS LOS TURNOS de los empleados (día anterior, actual, siguiente)
+      const allEmployeeShifts = await this.employeeShiftService.findMore(
+        {
+          start: new Date(format(subDays(new Date(from), 1), 'yyyy-MM-dd')),
+          end: new Date(format(addDays(new Date(to), 1), 'yyyy-MM-dd')),
+        },
+        arrayEmployeeIds,
+      );
 
-    const formatHoursToHHmm = (hoursDecimal: number): string => {
-      const totalMinutes = Math.round(hoursDecimal * 60);
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      return `${hours}.${String(minutes).padStart(2, '0')}`;
-    };
+      // Mapa: employeeId_fecha -> turno
+      const shiftsMap = new Map();
+      allEmployeeShifts.events?.forEach(shift => {
+        const key = `${shift.employeeId}_${format(new Date(shift.start), 'yyyy-MM-dd')}`;
+        shiftsMap.set(key, shift);
+      });
 
-    const parseHHmmToHoursDecimal = (hoursValue: number | string): number => {
-      const [hoursPart, minutesPart = '0'] = String(hoursValue).split('.');
-      const hours = Number(hoursPart) || 0;
-      const minutes = Math.min(Number((minutesPart + '00').slice(0, 2)) || 0, 59);
-      return hours + (minutes / 60);
-    };
+      // ✅ 4. PRE-CARGAR CALENDARIO (días festivos)
+      const allCalendarDays = await this.calendarService.findRangeDate({
+        start: format(new Date(from), 'yyyy-MM-dd'),
+        end: format(new Date(to), 'yyyy-MM-dd')
+      });
+      const calendarMap = new Map(
+        allCalendarDays?.map(day => [format(new Date(day.date), 'yyyy-MM-dd'), day])
+      );
 
-    const registros = [];
+      // ✅ 5. PRE-CARGAR TODAS LAS INCIDENCIAS
+      const allIncidences = await this.employeeIncidenceService.findAllIncidencesByIdsEmployee({
+        start: format(new Date(from), 'yyyy-MM-dd 00:00:00') as any,
+        end: format(new Date(to), 'yyyy-MM-dd 23:59:59') as any,
+        ids: arrayEmployeeIds,
+        code_band: ['VAC', 'PCS', 'PSS', 'HDS', 'CAST', 'FINJ', 'INC', 'DFT', 'PRTC', 'DOM', 'VACA', 'HE', 'HET', 'TXT', 'PSSE'],
+        status: 'Autorizada'
+      });
 
-    for (const iterator of employeeNomina) {
-      const eventDays = [];
-      let totalHrsRequeridas = 0;
-      let totalMinRequeridos = 0;
-      let totalHrsTrabajadas = 0;
-      let totalMinTrabajados = 0;
-      let totalHrsExtra = 0;
 
-      // ✅ PROCESAR CADA DÍA
-      for (let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
-        const diaConsulta = format(index, 'yyyy-MM-dd');
-        const diaAnterior = format(subDays(index, 1), 'yyyy-MM-dd');
-        const diaSiguiente = format(addDays(index, 1), 'yyyy-MM-dd');
 
-        // ✅ Obtener turnos desde el mapa
-        const turnoKey = `${iterator.id}_${diaConsulta}`;
-        const turnoAnteriorKey = `${iterator.id}_${diaAnterior}`;
-        const turnoSiguienteKey = `${iterator.id}_${diaSiguiente}`;
+      // Mapa: employeeId_fecha -> incidencias[]
+      const incidencesMap = new Map();
 
-        const employeeShif = shiftsMap.get(turnoKey);
-        const employeeShifAnterior = shiftsMap.get(turnoAnteriorKey);
-        const employeeShifSiguiente = shiftsMap.get(turnoSiguienteKey);
-
-        // ✅ Verificar día festivo desde el mapa
-        const dayCalendar = calendarMap.get(diaConsulta);
-
-        let sinTurno = '';
-        const incidenceExtra = [];
-        const commentIncidence = [];
-        let hrExtraDoble = 0;
-        let hrExtraTriple = 0;
-        const mediaHoraExtra = 0.06;
-        let sumaMediaHrExtra = 0;
-
-        // ✅ SI NO HAY TURNO
-        if (!employeeShif) {
-          // Lógica de días sin turno
-          if (Number(new Date(diaConsulta).getDay()) != 0 && Number(new Date(diaConsulta).getDay()) != 6) {
-            if (Number(new Date(diaConsulta).getDay()) == 5) {
-              if (employeeShifAnterior?.nameShift == 'T12-1' || employeeShifAnterior?.nameShift == 'T12-2') {
-                sinTurno = '';
-              } else {
-                sinTurno = 'S/N';
-              }
-            } else {
-              sinTurno = dayCalendar ? '' : 'S/N';
-            }
-          } else {
-            sinTurno = '';
-          }
-
-          eventDays.push({
-            date: diaConsulta,
-            incidencia: { extra: [] },
-            employeeShift: sinTurno,
-            comment: []
-          });
-          continue;
+      allIncidences?.forEach(inc => {
+        const key = `${inc.resourceId}_${format(new Date(inc.start), 'yyyy-MM-dd')}`;
+        if (!incidencesMap.has(key)) {
+          incidencesMap.set(key, []);
         }
+        incidencesMap.get(key).push(inc);
+      });
 
-        // ✅ HAY TURNO - PROCESAR
-        sinTurno = employeeShif.nameShift;
+      // ✅ 6. PRE-CARGAR TODOS LOS REGISTROS DEL CHECADOR
+      const allChecadorRecords = await this.checadorRepository.find({
+        where: {
+          employee: {
+            id: In(arrayEmployeeIds),
+          },
+          date: Between(
+            format(subDays(new Date(from), 1), 'yyyy-MM-dd 00:00:00') as any,
+            format(addDays(new Date(to), 1), 'yyyy-MM-dd 23:59:59') as any,
+          ),
+        },
+        relations: {
+          employee: true,
+          recordDevice: true,
+        },
+        order: {
+          employee: { id: 'ASC' },
+          date: 'ASC',
+        },
+      });
 
-        // Calcular horas del turno
-        const iniciaTurno = new Date(`${employeeShif.start} ${employeeShif.startTimeshift}`);
-        const termianTurno = new Date(`${employeeShif.start} ${employeeShif.endTimeshift}`);
+      // Mapa: employeeId_fecha -> registros[]
+      const checadorMap = new Map();
+      allChecadorRecords.forEach(record => {
+        const date = format(new Date(record.date), 'yyyy-MM-dd');
+        const key = `${record.employee.id}_${date}`;
 
-        if (['T3', 'TI3', 'T12-2', 'TESP12-2'].includes(employeeShif.nameShift)) {
-          termianTurno.setDate(termianTurno.getDate() + 1);
+        if (!checadorMap.has(key)) {
+          checadorMap.set(key, []);
         }
+        checadorMap.get(key).push(record);
+      });
 
-        const startTimeShift = moment(iniciaTurno);
-        const endTimeShift = moment(termianTurno);
-        const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
-        let hourShift = endTimeShift.diff(startTimeShift, 'hours');
-        let minShift = endTimeShift.diff(startTimeShift, 'minutes') % 60;
+      // ✅ 7. PRE-CARGAR CORRECCIONES DE TIEMPO
+      const allTimeCorrections = await this.timeCorrectionService.findTimeCorrectionRangeDate(
+        format(new Date(from), 'yyyy-MM-dd'),
+        format(new Date(to), 'yyyy-MM-dd'),
+        arrayEmployeeIds
+      );
 
-        // Sumar horas requeridas (excepto turnos TI)
-        if (!['TI', 'TI1', 'TI2', 'TI3'].includes(employeeShif.nameShift)) {
-          totalHrsRequeridas += hourShift;
-          totalMinRequeridos += minShift;
-        }
+      const timeCorrectionsMap = new Map(
+        allTimeCorrections?.map(tc => [`${tc.employee.id}_${tc.date}`, tc])
+      );
 
-        // ✅ Obtener incidencias desde el mapa
-        const incidenciasKey = `${iterator.id}_${diaConsulta}`;
-        const incidenciasAnteriorKey = `${iterator.id}_${diaAnterior}`;
-        const incidenciasSiguienteKey = `${iterator.id}_${diaSiguiente}`;
-        const incidenciasNormales = incidencesMap.get(incidenciasKey) || [];
-        const incidenciasAnterior = incidencesMap.get(incidenciasAnteriorKey) || [];
-        const incidenciasSiguiente = incidencesMap.get(incidenciasSiguienteKey) || [];
+      // ✅ 8. PRE-CARGAR CATÁLOGOS DE INCIDENCIAS
+      const incidenceHrExtra = await this.incidenceCatalogueService.findByCodeBand('HE');
+      const faltaInjustificada = await this.incidenceCatalogueService.findByCodeBand('FINJ');
 
-        let incidenciaTiemExtra = false;
-        let isTxtCompensatorio = false;
-        let existeDFT = false;
-        let hrsExtraIncidencias = 0;
+      const formatHoursToHHmm = (hoursDecimal: number): string => {
+        const totalMinutes = Math.round(hoursDecimal * 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${hours}.${String(minutes).padStart(2, '0')}`;
+      };
 
+      const parseHHmmToHoursDecimal = (hoursValue: number | string): number => {
+        const [hoursPart, minutesPart = '0'] = String(hoursValue).split('.');
+        const hours = Number(hoursPart) || 0;
+        const minutes = Math.min(Number((minutesPart + '00').slice(0, 2)) || 0, 59);
+        return hours + (minutes / 60);
+      };
 
-        // ✅ CALCULAR HORARIO PARA CHECADOR
-        const turnoActual = employeeShif?.nameShift || '';
-        const turnoAnterior = employeeShifAnterior?.nameShift || '';
-        const turnoSiguiente = employeeShifSiguiente?.nameShift || '';
+      if (streamWriter) {
+        streamWriter.start(diasGenerados);
+      }
 
-        let { hrEntrada, hrSalida, diaAnterior: diaAnt, diaSiguiente: diaSig } =
-          await this.entradaSalidaChecador(
-            new Date(index),
-            turnoAnterior,
-            turnoActual,
-            turnoSiguiente
-          );
+      const registros: Record<string, unknown>[] = [];
 
-        // ✅ Obtener registros del checador desde el mapa
-        const checadorKey = `${iterator.id}_${diaConsulta}`;
-        let registrosChecador = checadorMap.get(checadorKey) || [];
-        let existTiempoExtraHoy = false;
+      for (const iterator of employeeNomina) {
+        const eventDays = [];
+        let totalHrsRequeridas = 0;
+        let totalMinRequeridos = 0;
+        let totalHrsTrabajadas = 0;
+        let totalMinTrabajados = 0;
+        let totalHrsExtra = 0;
 
-        //si el turno actual es T3 o TI3, se agragan los registros del dia siguiente
-        //y el turno del dia siguiente es T3 o TI3 o 12x12
-        if (['T3', 'TI3', '12x12', 'TESP12-2'].includes(turnoActual)) {
-          registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
-        }
+        // ✅ PROCESAR CADA DÍA
+        for (let index = new Date(from); index <= new Date(to); index = new Date(index.setDate(index.getDate() + 1))) {
+          const diaConsulta = format(index, 'yyyy-MM-dd');
+          const diaAnterior = format(subDays(index, 1), 'yyyy-MM-dd');
+          const diaSiguiente = format(addDays(index, 1), 'yyyy-MM-dd');
 
+          // ✅ Obtener turnos desde el mapa
+          const turnoKey = `${iterator.id}_${diaConsulta}`;
+          const turnoAnteriorKey = `${iterator.id}_${diaAnterior}`;
+          const turnoSiguienteKey = `${iterator.id}_${diaSiguiente}`;
 
-        // ✅ AJUSTAR HORARIO SI HAY TIEMPO EXTRA
-        for (const inc of incidenciasNormales) {
-          if (['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
-            existTiempoExtraHoy = true;
-            if (['T1', 'TI1'].includes(turnoActual)) {
-              if (inc.incidenceShift === 1 || inc.incidenceShift === 2) {
-                hrEntrada = '05:00:00';
-                hrSalida = '21:59:00';
-              } else if (inc.incidenceShift === 3) {
-                hrEntrada = '18:00:00';
-                hrSalida = '06:59:00';
-                registrosChecador = registrosChecador.concat(checadorMap.get(turnoAnteriorKey) || []);
-              }
-            } else if (['T2', 'TI2'].includes(turnoActual)) {
-              if (inc.incidenceShift === 1 || inc.incidenceShift === 2) {
-                hrEntrada = '05:00:00';
-                hrSalida = '21:59:00';
-              } else if (inc.incidenceShift === 3) {
-                hrEntrada = '13:00:00';
-                hrSalida = '06:59:00';
-                registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
-              }
-            } else if (['T3', 'TI3'].includes(turnoActual)) {
-              if (inc.incidenceShift === 1) {
-                hrEntrada = '20:00:00';
-                hrSalida = '14:59:00';
-                registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
-              } else if (inc.incidenceShift === 2) {
-                hrEntrada = '13:00:00';
-                hrSalida = '06:59:00';
-                registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
-              }
-            } else if (['MIX', 'TI'].includes(turnoActual)) {
-              hrEntrada = '00:30:00';
-              hrSalida = '23:59:00';
-            }
-          }
-        }
+          const employeeShif = shiftsMap.get(turnoKey);
+          const employeeShifAnterior = shiftsMap.get(turnoAnteriorKey);
+          const employeeShifSiguiente = shiftsMap.get(turnoSiguienteKey);
 
+          // ✅ Verificar día festivo desde el mapa
+          const dayCalendar = calendarMap.get(diaConsulta);
 
-        // Filtrar registros
-        registrosChecador = registrosChecador.filter((registro) => {
-          if (registro.date <= new Date('2025-10-05 23:59:59')) {
-            return true;
-          }
-          return (
-            registro.recordDevice?.description === 'Acceso Personal' ||
-            registro.numRegistroChecador === 0 ||
-            registro.numRegistroChecador === 1
-          );
-        });
+          let sinTurno = '';
+          const incidenceExtra = [];
+          const commentIncidence = [];
+          let hrExtraDoble = 0;
+          let hrExtraTriple = 0;
+          const mediaHoraExtra = 0.06;
+          let sumaMediaHrExtra = 0;
 
-        // Procesar incidencias
-        for (const inc of incidenciasNormales) {
-          if (inc.status !== 'Autorizada') continue;
-
-          // VAC, VACA
-          if (['VAC', 'VACA', 'VacM'].includes(inc.codeBand)) {
-            totalHrsTrabajadas += hourShift;
-            totalMinTrabajados += minShift;
-          }
-
-          // Tiempo extra compensatorio
-          if (inc.codeBand === 'TxT' && inc.type === 'Compensatorio') {
-            isTxtCompensatorio = true;
-            totalHrsTrabajadas += hourShift;
-            totalMinTrabajados += minShift;
-          }
-
-          // HE, HET
-          if (['HE', 'HET'].includes(inc.codeBand)) {
-            incidenciaTiemExtra = true;
-            hrsExtraIncidencias += parseFloat(String(inc.total_hour));
-          }
-
-          // DFT
-          // Día festivo
-          if (inc.codeBand === 'DFT' || dayCalendar?.holiday) {
-            existeDFT = true;
-            totalHrsTrabajadas += hourShift;
-            totalMinTrabajados += minShift;
-          }
-
-
-          // Otras incidencias
-          if (!['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
-            if (inc.codeBand === 'HDS') {
-              incidenceExtra.push(`${moment.utc(inc.total_hour * 60 * 60 * 1000).format('H.mm')}${inc.codeBand}`);
-            } else if (inc.codeBand !== 'INC') {
-              // si la fecha esta en el calendario como dia festivo
-              //cambia a 1DESC
-              if (dayCalendar && dayCalendar.holiday && inc.codeBand == 'DFT' && registrosChecador.length > 0) {
-                incidenceExtra.push(`1DES`);
-              } else {
-                //si es turno de 12x12 y la incidencia es VAC o PSS se pone 1.5
-                if (['TESP12-1', 'TESP12-2'].includes(employeeShif.nameShift) && ['VAC', 'PSS'].includes(inc.codeBand)) {
-                  incidenceExtra.push(`1.5${inc.codeBand}`);
+          // ✅ SI NO HAY TURNO
+          if (!employeeShif) {
+            // Lógica de días sin turno
+            if (Number(new Date(diaConsulta).getDay()) != 0 && Number(new Date(diaConsulta).getDay()) != 6) {
+              if (Number(new Date(diaConsulta).getDay()) == 5) {
+                if (employeeShifAnterior?.nameShift == 'T12-1' || employeeShifAnterior?.nameShift == 'T12-2') {
+                  sinTurno = '';
                 } else {
-                  //si es DFT y existen registros del checador se agrega la incidencia al reporte
-                  if (registrosChecador.length > 0 && inc.codeBand == 'DFT') {
-                    incidenceExtra.push(`1${inc.codeBand}`);
-                  } else if (inc.codeBand != 'DFT') {
-                    incidenceExtra.push(`1${inc.codeBand}`);
-                  }
-
+                  sinTurno = 'S/N';
                 }
+              } else {
+                sinTurno = dayCalendar ? '' : 'S/N';
               }
-
             } else {
-              if (inc.codeBand === 'INC') {
-                //si es incapacidad se pone 0INC para que no sume horas trabajadas
-                incidenceExtra.push(`1${inc.codeBand}`);
-              }
-            }
-          }
-
-          // PCS, PSSE
-          if (['PCS', 'PSSE'].includes(inc.codeBand)) {
-            const horasPorDia = parseFloat(inc.total_hour) / inc.dateEmployeeIncidence?.length || 1;
-            totalHrsTrabajadas += Math.floor(horasPorDia);
-            totalMinTrabajados += Math.round((horasPorDia % 1) * 60);
-          }
-        }
-
-        //si el dia anterior tiene incidencias
-        //filtra las checadas para el inicio del turno actual
-        if (incidenciasAnterior.length > 0) {
-
-          registrosChecador = registrosChecador.filter(r => {
-            const horaRegistro = moment(r.date);
-            const inicioT2 = moment(`${format(diaAnt, 'yyyy-MM-dd')} ${hrEntrada}`);
-            const finT2 = moment(`${format(diaSig, 'yyyy-MM-dd')} ${hrSalida}`);
-            return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
-          });
-        }
-
-
-        //si el dia siguiente tiene incidencias
-        //filtra las checadas para el fin del turno actual
-        if (incidenciasSiguiente.length > 0) {
-          registrosChecador = registrosChecador.filter(r => {
-
-            const horaRegistro = moment(r.date);
-            const inicioT2 = moment(`${format(diaAnt, 'yyyy-MM-dd')} ${hrEntrada}`);
-            const finT2 = moment(`${format(diaSig, 'yyyy-MM-dd')} ${hrSalida}`);
-            return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
-          });
-        }
-
-        // ✅ SI NO HAY REGISTROS Y NO ES COMPENSATORIO
-        if (registrosChecador.length === 0 && !isTxtCompensatorio && !dayCalendar) {
-          const timeCorrectionKey = `${iterator.id}_${diaConsulta}`;
-          const timeCorrection = timeCorrectionsMap.get(timeCorrectionKey);
-
-          if (diaConsulta <= format(new Date(), 'yyyy-MM-dd')) {
-            if (incidenciasNormales.length === 0) {
-              incidenceExtra.push(`1${faltaInjustificada.code_band}`);
-
+              sinTurno = '';
             }
 
-            if (timeCorrection) {
-              commentIncidence.push(timeCorrection.comment);
-            }
+            eventDays.push({
+              date: diaConsulta,
+              incidencia: { extra: [] },
+              employeeShift: sinTurno,
+              comment: []
+            });
+            continue;
           }
-        }
 
-        // ✅ CALCULAR HORAS TRABAJADAS
-        if (registrosChecador.length > 0) {
-          // Verificar si hay incidencia de tiempo extra en turno 3
-          let turnoIncidencia = 0;
+          // ✅ HAY TURNO - PROCESAR
+          sinTurno = employeeShif.nameShift;
+
+          // Calcular horas del turno
+          const iniciaTurno = new Date(`${employeeShif.start} ${employeeShif.startTimeshift}`);
+          const termianTurno = new Date(`${employeeShif.start} ${employeeShif.endTimeshift}`);
+
+          if (['T3', 'TI3', 'T12-2', 'TESP12-2'].includes(employeeShif.nameShift)) {
+            termianTurno.setDate(termianTurno.getDate() + 1);
+          }
+
+          const startTimeShift = moment(iniciaTurno);
+          const endTimeShift = moment(termianTurno);
+          const diffTimeShift = endTimeShift.diff(startTimeShift, 'hours', true);
+          let hourShift = endTimeShift.diff(startTimeShift, 'hours');
+          let minShift = endTimeShift.diff(startTimeShift, 'minutes') % 60;
+
+          // Sumar horas requeridas (excepto turnos TI)
+          if (!['TI', 'TI1', 'TI2', 'TI3'].includes(employeeShif.nameShift)) {
+            totalHrsRequeridas += hourShift;
+            totalMinRequeridos += minShift;
+          }
+
+          // ✅ Obtener incidencias desde el mapa
+          const incidenciasKey = `${iterator.id}_${diaConsulta}`;
+          const incidenciasAnteriorKey = `${iterator.id}_${diaAnterior}`;
+          const incidenciasSiguienteKey = `${iterator.id}_${diaSiguiente}`;
+          const incidenciasNormales = incidencesMap.get(incidenciasKey) || [];
+          const incidenciasAnterior = incidencesMap.get(incidenciasAnteriorKey) || [];
+          const incidenciasSiguiente = incidencesMap.get(incidenciasSiguienteKey) || [];
+
+          let incidenciaTiemExtra = false;
+          let isTxtCompensatorio = false;
+          let existeDFT = false;
+          let hrsExtraIncidencias = 0;
+
+
+          // ✅ CALCULAR HORARIO PARA CHECADOR
+          const turnoActual = employeeShif?.nameShift || '';
+          const turnoAnterior = employeeShifAnterior?.nameShift || '';
+          const turnoSiguiente = employeeShifSiguiente?.nameShift || '';
+
+          let { hrEntrada, hrSalida, diaAnterior: diaAnt, diaSiguiente: diaSig } =
+            await this.entradaSalidaChecador(
+              new Date(index),
+              turnoAnterior,
+              turnoActual,
+              turnoSiguiente
+            );
+
+          // ✅ Obtener registros del checador desde el mapa
+          const checadorKey = `${iterator.id}_${diaConsulta}`;
+          let registrosChecador = checadorMap.get(checadorKey) || [];
+          let existTiempoExtraHoy = false;
+
+          //si el turno actual es T3 o TI3, se agragan los registros del dia siguiente
+          //y el turno del dia siguiente es T3 o TI3 o 12x12
+          if (['T3', 'TI3', '12x12', 'TESP12-2'].includes(turnoActual)) {
+            registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+          }
+
+
+          // ✅ AJUSTAR HORARIO SI HAY TIEMPO EXTRA
           for (const inc of incidenciasNormales) {
             if (['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
-              turnoIncidencia = inc.incidenceShift || 0;
-              break;
+              existTiempoExtraHoy = true;
+              if (['T1', 'TI1'].includes(turnoActual)) {
+                if (inc.incidenceShift === 1 || inc.incidenceShift === 2) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+                } else if (inc.incidenceShift === 3) {
+                  hrEntrada = '18:00:00';
+                  hrSalida = '06:59:00';
+                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoAnteriorKey) || []);
+                }
+              } else if (['T2', 'TI2'].includes(turnoActual)) {
+                if (inc.incidenceShift === 1 || inc.incidenceShift === 2) {
+                  hrEntrada = '05:00:00';
+                  hrSalida = '21:59:00';
+                } else if (inc.incidenceShift === 3) {
+                  hrEntrada = '13:00:00';
+                  hrSalida = '06:59:00';
+                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+                }
+              } else if (['T3', 'TI3'].includes(turnoActual)) {
+                if (inc.incidenceShift === 1) {
+                  hrEntrada = '20:00:00';
+                  hrSalida = '14:59:00';
+                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+                } else if (inc.incidenceShift === 2) {
+                  hrEntrada = '13:00:00';
+                  hrSalida = '06:59:00';
+                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+                }
+              } else if (['MIX', 'TI'].includes(turnoActual)) {
+                hrEntrada = '00:30:00';
+                hrSalida = '23:59:00';
+              }
             }
           }
 
-          let diffDatehour = 0;
-          let diffDatemin = 0;
-          let diffDate = 0;
 
-          // Si es T1 o TI1 con tiempo extra en turno 3, calcular turnos por separado
-          if ((turnoActual === 'T1' || turnoActual === 'TI1') && incidenciaTiemExtra && turnoIncidencia === 3) {
+          // Filtrar registros
+          registrosChecador = registrosChecador.filter((registro) => {
+            if (registro.date <= new Date('2025-10-05 23:59:59')) {
+              return true;
+            }
+            return (
+              registro.recordDevice?.description === 'Acceso Personal' ||
+              registro.numRegistroChecador === 0 ||
+              registro.numRegistroChecador === 1
+            );
+          });
 
-            // Filtrar registros del Turno 1 (06:30 - 15:00)
-            const registrosTurno1 = registrosChecador.filter(r => {
-              const horaRegistro = moment(r.date);
-              const inicioT1 = moment(`${diaConsulta} 05:00:00`);
-              const finT1 = moment(`${diaConsulta} 16:00:00`);
-              return horaRegistro.isSameOrAfter(inicioT1) && horaRegistro.isSameOrBefore(finT1);
-            });
+          // Procesar incidencias
+          for (const inc of incidenciasNormales) {
+            if (inc.status !== 'Autorizada') continue;
 
-            // Filtrar registros del Turno 3 (21:20 - 06:10 del día siguiente)
-            const registrosTurno3 = registrosChecador.filter(r => {
-              const horaRegistro = moment(r.date);
-              const inicioT3 = moment(`${diaConsulta} 21:00:00`);
-              const finT3 = moment(`${diaSiguiente} 07:00:00`);
-              return horaRegistro.isSameOrAfter(inicioT3) && horaRegistro.isSameOrBefore(finT3);
-            });
-
-            let diffHrT1 = 0;
-            let diffMinT1 = 0;
-            let diffHrT3 = 0;
-            let diffMinT3 = 0;
-
-            // Calcular horas del Turno 1
-            if (registrosTurno1.length >= 2) {
-              const firstHrT1 = moment(registrosTurno1[0].date);
-              const secondHrT1 = moment(registrosTurno1[registrosTurno1.length - 1].date);
-              diffHrT1 = secondHrT1.diff(firstHrT1, 'hours');
-              diffMinT1 = secondHrT1.diff(firstHrT1, 'minutes');
+            // VAC, VACA
+            if (['VAC', 'VACA', 'VacM'].includes(inc.codeBand)) {
+              totalHrsTrabajadas += hourShift;
+              totalMinTrabajados += minShift;
             }
 
-            // Calcular horas del Turno 3
-            if (registrosTurno3.length >= 2) {
-              const firstHrT3 = moment(registrosTurno3[0].date);
-              const secondHrT3 = moment(registrosTurno3[registrosTurno3.length - 1].date);
-              diffHrT3 = secondHrT3.diff(firstHrT3, 'hours');
-              diffMinT3 = secondHrT3.diff(firstHrT3, 'minutes');
+            // Tiempo extra compensatorio
+            if (inc.codeBand === 'TxT' && inc.type === 'Compensatorio') {
+              isTxtCompensatorio = true;
+              totalHrsTrabajadas += hourShift;
+              totalMinTrabajados += minShift;
             }
 
-            // Sumar las horas de ambos turnos
-            diffDatehour = diffHrT1 + diffHrT3;
-            diffDatemin = diffMinT1 + diffMinT3;
-            diffDate = (diffMinT1 + diffMinT3) / 60;
-
-          } else if ((turnoActual === 'T2' || turnoActual === 'TI2') && incidenciaTiemExtra && turnoIncidencia === 3) {
-
-            // Filtrar registros del Turno 2 (05:00 - 14:00)
-            const registrosTurno2 = registrosChecador.filter(r => {
-              const horaRegistro = moment(r.date);
-              const inicioT2 = moment(`${diaConsulta} 05:00:00`);
-              const finT2 = moment(`${diaConsulta} 14:00:00`);
-              return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
-            });
-
-            // Filtrar registros del Turno 3 (13:00 - 06:59 del día siguiente)
-            const registrosTurno3T2 = registrosChecador.filter(r => {
-              const horaRegistro = moment(r.date);
-              const inicioT3 = moment(`${diaConsulta} 13:00:00`);
-              const finT3 = moment(`${diaSiguiente} 07:00:00`);
-              return horaRegistro.isSameOrAfter(inicioT3) && horaRegistro.isSameOrBefore(finT3);
-            });
-
-            let diffHrT2 = 0;
-            let diffMinT2 = 0;
-            let diffHrT3T2 = 0;
-            let diffMinT3T2 = 0;
-
-            // Calcular horas del Turno 2
-            if (registrosTurno2.length >= 2) {
-              const firstHrT2 = moment(registrosTurno2[0].date);
-              const secondHrT2 = moment(registrosTurno2[registrosTurno2.length - 1].date);
-              diffHrT2 = secondHrT2.diff(firstHrT2, 'hours');
-              diffMinT2 = secondHrT2.diff(firstHrT2, 'minutes');
+            // HE, HET
+            if (['HE', 'HET'].includes(inc.codeBand)) {
+              incidenciaTiemExtra = true;
+              hrsExtraIncidencias += parseFloat(String(inc.total_hour));
             }
 
-            // Calcular horas del Turno 3
-            if (registrosTurno3T2.length >= 2) {
-              const firstHrT3T2 = moment(registrosTurno3T2[0].date);
-              const secondHrT3T2 = moment(registrosTurno3T2[registrosTurno3T2.length - 1].date);
-              diffHrT3T2 = secondHrT3T2.diff(firstHrT3T2, 'hours');
-              diffMinT3T2 = secondHrT3T2.diff(firstHrT3T2, 'minutes');
+            // DFT
+            // Día festivo
+            if (inc.codeBand === 'DFT' || dayCalendar?.holiday) {
+              existeDFT = true;
+              totalHrsTrabajadas += hourShift;
+              totalMinTrabajados += minShift;
             }
 
-            // Sumar las horas de ambos turnos
-            diffDatehour = diffHrT2 + diffHrT3T2;
-            diffDatemin = diffMinT2 + diffMinT3T2;
-            diffDate = (diffMinT2 + diffMinT3T2) / 60;
 
-          } else {
-            // Filtrar registros
+            // Otras incidencias
+            if (!['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
+              if (inc.codeBand === 'HDS') {
+                incidenceExtra.push(`${moment.utc(inc.total_hour * 60 * 60 * 1000).format('H.mm')}${inc.codeBand}`);
+              } else if (inc.codeBand !== 'INC') {
+                // si la fecha esta en el calendario como dia festivo
+                //cambia a 1DESC
+                if (dayCalendar && dayCalendar.holiday && inc.codeBand == 'DFT' && registrosChecador.length > 0) {
+                  incidenceExtra.push(`1DES`);
+                } else {
+                  //si es turno de 12x12 y la incidencia es VAC o PSS se pone 1.5
+                  if (['TESP12-1', 'TESP12-2'].includes(employeeShif.nameShift) && ['VAC', 'PSS'].includes(inc.codeBand)) {
+                    incidenceExtra.push(`1.5${inc.codeBand}`);
+                  } else {
+                    //si es DFT y existen registros del checador se agrega la incidencia al reporte
+                    if (registrosChecador.length > 0 && inc.codeBand == 'DFT') {
+                      incidenceExtra.push(`1${inc.codeBand}`);
+                    } else if (inc.codeBand != 'DFT') {
+                      incidenceExtra.push(`1${inc.codeBand}`);
+                    }
+
+                  }
+                }
+
+              } else {
+                if (inc.codeBand === 'INC') {
+                  //si es incapacidad se pone 0INC para que no sume horas trabajadas
+                  incidenceExtra.push(`1${inc.codeBand}`);
+                }
+              }
+            }
+
+            // PCS, PSSE
+            if (['PCS', 'PSSE'].includes(inc.codeBand)) {
+              const horasPorDia = parseFloat(inc.total_hour) / inc.dateEmployeeIncidence?.length || 1;
+              totalHrsTrabajadas += Math.floor(horasPorDia);
+              totalMinTrabajados += Math.round((horasPorDia % 1) * 60);
+            }
+          }
+
+          //si el dia anterior tiene incidencias
+          //filtra las checadas para el inicio del turno actual
+          if (incidenciasAnterior.length > 0) {
+
             registrosChecador = registrosChecador.filter(r => {
               const horaRegistro = moment(r.date);
               const inicioT2 = moment(`${format(diaAnt, 'yyyy-MM-dd')} ${hrEntrada}`);
               const finT2 = moment(`${format(diaSig, 'yyyy-MM-dd')} ${hrSalida}`);
               return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
             });
-            // Código original para casos normales
-            const firstDate = moment(registrosChecador[0]?.date);
-            const secondDate = moment(registrosChecador[registrosChecador.length - 1]?.date);
-
-            diffDatehour = secondDate.diff(firstDate, 'hours');
-            diffDatemin = secondDate.diff(firstDate, 'minutes');
-            diffDate = secondDate.diff(firstDate, 'hours', true);
-
-
           }
 
 
-          const horasDia = diffDatehour;
-          const minsDia = diffDatemin % 60;
+          //si el dia siguiente tiene incidencias
+          //filtra las checadas para el fin del turno actual
+          if (incidenciasSiguiente.length > 0) {
+            registrosChecador = registrosChecador.filter(r => {
 
-          const horasExtraDia = Math.max(0, horasDia - hourShift);
-          const minutosExtraDia = Math.max(0, minsDia - minShift);
-
-          totalHrsTrabajadas += horasDia - horasExtraDia;
-          totalMinTrabajados += minsDia - minutosExtraDia;
-
-          // ✅ CALCULAR TIEMPO EXTRA
-          if (turnoActual === 'T3' && incidenciasNormales.length === 0) {
-            incidenceExtra.push(`${mediaHoraExtra}${incidenceHrExtra.code_band}2`);
-            sumaMediaHrExtra += mediaHoraExtra;
-            totalHrsExtra += sumaMediaHrExtra;
+              const horaRegistro = moment(r.date);
+              const inicioT2 = moment(`${format(diaAnt, 'yyyy-MM-dd')} ${hrEntrada}`);
+              const finT2 = moment(`${format(diaSig, 'yyyy-MM-dd')} ${hrSalida}`);
+              return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
+            });
           }
 
-          //si es turno de 12x12 y no tiene incidencias se le asigna 1.3 hora extra doble
-          if (turnoActual === 'TESP12-2' && incidenciasNormales.length === 0) {
-            incidenceExtra.push(`1.3${incidenceHrExtra.code_band}2`);
-            sumaMediaHrExtra += 1.3;
-            totalHrsExtra += 1.3;
+          // ✅ SI NO HAY REGISTROS Y NO ES COMPENSATORIO
+          if (registrosChecador.length === 0 && !isTxtCompensatorio && !dayCalendar) {
+            const timeCorrectionKey = `${iterator.id}_${diaConsulta}`;
+            const timeCorrection = timeCorrectionsMap.get(timeCorrectionKey);
+
+            if (diaConsulta <= format(new Date(), 'yyyy-MM-dd')) {
+              if (incidenciasNormales.length === 0) {
+                incidenceExtra.push(`1${faltaInjustificada.code_band}`);
+
+              }
+
+              if (timeCorrection) {
+                commentIncidence.push(timeCorrection.comment);
+              }
+            }
           }
 
-          if (incidenciaTiemExtra && (horasExtraDia > 0 || minutosExtraDia > 0)) {
-            let calculoExtraTotal = horasExtraDia + (minutosExtraDia / 60);
-
-            // No permitir que exceda el tiempo extra autorizado en la incidencia (HH.mm)
-            if (hrsExtraIncidencias > 0) {
-              const maximoAutorizado = parseHHmmToHoursDecimal(hrsExtraIncidencias);
-              calculoExtraTotal = Math.min(calculoExtraTotal, maximoAutorizado);
+          // ✅ CALCULAR HORAS TRABAJADAS
+          if (registrosChecador.length > 0) {
+            // Verificar si hay incidencia de tiempo extra en turno 3
+            let turnoIncidencia = 0;
+            for (const inc of incidenciasNormales) {
+              if (['HE', 'HET', 'TxT'].includes(inc.codeBand)) {
+                turnoIncidencia = inc.incidenceShift || 0;
+                break;
+              }
             }
 
-            if (calculoExtraTotal > 3) {
-              hrExtraDoble = 3;
-              hrExtraTriple = calculoExtraTotal - 3;
-              totalHrsExtra += hrExtraTriple + hrExtraDoble;
-              incidenceExtra.push(`${formatHoursToHHmm(hrExtraDoble)}${incidenceHrExtra.code_band}2`);
-              incidenceExtra.push(`${formatHoursToHHmm(hrExtraTriple)}${incidenceHrExtra.code_band}3`);
+            let diffDatehour = 0;
+            let diffDatemin = 0;
+            let diffDate = 0;
+
+            // Si es T1 o TI1 con tiempo extra en turno 3, calcular turnos por separado
+            if ((turnoActual === 'T1' || turnoActual === 'TI1') && incidenciaTiemExtra && turnoIncidencia === 3) {
+
+              // Filtrar registros del Turno 1 (06:30 - 15:00)
+              const registrosTurno1 = registrosChecador.filter(r => {
+                const horaRegistro = moment(r.date);
+                const inicioT1 = moment(`${diaConsulta} 05:00:00`);
+                const finT1 = moment(`${diaConsulta} 16:00:00`);
+                return horaRegistro.isSameOrAfter(inicioT1) && horaRegistro.isSameOrBefore(finT1);
+              });
+
+              // Filtrar registros del Turno 3 (21:20 - 06:10 del día siguiente)
+              const registrosTurno3 = registrosChecador.filter(r => {
+                const horaRegistro = moment(r.date);
+                const inicioT3 = moment(`${diaConsulta} 21:00:00`);
+                const finT3 = moment(`${diaSiguiente} 07:00:00`);
+                return horaRegistro.isSameOrAfter(inicioT3) && horaRegistro.isSameOrBefore(finT3);
+              });
+
+              let diffHrT1 = 0;
+              let diffMinT1 = 0;
+              let diffHrT3 = 0;
+              let diffMinT3 = 0;
+
+              // Calcular horas del Turno 1
+              if (registrosTurno1.length >= 2) {
+                const firstHrT1 = moment(registrosTurno1[0].date);
+                const secondHrT1 = moment(registrosTurno1[registrosTurno1.length - 1].date);
+                diffHrT1 = secondHrT1.diff(firstHrT1, 'hours');
+                diffMinT1 = secondHrT1.diff(firstHrT1, 'minutes');
+              }
+
+              // Calcular horas del Turno 3
+              if (registrosTurno3.length >= 2) {
+                const firstHrT3 = moment(registrosTurno3[0].date);
+                const secondHrT3 = moment(registrosTurno3[registrosTurno3.length - 1].date);
+                diffHrT3 = secondHrT3.diff(firstHrT3, 'hours');
+                diffMinT3 = secondHrT3.diff(firstHrT3, 'minutes');
+              }
+
+              // Sumar las horas de ambos turnos
+              diffDatehour = diffHrT1 + diffHrT3;
+              diffDatemin = diffMinT1 + diffMinT3;
+              diffDate = (diffMinT1 + diffMinT3) / 60;
+
+            } else if ((turnoActual === 'T2' || turnoActual === 'TI2') && incidenciaTiemExtra && turnoIncidencia === 3) {
+
+              // Filtrar registros del Turno 2 (05:00 - 14:00)
+              const registrosTurno2 = registrosChecador.filter(r => {
+                const horaRegistro = moment(r.date);
+                const inicioT2 = moment(`${diaConsulta} 05:00:00`);
+                const finT2 = moment(`${diaConsulta} 14:00:00`);
+                return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
+              });
+
+              // Filtrar registros del Turno 3 (13:00 - 06:59 del día siguiente)
+              const registrosTurno3T2 = registrosChecador.filter(r => {
+                const horaRegistro = moment(r.date);
+                const inicioT3 = moment(`${diaConsulta} 13:00:00`);
+                const finT3 = moment(`${diaSiguiente} 07:00:00`);
+                return horaRegistro.isSameOrAfter(inicioT3) && horaRegistro.isSameOrBefore(finT3);
+              });
+
+              let diffHrT2 = 0;
+              let diffMinT2 = 0;
+              let diffHrT3T2 = 0;
+              let diffMinT3T2 = 0;
+
+              // Calcular horas del Turno 2
+              if (registrosTurno2.length >= 2) {
+                const firstHrT2 = moment(registrosTurno2[0].date);
+                const secondHrT2 = moment(registrosTurno2[registrosTurno2.length - 1].date);
+                diffHrT2 = secondHrT2.diff(firstHrT2, 'hours');
+                diffMinT2 = secondHrT2.diff(firstHrT2, 'minutes');
+              }
+
+              // Calcular horas del Turno 3
+              if (registrosTurno3T2.length >= 2) {
+                const firstHrT3T2 = moment(registrosTurno3T2[0].date);
+                const secondHrT3T2 = moment(registrosTurno3T2[registrosTurno3T2.length - 1].date);
+                diffHrT3T2 = secondHrT3T2.diff(firstHrT3T2, 'hours');
+                diffMinT3T2 = secondHrT3T2.diff(firstHrT3T2, 'minutes');
+              }
+
+              // Sumar las horas de ambos turnos
+              diffDatehour = diffHrT2 + diffHrT3T2;
+              diffDatemin = diffMinT2 + diffMinT3T2;
+              diffDate = (diffMinT2 + diffMinT3T2) / 60;
+
             } else {
-              hrExtraDoble = calculoExtraTotal;
-              totalHrsExtra += hrExtraDoble;
-              incidenceExtra.push(`${formatHoursToHHmm(hrExtraDoble)}${incidenceHrExtra.code_band}2`);
+              // Filtrar registros
+              registrosChecador = registrosChecador.filter(r => {
+                const horaRegistro = moment(r.date);
+                const inicioT2 = moment(`${format(diaAnt, 'yyyy-MM-dd')} ${hrEntrada}`);
+                const finT2 = moment(`${format(diaSig, 'yyyy-MM-dd')} ${hrSalida}`);
+                return horaRegistro.isSameOrAfter(inicioT2) && horaRegistro.isSameOrBefore(finT2);
+              });
+              // Código original para casos normales
+              const firstDate = moment(registrosChecador[0]?.date);
+              const secondDate = moment(registrosChecador[registrosChecador.length - 1]?.date);
+
+              diffDatehour = secondDate.diff(firstDate, 'hours');
+              diffDatemin = secondDate.diff(firstDate, 'minutes');
+              diffDate = secondDate.diff(firstDate, 'hours', true);
+
+
+            }
+
+
+            const horasDia = diffDatehour;
+            const minsDia = diffDatemin % 60;
+
+            const horasExtraDia = Math.max(0, horasDia - hourShift);
+            const minutosExtraDia = Math.max(0, minsDia - minShift);
+
+            totalHrsTrabajadas += horasDia - horasExtraDia;
+            totalMinTrabajados += minsDia - minutosExtraDia;
+
+            // ✅ CALCULAR TIEMPO EXTRA
+            if (turnoActual === 'T3' && incidenciasNormales.length === 0) {
+              incidenceExtra.push(`${mediaHoraExtra}${incidenceHrExtra.code_band}2`);
+              sumaMediaHrExtra += mediaHoraExtra;
+              totalHrsExtra += sumaMediaHrExtra;
+            }
+
+            //si es turno de 12x12 y no tiene incidencias se le asigna 1.3 hora extra doble
+            if (turnoActual === 'TESP12-2' && incidenciasNormales.length === 0) {
+              incidenceExtra.push(`1.3${incidenceHrExtra.code_band}2`);
+              sumaMediaHrExtra += 1.3;
+              totalHrsExtra += 1.3;
+            }
+
+            if (incidenciaTiemExtra && (horasExtraDia > 0 || minutosExtraDia > 0)) {
+              let calculoExtraTotal = horasExtraDia + (minutosExtraDia / 60);
+
+              // No permitir que exceda el tiempo extra autorizado en la incidencia (HH.mm)
+              if (hrsExtraIncidencias > 0) {
+                const maximoAutorizado = parseHHmmToHoursDecimal(hrsExtraIncidencias);
+                calculoExtraTotal = Math.min(calculoExtraTotal, maximoAutorizado);
+              }
+
+              if (calculoExtraTotal > 3) {
+                hrExtraDoble = 3;
+                hrExtraTriple = calculoExtraTotal - 3;
+                totalHrsExtra += hrExtraTriple + hrExtraDoble;
+                incidenceExtra.push(`${formatHoursToHHmm(hrExtraDoble)}${incidenceHrExtra.code_band}2`);
+                incidenceExtra.push(`${formatHoursToHHmm(hrExtraTriple)}${incidenceHrExtra.code_band}3`);
+              } else {
+                hrExtraDoble = calculoExtraTotal;
+                totalHrsExtra += hrExtraDoble;
+                incidenceExtra.push(`${formatHoursToHHmm(hrExtraDoble)}${incidenceHrExtra.code_band}2`);
+              }
+            }
+
+
+            // DFT en domingo
+            /* if (existeDFT && registrosChecador.length > 0) {
+              const porcentajeTrabajado = Math.min(1, diffDate / diffTimeShift);
+              incidenceExtra.push((porcentajeTrabajado / 1.666667).toFixed(2) + 'DFT');
+  
+              
+            } */
+
+            // Domingo
+            if (Number(new Date(diaConsulta).getDay()) === 0) {
+              if (incidenciasNormales.some(i => i.codeBand === 'DFT') || turnoActual === 'T4' || turnoActual === 'TESP12-1' || turnoActual === 'TESP12-2') {
+                incidenceExtra.push('1DOM');
+              }
             }
           }
 
-
-          // DFT en domingo
-          /* if (existeDFT && registrosChecador.length > 0) {
-            const porcentajeTrabajado = Math.min(1, diffDate / diffTimeShift);
-            incidenceExtra.push((porcentajeTrabajado / 1.666667).toFixed(2) + 'DFT');
-
-            
-          } */
-
-          // Domingo
-          if (Number(new Date(diaConsulta).getDay()) === 0) {
-            if (incidenciasNormales.some(i => i.codeBand === 'DFT') || turnoActual === 'T4' || turnoActual === 'TESP12-1' || turnoActual === 'TESP12-2') {
-              incidenceExtra.push('1DOM');
-            }
-          }
+          eventDays.push({
+            date: diaConsulta,
+            incidencia: { extra: incidenceExtra },
+            employeeShift: sinTurno,
+            comment: commentIncidence
+          });
         }
 
-        eventDays.push({
-          date: diaConsulta,
-          incidencia: { extra: incidenceExtra },
-          employeeShift: sinTurno,
-          comment: commentIncidence
-        });
+        // ✅ CALCULAR TOTALES FINALES
+        totalHrsRequeridas += Math.floor(totalMinRequeridos / 60);
+        totalMinRequeridos = totalMinRequeridos % 60;
+
+        totalHrsTrabajadas += Math.floor(totalMinTrabajados / 60);
+        totalMinTrabajados = totalMinTrabajados % 60;
+
+        // Calcular comedor
+        const { totalCountComedor, totalPagarComida } = await this.findTotalComedor(
+          iterator.id,
+          data.startDateComedor,
+          data.endDateComedor
+        );
+
+        const registro = {
+          idEmpleado: iterator.id,
+          numeroNomina: iterator.employee_number,
+          nombre: `${iterator.name} ${iterator.paternal_surname} ${iterator.maternal_surname}`,
+          tipo_nomina: iterator.payRoll.name,
+          perfile: iterator.employeeProfile.name,
+          date: eventDays,
+          horasEsperadas: `${totalHrsRequeridas}.${moment().minutes(totalMinRequeridos).format('mm')}`,
+          horasTrabajadas: `${totalHrsTrabajadas}.${moment().minutes(totalMinTrabajados).format('mm')}`,
+          horasTrabajadasyExtra: (totalHrsTrabajadas + totalHrsExtra).toFixed(2),
+          horasExtra: totalHrsExtra.toFixed(2),
+          totalRegComedor: totalCountComedor,
+          totalPagarComida: totalPagarComida,
+          //shift: turnoActual
+        };
+
+        if (streamWriter) {
+          streamWriter.writeRegistro(registro);
+        } else {
+          registros.push(registro);
+        }
+
       }
 
-      // ✅ CALCULAR TOTALES FINALES
-      totalHrsRequeridas += Math.floor(totalMinRequeridos / 60);
-      totalMinRequeridos = totalMinRequeridos % 60;
+      if (streamWriter) {
+        streamWriter.end();
+        return;
+      }
 
-      totalHrsTrabajadas += Math.floor(totalMinTrabajados / 60);
-      totalMinTrabajados = totalMinTrabajados % 60;
-
-      // Calcular comedor
-      const { totalCountComedor, totalPagarComida } = await this.findTotalComedor(
-        iterator.id,
-        data.startDateComedor,
-        data.endDateComedor
+      return {
+        registros,
+        diasGenerados,
+      };
+    } catch (error) {
+      this.log.error('Error al generar reporte de asistencia', error);
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Error al generar reporte de asistencia',
       );
-
-      registros.push({
-        idEmpleado: iterator.id,
-        numeroNomina: iterator.employee_number,
-        nombre: `${iterator.name} ${iterator.paternal_surname} ${iterator.maternal_surname}`,
-        tipo_nomina: iterator.payRoll.name,
-        perfile: iterator.employeeProfile.name,
-        date: eventDays,
-        horasEsperadas: `${totalHrsRequeridas}.${moment().minutes(totalMinRequeridos).format('mm')}`,
-        horasTrabajadas: `${totalHrsTrabajadas}.${moment().minutes(totalMinTrabajados).format('mm')}`,
-        horasTrabajadasyExtra: (totalHrsTrabajadas + totalHrsExtra).toFixed(2),
-        horasExtra: totalHrsExtra.toFixed(2),
-        totalRegComedor: totalCountComedor,
-        totalPagarComida: totalPagarComida,
-        //shift: turnoActual
-      });
-
     }
-
-    return {
-      registros,
-      diasGenerados,
-    };
-
 
 
   }
