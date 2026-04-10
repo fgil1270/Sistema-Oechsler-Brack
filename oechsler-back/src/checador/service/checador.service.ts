@@ -42,6 +42,13 @@ type NomipaqReportStreamWriter = {
   end: () => void;
 };
 
+type ChecadorRecordLite = {
+  date: Date;
+  employeeId: number;
+  numRegistroChecador: number;
+  recordDeviceDescription?: string | null;
+};
+
 @Injectable()
 export class ChecadorService {
   private log = new CustomLoggerService();
@@ -930,31 +937,40 @@ export class ChecadorService {
       });
 
       // ✅ 6. PRE-CARGAR TODOS LOS REGISTROS DEL CHECADOR
-      const allChecadorRecords = await this.checadorRepository.find({
-        where: {
-          employee: {
-            id: In(arrayEmployeeIds),
-          },
-          date: Between(
-            format(subDays(new Date(from), 1), 'yyyy-MM-dd 00:00:00') as any,
-            format(addDays(new Date(to), 1), 'yyyy-MM-dd 23:59:59') as any,
-          ),
-        },
-        relations: {
-          employee: true,
-          recordDevice: true,
-        },
-        order: {
-          employee: { id: 'ASC' },
-          date: 'ASC',
-        },
-      });
+      const allChecadorRecordsRaw = await this.checadorRepository
+        .createQueryBuilder('checador')
+        .leftJoin('checador.employee', 'employee')
+        .leftJoin('checador.recordDevice', 'recordDevice')
+        .select('checador.date', 'date')
+        .addSelect('checador.numRegistroChecador', 'numRegistroChecador')
+        .addSelect('employee.id', 'employeeId')
+        .addSelect('recordDevice.description', 'recordDeviceDescription')
+        .where('employee.id IN (:...employeeIds)', { employeeIds: arrayEmployeeIds })
+        .andWhere('checador.date BETWEEN :start AND :end', {
+          start: format(subDays(new Date(from), 1), 'yyyy-MM-dd 00:00:00'),
+          end: format(addDays(new Date(to), 1), 'yyyy-MM-dd 23:59:59'),
+        })
+        .orderBy('employee.id', 'ASC')
+        .addOrderBy('checador.date', 'ASC')
+        .getRawMany<{
+          date: Date | string;
+          numRegistroChecador: number | string;
+          employeeId: number | string;
+          recordDeviceDescription?: string | null;
+        }>();
+
+      const allChecadorRecords: ChecadorRecordLite[] = allChecadorRecordsRaw.map((record) => ({
+        date: new Date(record.date),
+        employeeId: Number(record.employeeId),
+        numRegistroChecador: Number(record.numRegistroChecador),
+        recordDeviceDescription: record.recordDeviceDescription ?? null,
+      }));
 
       // Mapa: employeeId_fecha -> registros[]
-      const checadorMap = new Map();
+      const checadorMap = new Map<string, ChecadorRecordLite[]>();
       allChecadorRecords.forEach(record => {
         const date = format(new Date(record.date), 'yyyy-MM-dd');
-        const key = `${record.employee.id}_${date}`;
+        const key = `${record.employeeId}_${date}`;
 
         if (!checadorMap.has(key)) {
           checadorMap.set(key, []);
@@ -1165,7 +1181,7 @@ export class ChecadorService {
               return true;
             }
             return (
-              registro.recordDevice?.description === 'Acceso Personal' ||
+              registro.recordDeviceDescription === 'Acceso Personal' ||
               registro.numRegistroChecador === 0 ||
               registro.numRegistroChecador === 1
             );
