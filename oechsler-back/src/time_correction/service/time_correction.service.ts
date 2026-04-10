@@ -21,7 +21,6 @@ import { format } from 'date-fns';
 import { es, fi } from 'date-fns/locale';
 import * as moment from 'moment';
 
-
 import { TimeCorrection } from '../entities/time_correction.entity';
 import { CreateTimeCorrectionDto, ReportTimeCorrectionDto } from '../dto/create-time-correction.dto';
 import { EmployeeIncidence } from '../../employee_incidence/entities/employee_incidence.entity';
@@ -32,12 +31,14 @@ import { ChecadorService } from '../../checador/service/checador.service';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
-
 import { read } from 'xlsx';
+import { CustomLoggerService } from '../../logger/logger.service';
 
 
 @Injectable()
 export class TimeCorrectionService {
+  private log = new CustomLoggerService();
+
   constructor(
     @InjectRepository(TimeCorrection)
     private timeCorrectionRepository: Repository<TimeCorrection>,
@@ -846,6 +847,7 @@ export class TimeCorrectionService {
         diasGenerados: diasGenerados.map(d => format(d, 'yyyy-MM-dd')),
       };
     } catch (error) {
+      this.log.error('Error al generar reporte de corrección de tiempo: ', error);
       throw new BadGatewayException(
         `Error al generar reporte de corrección de tiempo: ${error.message}`
       );

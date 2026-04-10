@@ -54,8 +54,8 @@ export class TimeCorrectionController {
   }
 
   @ApiOperation({ summary: 'Reporte corrección de tiempo v2' })
-  @Get('reportV2')
-  correctionTimeReportV2(@Query() data: any, @CurrentUser() user: any) {
+  @Post('reportV2')
+  correctionTimeReportV2(@Body() data: any, @CurrentUser() user: any) {
     return this.timeCorrectionService.reportTimeCorrection(data, user);
   }
 }

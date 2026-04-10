@@ -7,6 +7,7 @@ import {
   Get,
   Post,
   Body,
+  Res,
   Put,
   Param,
   Delete,
@@ -17,6 +18,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { Request, Response } from 'express';
+import { createGzip } from 'zlib';
 
 import { ChecadorService } from '../service/checador.service';
 import { CreateChecadaDto, UpdateChecadaDto, FindChecadaDto, NomipaqDto } from '../dto/create-checada.dto';
@@ -85,8 +88,52 @@ export class ChecadorController {
   })
   @Views('nomipaq')
   @Post('nomipaq/report/v2')
-  reportNomipaqV2(@Body() data: NomipaqDto, @CurrentUser() user: any) {
-    return this.checadorService.reportNomipaqV2(data, user);
+  async reportNomipaqV2(
+    @Body() data: NomipaqDto,
+    @CurrentUser() user: any,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+    const supportsGzip = typeof acceptEncoding === 'string' && acceptEncoding.includes('gzip');
+    const output = supportsGzip ? createGzip() : res;
+    let diasGenerados: string[] = [];
+    let isFirstRegistro = true;
+
+    res.status(200);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+
+    if (supportsGzip) {
+      res.setHeader('Content-Encoding', 'gzip');
+      res.append('Vary', 'Accept-Encoding');
+      output.pipe(res);
+    }
+
+    try {
+      await this.checadorService.reportNomipaqV2(data, user, {
+        start: (days: string[]) => {
+          diasGenerados = days;
+          output.write('{"registros":[');
+        },
+        writeRegistro: (registro: Record<string, unknown>) => {
+          output.write(`${isFirstRegistro ? '' : ','}${JSON.stringify(registro)}`);
+          isFirstRegistro = false;
+        },
+        end: () => {
+          output.write(`],"diasGenerados":${JSON.stringify(diasGenerados)}}`);
+          output.end();
+        },
+      });
+    } catch (error) {
+      if (res.headersSent) {
+        // Evita cerrar abruptamente el socket (ERR_FAILED en navegador)
+        output.end();
+        return;
+      }
+
+      throw error;
+    }
   }
 
   @ApiOperation({ summary: 'Actualizar Checada' })
