@@ -175,7 +175,7 @@ export class JobDescriptionService {
       if (createJobDescriptionDto.competencias && createJobDescriptionDto.competencias.length > 0) {
         const competenceNew = await Promise.all(
           createJobDescriptionDto.competencias.map(async (competencia) => {
-            return await this.JobsService.createJobCompetence(job.id, competencia.idcompetencia, competencia.domain);
+            return await this.JobsService.createJobCompetence(job.id, competencia.idcompetencia, '');
           })
         );
 
