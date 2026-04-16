@@ -29,6 +29,11 @@ export class StudyDto {
     @IsString()
     @ApiProperty({ description: 'Dominio del grado', example: 'Avanzado' })
     domain: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty({ description: 'Tipo de estudio', example: 'Licenciatura' })
+    type: string;
 }
 
 export class ExperienceAreaDto {
@@ -121,10 +126,10 @@ export class CompetenceDto {
     @ApiProperty({ description: 'Nombre de la competencia', example: 'Liderazgo' })
     nameCompetencia: string;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @ApiProperty({ description: 'Dominio de la competencia', example: 'Avanzado' })
-    domain: string;
+    domain?: string;
 }
 
 

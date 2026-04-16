@@ -65,9 +65,15 @@ export class JobsService {
         jobCompetences: true,
         jobDescription: {
           activities: true,
-          jobReportHim: true,
-          jobHelp: true,
-          jobAbsenceDelegate: true,
+          jobReportHim: {
+            job: true,
+          },
+          jobHelp: {
+            job: true,
+          },
+          jobAbsenceDelegate: {
+            job: true,
+          },
           jobInteractionArea: true,
           jobDegree: true,
           jobAreaExperience: true,
@@ -127,6 +133,7 @@ export class JobsService {
     };
   }
 
+  //buscar competencias de un job
   async getCompetencies(id: number) {
     const job = await this.jobRepository.findOne({
       relations: {
@@ -194,6 +201,7 @@ export class JobsService {
 
   //crear job_competence
   async createJobCompetence(jobId: number, competenceId: number, domain: string) {
+
     const job = await this.jobRepository.findOne({
       where: {
         id: jobId,
@@ -225,6 +233,20 @@ export class JobsService {
       throw new NotFoundException(`Job Competence #${id} not found`);
     }
     return job;
+  }
+
+  //eliminar job_competence por id
+  async deleteJobCompetences(jobId: number[]) {
+    const jobCompetences = await this.jobCompetenceRepository.find({
+      where: {
+        job: {
+          id: In(jobId),
+        },
+      },
+    });
+    if (jobCompetences.length > 0) {
+      await this.jobCompetenceRepository.softRemove(jobCompetences);
+    }
   }
 
 }

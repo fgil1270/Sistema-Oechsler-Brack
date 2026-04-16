@@ -4,6 +4,8 @@ import {
   Get,
   Param,
   Post,
+  Put,
+  Delete,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -37,4 +39,13 @@ export class JobDescriptionController {
     //return this.jobDescriptionService.findOne(+id);
   }
 
+  @Put(':id')
+  update(@Param('id') id: string, @Body() updateJobDescriptionDto: any) {
+    return this.jobDescriptionService.update(+id, updateJobDescriptionDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    //return this.jobDescriptionService.remove(+id);
+  }
 }

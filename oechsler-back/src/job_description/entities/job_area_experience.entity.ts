@@ -20,7 +20,7 @@ export class JobAreaExperience {
     @Column({ type: 'varchar', length: 255 })
     area: string;
 
-    @Column({ type: 'int' })
+    @Column({ type: 'decimal', precision: 10, scale: 1 })
     experience: number;
 
     @CreateDateColumn()

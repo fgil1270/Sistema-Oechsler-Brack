@@ -19,7 +19,7 @@ import {
 } from 'typeorm';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { join } from 'path';
-import { mkdirSync, existsSync, writeFileSync } from 'fs';
+import { mkdirSync, existsSync, writeFileSync, unlinkSync } from 'fs';
 import { format } from 'date-fns';
 import ical, {
   ICalCalendar,
@@ -690,6 +690,7 @@ export class RequestCourseService {
       where: whereConditions,
     });
 
+
     requestCourse.filter((item) => {
       if (eployeesIds.includes(item.employee?.id)) {
         dataRequestCourse.push(item);
@@ -703,7 +704,22 @@ export class RequestCourseService {
       },
     });
 
-    return dataRequestCourse;
+    // Totales por status
+    // Si el status es Finalizado y el curso requiere constancia, eficiencia o quiz,
+    // o no tiene documentos subidos, se clasifica como Pendiente revisar.
+    const totalByStatus = dataRequestCourse.reduce<Record<string, number>>((acc, item) => {
+      let status = item.status ?? 'Sin status';
+
+
+      acc[status] = (acc[status] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      data: dataRequestCourse,
+      totals: totalByStatus,
+      total: dataRequestCourse.length,
+    };
   }
 
 
@@ -2308,4 +2324,35 @@ export class RequestCourseService {
     }
   }
 
+  //eliminar documento de solicitud de curso
+  async deleteDocument(idDocument: number) {
+    try {
+      const document = await this.requestCourseDocument.findOne({
+        where: {
+          id: idDocument,
+        },
+      });
+      if (!document) {
+        throw new NotFoundException('Documento no encontrado');
+      }
+      //eliminar el archivo del servidor
+      const filePath = join(__dirname, `../../../${document.route}/${document.name}`);
+      //verificar si el archivo existe antes de eliminarlo
+      if (existsSync(filePath)) {
+        //eliminar el archivo
+        unlinkSync(filePath);
+      }
+      //eliminar el registro de la base de datos
+      await this.requestCourseDocument.delete(idDocument);
+      return {
+        error: false,
+        msg: 'Documento eliminado correctamente',
+      };
+    } catch (error) {
+      return {
+        error: true,
+        msg: error.message,
+      };
+    }
+  }
 }

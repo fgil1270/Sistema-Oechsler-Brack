@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
   BadGatewayException,
   forwardRef,
   Inject,
@@ -28,6 +29,7 @@ import { EmployeeIncidenceService } from '../../employee_incidence/service/emplo
 import { EmployeeShiftService } from '../../employee_shift/service/employee_shift.service';
 import { EmployeesService } from '../../employees/service/employees.service';
 import { ChecadorService } from '../../checador/service/checador.service';
+import { Checador } from '../../checador/entities/checador.entity';
 import { IncidenceCatologueService } from '../../incidence_catologue/service/incidence_catologue.service';
 import { OrganigramaService } from '../../organigrama/service/organigrama.service';
 import { CalendarService } from '../../calendar/service/calendar.service';
@@ -606,6 +608,7 @@ export class TimeCorrectionService {
         authorizedIncidences,
         allShifts,
         allLeaders,
+        allChecadorRecords,
       ] = await Promise.all([
         this.loadTimeCorrections(employeeIds, from, to),
         this.loadHolidays(from, to),
@@ -613,6 +616,7 @@ export class TimeCorrectionService {
         this.loadAuthorizedIncidences(employeeIds, from, to),
         this.loadEmployeeShifts(employeeIds, from, to),
         this.loadEmployeeLeaders(employeeIds),
+        this.loadChecadorRecords(employeeIds, from, to),
       ]);
 
       // Crear maps para búsqueda O(1)
@@ -622,6 +626,7 @@ export class TimeCorrectionService {
       const incidencesMap = this.createIncidenceMap(authorizedIncidences);
       const shiftsMap = this.createShiftsMap(allShifts);
       const leadersMap = new Map(allLeaders.map(l => [l.employeeId, l.leaders]));
+      const checadorMap = this.createChecadorMap(allChecadorRecords);
 
       const registros = [];
       let registroId = 0;
@@ -671,6 +676,8 @@ export class TimeCorrectionService {
           const turnoAnterior = shiftsMap.get(previousShiftKey)?.nameShift;
           const turnoSiguiente = shiftsMap.get(nextShiftKey)?.nameShift;
 
+          const checadorCurrentDay = checadorMap.get(shiftKey) || [];
+
           // Obtener horarios de entrada/salida para consultar checador
           let { hrEntrada, hrSalida, diaAnterior, diaSiguiente } =
             await this.checadorService.entradaSalidaChecador(
@@ -697,15 +704,7 @@ export class TimeCorrectionService {
               }
             } else {
               // Buscar checadas del día actual
-              checadas = await this.dataSource.manager
-                .createQueryBuilder('Checador', 'c')
-                .leftJoinAndSelect('c.employee', 'employee')
-                .where('employee.id = :employeeId', { employeeId: employee.id })
-                .andWhere('c.date >= :from AND c.date <= :to', {
-                  from: format(currentDate, 'yyyy-MM-dd 00:00:00'),
-                  to: format(currentDate, 'yyyy-MM-dd 23:59:59')
-                })
-                .getMany();
+              checadas = checadorCurrentDay;
 
               if (checadas.length === 0) {
                 continue;
@@ -719,17 +718,26 @@ export class TimeCorrectionService {
             }
           }
 
-          // Obtener registros del checador
-          const registrosChecadorNuevo = await this.dataSource.manager
-            .createQueryBuilder('Checador', 'c')
-            .leftJoinAndSelect('c.employee', 'employee')
-            .where('employee.id = :employeeId', { employeeId: employee.id })
-            .andWhere('c.date >= :from AND c.date <= :to', {
-              from: format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`),
-              to: format(diaSiguiente, `yyyy-MM-dd ${hrSalida}`)
+          // Obtener registros del checador desde cache en memoria (dia anterior, actual y siguiente)
+          const checadorCandidates = [
+            ...(checadorMap.get(previousShiftKey) || []),
+            ...checadorCurrentDay,
+            ...(checadorMap.get(nextShiftKey) || []),
+          ];
+
+          const uniqueCandidates = Array.from(
+            new Map(checadorCandidates.map((record) => [record.id, record])).values(),
+          );
+
+          const fromDate = new Date(format(diaAnterior, `yyyy-MM-dd ${hrEntrada}`)).getTime();
+          const toDate = new Date(format(diaSiguiente, `yyyy-MM-dd ${hrSalida}`)).getTime();
+
+          const registrosChecadorNuevo = uniqueCandidates
+            .filter((record) => {
+              const recordTime = new Date(record.date).getTime();
+              return recordTime >= fromDate && recordTime <= toDate;
             })
-            .orderBy('c.date', 'ASC')
-            .getMany();
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
           // Determinar incongruencia
           if (registrosChecadorNuevo.length > 0) {
@@ -881,18 +889,43 @@ export class TimeCorrectionService {
 
   // Cargar días festivos - optimizado con una sola query
   private async loadHolidays(from: Date, to: Date) {
-    // Generar todas las fechas del rango
-    const dates = this.generateDateRange(from, to);
+    const calendars = await this.calendarService.findRangeDate({
+      start: format(from, 'yyyy-MM-dd'),
+      end: format(to, 'yyyy-MM-dd'),
+    });
 
-    // Buscar todos los festivos de una vez
-    const holidays = await Promise.all(
-      dates.map(date => this.calendarService.findByDate(format(date, 'yyyy-MM-dd')))
-    );
+    return (calendars || [])
+      .filter((calendar) => calendar?.holiday)
+      .map((calendar) => ({ date: calendar.date }));
+  }
 
-    // Filtrar solo los días festivos
-    return holidays
-      .map((h, index) => h?.holiday ? { date: dates[index] } : null)
-      .filter(h => h !== null);
+  // Cargar checadas en bloque para todo el rango y empleados
+  private async loadChecadorRecords(employeeIds: number[], from: Date, to: Date) {
+    const fromExtended = new Date(from);
+    const toExtended = new Date(to);
+    fromExtended.setDate(fromExtended.getDate() - 1);
+    toExtended.setDate(toExtended.getDate() + 1);
+
+    const rows = await this.dataSource.getRepository(Checador)
+      .createQueryBuilder('c')
+      .innerJoin('c.employee', 'employee')
+      .select('c.id', 'id')
+      .addSelect('c.date', 'date')
+      .addSelect('employee.id', 'employeeId')
+      .where('employee.id IN (:...employeeIds)', { employeeIds })
+      .andWhere('c.date BETWEEN :from AND :to', {
+        from: format(fromExtended, 'yyyy-MM-dd 00:00:00'),
+        to: format(toExtended, 'yyyy-MM-dd 23:59:59'),
+      })
+      .orderBy('employee.id', 'ASC')
+      .addOrderBy('c.date', 'ASC')
+      .getRawMany<{ id: number | string; date: Date | string; employeeId: number | string }>();
+
+    return rows.map((row) => ({
+      id: Number(row.id),
+      date: new Date(row.date),
+      employeeId: Number(row.employeeId),
+    }));
   }
 
   // Cargar incidencias compensatorias
@@ -1018,6 +1051,21 @@ export class TimeCorrectionService {
       const key = `${shift.employeeId}-${format(new Date(shift.date), 'yyyy-MM-dd')}`;
       map.set(key, shift);
     });
+    return map;
+  }
+
+  // Crear mapa de checadas por empleado y fecha
+  private createChecadorMap(records: Array<{ id: number; date: Date; employeeId: number }>) {
+    const map = new Map<string, Array<{ id: number; date: Date; employeeId: number }>>();
+
+    records.forEach((record) => {
+      const key = `${record.employeeId}-${format(new Date(record.date), 'yyyy-MM-dd')}`;
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key).push(record);
+    });
+
     return map;
   }
 

@@ -209,4 +209,10 @@ export class RequestCourseDocumentController {
     return this.requestCourseService.uploadMultipleFiles(idRequestCourse, files, classifications);
 
   }
+
+  @ApiOperation({ summary: 'Eliminar documento de solicitud de curso' })
+  @Delete(':idDocument')
+  async deleteDocument(@Param('idDocument', ParseIntPipe) idDocument: number) {
+    return this.requestCourseService.deleteDocument(idDocument);
+  }
 }
