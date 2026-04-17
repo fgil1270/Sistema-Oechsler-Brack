@@ -2808,6 +2808,17 @@ export class EmployeeIncidenceService {
               ei_shift: currentIncidence.shift
             });
 
+            //se consulta la incidencia
+            const findIndcidencia = await this.employeeIncidenceRepository.findOne({
+              where: {
+                id: incidenceId
+              },
+              relations: {
+                incidenceCatologue: true,
+                dateEmployeeIncidence: true
+              }
+            });
+
             // Calcular horas
             const totalHour = parseFloat(String(currentIncidence.total_hour));
             const days = currentIncidence.dateEmployeeIncidence.length;
@@ -2815,7 +2826,8 @@ export class EmployeeIncidenceService {
             const horas = Math.floor(totalHour);
             const minutos = Math.round((totalHour - horas) * 100);
             const totalEnMinutos = horas * 60 + minutos;
-            const horasPorDia = totalEnMinutos / days;
+            // Horas de incidencia por día
+            const horasPorDia = totalEnMinutos / findIndcidencia.dateEmployeeIncidence.length;
 
             const horasIncidencia = Math.floor(horasPorDia / 60);
             const minsIncidencia = Math.round(horasPorDia % 60);
