@@ -29,6 +29,7 @@ async function bootstrap() {
 
   const allowedOrigins = [
     'http://192.168.51.39:4200',
+    'http://192.168.51.39:4501',
     'http://localhost:4200',
   ];
 

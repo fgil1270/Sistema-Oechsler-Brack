@@ -35,4 +35,7 @@ export class JobDegree {
     @JoinColumn()
     jobDescription: JobDescription;
 
+    @Column({ type: 'varchar', length: 255 })
+    type: string;
+
 }

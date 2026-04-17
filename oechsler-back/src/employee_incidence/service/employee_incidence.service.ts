@@ -2781,6 +2781,12 @@ export class EmployeeIncidenceService {
           const incidenciaTiempoExtra = incidenceIds
             .map((idInc: any) => incidencesById.get(idInc))
             .find((inc) => inc && ['HE', 'HET', 'TxT'].includes(inc.incidenceCatologue.code_band));
+          const incidenciaTiempoExtraAnterior = incidenceIdsAnterior
+            .map((idInc: any) => incidencesById.get(idInc))
+            .find((inc) => inc && ['HE', 'HET', 'TxT'].includes(inc.incidenceCatologue.code_band));
+          const incidenciaTiempoExtraSiguiente = incidenceIdsSiguiente
+            .map((idInc: any) => incidencesById.get(idInc))
+            .find((inc) => inc && ['HE', 'HET', 'TxT'].includes(inc.incidenceCatologue.code_band));
 
 
 
@@ -2802,6 +2808,17 @@ export class EmployeeIncidenceService {
               ei_shift: currentIncidence.shift
             });
 
+            //se consulta la incidencia
+            const findIndcidencia = await this.employeeIncidenceRepository.findOne({
+              where: {
+                id: incidenceId
+              },
+              relations: {
+                incidenceCatologue: true,
+                dateEmployeeIncidence: true
+              }
+            });
+
             // Calcular horas
             const totalHour = parseFloat(String(currentIncidence.total_hour));
             const days = currentIncidence.dateEmployeeIncidence.length;
@@ -2809,7 +2826,8 @@ export class EmployeeIncidenceService {
             const horas = Math.floor(totalHour);
             const minutos = Math.round((totalHour - horas) * 100);
             const totalEnMinutos = horas * 60 + minutos;
-            const horasPorDia = totalEnMinutos / days;
+            // Horas de incidencia por día
+            const horasPorDia = totalEnMinutos / findIndcidencia.dateEmployeeIncidence.length;
 
             const horasIncidencia = Math.floor(horasPorDia / 60);
             const minsIncidencia = Math.round(horasPorDia % 60);
@@ -2881,7 +2899,7 @@ export class EmployeeIncidenceService {
           ...(checadorMap.get(keyChecadorAnterior) || []),
           ...(checadorMap.get(keyChecador) || []),
           ...(checadorMap.get(keyChecadorSiguiente) || [])
-        ]; */
+          ]; */
           let registrosChecador = checadorMap.get(keyChecador) || [];
 
           //si el turno actual es T3 o TI3, se agragan los registros del dia siguiente
@@ -2910,7 +2928,7 @@ export class EmployeeIncidenceService {
                   hrSalida = '21:59:00';
                   //diaAnterior = new Date(diahoy);
                 } else if (incidencia.shift == 3) {
-                  hrEntrada = '05:00:00';
+                  hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
                   //diaSiguiente.setDate(diahoy.getDate() + 1);
                   turnoIncidencia = 3;
@@ -2930,6 +2948,7 @@ export class EmployeeIncidenceService {
                 } else if (incidencia.shift == 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
+                  diaSig = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                   //diaSiguiente = new Date(new Date(diahoy).setDate(new Date(diahoy).getDate() + 1));
                   registrosChecador = registrosChecador.concat(checadorMap.get(keyChecadorSiguiente) || []);
                 }
@@ -2975,6 +2994,21 @@ export class EmployeeIncidenceService {
             }
           }
 
+          //incidencia tiempo extra del dia anterior
+          if (incidenciaTiempoExtraAnterior) {
+            // Determinar si es un array o un objeto individual
+            const incidenciasAnterior = Array.isArray(incidenciaTiempoExtraAnterior) ? incidenciaTiempoExtraAnterior : [incidenciaTiempoExtraAnterior];
+
+            // Procesar solo la primera incidencia de tiempo extra encontrada
+            const incidenciaAnt = incidenciasAnterior[0];
+
+            if (incidenciaAnt) {
+              if (turnoActual != '' && (turnoActual == 'T2' || turnoActual == 'TI2')) {
+                hrEntrada = '13:00:00';
+              }
+            }
+          }
+
 
           // Eliminar duplicados basándose en el ID único del registro
           /*  const uniqueRegistros = new Map();
@@ -2995,9 +3029,6 @@ export class EmployeeIncidenceService {
               registro.numRegistroChecador === 1
             );
           });
-
-
-
 
 
           let diffHr = 0;

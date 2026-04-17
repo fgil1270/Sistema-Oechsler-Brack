@@ -1961,7 +1961,31 @@ export class ChecadorService {
         },
       });
 
-      let totalRegComedor = registrosComedor.filter((checador: any) => checador.recordDevice?.origin == 'Comedor').length;
+      const registrosComedorFiltrados = registrosComedor
+        .filter((checador) => checador.recordDevice?.origin == 'Comedor')
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      // Si entre registros pasan menos de 3 minutos, se consideran una sola comida.
+      let totalRegComedor = 0;
+      let ultimoRegistroContado: Date | null = null;
+
+      for (const registro of registrosComedorFiltrados) {
+        const fechaRegistro = new Date(registro.date);
+
+        if (!ultimoRegistroContado) {
+          totalRegComedor += 1;
+          ultimoRegistroContado = fechaRegistro;
+          continue;
+        }
+
+        const diferenciaMinutos =
+          (fechaRegistro.getTime() - ultimoRegistroContado.getTime()) / (1000 * 60);
+
+        if (diferenciaMinutos >= 3) {
+          totalRegComedor += 1;
+          ultimoRegistroContado = fechaRegistro;
+        }
+      }
 
       //obtener incidencias tiempo extra por turno(HET) y tiempo extra por horas(HE)
       const incidenciasNormales =

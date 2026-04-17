@@ -164,6 +164,7 @@ export class JobDescriptionService {
             return this.jobDegreeRepository.create({
               degree: estudio.estudio,
               dominio: estudio.domain,
+              type: estudio.type,
               jobDescription: savedJobDescription,
             });
           })
@@ -175,7 +176,7 @@ export class JobDescriptionService {
       if (createJobDescriptionDto.competencias && createJobDescriptionDto.competencias.length > 0) {
         const competenceNew = await Promise.all(
           createJobDescriptionDto.competencias.map(async (competencia) => {
-            return await this.JobsService.createJobCompetence(job.id, competencia.idcompetencia, competencia.domain);
+            return await this.JobsService.createJobCompetence(job.id, competencia.idcompetencia, '');
           })
         );
 
@@ -197,7 +198,6 @@ export class JobDescriptionService {
       return { accion: 'This action adds a new job-description' };
     } catch (error) {
       this.log.log(`Error creating job description: ${error.message}`);
-      console.log('Error creating job description:', error.message);
       throw new Error(`Failed to create job description: ${error}`);
     }
 
@@ -213,6 +213,249 @@ export class JobDescriptionService {
   //buscar un job-description por id
   findOne(id: number) {
     return `This action returns a #${id} job-description`;
+  }
+
+  //actualizar un job-description por id
+  async update(id: number, updateJobDescriptionDto: CreateJobDescriptionDto) {
+    try {
+      const jobDescription = await this.jobDescriptionRepository.findOne({
+        where: {
+          id: id
+        },
+        relations: {
+          job: true,
+        },
+      });
+
+      if (!jobDescription) {
+        throw new NotFoundException(`No se encontro el job description con ID ${id}`);
+      }
+
+      let job = jobDescription.job;
+
+      if (!job) {
+        throw new BadRequestException('No se encontro el puesto asociado al job description');
+      }
+
+      jobDescription.type_job = updateJobDescriptionDto.employeeType;
+      jobDescription.area = updateJobDescriptionDto.areaName;
+      jobDescription.description = updateJobDescriptionDto.description;
+
+      if (updateJobDescriptionDto.estructuraOrganizacional?.idJobLeader) {
+        const jobLeader = await this.JobsService.findOne(updateJobDescriptionDto.estructuraOrganizacional.idJobLeader);
+        if (!jobLeader) {
+          throw new BadRequestException('No se encontro el puesto lider asociado al job description');
+        }
+        jobDescription.jobLeader = jobLeader;
+      } else {
+        jobDescription.jobLeader = null;
+      }
+
+      const savedJobDescription = await this.jobDescriptionRepository.save(jobDescription);
+
+
+      const currentActivities = await this.jobActivityRepository.find({
+        where: { jobDescription: { id: savedJobDescription.id } },
+      });
+      //si en la actualización se envía una nueva lista de actividades, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.responsibilities && updateJobDescriptionDto.responsibilities.length > 0) {
+        if (currentActivities.length > 0) {
+          await this.jobActivityRepository.softRemove(currentActivities);
+        }
+      }
+
+
+      const currentReportHim = await this.jobReportHimRepository.find({
+        where: { jobDescription: { id: savedJobDescription.id } },
+      });
+      //si en la actualización se envía una nueva lista de puestos que le reportan, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.estructuraOrganizacional?.idJobReportan) {
+        if (currentReportHim.length > 0) {
+          await this.jobReportHimRepository.softRemove(currentReportHim);
+        }
+      }
+
+
+      const currentHelp = await this.jobHelpRepository.find({
+        where: { jobDescription: { id: savedJobDescription.id } },
+      });
+      //si en la actualización se envía una nueva lista de puestos que brindan apoyo, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.estructuraOrganizacional?.idApoya) {
+        if (currentHelp.length > 0) {
+          await this.jobHelpRepository.softRemove(currentHelp);
+        }
+      }
+
+
+      const currentAbsenceDelegate = await this.jobAbsenceDelegateRepository.find({
+        where: { jobDescription: { id: savedJobDescription.id } },
+      });
+      //si en la actualización se envía una nueva lista de puestos que pueden apoyar por ausencia, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.estructuraOrganizacional?.idApoyado) {
+        if (currentAbsenceDelegate.length > 0) {
+          await this.jobAbsenceDelegateRepository.softRemove(currentAbsenceDelegate);
+        }
+      }
+
+
+      const currentInteractionAreas = await this.jobInteractionAreaRepository.find({
+        where: { jobDescription: { id: savedJobDescription.id } },
+      });
+      //si en la actualización se envía una nueva lista de áreas de interacción, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.interactions && updateJobDescriptionDto.interactions.length > 0) {
+        if (currentInteractionAreas.length > 0) {
+          await this.jobInteractionAreaRepository.softRemove(currentInteractionAreas);
+        }
+      }
+
+
+      const currentDegrees = await this.jobDegreeRepository.find({
+        where: { jobDescription: { id: savedJobDescription.id } },
+      });
+      //si en la actualización se envía una nueva lista de áreas de estudio, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.estudios && updateJobDescriptionDto.estudios.length > 0) {
+        if (currentDegrees.length > 0) {
+          await this.jobDegreeRepository.softRemove(currentDegrees);
+        }
+      }
+
+      const currentCompetences = await this.JobsService.getCompetencies(job.id);
+      //si en la actualización se envía una nueva lista de competencias, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.competencias && updateJobDescriptionDto.competencias.length > 0) {
+        if (currentCompetences.jobCompetences.length > 0) {
+          await this.JobsService.deleteJobCompetences(currentCompetences.jobCompetences.map(jc => jc.id));
+        }
+      }
+
+
+      const currentExperienceAreas = await this.jobAreaExperienceRepository.find({
+        where: { jobDescription: { id: savedJobDescription.id } },
+      });
+      //si en la actualización se envía una nueva lista de áreas de experiencia, se eliminan los registros actuales y se crean los nuevos
+      if (updateJobDescriptionDto.experienceAreas && updateJobDescriptionDto.experienceAreas.length > 0) {
+        if (currentExperienceAreas.length > 0) {
+          await this.jobAreaExperienceRepository.softRemove(currentExperienceAreas);
+        }
+      }
+
+
+      if (updateJobDescriptionDto.responsibilities && updateJobDescriptionDto.responsibilities.length > 0) {
+        const jobActivities = updateJobDescriptionDto.responsibilities.map((activity) =>
+          this.jobActivityRepository.create({
+            activity: activity.responsibility,
+            jobDescription: savedJobDescription,
+          }),
+        );
+
+        await this.jobActivityRepository.save(jobActivities);
+      }
+
+      if (updateJobDescriptionDto.estructuraOrganizacional?.idJobReportan && updateJobDescriptionDto.estructuraOrganizacional.idJobReportan.length > 0) {
+        const reportHimJobs = await Promise.all(
+          updateJobDescriptionDto.estructuraOrganizacional.idJobReportan.map(async (idJobReportHim) => {
+            const jobReportHim = await this.JobsService.findOne(idJobReportHim);
+            if (!jobReportHim) {
+              throw new BadRequestException(`No se encontro el puesto que le reporta con ID ${idJobReportHim}`);
+            }
+            return this.jobReportHimRepository.create({
+              job: jobReportHim,
+              jobDescription: savedJobDescription,
+            });
+          }),
+        );
+
+        await this.jobReportHimRepository.save(reportHimJobs);
+      }
+
+      if (updateJobDescriptionDto.estructuraOrganizacional?.idApoya && updateJobDescriptionDto.estructuraOrganizacional.idApoya.length > 0) {
+        const helpJobs = await Promise.all(
+          updateJobDescriptionDto.estructuraOrganizacional.idApoya.map(async (idHelpJob) => {
+            const jobHelp = await this.JobsService.findOne(idHelpJob);
+            if (!jobHelp) {
+              throw new BadRequestException(`No se encontro el puesto que brinda apoyo con ID ${idHelpJob}`);
+            }
+            return this.jobHelpRepository.create({
+              job: jobHelp,
+              jobDescription: savedJobDescription,
+            });
+          }),
+        );
+        await this.jobHelpRepository.save(helpJobs);
+      }
+
+      if (updateJobDescriptionDto.estructuraOrganizacional?.idApoyado && updateJobDescriptionDto.estructuraOrganizacional.idApoyado.length > 0) {
+        const absenceDelegateJobs = await Promise.all(
+          updateJobDescriptionDto.estructuraOrganizacional.idApoyado.map(async (idAbsenceDelegateJob) => {
+            const jobAbsenceDelegate = await this.JobsService.findOne(idAbsenceDelegateJob);
+            if (!jobAbsenceDelegate) {
+              throw new BadRequestException(`No se encontro el puesto que puede apoyar por ausencia con ID ${idAbsenceDelegateJob}`);
+            }
+            return this.jobAbsenceDelegateRepository.create({
+              job: jobAbsenceDelegate,
+              jobDescription: savedJobDescription,
+            });
+          }),
+        );
+        await this.jobAbsenceDelegateRepository.save(absenceDelegateJobs);
+      }
+
+      if (updateJobDescriptionDto.interactions && updateJobDescriptionDto.interactions.length > 0) {
+        const interactionAreas = await Promise.all(
+          updateJobDescriptionDto.interactions.map(async (interaction) => {
+            return this.jobInteractionAreaRepository.create({
+              name: interaction.name,
+              jobDescription: savedJobDescription,
+            });
+          }),
+        );
+        await this.jobInteractionAreaRepository.save(interactionAreas);
+      }
+
+      if (updateJobDescriptionDto.estudios && updateJobDescriptionDto.estudios.length > 0) {
+        const degreeAreas = await Promise.all(
+          updateJobDescriptionDto.estudios.map(async (estudio) => {
+            return this.jobDegreeRepository.create({
+              degree: estudio.estudio,
+              dominio: estudio.domain,
+              type: estudio.type,
+              jobDescription: savedJobDescription,
+            });
+          }),
+        );
+        await this.jobDegreeRepository.save(degreeAreas);
+      }
+
+      if (updateJobDescriptionDto.competencias && updateJobDescriptionDto.competencias.length > 0) {
+        await Promise.all(
+          updateJobDescriptionDto.competencias.map(async (competencia) => {
+            return await this.JobsService.createJobCompetence(job.id, competencia.idcompetencia, '');
+          }),
+        );
+      }
+
+      if (updateJobDescriptionDto.experienceAreas && updateJobDescriptionDto.experienceAreas.length > 0) {
+        const experienceAreas = await Promise.all(
+          updateJobDescriptionDto.experienceAreas.map(async (area) => {
+            return this.jobAreaExperienceRepository.create({
+              area: area.name,
+              experience: area.year,
+              jobDescription: savedJobDescription,
+            });
+          }),
+        );
+        await this.jobAreaExperienceRepository.save(experienceAreas);
+      }
+
+      return { accion: 'This action updates a job-description' };
+    } catch (error) {
+      this.log.log(`Error updating job description: ${error}`);
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new Error(`Failed to update job description: ${error}`);
+    }
   }
 
 
