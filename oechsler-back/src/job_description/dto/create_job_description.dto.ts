@@ -115,6 +115,20 @@ export class InteractionDto {
     name: string;
 }
 
+export class AuthorizationDto {
+    @IsNumber()
+    @ApiProperty({ description: 'ID del empleado autorizador como Lider', example: 1 })
+    leader: number;
+
+    @IsNumber()
+    @ApiProperty({ description: 'ID del empleado autorizador como Jefe de Area', example: 2 })
+    manager: number;
+
+    @IsNumber()
+    @ApiProperty({ description: 'ID del empleado autorizador como RH', example: 3 })
+    rh: number;
+}
+
 export class CompetenceDto {
     @IsOptional()
     @IsNumber()
@@ -131,7 +145,6 @@ export class CompetenceDto {
     @ApiProperty({ description: 'Dominio de la competencia', example: 'Avanzado' })
     domain?: string;
 }
-
 
 export class CreateJobDescriptionDto {
     @IsNumber()
@@ -225,4 +238,14 @@ export class CreateJobDescriptionDto {
         type: [ExperienceAreaDto],
     })
     experienceAreas: ExperienceAreaDto[];
+
+    @IsObject()
+    @ValidateNested()
+    @Type(() => AuthorizationDto)
+    @ApiProperty({
+        description: 'Autorizadores del job description',
+        required: false,
+        type: AuthorizationDto,
+    })
+    authorization?: AuthorizationDto;
 }

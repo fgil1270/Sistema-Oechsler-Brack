@@ -6,8 +6,8 @@ import {
   forwardRef,
   Inject,
 } from '@nestjs/common';
-import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, Between } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In, Not, IsNull, Like, MoreThanOrEqual, Between, DataSource } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 
 import { CreateJobDescriptionDto } from '../dto/create_job_description.dto';
 import { JobDescription } from '../entities/job_description.entity';
@@ -41,6 +41,7 @@ export class JobDescriptionService {
     //@InjectRepository(JobCompetence) private jobCompetence: Repository<JobCompetence>,
     private employeesService: EmployeesService,
     private JobsService: JobsService,
+    @InjectDataSource() private dataSource: DataSource,
   ) { }
 
   //crear un nuevo job-description
@@ -61,11 +62,11 @@ export class JobDescriptionService {
       //Crear el job description
       const createdJobDescription = this.jobDescriptionRepository.create();
       createdJobDescription.type_job = createJobDescriptionDto.employeeType;
-      createdJobDescription.status = 'Pendiente';
+      createdJobDescription.status = 'Solicitado';
       createdJobDescription.area = createJobDescriptionDto.areaName;
       createdJobDescription.description = createJobDescriptionDto.description;
-      createdJobDescription.authorizeLeader = userCreate.emp;
-      createdJobDescription.lead_authorized_at = new Date();
+      //createdJobDescription.authorizeLeader = userCreate.emp;
+      //createdJobDescription.lead_authorized_at = new Date();
       createdJobDescription.job = job;
 
       // Guardar el job description en la base de datos
@@ -195,6 +196,34 @@ export class JobDescriptionService {
         );
         await this.jobAreaExperienceRepository.save(experienceAreas);
       }
+
+      //leader que autorizara
+      if (createJobDescriptionDto.authorization?.leader) {
+        let leader = await this.employeesService.findOne(createJobDescriptionDto.authorization.leader);
+        if (!leader) {
+          throw new BadRequestException('No se encontro el empleado autorizador como líder');
+        }
+        savedJobDescription.authorizeLeader = leader.emp;
+      }
+
+      //manager que autorizara
+      if (createJobDescriptionDto.authorization?.manager) {
+        let manager = await this.employeesService.findOne(createJobDescriptionDto.authorization.manager);
+        if (!manager) {
+          throw new BadRequestException('No se encontro el empleado autorizador como jefe de area');
+        }
+        savedJobDescription.authorizeManager = manager.emp;
+      }
+
+      //rh que autorizara
+      if (createJobDescriptionDto.authorization?.rh) {
+        let rh = await this.employeesService.findOne(createJobDescriptionDto.authorization.rh);
+        if (!rh) {
+          throw new BadRequestException('No se encontro el empleado autorizador como RH');
+        }
+        savedJobDescription.authorizeRh = rh.emp;
+      }
+
       return { accion: 'This action adds a new job-description' };
     } catch (error) {
       this.log.log(`Error creating job description: ${error.message}`);
@@ -207,12 +236,74 @@ export class JobDescriptionService {
 
   //buscar todos los job-description
   findAll() {
+
     return `This action returns all job-descriptions`;
   }
 
   //buscar un job-description por id
   findOne(id: number) {
     return `This action returns a #${id} job-description`;
+  }
+
+  //buscar descripciones de puesto para autorizacion
+  //la busqueda debe ser con base al usuario que se loguea
+  async findDescriptionsForAuthorization(user: any) {
+    try {
+      // Si el usuario es admin, retornar todas las descripciones de puesto
+      const isAdmin = user.roles?.some((r: { name: string }) => r.name === 'Admin');
+
+      if (isAdmin) {
+        let jobDescriptions = await this.jobDescriptionRepository.find({
+          relations: {
+            job: true,
+          },
+          where: {
+            status: 'Solicitado',
+          }
+        });
+
+        return jobDescriptions;
+      }
+
+      let employee = await this.employeesService.findOne(user.idEmployee);
+
+      if (!employee?.emp) {
+        throw new BadRequestException('No se encontro el empleado del usuario autenticado');
+      }
+
+      const jobDescriptions = await this.jobDescriptionRepository.find({
+        relations: {
+          job: true,
+          authorizeLeader: true,
+        },
+        where: [
+          {
+            authorizeLeader: {
+              id: employee.emp.id,
+            },
+            status: 'Solicitado',
+          },
+          {
+            authorizeManager: {
+              id: employee.emp.id,
+            },
+            status: 'Solicitado',
+          },
+          {
+            authorizeRh: {
+              id: employee.emp.id,
+            },
+            status: 'Solicitado',
+          },
+        ],
+      });
+
+      // Eliminar duplicados en caso de que el empleado aparezca en más de una condición
+      const unique = Array.from(new Map(jobDescriptions.map(jd => [jd.id, jd])).values());
+
+      return unique;
+    } catch (error) {
+    }
   }
 
   //actualizar un job-description por id
@@ -249,6 +340,33 @@ export class JobDescriptionService {
         jobDescription.jobLeader = jobLeader;
       } else {
         jobDescription.jobLeader = null;
+      }
+
+      //leader que autorizara
+      if (updateJobDescriptionDto.authorization?.leader) {
+        let leader = await this.employeesService.findOne(updateJobDescriptionDto.authorization.leader);
+        if (!leader) {
+          throw new BadRequestException('No se encontro el empleado autorizador como líder');
+        }
+        jobDescription.authorizeLeader = leader.emp;
+      }
+
+      //manager que autorizara
+      if (updateJobDescriptionDto.authorization?.manager) {
+        let manager = await this.employeesService.findOne(updateJobDescriptionDto.authorization.manager);
+        if (!manager) {
+          throw new BadRequestException('No se encontro el empleado autorizador como jefe de area');
+        }
+        jobDescription.authorizeManager = manager.emp;
+      }
+
+      //rh que autorizara
+      if (updateJobDescriptionDto.authorization?.rh) {
+        let rh = await this.employeesService.findOne(updateJobDescriptionDto.authorization.rh);
+        if (!rh) {
+          throw new BadRequestException('No se encontro el empleado autorizador como RH');
+        }
+        jobDescription.authorizeRh = rh.emp;
       }
 
       const savedJobDescription = await this.jobDescriptionRepository.save(jobDescription);
@@ -446,6 +564,7 @@ export class JobDescriptionService {
         await this.jobAreaExperienceRepository.save(experienceAreas);
       }
 
+
       return { accion: 'This action updates a job-description' };
     } catch (error) {
       this.log.log(`Error updating job description: ${error}`);
@@ -455,6 +574,64 @@ export class JobDescriptionService {
       }
 
       throw new Error(`Failed to update job description: ${error}`);
+    }
+  }
+
+  //actualizar status de un job-description por id
+  async updateStatus(id: number, status: string) {
+    const jobDescription = await this.jobDescriptionRepository.findOne({
+      where: {
+        id: id
+      },
+    });
+
+    if (!jobDescription) {
+      throw new NotFoundException(`No se encontro el job description con ID ${id}`);
+    }
+
+    jobDescription.status = status;
+
+    await this.jobDescriptionRepository.save(jobDescription);
+
+    return { accion: `This action updates the status of a job-description to ${status}` };
+  }
+
+  //buscar los empleados que tengan rol de lider
+  //buscar los empleados que su puesto tenga el nombre de Gerente
+  //buscar los empleados que su rol sea RH
+  async getEmployeesForAuthorization() {
+    try {
+      let leaders = [];
+      let managers = [];
+      let rh = [];
+      const empleados = await this.dataSource.createQueryBuilder()
+        .select('employee.id, employee.name, employee.paternal_surname, employee.maternal_surname, job.cv_name as job_name, role.name as role_name')
+        .from('employee', 'employee')
+        .innerJoin('job', 'job', 'job.id = employee.jobId')
+        .innerJoin('user', 'user', 'user.employeeId = employee.id')
+        .innerJoin('user_roles_role', 'userRole', 'userRole.userId = user.id')
+        .innerJoin('role', 'role', 'role.id = userRole.roleId')
+
+        .getRawMany();
+
+      for (const emp of empleados) {
+        if (emp.role_name === 'Jefe de Area') {
+          leaders.push(emp);
+        }
+
+        if (String(emp.job_name).toLowerCase().includes('gerente')) {
+          managers.push(emp);
+        }
+
+        if (emp.role_name === 'RH') {
+          rh.push(emp);
+        }
+
+      }
+      return { leaders, managers, rh };
+    } catch (error) {
+      this.log.log(`Error getting employees for authorization: ${error}`);
+      throw new Error(`Failed to get employees for authorization: ${error}`);
     }
   }
 

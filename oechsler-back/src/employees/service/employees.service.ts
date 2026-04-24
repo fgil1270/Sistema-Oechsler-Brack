@@ -32,6 +32,7 @@ import { EmployeeShift } from 'src/employee_shift/entities/employee_shift.entity
 import { CustomLoggerService } from '../../logger/logger.service';
 import { UsersService } from '../../users/service/users.service';
 
+
 @Injectable()
 export class EmployeesService {
   private log = new CustomLoggerService();
@@ -1029,8 +1030,8 @@ export class EmployeesService {
           sumDiasSiguenteAnoFin = (parseInt(arrayFinAno[1]) / 100) * objDiasBysiguenteAnoFin.day;
           sumaDiasAntiguedadFin = totalDiasByFinAno + sumDiasSiguenteAnoFin;
         } catch (error) {
-
-          console.error('Error al calcular los dias de vacaciones del historial', error);
+          this.log.error('Error al calcular los dias de vacaciones del historial', error.stack);
+          throw new BadRequestException('Error al calcular los dias de vacaciones del historial');
         }
 
 
@@ -1089,13 +1090,21 @@ export class EmployeesService {
         incidences?.forEach((element) => {
           if (element.status === 'Pendiente') {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-              totalVacacionesPendientes += 1;
+              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
+                totalVacacionesPendientes += 1.5;
+              } else {
+                totalVacacionesPendientes += 1;
+              }
             } else if (element.code_band === 'VacM') {
               totalVacacionesPendientes += 0.5;
             }
           } else {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-              dayUsedAllYears += 1;
+              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
+                dayUsedAllYears += 1.5;
+              } else {
+                dayUsedAllYears += 1;
+              }
             } else if (element.code_band === 'VacM') {
               dayUsedAllYears += 0.5;
             }
@@ -1136,7 +1145,7 @@ export class EmployeesService {
         incidences?.forEach((element) => {
           if (element.status === 'Pendiente') {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
+              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
                 totalVacacionesPendientes += 1.5;
                 totalDiasIncidencia += 1.5;
               } else {
@@ -1150,7 +1159,7 @@ export class EmployeesService {
             }
           } else {
             if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
+              if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
                 totalDiasIncidencia += 1.5;
               } else {
                 totalDiasIncidencia += 1;
@@ -1281,13 +1290,24 @@ export class EmployeesService {
       incidences?.forEach((element) => {
         if (element.status === 'Pendiente') {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-            totalVacacionesPendientes += 1;
+            //si el turno es de 12x12 se cuentan las vacaciones como 1.5
+            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
+              totalVacacionesPendientes += 1.5;
+            } else {
+              totalVacacionesPendientes += 1;
+            }
           } else if (element.code_band === 'VacM') {
             totalVacacionesPendientes += 0.5;
           }
         } else {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-            dayUsedAllYears += 1;
+            //si el turno es de 12x12 se cuentan las vacaciones como 1.5
+            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
+              dayUsedAllYears += 1.5;
+            } else {
+              dayUsedAllYears += 1;
+            }
+
           } else if (element.code_band === 'VacM') {
             dayUsedAllYears += 0.5;
           }
@@ -1329,7 +1349,7 @@ export class EmployeesService {
       incidences?.forEach((element) => {
         if (element.status === 'Pendiente') {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
+            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
               totalVacacionesPendientes += 1.5;
               totalDiasIncidencia += 1.5;
             } else {
@@ -1343,7 +1363,7 @@ export class EmployeesService {
           }
         } else {
           if (element.code_band === 'VAC' || element.code_band === 'VACA') {
-            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2') {
+            if (element.shift_name === '12x12-1' || element.shift_name === '12x12-2' || element.shift_name === 'Esp 12x12-1' || element.shift_name === 'Esp 12x12-2') {
               totalDiasIncidencia += 1.5;
             } else {
               totalDiasIncidencia += 1;

@@ -78,6 +78,9 @@ export class JobsService {
           jobDegree: true,
           jobAreaExperience: true,
           jobLeader: true,
+          authorizeLeader: true,
+          authorizeManager: true,
+          authorizeRh: true,
         },
       },
       where: {

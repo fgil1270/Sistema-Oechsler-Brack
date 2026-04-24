@@ -13,7 +13,7 @@ import {
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { format, parseISO, subDays, addDays } from 'date-fns';
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
-import { ar, es } from 'date-fns/locale';
+import { ar, da, es } from 'date-fns/locale';
 import * as moment from 'moment';
 import ical, {
   ICalCalendar,
@@ -687,7 +687,8 @@ export class EmployeeIncidenceService {
 
         fs.writeFile(filePath, base64Data, 'base64', (err) => {
           if (err) {
-            console.error('Error writing file:', err);
+            this.log.error('Error writing file:', err.message);
+
           } else {
             employeeIncidence.employee_image = filePath;
             this.employeeIncidenceRepository.save(employeeIncidence);

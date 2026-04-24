@@ -935,6 +935,8 @@ export class ChecadorService {
         }
         incidencesMap.get(key).push(inc);
       });
+      // Liberar el array de incidencias de memoria
+      if (Array.isArray(allIncidences)) (allIncidences as unknown[]).length = 0;
 
       // ✅ 6. PRE-CARGAR TODOS LOS REGISTROS DEL CHECADOR
       const allChecadorRecordsRaw = await this.checadorRepository
@@ -959,24 +961,24 @@ export class ChecadorService {
           recordDeviceDescription?: string | null;
         }>();
 
-      const allChecadorRecords: ChecadorRecordLite[] = allChecadorRecordsRaw.map((record) => ({
-        date: new Date(record.date),
-        employeeId: Number(record.employeeId),
-        numRegistroChecador: Number(record.numRegistroChecador),
-        recordDeviceDescription: record.recordDeviceDescription ?? null,
-      }));
-
-      // Mapa: employeeId_fecha -> registros[]
+      // Mapa: employeeId_fecha -> registros[] (construido directamente sin copia intermedia)
       const checadorMap = new Map<string, ChecadorRecordLite[]>();
-      allChecadorRecords.forEach(record => {
-        const date = format(new Date(record.date), 'yyyy-MM-dd');
-        const key = `${record.employeeId}_${date}`;
-
+      for (const record of allChecadorRecordsRaw) {
+        const lite: ChecadorRecordLite = {
+          date: new Date(record.date),
+          employeeId: Number(record.employeeId),
+          numRegistroChecador: Number(record.numRegistroChecador),
+          recordDeviceDescription: record.recordDeviceDescription ?? null,
+        };
+        const date = format(lite.date, 'yyyy-MM-dd');
+        const key = `${lite.employeeId}_${date}`;
         if (!checadorMap.has(key)) {
           checadorMap.set(key, []);
         }
-        checadorMap.get(key).push(record);
-      });
+        checadorMap.get(key).push(lite);
+      }
+      // Liberar el array raw de memoria
+      (allChecadorRecordsRaw as unknown[]).length = 0;
 
       // ✅ 7. PRE-CARGAR CORRECCIONES DE TIEMPO
       const allTimeCorrections = await this.timeCorrectionService.findTimeCorrectionRangeDate(
@@ -1131,7 +1133,7 @@ export class ChecadorService {
           //si el turno actual es T3 o TI3, se agragan los registros del dia siguiente
           //y el turno del dia siguiente es T3 o TI3 o 12x12
           if (['T3', 'TI3', '12x12', 'TESP12-2'].includes(turnoActual)) {
-            registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+            registrosChecador = [...registrosChecador, ...(checadorMap.get(turnoSiguienteKey) ?? [])];
           }
 
 
@@ -1146,7 +1148,7 @@ export class ChecadorService {
                 } else if (inc.incidenceShift === 3) {
                   hrEntrada = '18:00:00';
                   hrSalida = '06:59:00';
-                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoAnteriorKey) || []);
+                  registrosChecador = [...registrosChecador, ...(checadorMap.get(turnoAnteriorKey) ?? [])];
                 }
               } else if (['T2', 'TI2'].includes(turnoActual)) {
                 if (inc.incidenceShift === 1 || inc.incidenceShift === 2) {
@@ -1155,17 +1157,17 @@ export class ChecadorService {
                 } else if (inc.incidenceShift === 3) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
-                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+                  registrosChecador = [...registrosChecador, ...(checadorMap.get(turnoSiguienteKey) ?? [])];
                 }
               } else if (['T3', 'TI3'].includes(turnoActual)) {
                 if (inc.incidenceShift === 1) {
                   hrEntrada = '20:00:00';
                   hrSalida = '14:59:00';
-                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+                  registrosChecador = [...registrosChecador, ...(checadorMap.get(turnoSiguienteKey) ?? [])];
                 } else if (inc.incidenceShift === 2) {
                   hrEntrada = '13:00:00';
                   hrSalida = '06:59:00';
-                  registrosChecador = registrosChecador.concat(checadorMap.get(turnoSiguienteKey) || []);
+                  registrosChecador = [...registrosChecador, ...(checadorMap.get(turnoSiguienteKey) ?? [])];
                 }
               } else if (['MIX', 'TI'].includes(turnoActual)) {
                 hrEntrada = '00:30:00';
