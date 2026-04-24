@@ -34,14 +34,32 @@ export class JobDescriptionController {
     //return this.jobDescriptionService.findAll();
   }
 
+  // Endpoint para obtener descripciones de puestos para autorización
+  @Get('authorization')
+  findDescriptionsForAuthorization(@CurrentUser() user: any) {
+
+    return this.jobDescriptionService.findDescriptionsForAuthorization(user);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log('ID recibido:', id); // Agrega este log para verificar el ID
     //return this.jobDescriptionService.findOne(+id);
+  }
+
+  @Get('employee/authorization')
+  getEmployeesForAuthorization() {
+    return this.jobDescriptionService.getEmployeesForAuthorization();
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateJobDescriptionDto: any) {
     return this.jobDescriptionService.update(+id, updateJobDescriptionDto);
+  }
+
+  @Put(':id/status')
+  updateStatus(@Param('id') id: string, @Body('status') status: string) {
+    return this.jobDescriptionService.updateStatus(+id, status);
   }
 
   @Delete(':id')

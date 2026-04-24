@@ -95,4 +95,5 @@ export class JobDescription {
     @ManyToOne(() => Job, (job) => job.jobDescriptionLeader)
     @JoinColumn()
     jobLeader: Job;
+
 }
