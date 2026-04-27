@@ -1,3 +1,4 @@
+import { ProcessEvaluationModule } from './process_evaluation/process-evaluation.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -56,7 +57,7 @@ import { JobDescriptionModule } from './job_description/job-description.module';
 
 
 @Module({
-  imports: [
+  imports: [ProcessEvaluationModule,
     WebsocketModule,
     MailModule,
     ConfigModule.forRoot({

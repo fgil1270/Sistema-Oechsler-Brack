@@ -39,7 +39,7 @@ import { EmployeeWorkerHistory } from './entities/employee_worker_history.entity
     EmployeeProfilesModule,
     forwardRef(() => UsersModule),
     OrganigramaModule,
-    forwardRef(() => CalendarModule),
+    forwardRef(() => CalendarModule)
   ],
   controllers: [EmployeesController, VacationsReportController],
   providers: [EmployeesService],
