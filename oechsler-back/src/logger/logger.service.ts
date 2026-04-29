@@ -50,9 +50,15 @@ export class CustomLoggerService implements LoggerService {
   }
 
   error(message: string, trace: string) {
+    // INMEDIATO para errores - no usar setImmediate
+    console.error(`❌ ERROR: ${message}`, trace);
+    this.logger.error(`${message} - ${trace}`);
+
     setImmediate(() => {
       this.logger.error(`${message} - ${trace}`);
     });
+
+
   }
 
   warn(message: string) {

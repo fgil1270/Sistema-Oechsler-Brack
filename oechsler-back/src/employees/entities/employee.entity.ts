@@ -38,6 +38,7 @@ import { HistoryTraining } from '../../training/entities/history-training.entity
 import { ProductionMachineEmployee } from '../../production_machine/entities/production_machine_employee.entity';
 import { JobDescription } from '../../job_description/entities/job_description.entity';
 import { ProccessEvaluation } from '../../process_evaluation/entities/proccess-evaluation.entity';
+import { ProccessEvaluationQuiz } from '../../process_evaluation/entities/proccess-evaluation-quiz.entity';
 
 @Entity()
 export class Employee {
@@ -288,5 +289,8 @@ export class Employee {
 
   @OneToMany(() => ProccessEvaluation, (proccessEvaluation) => proccessEvaluation.createdBy)
   proccessEvaluation: ProccessEvaluation[];
+
+  @OneToMany(() => ProccessEvaluationQuiz, (proccessEvaluationQuiz) => proccessEvaluationQuiz.employee)
+  proccessEvaluationQuiz: ProccessEvaluationQuiz[];
 
 }

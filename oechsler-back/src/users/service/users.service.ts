@@ -3,6 +3,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -28,7 +30,7 @@ export class UsersService {
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Role) private roleRepository: Repository<Role>,
     private configService: ConfigService,
-    private employeeService: EmployeesService,
+    @Inject(forwardRef(() => EmployeesService)) private employeeService: EmployeesService,
   ) { }
 
   async create(user: CreateUserDto) {

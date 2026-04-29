@@ -12,6 +12,8 @@ import {
 } from 'typeorm';
 
 import { Employee } from '../../employees/entities/employee.entity';
+import { ProccessEvaluationQuestion } from './proccess-evaluation-question.entity';
+import { ProccessEvaluationQuiz } from './proccess-evaluation-quiz.entity';
 
 @Entity()
 export class ProccessEvaluation {
@@ -39,5 +41,11 @@ export class ProccessEvaluation {
     @ManyToOne(() => Employee, (employee) => employee.proccessEvaluation)
     @JoinColumn()
     createdBy: Employee;
+
+    @OneToMany(() => ProccessEvaluationQuestion, (proccessEvaluationQuestion) => proccessEvaluationQuestion.proccessEvaluation)
+    question: ProccessEvaluationQuestion[];
+
+    @OneToMany(() => ProccessEvaluationQuiz, (proccessEvaluationQuiz) => proccessEvaluationQuiz.proccessEvaluation)
+    questionQuiz: ProccessEvaluationQuiz[];
 
 }
